@@ -1,6 +1,6 @@
 const SILENCE_SPEED = 4;
 const SOUNDED_SPEED = 1;
-const VOLUME_THRESHOLD = 0.00005;
+const VOLUME_THRESHOLD = 0.01;
 const SOUNDED_MARGIN_AFTER = 0;
 const SOUNDED_MARGIN_BEFORE = 40;
 
@@ -22,23 +22,24 @@ window.onload = () => {
   const src = ctx.createMediaElementSource(video);
   src.connect(scriptProcessor);
 
-  let sumOfSquares = 0;
-  let avgVolume;
+  let maxChunkVolume;
   scriptProcessor.onaudioprocess = function (e) {
     const numChannels = e.inputBuffer.numberOfChannels;
-    sumOfSquares = 0;
+    maxChunkVolume = 0;
     for (let channelI = 0; channelI < numChannels; channelI++) {
       const inputChannelData = e.inputBuffer.getChannelData(channelI);
       e.outputBuffer.copyToChannel(inputChannelData, channelI);
       const numSamples = inputChannelData.length;
       // `forEach` and `reduce` appear to be slower here.
       for (let sampleI = 0; sampleI < numSamples; sampleI++) {
-        sumOfSquares += inputChannelData[sampleI] * inputChannelData[sampleI];
+        const currVol = Math.abs(inputChannelData[sampleI]);
+        if (currVol > maxChunkVolume) {
+          maxChunkVolume = currVol;
+        }
       }
     }
-    avgVolume = sumOfSquares / e.inputBuffer.length; // inputBuffer is an array of samples from all channels.
-    requestAnimationFrame(() => console.log(avgVolume.toFixed(8)));
-    if (avgVolume < VOLUME_THRESHOLD) {
+    requestAnimationFrame(() => console.log(maxChunkVolume.toFixed(8)));
+    if (maxChunkVolume < VOLUME_THRESHOLD) {
       video.playbackRate = SILENCE_SPEED;
     } else {
       video.playbackRate = SOUNDED_SPEED;
