@@ -4,8 +4,13 @@ chrome.storage.sync.get(
     volumeThreshold: 0.010,
     silenceSpeed: 4,
     soundedSpeed: 1.75,
+    enabled: true,
   },
   function (settings) {
+    if (!settings.enabled) {
+      return;
+    }
+
     let currSilenceSpeed = settings.silenceSpeed;
     let currSoundedSpeed = settings.soundedSpeed;
 
