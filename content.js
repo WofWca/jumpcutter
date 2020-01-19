@@ -1,10 +1,10 @@
 const SILENCE_SPEED = 4;
 const SOUNDED_SPEED = 1;
 const VOLUME_THRESHOLD = 0.01;
-const SOUNDED_MARGIN_AFTER = 0;
-const SOUNDED_MARGIN_BEFORE = 40;
+// const SOUNDED_MARGIN_AFTER = 0;
+// const SOUNDED_MARGIN_BEFORE = 40;
+// const SOUNDED_MARGIN_BEFORE_SEC = SOUNDED_MARGIN_BEFORE / 1000;
 
-const SOUNDED_MARGIN_BEFORE_SEC = SOUNDED_MARGIN_BEFORE / 1000;
 const video = document.querySelector('video');
 console.log('Jump Cutter: video:', video);
 if (video !== null) {
