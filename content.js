@@ -5,41 +5,30 @@ const VOLUME_THRESHOLD = 0.01;
 // const SOUNDED_MARGIN_BEFORE = 40;
 // const SOUNDED_MARGIN_BEFORE_SEC = SOUNDED_MARGIN_BEFORE / 1000;
 
-const video = document.querySelector('video');
-console.log('Jump Cutter: video:', video);
-if (video !== null) {
+async function controlSpeed(video) {
   const ctx = new AudioContext();
-  // TODO ScriptProcessor is deprecated. How to use `AudioWorkletProcessor`? It requries a separate file.
-  const scriptProcessor = ctx.createScriptProcessor(0, 1, 1);
-  // TODO audio lags because of this on load. until we connect it to the destination.
-  // Connecting scriptProcessor first as the audio will stop playing as soon as we createMediaElementSource.
-  scriptProcessor.connect(ctx.destination);
-  const src = ctx.createMediaElementSource(video);
-  src.connect(scriptProcessor);
-
-  let maxChunkVolume;
-  scriptProcessor.onaudioprocess = function (e) {
-    const numChannels = e.inputBuffer.numberOfChannels;
-    maxChunkVolume = 0;
-    for (let channelI = 0; channelI < numChannels; channelI++) {
-      const inputChannelData = e.inputBuffer.getChannelData(channelI);
-      e.outputBuffer.copyToChannel(inputChannelData, channelI);
-      const numSamples = inputChannelData.length;
-      // `forEach` and `reduce` appear to be slower here.
-      for (let sampleI = 0; sampleI < numSamples; sampleI++) {
-        const currVol = Math.abs(inputChannelData[sampleI]);
-        if (currVol > maxChunkVolume) {
-          maxChunkVolume = currVol;
-        }
-      }
-    }
-    requestAnimationFrame(() => console.log(maxChunkVolume.toFixed(8)));
+  await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeGetterProcessor.js'));
+  const volumeGetterNode = new AudioWorkletNode(ctx, 'VolumeGetterProcessor')
+  // TODO audio lags for a moment because of this. Until we connect it to the destination.
+  // Connecting volumeGetter first as the audio will stop playing as soon as we `createMediaElementSource`.
+  volumeGetterNode.port.onmessage = (msg) => {
+    maxChunkVolume = msg.data;
+    // console.log(maxChunkVolume);
     if (maxChunkVolume < VOLUME_THRESHOLD) {
       video.playbackRate = SILENCE_SPEED;
     } else {
       video.playbackRate = SOUNDED_SPEED;
     }
   }
+  volumeGetterNode.connect(ctx.destination);
+  const src = ctx.createMediaElementSource(video);
+  src.connect(volumeGetterNode);
+}
+
+const video = document.querySelector('video');
+console.log('Jump Cutter: video:', video);
+if (video !== null) {
+  controlSpeed(video);
 } else {
   // TODO search again when document updates? Or just after some time?
   console.log('Jump cutter: no video found. Exiting');
