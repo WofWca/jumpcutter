@@ -6,32 +6,45 @@ chrome.storage.sync.get(
     soundedSpeed: 1.75,
   },
   function (settings) {
-    const currSettings = { ...settings };
-
-    chrome.storage.onChanged.addListener(function (changes) {
-      Object.entries(changes).forEach(([settingName, change]) => {
-        currSettings[settingName] = change.newValue;
-      })
-    });
+    let currSilenceSpeed = settings.silenceSpeed;
+    let currSoundedSpeed = settings.soundedSpeed;
 
     async function controlSpeed(video) {
       const ctx = new AudioContext();
-      await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeGetterProcessor.js'));
-      const volumeGetterNode = new AudioWorkletNode(ctx, 'VolumeGetterProcessor')
+      await ctx.audioWorklet.addModule(chrome.runtime.getURL('ThresholdDetectorProcessor.js'));
+      const thresholdDetectorNode = new AudioWorkletNode(ctx, 'ThresholdDetectorProcessor', {
+        parameterData: { volumeThreshold: settings.volumeThreshold },
+      })
       // TODO audio lags for a moment because of this. Until we connect it to the destination.
       // Connecting volumeGetter first as the audio will stop playing as soon as we `createMediaElementSource`.
-      volumeGetterNode.port.onmessage = (msg) => {
-        maxChunkVolume = msg.data;
-        // console.log(maxChunkVolume);
-        if (maxChunkVolume < currSettings.volumeThreshold) {
-          video.playbackRate = currSettings.silenceSpeed;
+      thresholdDetectorNode.port.onmessage = (msg) => {
+        const goneAboveOrBelow = msg.data;
+        // console.log(goneAboveOrBelow);
+        if (goneAboveOrBelow === 'below') {
+          video.playbackRate = currSilenceSpeed;
         } else {
-          video.playbackRate = currSettings.soundedSpeed;
+          video.playbackRate = currSoundedSpeed;
         }
       }
-      volumeGetterNode.connect(ctx.destination);
+      thresholdDetectorNode.connect(ctx.destination);
       const src = ctx.createMediaElementSource(video);
-      src.connect(volumeGetterNode);
+      src.connect(thresholdDetectorNode);
+
+      chrome.storage.onChanged.addListener(function (changes) {
+        const silenceSpeedChange = changes.silenceSpeed;
+        if (silenceSpeedChange !== undefined) {
+          currSilenceSpeed = silenceSpeedChange.newValue;
+        }
+        const soundedSpeedChange = changes.soundedSpeed;
+        if (soundedSpeedChange !== undefined) {
+          currSoundedSpeed = soundedSpeedChange.newValue;
+        }
+        const volumeThresholdChange = changes.volumeThreshold;
+        if (volumeThresholdChange !== undefined) {
+          const volumeThresholdParam = thresholdDetectorNode.parameters.get('volumeThreshold');
+          volumeThresholdParam.setValueAtTime(volumeThresholdChange.newValue, ctx.currentTime);
+        }
+      });
     }
 
     const video = document.querySelector('video');

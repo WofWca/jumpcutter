@@ -14,7 +14,7 @@
     }
   ],
   "web_accessible_resources": [
-    "VolumeGetterProcessor.js"
+    "ThresholdDetectorProcessor.js"
   ],
   "manifest_version": 2
 }
