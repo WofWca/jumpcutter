@@ -8,7 +8,7 @@ class ThresholdDetectorProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [{
       name: 'volumeThreshold',
-      defaultValue: 0.12, // TODO DRY.
+      defaultValue: 0.10, // TODO DRY.
       minValue: 0,
       maxValue: 1,
       automationRate: 'k-rate',

@@ -1,8 +1,8 @@
 chrome.storage.sync.get(
   // TODO DRY with `popup.js`.
   {
-    volumeThreshold: 0.012,
-    silenceSpeed: 8,
+    volumeThreshold: 0.010,
+    silenceSpeed: 4,
     soundedSpeed: 1.75,
   },
   function (settings) {

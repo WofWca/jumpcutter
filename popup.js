@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   chrome.storage.sync.get(
     {
-      volumeThreshold: 0.012,
-      silenceSpeed: 8,
+      volumeThreshold: 0.01,
+      silenceSpeed: 4,
       soundedSpeed: 1.75,
     },
     function ({ volumeThreshold, silenceSpeed, soundedSpeed }) {
