@@ -9,7 +9,8 @@
   "content_scripts": [
     {
       "matches": [ "http://*/*", "https://*/*", "file:///*" ],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ],
   "manifest_version": 2

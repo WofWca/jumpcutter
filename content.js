@@ -5,14 +5,9 @@ const SOUNDED_MARGIN_AFTER = 0;
 const SOUNDED_MARGIN_BEFORE = 40;
 
 const SOUNDED_MARGIN_BEFORE_SEC = SOUNDED_MARGIN_BEFORE / 1000;
-window.onload = () => {
-  const video = document.querySelector('video');
-  console.log('Jump Cutter: video:', video);
-  if (video === null) {
-    // TODO search again when document updates? Or just after some time?
-    console.log('Jump cutter: no video found. Exiting');
-    return;
-  }
+const video = document.querySelector('video');
+console.log('Jump Cutter: video:', video);
+if (video !== null) {
   const ctx = new AudioContext();
   // TODO ScriptProcessor is deprecated. How to use `AudioWorkletProcessor`? It requries a separate file.
   const scriptProcessor = ctx.createScriptProcessor(0, 1, 1);
@@ -45,4 +40,7 @@ window.onload = () => {
       video.playbackRate = SOUNDED_SPEED;
     }
   }
+} else {
+  // TODO search again when document updates? Or just after some time?
+  console.log('Jump cutter: no video found. Exiting');
 }
