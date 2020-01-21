@@ -5,3 +5,9 @@ label {
 label:not(:first-child) {
   margin-top: 1rem;
 }
+
+#repo-link {
+  margin-top: 1rem;
+  display: block;
+  text-align: end;
+}
