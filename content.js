@@ -57,6 +57,7 @@ chrome.storage.sync.get(
     if (video === null) {
       // TODO search again when document updates? Or just after some time?
       console.log('Jump cutter: no video found. Exiting');
+      return;
     }
     controlSpeed(video);
   }
