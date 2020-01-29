@@ -17,15 +17,10 @@ class ThresholdDetectorProcessor extends AudioWorkletProcessor {
 
   process(inputs, outputs, parameters) {
     const threshold = parameters.volumeThreshold[0];
-    let currOutput, currOutputChannel;
     let hasBeenAboveInThisChunk = false;
-    inputs.forEach((input, inputI) => {
-      currOutput = outputs[inputI];
-      input.forEach((channel, channelI) => {
-        currOutputChannel = currOutput[channelI]
-        channel.forEach((sample, sampleI) => {
-          currOutputChannel[sampleI] = sample;
-          
+    inputs.forEach(input => {
+      input.forEach(channel => {
+        channel.forEach(sample => {
           const currVol = Math.abs(sample);
           // Eager to post 'above'...
           if (currVol >= threshold) {

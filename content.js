@@ -19,6 +19,7 @@ chrome.storage.sync.get(
       await ctx.audioWorklet.addModule(chrome.runtime.getURL('ThresholdDetectorProcessor.js'));
       const thresholdDetectorNode = new AudioWorkletNode(ctx, 'ThresholdDetectorProcessor', {
         parameterData: { volumeThreshold: settings.volumeThreshold },
+        numberOfOutputs: 0,
       })
       // TODO audio lags for a moment because of this. Until we connect it to the destination.
       // Connecting volumeGetter first as the audio will stop playing as soon as we `createMediaElementSource`.
@@ -31,8 +32,8 @@ chrome.storage.sync.get(
           video.playbackRate = currSoundedSpeed;
         }
       }
-      thresholdDetectorNode.connect(ctx.destination);
       const src = ctx.createMediaElementSource(video);
+      src.connect(ctx.destination);
       src.connect(thresholdDetectorNode);
 
       chrome.storage.onChanged.addListener(function (changes) {
