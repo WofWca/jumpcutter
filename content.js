@@ -21,8 +21,6 @@ chrome.storage.sync.get(
         parameterData: { volumeThreshold: settings.volumeThreshold },
         numberOfOutputs: 0,
       })
-      // TODO audio lags for a moment because of this. Until we connect it to the destination.
-      // Connecting volumeGetter first as the audio will stop playing as soon as we `createMediaElementSource`.
       thresholdDetectorNode.port.onmessage = (msg) => {
         const goneAboveOrBelow = msg.data;
         // console.log(goneAboveOrBelow);
