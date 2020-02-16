@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
     'volumeThreshold',
     'silenceSpeed',
     'soundedSpeed',
+    'marginBefore',
+    'marginAfter'
   ];
   const numberInputs = {};
   numberInputsNames.forEach(n => {
@@ -16,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
       volumeThreshold: 0.01,
       silenceSpeed: 4,
       soundedSpeed: 1.75,
+      marginBefore: 0.050,
+      marginAfter: 0.050,
     },
     function (settings) {
       Object.entries(numberInputs).forEach(([name, el]) => {

@@ -20,7 +20,7 @@
     }
   ],
   "web_accessible_resources": [
-    "ThresholdDetectorProcessor.js"
+    "SilenceDetectorProcessor.js"
   ],
   "manifest_version": 2
 }
