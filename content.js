@@ -15,6 +15,32 @@ function getNewLookaheadDelay(videoTimeMargin, soundedSpeed, silenceSpeed) {
 function getTotalDelay(lookaheadNodeDelay, stretcherNodeDelay) {
   return lookaheadNodeDelay + stretcherNodeDelay;
 }
+function getNewSnippetDuration(originalRealtimeDuration, originalSpeed, newSpeed) {
+  const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
+  return videoSpeedSnippetDuration / newSpeed;
+}
+// The delay that the stretcher node is going to have when it's done slowing down a snippet
+function getStretcherDelayChange(snippetOriginalRealtimeDuration, originalSpeed, newSpeed) {
+  const snippetNewDuration = getNewSnippetDuration(snippetOriginalRealtimeDuration, originalSpeed, newSpeed);
+  const delayChange = snippetNewDuration - snippetOriginalRealtimeDuration;
+  return delayChange;
+}
+function getStretcherDelayChangeRate(originalSpeed, newSpeed) {
+  // Could have used `getNewSnippetDuration` with some random snippet duration.
+  // const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
+  // const newSnippetDuration = videoSpeedSnippetDuration / newSpeed;
+  // const delayChange = newSnippetDuration - originalRealtimeDuration;
+  // Delay change must happen over the new snippet duration.
+  // const delayChangeRate = delayChange / newSnippetDuration = 
+  //   (((originalRealtimeDuration * originalSpeed) / newSpeed) - originalRealtimeDuration)
+  //   / ((originalRealtimeDuration * originalSpeed) / newSpeed);
+  return 1 - newSpeed / originalSpeed;
+}
+function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSpeed) {
+  const realTimeMarginBefore = videoTimeMarginBefore / silenceSpeed;
+  const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
+  return 0 + delayChange;
+}
 // function setVideoSpeed(video, newSpeed, silenceDetectorNode, videoTimeMarginBefore) {
 //   video.playbackRate = newSpeed;
 //   // ALong with speed, the margin changes, because it's real-time, not video-time.
