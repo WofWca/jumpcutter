@@ -204,16 +204,15 @@ chrome.storage.sync.get(
           // ALong with speed, the margin changes, because it's real-time, not video-time.
           silenceDetectorNode.parameters.get('durationThreshold').value = currValues.marginBefore / newSpeed;
 
-          // const totalDelay = lookahead.delayTime.value
-          //   + getStretcherSoundedDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
-          // const startIn = totalDelay - originalRealtimeMargin;
-          // This does not represent `silenceDetectorNode.parameters.get('durationThreshold').value`, because of that
-          // workaround.
-          // const oldRealtimeMargin = currValues.marginBefore / currValues.soundedSpeed;
-          // const startIn = totalDelay - oldRealtimeMargin;
+          const oldRealtimeMargin =
+            currValues.marginBefore / currValues.soundedSpeed
+            + getWorkaroundAddedMargin(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
+          const totalDelay = lookahead.delayTime.value
+            + getStretcherSoundedDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
+          const startIn = totalDelay - oldRealtimeMargin;
 
           const speedUpBy = currValues.silenceSpeed / currValues.soundedSpeed;
-          scheduleStretcherNodeDelayReset(0, speedUpBy, stretcher, ctx.currentTime);
+          scheduleStretcherNodeDelayReset(startIn, speedUpBy, stretcher, ctx.currentTime);
 
           // log({ value: 0, endDelta: endTime - ctx.currentTime }); // We don't show the delay here actually
           // console.log(`Ramping from ${stretcher.delayTime.value} to ${0} over ${speeUpDuration}s`);
