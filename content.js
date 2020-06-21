@@ -9,6 +9,10 @@ const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
 const numberSettingsNames = ['silenceSpeed', 'soundedSpeed', 'marginBefore', 'marginAfter'];
 
+function getRealtimeMargin(marginBefore, speed) {
+  return marginBefore / speed;
+}
+
 function getNewLookaheadDelay(videoTimeMargin, soundedSpeed, silenceSpeed) {
   return videoTimeMargin / Math.min(soundedSpeed, silenceSpeed)
 }
@@ -169,13 +173,13 @@ chrome.storage.sync.get(
           const newSpeed = currValues.soundedSpeed;
           video.playbackRate = newSpeed;
           // ALong with speed, the margin changes, because it's real-time, not video-time.
-          silenceDetectorNode.parameters.get('durationThreshold').value = currValues.marginBefore / newSpeed;
+          silenceDetectorNode.parameters.get('durationThreshold').value = getRealtimeMargin(currValues.marginBefore, newSpeed);
 
           const totalDelay = lookahead.delayTime.value + 0;
           // Can't just get `silenceDetectorNode.parameters.get('durationThreshold').value`, because the current value
           // may be different from the value at the moment to which we're scheduling the stretcher delay change.
           // Same for the `else` block.
-          const oldRealtimeMargin = currValues.marginBefore / currValues.silenceSpeed;
+          const oldRealtimeMargin = getRealtimeMargin(currValues.marginBefore, currValues.silenceSpeed);
           const startIn = totalDelay - oldRealtimeMargin;
           const originalEndIn = startIn + oldRealtimeMargin;
           const slowDownBy = currValues.silenceSpeed / currValues.soundedSpeed;
@@ -188,9 +192,9 @@ chrome.storage.sync.get(
           const newSpeed = currValues.silenceSpeed;
           video.playbackRate = newSpeed;
           // ALong with speed, the margin changes, because it's real-time, not video-time.
-          silenceDetectorNode.parameters.get('durationThreshold').value = currValues.marginBefore / newSpeed;
+          silenceDetectorNode.parameters.get('durationThreshold').value = getRealtimeMargin(currValues.marginBefore, newSpeed);
 
-          const oldRealtimeMargin = currValues.marginBefore / currValues.soundedSpeed;
+          const oldRealtimeMargin = getRealtimeMargin(currValues.marginBefore, currValues.soundedSpeed);
           const totalDelay = lookahead.delayTime.value
             + getStretcherSoundedDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
           const startIn = totalDelay - oldRealtimeMargin;
