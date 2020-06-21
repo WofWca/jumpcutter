@@ -41,10 +41,10 @@ function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSp
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
 }
-function getWorkaroundAddedMargin(videoTimeMarginBefore, soundedSpeed, silenceSpeed) {
-  return getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSpeed)
-    / - getStretcherDelayChangeRate(soundedSpeed, silenceSpeed);
-}
+// function getWorkaroundAddedMargin(videoTimeMarginBefore, soundedSpeed, silenceSpeed) {
+//   return getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSpeed)
+//     / - getStretcherDelayChangeRate(soundedSpeed, silenceSpeed);
+// }
 // function setVideoSpeed(video, newSpeed, silenceDetectorNode, videoTimeMarginBefore) {
 //   video.playbackRate = newSpeed;
 //   // ALong with speed, the margin changes, because it's real-time, not video-time.
@@ -169,12 +169,7 @@ chrome.storage.sync.get(
           const newSpeed = currValues.soundedSpeed;
           video.playbackRate = newSpeed;
           // ALong with speed, the margin changes, because it's real-time, not video-time.
-
-          // The margin is greater than we need, because we want it to play at sounded speed a bit more, so we can
-          // put the stretcher delay back to 0, but this would require speeding up the audio. We don't want to speed
-          // up audio that is already at high speed.
-          // silenceDetectorNode.parameters.get('durationThreshold').value =
-          //   originalRealtimeMargin * currValues.silenceSpeed / currValues.soundedSpeed;
+          silenceDetectorNode.parameters.get('durationThreshold').value = currValues.marginBefore / newSpeed;
 
           const totalDelay = lookahead.delayTime.value + 0;
           // Can't just get `silenceDetectorNode.parameters.get('durationThreshold').value`, because the current value
@@ -186,15 +181,6 @@ chrome.storage.sync.get(
           const slowDownBy = currValues.silenceSpeed / currValues.soundedSpeed;
           scheduleAudioStretch(startIn, originalEndIn, slowDownBy, stretcher, ctx.currentTime);
 
-          // The previous section is correct, but I commented it out to implement an easier version:
-          silenceDetectorNode.parameters.get('durationThreshold').value =
-            // Correct value
-            currValues.marginBefore / newSpeed
-            // This is so we don't have to deal with the case when we're starting to reset the stretcher delay, and then
-            // there's a loud secton again and we have to pause the delay change halfway through.
-            // This is the real-time duration of delay reset.
-            + getWorkaroundAddedMargin(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
-
           // console.log(`Ramping from ${stretcher.delayTime.value} to ${addedDelay} over ${slowDownDuration}s`);
           // log({ value: addedDelay, endDelta: endTime - ctx.currentTime });
         } else {
@@ -204,9 +190,7 @@ chrome.storage.sync.get(
           // ALong with speed, the margin changes, because it's real-time, not video-time.
           silenceDetectorNode.parameters.get('durationThreshold').value = currValues.marginBefore / newSpeed;
 
-          const oldRealtimeMargin =
-            currValues.marginBefore / currValues.soundedSpeed
-            + getWorkaroundAddedMargin(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
+          const oldRealtimeMargin = currValues.marginBefore / currValues.soundedSpeed;
           const totalDelay = lookahead.delayTime.value
             + getStretcherSoundedDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
           const startIn = totalDelay - oldRealtimeMargin;
