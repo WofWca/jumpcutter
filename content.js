@@ -29,31 +29,11 @@ function getStretcherDelayChange(snippetOriginalRealtimeDuration, originalSpeed,
   const delayChange = snippetNewDuration - snippetOriginalRealtimeDuration;
   return delayChange;
 }
-function getStretcherDelayChangeRate(originalSpeed, newSpeed) {
-  // Could have used `getNewSnippetDuration` with some random snippet duration.
-  // const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
-  // const newSnippetDuration = videoSpeedSnippetDuration / newSpeed;
-  // const delayChange = newSnippetDuration - originalRealtimeDuration;
-  // Delay change must happen over the new snippet duration.
-  // const delayChangeRate = delayChange / newSnippetDuration = 
-  //   (((originalRealtimeDuration * originalSpeed) / newSpeed) - originalRealtimeDuration)
-  //   / ((originalRealtimeDuration * originalSpeed) / newSpeed);
-  return 1 - newSpeed / originalSpeed;
-}
 function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSpeed) {
   const realTimeMarginBefore = videoTimeMarginBefore / silenceSpeed;
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
 }
-// function getWorkaroundAddedMargin(videoTimeMarginBefore, soundedSpeed, silenceSpeed) {
-//   return getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSpeed)
-//     / - getStretcherDelayChangeRate(soundedSpeed, silenceSpeed);
-// }
-// function setVideoSpeed(video, newSpeed, silenceDetectorNode, videoTimeMarginBefore) {
-//   video.playbackRate = newSpeed;
-//   // ALong with speed, the margin changes, because it's real-time, not video-time.
-//   silenceDetectorNode.parameters.get('durationThreshold').value = videoTimeMarginBefore / newSpeed;
-// }
 /**
  * Gradually increases/decreases delay of stretcherNode. Not pitch-corrected.
  * @param {number} startIn How many seconds from now it will start playing.
