@@ -160,6 +160,7 @@ chrome.storage.sync.get(
           // may be different from the value at the moment to which we're scheduling the stretcher delay change.
           // Same for the `else` block.
           const oldRealtimeMargin = getRealtimeMargin(currValues.marginBefore, currValues.silenceSpeed);
+          // In practice this is 0 except when stretcher delay reset is in progress.
           const startIn = totalDelay - oldRealtimeMargin;
           const originalEndIn = startIn + oldRealtimeMargin;
           const slowDownBy = currValues.silenceSpeed / currValues.soundedSpeed;
