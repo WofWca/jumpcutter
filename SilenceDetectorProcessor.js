@@ -6,7 +6,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
     const initialDuration = options.processorOptions.initialDuration !== undefined
       ? options.processorOptions.initialDuration
       : 0;
-    this._consecutiveSilentSamples = initialDuration * sampleRate;
+    this._lastLoudSampleTime = currentTime - initialDuration;
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
   }
@@ -29,14 +29,12 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
   }
 
   // Just so we don't mess up `>=` and `>` somewhere.
-  isPastDurationThreshold(durationThresholdSamples) {
-    return this._consecutiveSilentSamples >= durationThresholdSamples;
+  isPastDurationThreshold(durationThreshold) {
+    return currentTime >= this._lastLoudSampleTime + durationThreshold;
   }
 
   process(inputs, outputs, parameters) {
     const volumeThreshold = parameters.volumeThreshold[0];
-    const durationThresholdSeconds = parameters.durationThreshold[0];
-    const durationThresholdSamples = durationThresholdSeconds * sampleRate;
     for (let inputI = 0; inputI < inputs.length; inputI++) {
       const input = inputs[inputI];
       const numSamples = input[0].length;
@@ -50,15 +48,14 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
           }
         }
         if (loudSampleFound) {
-          this._consecutiveSilentSamples = 0;
+          this._lastLoudSampleTime = currentTime;
           if (this._lastTimePostedSilenceStart) {
             // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples, durationThresholdSamples);
             this.port.postMessage('silenceEnd');
             this._lastTimePostedSilenceStart = false;
           }
         } else {
-          ++this._consecutiveSilentSamples;
-          if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(durationThresholdSamples)) {
+          if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
             // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples);
             this.port.postMessage('silenceStart');
             this._lastTimePostedSilenceStart = true;
