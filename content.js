@@ -168,7 +168,7 @@ chrome.storage.sync.get(
       const silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
         parameterData: {
           volumeThreshold: settings.volumeThreshold,
-          durationThreshold: currValues.marginBefore + currValues.marginAfter,
+          durationThreshold: getRealtimeMargin(currValues.marginBefore, currValues.soundedSpeed),
           sampleRate: ctx.sampleRate,
         },
         processorOptions: { initialDuration: Infinity },
@@ -217,18 +217,10 @@ chrome.storage.sync.get(
         const silenceStartOrEnd = msg.data;
         // console.log(silenceStartOrEnd);
         if (silenceStartOrEnd === 'silenceEnd') {
-          const newSpeed = currValues.soundedSpeed;
-          video.playbackRate = newSpeed;
-          // ALong with speed, the margin changes, because it's real-time, not video-time.
-          silenceDetectorNode.parameters.get('durationThreshold').value = getRealtimeMargin(currValues.marginBefore, newSpeed);
+          video.playbackRate = currValues.soundedSpeed;
 
           // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
           // Or just use if-else?
-
-          // // Can't just get `silenceDetectorNode.parameters.get('durationThreshold').value`, because the current value
-          // // may be different from the value at the moment to which we're scheduling the stretcher delay change.
-          // // Same for the `else` block.
-          // const silenceSpeedRealtimeMarginBefore = getRealtimeMargin(currValues.marginBefore, currValues.silenceSpeed);
 
           const lastSilenceSpeedLastsForRealtime = currentTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
           const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * currValues.silenceSpeed;
@@ -323,10 +315,7 @@ chrome.storage.sync.get(
           });
         } else {
           // (Almost) same calculations as obove.
-          const newSpeed = currValues.silenceSpeed;
-          video.playbackRate = newSpeed;
-          // ALong with speed, the margin changes, because it's real-time, not video-time.
-          silenceDetectorNode.parameters.get('durationThreshold').value = getRealtimeMargin(currValues.marginBefore, newSpeed);
+          video.playbackRate = currValues.silenceSpeed;
 
           const oldRealtimeMargin = getRealtimeMargin(currValues.marginBefore, currValues.soundedSpeed);
           // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
