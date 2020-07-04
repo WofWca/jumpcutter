@@ -169,7 +169,6 @@ chrome.storage.sync.get(
         parameterData: {
           volumeThreshold: settings.volumeThreshold,
           durationThreshold: getRealtimeMargin(currValues.marginBefore, currValues.soundedSpeed),
-          sampleRate: ctx.sampleRate,
         },
         processorOptions: { initialDuration: Infinity },
         numberOfOutputs: 0,

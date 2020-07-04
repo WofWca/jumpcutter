@@ -6,8 +6,8 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
     const initialDuration = options.processorOptions.initialDuration !== undefined
       ? options.processorOptions.initialDuration
       : 0;
-    this._consecutiveSilentSamples = initialDuration * options.parameterData.sampleRate;
-    const thresholdSamples = options.parameterData.sampleRate * options.parameterData.durationThreshold;
+    this._consecutiveSilentSamples = initialDuration * sampleRate;
+    const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
   }
   static get parameterDescriptors() {
@@ -25,11 +25,6 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
         minValue: 0,
         automationRate: 'k-rate',
       },
-      {
-        // How about just pass it in the constructor?
-        name: 'sampleRate',
-        automationRate: 'k-rate',
-      }
     ];
   }
 
@@ -41,7 +36,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
   process(inputs, outputs, parameters) {
     const volumeThreshold = parameters.volumeThreshold[0];
     const durationThresholdSeconds = parameters.durationThreshold[0];
-    const durationThresholdSamples = durationThresholdSeconds * parameters.sampleRate[0];
+    const durationThresholdSamples = durationThresholdSeconds * sampleRate;
     for (let inputI = 0; inputI < inputs.length; inputI++) {
       const input = inputs[inputI];
       const numSamples = input[0].length;
