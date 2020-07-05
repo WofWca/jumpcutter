@@ -35,31 +35,29 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
 
   process(inputs, outputs, parameters) {
     const volumeThreshold = parameters.volumeThreshold[0];
-    for (let inputI = 0; inputI < inputs.length; inputI++) {
-      const input = inputs[inputI];
-      const numSamples = input[0].length;
-      for (let sampleI = 0; sampleI < numSamples; sampleI++) {
-        let loudSampleFound = false;
-        for (let channelI = 0; channelI < input.length; channelI++) {
-          const sample = input[channelI][sampleI];
-          if (Math.abs(sample) >= volumeThreshold) {
-            loudSampleFound = true;
-            break;
-          }
+    const input = inputs[0];
+    const numSamples = input[0].length;
+    for (let sampleI = 0; sampleI < numSamples; sampleI++) {
+      let loudSampleFound = false;
+      for (let channelI = 0; channelI < input.length; channelI++) {
+        const sample = input[channelI][sampleI];
+        if (Math.abs(sample) >= volumeThreshold) {
+          loudSampleFound = true;
+          break;
         }
-        if (loudSampleFound) {
-          this._lastLoudSampleTime = currentTime;
-          if (this._lastTimePostedSilenceStart) {
-            // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples, durationThresholdSamples);
-            this.port.postMessage('silenceEnd');
-            this._lastTimePostedSilenceStart = false;
-          }
-        } else {
-          if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
-            // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples);
-            this.port.postMessage('silenceStart');
-            this._lastTimePostedSilenceStart = true;
-          }
+      }
+      if (loudSampleFound) {
+        this._lastLoudSampleTime = currentTime;
+        if (this._lastTimePostedSilenceStart) {
+          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples, durationThresholdSamples);
+          this.port.postMessage('silenceEnd');
+          this._lastTimePostedSilenceStart = false;
+        }
+      } else {
+        if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
+          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples);
+          this.port.postMessage('silenceStart');
+          this._lastTimePostedSilenceStart = true;
         }
       }
     }
