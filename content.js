@@ -215,8 +215,7 @@ chrome.storage.sync.get(
       }
 
       silenceDetectorNode.port.onmessage = (msg) => {
-        const currentTime = ctx.currentTime;
-        const silenceStartOrEnd = msg.data;
+        const { time: eventTime, type: silenceStartOrEnd } = msg.data;
         // console.log(silenceStartOrEnd);
         if (silenceStartOrEnd === 'silenceEnd') {
           video.playbackRate = currValues.soundedSpeed;
@@ -224,7 +223,7 @@ chrome.storage.sync.get(
           // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
           // Or just use if-else?
 
-          const lastSilenceSpeedLastsForRealtime = currentTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
+          const lastSilenceSpeedLastsForRealtime = eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
           const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * currValues.silenceSpeed;
 
           const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
@@ -239,7 +238,7 @@ chrome.storage.sync.get(
             marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration / currValues.soundedSpeed;
           // The time at which the moment from which the speed of the video needs to be slow has been on the input.
           const marginBeforeStartInputTime =
-            currentTime
+            eventTime
             - marginBeforePartAtSilenceSpeedRealTimeDuration
             - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
           // Same, but when it's going to be on the output.
@@ -308,7 +307,7 @@ chrome.storage.sync.get(
             // A.k.a. `marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease`,
             finalStretcherDelay,
             // A.k.a. `alreadySoundedSpeedPartEndOutputTime + silenceSpeedPartStretchedDuration`
-            currentTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
+            eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
           );
           log({
             type: 'linearRampToValueAtTime',
@@ -326,18 +325,18 @@ chrome.storage.sync.get(
           const startIn = getTotalDelay(lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
 
           const speedUpBy = currValues.silenceSpeed / currValues.soundedSpeed;
-          // scheduleStretcherNodeDelayReset(startIn, speedUpBy, stretcher, ctx.currentTime);
+          // scheduleStretcherNodeDelayReset(startIn, speedUpBy, stretcher, eventTime);
 
           const originalRealtimeSpeed = 1;
           const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
           const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
-          const startTime = currentTime + startIn;
+          const startTime = eventTime + startIn;
           const endTime = startTime + snippetNewDuration;
           stretcher.delayTime
             .setValueAtTime(stretcherDelayStartValue, startTime)
             .linearRampToValueAtTime(0, endTime);
           lastScheduledStretcherDelayReset = {
-            newSpeedStartInputTime: currentTime,
+            newSpeedStartInputTime: eventTime,
             startTime,
             startValue: stretcherDelayStartValue,
             endTime,
