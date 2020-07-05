@@ -9,6 +9,8 @@ const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
 const numberSettingsNames = ['silenceSpeed', 'soundedSpeed', 'marginBefore', 'marginAfter'];
 
+const logging = false;
+
 function getRealtimeMargin(marginBefore, speed) {
   return marginBefore / speed;
 }
@@ -197,11 +199,13 @@ chrome.storage.sync.get(
               // Maybe it's more clear to write this as:
               // .cancelAndHoldAtTime(lastScheduledStretcherDelayReset.startTime)
               // .linearRampToValueAtTime(marginBeforeStartOutputTimeStretcherDelay, marginBeforeStartOutputTime)
-            log({
-              type: 'pauseReset',
-              value: marginBeforeStartOutputTimeStretcherDelay,
-              time: marginBeforeStartOutputTime,
-            });
+            if (logging) {
+              log({
+                type: 'pauseReset',
+                value: marginBeforeStartOutputTimeStretcherDelay,
+                time: marginBeforeStartOutputTime,
+              });
+            }
           }
 
           const alreadySoundedSpeedPartEndOutputTime =
@@ -214,11 +218,13 @@ chrome.storage.sync.get(
             marginBeforeStartOutputTimeStretcherDelay,
             alreadySoundedSpeedPartEndOutputTime
           );
-          log({
-            type: 'setValueAtTime',
-            value: marginBeforeStartOutputTimeStretcherDelay,
-            time: alreadySoundedSpeedPartEndOutputTime,
-          });
+          if (logging) {
+            log({
+              type: 'setValueAtTime',
+              value: marginBeforeStartOutputTimeStretcherDelay,
+              time: alreadySoundedSpeedPartEndOutputTime,
+            });
+          }
           const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
             marginBeforePartAtSilenceSpeedRealTimeDuration,
             currValues.silenceSpeed,
@@ -237,11 +243,13 @@ chrome.storage.sync.get(
             // A.k.a. `alreadySoundedSpeedPartEndOutputTime + silenceSpeedPartStretchedDuration`
             eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
           );
-          log({
-            type: 'linearRampToValueAtTime',
-            value: marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease,
-            time: alreadySoundedSpeedPartEndOutputTime + silenceSpeedPartStretchedDuration,
-          });
+          if (logging) {
+            log({
+              type: 'linearRampToValueAtTime',
+              value: marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease,
+              time: alreadySoundedSpeedPartEndOutputTime + silenceSpeedPartStretchedDuration,
+            });
+          }
         } else {
           // (Almost) same calculations as obove.
           video.playbackRate = currValues.silenceSpeed;
@@ -270,18 +278,23 @@ chrome.storage.sync.get(
             endValue: 0,
           };
 
-          log({
-            type: 'reset',
-            startValue: stretcherDelayStartValue,
-            startTime: startTime,
-            endTime: endTime,
-            lastScheduledStretcherDelayReset,
-          });
+          if (logging) {
+            log({
+              type: 'reset',
+              startValue: stretcherDelayStartValue,
+              startTime: startTime,
+              endTime: endTime,
+              lastScheduledStretcherDelayReset,
+            });
+          }
         }
       }
-      setInterval(() => {
-        log();
-      }, 1);
+
+      if (logging) {
+        setInterval(() => {
+          log();
+        }, 1);
+      }
 
       chrome.storage.onChanged.addListener(function (changes) {
         numberSettingsNames.forEach(n => {
