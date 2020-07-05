@@ -36,28 +36,6 @@ function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSp
   return 0 + delayChange;
 }
 
-// // This function won't help us because on silenceStart we need to know the offset of the moment that has passed.
-// // Wait. But isn't the stretcher's delay on silenceStart always at its max value?
-
-// /**
-//  * Answers the question "When is the sample that is currently on the input going to appear on the output?"
-//  */
-// function getCurrentMomentOutputDelay(lookaheadDelay, lastScheduledStretcherDelayReset) {
-//   return lookaheadDelay + 
-// }
-
-
-
-// /**
-//  * The holy grail of this algorithm.
-//  * Answers the question "When is the sample that has been on the input `ago` seconds ago going to appear on the output?"
-//  * Only works for input values such that the correct answer is after the `lastScheduledStretcherDelayReset`'s start time.
-//  * @param {number} ago - how long ago the target moment has appeared on the input, in seconds.
-//  */
-// function getMomentOutputTime(ago, lookaheadDelay, lastScheduledStretcherDelayReset) {
-//   return lookaheadDelay + 
-// }
-
 /**
  * The holy grail of this algorithm.
  * Answers the question "When is the sample that has been on the input at `momentTime` going to appear on the output?"
@@ -68,74 +46,26 @@ function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSp
 function getMomentOutputTime(momentTime, lookaheadDelay, lastScheduledStretcherDelayReset) {
   const stretch = lastScheduledStretcherDelayReset;
   const stretchEndTotalDelay = getTotalDelay(lookaheadDelay, stretch.endValue);
-  // TODO `const asdadsd = momentTime + stretchEndTotalDelay;` ?
   // Simpliest case. The target moment is after the `stretch`'s end time
+  // TODO DRY `const asdadsd = momentTime + stretchEndTotalDelay;`?
   if (momentTime + stretchEndTotalDelay >= stretch.endTime) {
     return momentTime + stretchEndTotalDelay;
   } else {
     // `lastScheduledStretcherDelayReset` is going to be in progress when the target moment is on the output.
-    // At which point between its tart and end would the target moment be played?
+
+    // At which point between its start and end would the target moment be played if we were to not actually change the
+    // delay ?
     const originalTargetMomentOffsetRelativeToStretchStart =
       momentTime + getTotalDelay(lookaheadDelay, stretch.startValue) - stretch.startTime;
     // By how much the snippet is going to be stretched?
     const playbackSpeedupDuringStretch =
       ((stretch.endTime - stretch.startTime) + (stretch.startValue - stretch.endValue))
       / (stretch.endTime - stretch.startTime);
-    // const stretchedSnippetFinalDurationRelativeToOriginalDuration =
-    //   ((stretch.endTime - stretch.startTime) + (stretch.endValue - stretch.startValue))
-    //   / (stretch.endTime - stretch.startTime);
-    // const stretchedSnippetFinalDurationRelativeToOriginalDuration =
-    //   (stretch.endTime - stretch.startTime)
-    //   / ((stretch.endTime - stretch.startTime) + (stretch.startValue - stretch.endValue));
     // How much time will pass since the stretch start until the target moment is played on the output?
     const finalTargetMomentOffsetRelativeToStretchStart =
       originalTargetMomentOffsetRelativeToStretchStart / playbackSpeedupDuringStretch;
-    
-    // Wait what? Stretch start time? Don't we know it already?
-    // const stretchStartTime = momentTime + getTotalDelay(lookaheadDelay, stretch.startValue);
-    // return stretchStartTime + finalTargetMomentOffsetRelativeToStretchStart;
-
     return stretch.startTime + finalTargetMomentOffsetRelativeToStretchStart;
   }
-}
-/**
- * Gradually increases/decreases delay of stretcherNode. Not pitch-corrected.
- * @param {number} startIn How many seconds from now it will start playing.
- * @param {number} originalEndIn How many seconds from now it would stop playing if we wouldn't stretch it.
- * @param {number} by By how much to stretch it.
- * @param {DelayNode} stretcherNode The node which is going to be performing this manipulation.
- */
-function scheduleAudioStretch(startIn, originalEndIn, by, stretcherNode, ctxCurrentTime) {
-  const snippetOriginalDuration = originalEndIn - startIn;
-  const snippetNewDuration = by * snippetOriginalDuration;
-  const delayChange = snippetNewDuration - snippetOriginalDuration;
-  const startTime = ctxCurrentTime + startIn;
-  const endTime = startTime + snippetNewDuration;
-
-  // TODO we evaluate `stretcherNode.delayTime.value` now, but their values may not be the same at the time to which
-  // we schedule the changes.
-  // stretcherNode.delayTime.setValueAtTime(stretcherNode.delayTime.value, startTime);
-  // stretcherNode.delayTime.linearRampToValueAtTime(stretcherNode.delayTime.value + delayChange, endTime);
-  stretcherNode.delayTime.setValueAtTime(0, startTime);
-  stretcherNode.delayTime.linearRampToValueAtTime(delayChange, endTime);
-}
-function scheduleStretcherNodeDelayReset(startIn, speedUpBy, stretcherNode, ctxCurrentTime) {
-  const originalRealtimeSpeed = 1;
-  const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
-  const snippetNewDuration = stretcherNode.delayTime.value / delayDecreaseSpeed;
-  const startTime = ctxCurrentTime + startIn;
-  const endTime = startTime + snippetNewDuration;
-
-  stretcherNode.delayTime
-    .setValueAtTime(stretcherNode.delayTime.value, startTime)
-    .linearRampToValueAtTime(0, endTime);
-
-  // stretcherNode.delayTime.setValueAtTime(stretcherNode.delayTime.value, startTime);
-  // stretcherNode.delayTime.cancelAndHoldAtTime(startTime).linearRampToValueAtTime(0, endTime);
-
-  // stretcherNode.delayTime
-  //   .setValueAtTime(getStretcherSoundedDelay(), startTime)
-  //   .linearRampToValueAtTime(0, endTime);
 }
 
 chrome.storage.sync.get(
@@ -198,7 +128,6 @@ chrome.storage.sync.get(
 
       const logArr = [];
       const logBuffer = new Float32Array(analyzerOut.fftSize);
-      console.log(logArr)
       function log(msg = null) {
         analyzerOut.getFloatTimeDomainData(logBuffer);
         const outVol = logBuffer[logBuffer.length - 1];
@@ -216,7 +145,6 @@ chrome.storage.sync.get(
 
       silenceDetectorNode.port.onmessage = (msg) => {
         const { time: eventTime, type: silenceStartOrEnd } = msg.data;
-        // console.log(silenceStartOrEnd);
         if (silenceStartOrEnd === 'silenceEnd') {
           video.playbackRate = currValues.soundedSpeed;
 
@@ -252,7 +180,7 @@ chrome.storage.sync.get(
             marginBeforeStartOutputTimeTotalDelay - lookahead.delayTime.value;
 
           // As you remember, silence on the input must last for some time before we speed up the video.
-          // We then speed up these sections by calling `scheduleStretcherNodeDelayReset`.
+          // We then speed up these sections by reducing the stretcher delay.
           // And sometimes we may stumble upon a silence period long enough to make us speed up the video, but short
           // enough for us to not be done with speeding up that last part, so the margin before and that last part
           // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
@@ -325,7 +253,6 @@ chrome.storage.sync.get(
           const startIn = getTotalDelay(lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
 
           const speedUpBy = currValues.silenceSpeed / currValues.soundedSpeed;
-          // scheduleStretcherNodeDelayReset(startIn, speedUpBy, stretcher, eventTime);
 
           const originalRealtimeSpeed = 1;
           const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
@@ -352,7 +279,6 @@ chrome.storage.sync.get(
           });
         }
       }
-      // setInterval(() => console.log(stretcher.delayTime.value), 10);
       setInterval(() => {
         log();
       }, 1);
@@ -389,7 +315,6 @@ chrome.storage.sync.get(
     }
 
     const video = document.querySelector('video');
-    // console.log('Jump Cutter: video:', video);
     if (video === null) {
       // TODO search again when document updates? Or just after some time?
       console.log('Jump cutter: no video found. Exiting');
