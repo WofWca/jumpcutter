@@ -41,7 +41,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
       let loudSampleFound = false;
       for (let channelI = 0; channelI < input.length; channelI++) {
         const sample = input[channelI][sampleI];
-        if (Math.abs(sample) >= volumeThreshold) {
+        if (sample >= volumeThreshold) {
           loudSampleFound = true;
           break;
         }

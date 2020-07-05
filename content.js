@@ -161,10 +161,12 @@ chrome.storage.sync.get(
 
       const ctx = new AudioContext();
       await ctx.audioWorklet.addModule(chrome.runtime.getURL('SilenceDetectorProcessor.js'));
+      await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeFilter.js'));
 
       const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
       const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
+      const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
       const silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
         parameterData: {
           volumeThreshold: settings.volumeThreshold,
@@ -181,7 +183,8 @@ chrome.storage.sync.get(
       const stretcher = ctx.createDelay(maxMaginStretcherDelay);
       const src = ctx.createMediaElementSource(video);
       src.connect(lookahead);
-      src.connect(silenceDetectorNode);
+      src.connect(volumeFilter);
+      volumeFilter.connect(silenceDetectorNode);
       src.connect(analyzerIn);
       lookahead.connect(stretcher);
       stretcher.connect(ctx.destination);
