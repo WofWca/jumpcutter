@@ -177,19 +177,19 @@ chrome.storage.sync.get(
       });
       const analyzerIn = ctx.createAnalyser();
       const analyzerOut = ctx.createAnalyser();
-      analyzerIn.fftSize = 4096;
-      analyzerOut.fftSize = 4096;
+      const outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
       const lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const stretcher = ctx.createDelay(maxMaginStretcherDelay);
       const src = ctx.createMediaElementSource(video);
       src.connect(lookahead);
       src.connect(volumeFilter);
       volumeFilter.connect(silenceDetectorNode);
-      src.connect(analyzerIn);
+      volumeFilter.connect(analyzerIn);
       lookahead.connect(stretcher);
       stretcher.connect(ctx.destination);
-      stretcher.connect(analyzerOut);
-      
+      stretcher.connect(outVolumeFilter);
+      outVolumeFilter.connect(analyzerOut);
+
       lookahead.delayTime.value = getNewLookaheadDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
       stretcher.delayTime.value = 0;
       // If we don't do this explicitly, it would jump when we call `.linearRampToValueAtTime`.
@@ -201,9 +201,9 @@ chrome.storage.sync.get(
       console.log(logArr)
       function log(msg = null) {
         analyzerOut.getFloatTimeDomainData(logBuffer);
-        const outVol = logBuffer.reduce((acc, curr) => acc + Math.abs(curr), 0) / analyzerOut.fftSize;
+        const outVol = logBuffer[logBuffer.length - 1];
         analyzerIn.getFloatTimeDomainData(logBuffer);
-        const inVol = logBuffer.reduce((acc, curr) => acc + Math.abs(curr), 0) / analyzerIn.fftSize;
+        const inVol = logBuffer[logBuffer.length - 1];
         logArr.push({
           msg,
           t: ctx.currentTime,
