@@ -49,13 +49,13 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
       if (loudSampleFound) {
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
-          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples, durationThresholdSamples);
+          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
           this.port.postMessage('silenceEnd');
           this._lastTimePostedSilenceStart = false;
         }
       } else {
         if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
-          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._consecutiveSilentSamples);
+          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
           this.port.postMessage('silenceStart');
           this._lastTimePostedSilenceStart = true;
         }
