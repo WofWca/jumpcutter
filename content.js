@@ -98,7 +98,14 @@ chrome.storage.sync.get(
       const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
       const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
-      const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
+      const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+        processorOptions: {
+          maxSmoothingWindowLength: 0.0001,
+        },
+        parameterData: {
+          smoothingWindowLength: 0.0001, // TODO make a setting out of it.
+        },
+      });
       const silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
         parameterData: {
           volumeThreshold: settings.volumeThreshold,
