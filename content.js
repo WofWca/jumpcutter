@@ -89,7 +89,7 @@ chrome.storage.sync.get(
     numberSettingsNames.forEach(n => currValues[n] = settings[n]);
 
     async function controlSpeed(video) {
-      let lastScheduledStretcherDelayReset = null;
+      video.playbackRate = currValues.soundedSpeed;
 
       const ctx = new AudioContext();
       await ctx.audioWorklet.addModule(chrome.runtime.getURL('SilenceDetectorProcessor.js'));
@@ -111,14 +111,17 @@ chrome.storage.sync.get(
           volumeThreshold: settings.volumeThreshold,
           durationThreshold: getRealtimeMargin(currValues.marginBefore, currValues.soundedSpeed),
         },
-        processorOptions: { initialDuration: Infinity },
+        processorOptions: { initialDuration: 0 },
         numberOfOutputs: 0,
       });
       const analyzerIn = ctx.createAnalyser();
       const analyzerOut = ctx.createAnalyser();
       const outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
       const lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
+      lookahead.delayTime.value = getNewLookaheadDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
       const stretcher = ctx.createDelay(maxMaginStretcherDelay);
+      stretcher.delayTime.value =
+        getStretcherSoundedDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
       const src = ctx.createMediaElementSource(video);
       src.connect(lookahead);
       src.connect(volumeFilter);
@@ -129,11 +132,7 @@ chrome.storage.sync.get(
       stretcher.connect(outVolumeFilter);
       outVolumeFilter.connect(analyzerOut);
 
-      lookahead.delayTime.value = getNewLookaheadDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
-      stretcher.delayTime.value = 0;
-      // If we don't do this explicitly, it would jump when we call `.linearRampToValueAtTime`.
-      // Looks like a bug, Chromium: 79.0.3945.130 (Official Build) (64-bit)
-      stretcher.delayTime.setValueAtTime(0, ctx.currentTime);
+      let lastScheduledStretcherDelayReset = null;
 
       const logArr = [];
       const logBuffer = new Float32Array(analyzerOut.fftSize);
