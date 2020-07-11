@@ -1,11 +1,20 @@
 document.addEventListener('DOMContentLoaded', function () {
+  /**
+   * @param {Event} e
+   */
+  document.getElementById('resetSoundedSpeed').onclick = function onResetSoundedSpeedClick(e) {
+    const input = document.getElementById('soundedSpeed');
+    input.value = 1;
+    input.dispatchEvent(new Event('input'));
+  }
+
   const enabledEl = document.getElementById('enabled');
   const numberInputsNames = [
     'volumeThreshold',
     'silenceSpeed',
     'soundedSpeed',
     'marginBefore',
-    'marginAfter'
+    // 'marginAfter'
   ];
   const numberInputs = {};
   numberInputsNames.forEach(n => {
@@ -26,6 +35,17 @@ document.addEventListener('DOMContentLoaded', function () {
         el.value = settings[name];
       });
       enabledEl.checked = enabled;
+
+      /**
+       * @param {InputEvent} e
+       */
+      function updateRangeNumberRepresentation(el) {
+        el.nextElementSibling.innerText = parseFloat(el.value).toFixed(3);
+      }
+      document.querySelectorAll('input[type="range"]').forEach(el => {
+        updateRangeNumberRepresentation(el);
+        el.addEventListener('input', e => updateRangeNumberRepresentation(e.target));
+      });
     }
   );
 
