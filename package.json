@@ -1,0 +1,16 @@
+{
+  "name": "jump-cutter",
+  "version": "1.0.0",
+  "author": {
+    "name": "WofWca",
+    "email": "wofwca@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WofWca/jumpcutter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WofWca/jumpcutter/issues"
+  },
+  "homepage": "https://github.com/WofWca/jumpcutter#readme"
+}
