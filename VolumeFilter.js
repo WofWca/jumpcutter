@@ -100,7 +100,7 @@ class VolumeFilter extends AudioWorkletProcessor {
       // add the value of the sample that enters it.
       // TODO handle the case when smoothingWindowLength is shorter than `SAMPLES_PER_QUANTUM`.
       const lastWindowSampleSquare =
-        this._sampleSquaresRingBuffer.getReverse((smoothingWindowLengthSamples - 1) - sampleI);
+        this._sampleSquaresRingBuffer.getReverse((smoothingWindowLengthSamples - 1));
       this._currWindowSquaresSum -= lastWindowSampleSquare;
       this._currWindowSquaresSum += allChannelsSampleMeanSquare;
       // Dunno, it becomes negative from time to time.
