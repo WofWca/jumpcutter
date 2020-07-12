@@ -164,7 +164,7 @@ chrome.storage.sync.get(
 
           const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
             lastSilenceSpeedLastsForVideoTime,
-            currValues.marginBefore,
+            currValues.marginBefore
           );
           const marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration =
             currValues.marginBefore - marginBeforePartAtSilenceSpeedVideoTimeDuration;
@@ -181,7 +181,7 @@ chrome.storage.sync.get(
           const marginBeforeStartOutputTime = getMomentOutputTime(
             marginBeforeStartInputTime,
             lookahead.delayTime.value,
-            lastScheduledStretcherDelayReset,
+            lastScheduledStretcherDelayReset
           );
           const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
           const marginBeforeStartOutputTimeStretcherDelay =
