@@ -16,7 +16,7 @@ function windowLengthNumSecondsToSamples(numSeconds) {
 }
 
 class SingleChannelRingBuffer extends Float32Array {
-  _lastSampleI;
+  // _lastSampleI;
   constructor(length) {
     super(length);
     this._lastSampleI = length - 1;
@@ -43,9 +43,9 @@ class SingleChannelRingBuffer extends Float32Array {
 
 // Simple rectangular window and RMS.
 class VolumeFilter extends AudioWorkletProcessor {
-  _sampleSquaresRingBuffer;
-  _currWindowSquaresSum = 0;
-  _options;
+  // _sampleSquaresRingBuffer;
+  // _currWindowSquaresSum = 0;
+  // _options;
   constructor({ processorOptions, parameterData }) {
     super({
       numberOfInputs: 1,
@@ -53,6 +53,7 @@ class VolumeFilter extends AudioWorkletProcessor {
       outputChannelCount: 1,
       parameterData,
     });
+    this._currWindowSquaresSum = 0;
     this._options = {
       maxChannels: DEFAULT_MAX_NUM_CHANNELS,
       maxSmoothingWindowLength: 1,
