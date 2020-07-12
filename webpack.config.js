@@ -4,6 +4,8 @@ module.exports = {
   entry: {
     content: './src/content.js',
     popup: './src/popup.js',
+    SilenceDetectorProcessor: './src/SilenceDetectorProcessor.js',
+    VolumeFilter: './src/VolumeFilter.js',
   },
 
   output: {
