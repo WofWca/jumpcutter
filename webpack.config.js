@@ -1,3 +1,4 @@
+const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
@@ -11,6 +12,16 @@ module.exports = {
   output: {
     filename: '[name].js'
   },
+
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { context: 'src', from: 'manifest.json' },
+        { context: 'src', from: 'icons/**' },
+        { context: 'src', from: '**/*.(html|css)' },
+      ],
+    }),
+  ],
 
   optimization: {
     minimizer: [new TerserPlugin()],

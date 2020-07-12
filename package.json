@@ -17,6 +17,7 @@
     "build": "webpack --mode=production"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^6.0.3",
     "terser-webpack-plugin": "^3.0.6",
     "webpack": "^5.0.0-beta.22",
     "webpack-cli": "^4.0.0-beta.8"
