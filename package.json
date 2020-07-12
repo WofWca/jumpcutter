@@ -12,5 +12,13 @@
   "bugs": {
     "url": "https://github.com/WofWca/jumpcutter/issues"
   },
-  "homepage": "https://github.com/WofWca/jumpcutter#readme"
+  "homepage": "https://github.com/WofWca/jumpcutter#readme",
+  "scripts": {
+    "build": "webpack --mode=production"
+  },
+  "devDependencies": {
+    "terser-webpack-plugin": "^3.0.6",
+    "webpack": "^5.0.0-beta.22",
+    "webpack-cli": "^4.0.0-beta.8"
+  }
 }
