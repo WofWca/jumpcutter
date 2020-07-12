@@ -1,5 +1,4 @@
 'use strict';
-const PRODUCTION = true;
 const SAMPLES_PER_QUANTUM = 128;
 // This is the minimum number a broswer should support, apparently. TODO make sure this is correct.
 // https://webaudio.github.io/web-audio-api/#BaseAudioContent-methods
@@ -32,7 +31,7 @@ class SingleChannelRingBuffer extends Float32Array {
    * @param {numer} depth how many elements have been pushed after the one that we want to get.
    */
   getReverse(depth) {
-    if (!PRODUCTION) {
+    if (process.env.NODE_ENV !== 'production') {
       if (depth >= this.length) {
         throw new RangeError();
       }
@@ -82,7 +81,7 @@ class VolumeFilter extends AudioWorkletProcessor {
     const numChannels = input.length;
     const numSamples = input[0].length;
 
-    if (!PRODUCTION) {
+    if (process.env.NODE_ENV !== 'production') {
       if (numSamples !== SAMPLES_PER_QUANTUM) {
         throw new Error('Splish-splash. Your assumptions about quantum length are trash');
       }

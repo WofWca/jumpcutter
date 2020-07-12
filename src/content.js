@@ -9,7 +9,7 @@ const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
 const numberSettingsNames = ['silenceSpeed', 'soundedSpeed', 'marginBefore', 'marginAfter'];
 
-const logging = false;
+const logging = process.env.NODE_ENV !== 'production';
 
 function getRealtimeMargin(marginBefore, speed) {
   return marginBefore / speed;
