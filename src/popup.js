@@ -1,9 +1,20 @@
 document.addEventListener('DOMContentLoaded', function () {
+  /**
+   * @param {Event} e
+   */
+  document.getElementById('resetSoundedSpeed').onclick = function onResetSoundedSpeedClick(e) {
+    const input = document.getElementById('soundedSpeed');
+    input.value = 1;
+    input.dispatchEvent(new Event('input'));
+  }
+
   const enabledEl = document.getElementById('enabled');
   const numberInputsNames = [
     'volumeThreshold',
     'silenceSpeed',
     'soundedSpeed',
+    'marginBefore',
+    // 'marginAfter'
   ];
   const numberInputs = {};
   numberInputsNames.forEach(n => {
@@ -16,12 +27,25 @@ document.addEventListener('DOMContentLoaded', function () {
       volumeThreshold: 0.01,
       silenceSpeed: 4,
       soundedSpeed: 1.75,
+      marginBefore: 0.050,
+      marginAfter: 0.050,
     },
     function (settings) {
       Object.entries(numberInputs).forEach(([name, el]) => {
         el.value = settings[name];
       });
       enabledEl.checked = enabled;
+
+      /**
+       * @param {InputEvent} e
+       */
+      function updateRangeNumberRepresentation(el) {
+        el.nextElementSibling.innerText = parseFloat(el.value).toFixed(3);
+      }
+      document.querySelectorAll('input[type="range"]').forEach(el => {
+        updateRangeNumberRepresentation(el);
+        el.addEventListener('input', e => updateRangeNumberRepresentation(e.target));
+      });
     }
   );
 
