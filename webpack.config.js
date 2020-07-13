@@ -1,5 +1,6 @@
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
   devtool: process.env.NODE_ENV === 'production'
@@ -22,6 +23,7 @@ module.exports = {
   },
 
   plugins: [
+    new CleanWebpackPlugin(),
     new CopyPlugin({
       patterns: [
         { context: 'src', from: 'manifest.json' },
