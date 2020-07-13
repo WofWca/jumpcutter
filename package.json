@@ -14,7 +14,8 @@
   },
   "homepage": "https://github.com/WofWca/jumpcutter#readme",
   "scripts": {
-    "build": "webpack --mode=production"
+    "build": "NODE_ENV=production webpack --mode=production",
+    "serve": "webpack --mode=development --watch"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^6.0.3",
