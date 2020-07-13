@@ -1,5 +1,4 @@
 'use strict';
-const PRODUCTION = true;
 const SAMPLES_PER_QUANTUM = 128;
 // This is the minimum number a broswer should support, apparently. TODO make sure this is correct.
 // https://webaudio.github.io/web-audio-api/#BaseAudioContent-methods
@@ -16,7 +15,7 @@ function windowLengthNumSecondsToSamples(numSeconds) {
 }
 
 class SingleChannelRingBuffer extends Float32Array {
-  _lastSampleI;
+  // _lastSampleI;
   constructor(length) {
     super(length);
     this._lastSampleI = length - 1;
@@ -32,7 +31,7 @@ class SingleChannelRingBuffer extends Float32Array {
    * @param {numer} depth how many elements have been pushed after the one that we want to get.
    */
   getReverse(depth) {
-    if (!PRODUCTION) {
+    if (process.env.NODE_ENV !== 'production') {
       if (depth >= this.length) {
         throw new RangeError();
       }
@@ -43,9 +42,9 @@ class SingleChannelRingBuffer extends Float32Array {
 
 // Simple rectangular window and RMS.
 class VolumeFilter extends AudioWorkletProcessor {
-  _sampleSquaresRingBuffer;
-  _currWindowSquaresSum = 0;
-  _options;
+  // _sampleSquaresRingBuffer;
+  // _currWindowSquaresSum = 0;
+  // _options;
   constructor({ processorOptions, parameterData }) {
     super({
       numberOfInputs: 1,
@@ -53,6 +52,7 @@ class VolumeFilter extends AudioWorkletProcessor {
       outputChannelCount: 1,
       parameterData,
     });
+    this._currWindowSquaresSum = 0;
     this._options = {
       maxChannels: DEFAULT_MAX_NUM_CHANNELS,
       maxSmoothingWindowLength: 1,
@@ -81,7 +81,7 @@ class VolumeFilter extends AudioWorkletProcessor {
     const numChannels = input.length;
     const numSamples = input[0].length;
 
-    if (!PRODUCTION) {
+    if (process.env.NODE_ENV !== 'production') {
       if (numSamples !== SAMPLES_PER_QUANTUM) {
         throw new Error('Splish-splash. Your assumptions about quantum length are trash');
       }

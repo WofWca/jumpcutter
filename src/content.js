@@ -9,7 +9,7 @@ const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
 const numberSettingsNames = ['silenceSpeed', 'soundedSpeed', 'marginBefore', 'marginAfter'];
 
-const logging = false;
+const logging = process.env.NODE_ENV !== 'production';
 
 function getRealtimeMargin(marginBefore, speed) {
   return marginBefore / speed;
@@ -164,7 +164,7 @@ chrome.storage.sync.get(
 
           const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
             lastSilenceSpeedLastsForVideoTime,
-            currValues.marginBefore,
+            currValues.marginBefore
           );
           const marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration =
             currValues.marginBefore - marginBeforePartAtSilenceSpeedVideoTimeDuration;
@@ -181,7 +181,7 @@ chrome.storage.sync.get(
           const marginBeforeStartOutputTime = getMomentOutputTime(
             marginBeforeStartInputTime,
             lookahead.delayTime.value,
-            lastScheduledStretcherDelayReset,
+            lastScheduledStretcherDelayReset
           );
           const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
           const marginBeforeStartOutputTimeStretcherDelay =
