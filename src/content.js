@@ -214,28 +214,26 @@ chrome.storage.sync.get(
             }
           }
 
-          const alreadySoundedSpeedPartEndOutputTime =
-            // A.k.a. `marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration`
-            lastScheduledStretcherDelayReset.newSpeedStartInputTime
-            + getTotalDelay(lookahead.delayTime.value, marginBeforeStartOutputTimeStretcherDelay);
+          const marginBeforePartAtSilenceSpeedStartOutputTime =
+            marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
           // Need to `setValueAtTime` to the same value again so further `linearRampToValueAtTime` makes increasing the
-          // delay from `alreadySoundedSpeedPartEndOutputTime`.
+          // delay from `marginBeforePartAtSilenceSpeedStartOutputTime`.
           stretcher.delayTime.setValueAtTime(
             marginBeforeStartOutputTimeStretcherDelay,
-            alreadySoundedSpeedPartEndOutputTime
+            marginBeforePartAtSilenceSpeedStartOutputTime
           );
           if (logging) {
             log({
               type: 'setValueAtTime',
               value: marginBeforeStartOutputTimeStretcherDelay,
-              time: alreadySoundedSpeedPartEndOutputTime,
+              time: marginBeforePartAtSilenceSpeedStartOutputTime,
             });
           }
-          const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
-            marginBeforePartAtSilenceSpeedRealTimeDuration,
-            currValues.silenceSpeed,
-            currValues.soundedSpeed
-          );
+          // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
+          //   marginBeforePartAtSilenceSpeedRealTimeDuration,
+          //   currValues.silenceSpeed,
+          //   currValues.soundedSpeed
+          // );
           const stretcherDelayIncrease = getStretcherDelayChange(
             marginBeforePartAtSilenceSpeedRealTimeDuration,
             currValues.silenceSpeed,
@@ -244,16 +242,15 @@ chrome.storage.sync.get(
           // I think currently it should always be equal to the max delay.
           const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
           stretcher.delayTime.linearRampToValueAtTime(
-            // A.k.a. `marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease`,
             finalStretcherDelay,
-            // A.k.a. `alreadySoundedSpeedPartEndOutputTime + silenceSpeedPartStretchedDuration`
+            // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
             eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
           );
           if (logging) {
             log({
               type: 'linearRampToValueAtTime',
-              value: marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease,
-              time: alreadySoundedSpeedPartEndOutputTime + silenceSpeedPartStretchedDuration,
+              value: finalStretcherDelay,
+              time: eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay),
             });
           }
         } else {
