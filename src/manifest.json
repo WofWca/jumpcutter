@@ -20,7 +20,8 @@
     }
   ],
   "web_accessible_resources": [
-    "SilenceDetectorProcessor.js"
+    "SilenceDetectorProcessor.js",
+    "VolumeFilter.js"
   ],
   "manifest_version": 2
 }
