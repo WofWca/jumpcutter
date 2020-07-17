@@ -17,11 +17,14 @@
     "build": "NODE_ENV=production webpack --mode=production",
     "serve": "webpack --mode=development --watch"
   },
+  "dependencies": {
+    "tone": "^14.7.12"
+  },
   "devDependencies": {
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^6.0.3",
     "terser-webpack-plugin": "^3.0.6",
     "webpack": "^5.0.0-beta.22",
-    "webpack-cli": "^4.0.0-beta.8"
+    "webpack-cli": "^3.3.12"
   }
 }
