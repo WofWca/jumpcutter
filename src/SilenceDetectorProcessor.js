@@ -1,5 +1,7 @@
 'use strict';
 
+const assumeSoundedWhenUnknown = true;
+
 class SilenceDetectorProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super(options);
@@ -36,6 +38,13 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
   process(inputs, outputs, parameters) {
     const volumeThreshold = parameters.volumeThreshold[0];
     const input = inputs[0];
+    if (input.length === 0) {
+      if (!assumeSoundedWhenUnknown) {
+        throw new Error('The below code assumes video parts to be sounded when it is unknown');
+      }
+      this._lastLoudSampleTime = currentTime;
+      return true;
+    }
     const numSamples = input[0].length;
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
       let loudSampleFound = false;

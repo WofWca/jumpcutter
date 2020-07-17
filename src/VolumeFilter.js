@@ -77,6 +77,9 @@ class VolumeFilter extends AudioWorkletProcessor {
     const smoothingWindowLength = parameters.smoothingWindowLength[0];
     const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
     const input = inputs[0];
+    if (input.length === 0) {
+      return true;
+    }
     const outputChannel = outputs[0][0]; // Single output, single channel.
     const numChannels = input.length;
     const numSamples = input[0].length;
