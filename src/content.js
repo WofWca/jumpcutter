@@ -1,5 +1,7 @@
 'use strict';
 
+import { PitchShift, connect as ToneConnect, setContext as toneSetContext } from 'tone';
+
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
 const MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE = 8000;
 const MAX_MARGIN_BEFORE_VIDEO_TIME = 0.5;
@@ -37,6 +39,9 @@ function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSp
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
 }
+function getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime }) {
+  return ((endTime - startTime) + (startValue - endValue)) / (endTime - startTime);
+}
 
 /**
  * The holy grail of this algorithm.
@@ -60,13 +65,135 @@ function getMomentOutputTime(momentTime, lookaheadDelay, lastScheduledStretcherD
     const originalTargetMomentOffsetRelativeToStretchStart =
       momentTime + getTotalDelay(lookaheadDelay, stretch.startValue) - stretch.startTime;
     // By how much the snippet is going to be stretched?
-    const playbackSpeedupDuringStretch =
-      ((stretch.endTime - stretch.startTime) + (stretch.startValue - stretch.endValue))
-      / (stretch.endTime - stretch.startTime);
+    const playbackSpeedupDuringStretch = getStretchSpeedChangeMultiplier(stretch);
     // How much time will pass since the stretch start until the target moment is played on the output?
     const finalTargetMomentOffsetRelativeToStretchStart =
       originalTargetMomentOffsetRelativeToStretchStart / playbackSpeedupDuringStretch;
     return stretch.startTime + finalTargetMomentOffsetRelativeToStretchStart;
+  }
+}
+
+class PitchPreservingStretcherNode {
+  // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
+  // scheduling.
+
+  /**
+   * @param {AudioContext} context
+   */
+  constructor(context, maxDelay, initialDelay=0) {
+    this.context = context;
+
+    this.speedUpGain = context.createGain();
+    this.slowDownGain = context.createGain();
+    this.normalSpeedGain = context.createGain();
+
+    this.speedUpPitchShift = new PitchShift();
+    this.slowDownPitchShift = new PitchShift();
+
+    // Why this value?
+    // 1. Withing the range recommended by Tone.js documentation:
+    // https://tonejs.github.io/docs/13.8.25/PitchShift#windowsize
+    // 2. I played around with it a bit and this sounded best for me.
+    // TODO make it into a setting?
+    const windowSize = 0.06;
+    this.speedUpPitchShift.windowSize = windowSize;
+    this.slowDownPitchShift.windowSize = windowSize;
+
+    this.delayNode = context.createDelay(maxDelay);
+    this.delayNode.delayTime.value = initialDelay;
+
+    ToneConnect(this.delayNode, this.speedUpPitchShift);
+    ToneConnect(this.delayNode, this.slowDownPitchShift);
+
+    this.delayNode.connect(this.normalSpeedGain);
+
+    this.speedUpPitchShift.connect(this.slowDownGain);
+    this.slowDownPitchShift.connect(this.speedUpGain);
+
+    this.setOutputPitchAt('normal', context.currentTime);
+  }
+
+  get allGainNodes() {
+    return [
+      this.speedUpGain,
+      this.slowDownGain,
+      this.normalSpeedGain,
+    ];
+  }
+
+  /**
+   * @param {AudioNode} sourceNode
+   */
+  connectInputFrom(sourceNode) {
+    sourceNode.connect(this.delayNode);
+  }
+  /**
+   * @param {AudioNode} destinationNode
+   */
+  connectOutputTo(destinationNode) {
+    for (const node of this.allGainNodes) {
+      node.connect(destinationNode);
+    }
+  }
+
+  /**
+   * @param {'slowdown' | 'speedup' | 'normal'} pitchSetting
+   */
+  setOutputPitchAt(pitchSetting, time) {
+    if (process.env.NODE_ENV !== 'production') {
+      if (!['slowdown', 'speedup', 'normal'].includes(pitchSetting)) {
+        // TODO replace with TypeScript?
+        throw new Error(`Invalid pitchSetting "${pitchSetting}"`);
+      }
+    }
+
+    this.speedUpGain    .gain.setValueAtTime(pitchSetting === 'speedup'  ? 1 : 0, time);
+    this.slowDownGain   .gain.setValueAtTime(pitchSetting === 'slowdown' ? 1 : 0, time);
+    this.normalSpeedGain.gain.setValueAtTime(pitchSetting === 'normal'   ? 1 : 0, time);
+  }
+
+  stretch(startValue, endValue, startTime, endTime) {
+    if (startValue === endValue) {
+      return;
+    }
+
+    this.delayNode.delayTime
+      .setValueAtTime(startValue, startTime)
+      .linearRampToValueAtTime(endValue, endTime);
+    const speedupOrSlowdown = endValue > startValue ? 'slowdown' : 'speedup';
+    this.setOutputPitchAt(
+      speedupOrSlowdown,
+      startTime
+    );
+    this.setOutputPitchAt('normal', endTime);
+    
+    const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
+    // Acutally we only need to do this when the user changes settings.
+    setTimeout(() => {
+      function speedChangeMultiplierToSemitones(m) {
+        return -12 * Math.log2(1 / m);
+      }
+      const node = speedupOrSlowdown === 'speedup'
+        ? this.speedUpPitchShift
+        : this.slowDownPitchShift;
+      node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
+    }, startTime - this.context.currentTime);
+  }
+
+  /**
+   * @param {number} interruptAtTime the time at which to stop changing the delay.
+   * @param {number} interruptAtTimeValue the value of the delay at `interruptAtTime`
+   */
+  interruptLastScheduledStretch(interruptAtTimeValue, interruptAtTime) {
+    // We don't need to specify the start time since it has been scheduled before in the `stretch` method
+    this.delayNode.delayTime
+      .cancelAndHoldAtTime(interruptAtTime)
+      .linearRampToValueAtTime(interruptAtTimeValue, interruptAtTime);
+
+    for (const node of this.allGainNodes) {
+      node.gain.cancelAndHoldAtTime(interruptAtTime);
+    }
+    this.setOutputPitchAt('normal', interruptAtTime);
   }
 }
 
@@ -92,6 +219,7 @@ chrome.storage.sync.get(
       video.playbackRate = currValues.soundedSpeed;
 
       const ctx = new AudioContext();
+      toneSetContext(ctx);
       await ctx.audioWorklet.addModule(chrome.runtime.getURL('SilenceDetectorProcessor.js'));
       await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeFilter.js'));
 
@@ -100,10 +228,10 @@ chrome.storage.sync.get(
 
       const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
         processorOptions: {
-          maxSmoothingWindowLength: 0.0001,
+          maxSmoothingWindowLength: 0.03,
         },
         parameterData: {
-          smoothingWindowLength: 0.0001, // TODO make a setting out of it.
+          smoothingWindowLength: 0.03, // TODO make a setting out of it.
         },
       });
       const silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
@@ -119,17 +247,17 @@ chrome.storage.sync.get(
       const outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
       const lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       lookahead.delayTime.value = getNewLookaheadDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
-      const stretcher = ctx.createDelay(maxMaginStretcherDelay);
-      stretcher.delayTime.value =
+      const stretcherInitialDelay =
         getStretcherSoundedDelay(currValues.marginBefore, currValues.soundedSpeed, currValues.silenceSpeed);
+      const stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay, stretcherInitialDelay);
       const src = ctx.createMediaElementSource(video);
       src.connect(lookahead);
       src.connect(volumeFilter);
       volumeFilter.connect(silenceDetectorNode);
       volumeFilter.connect(analyzerIn);
-      lookahead.connect(stretcher);
-      stretcher.connect(ctx.destination);
-      stretcher.connect(outVolumeFilter);
+      stretcher.connectInputFrom(lookahead);
+      stretcher.connectOutputTo(ctx.destination);
+      stretcher.connectOutputTo(outVolumeFilter);
       outVolumeFilter.connect(analyzerOut);
 
       let lastScheduledStretcherDelayReset = null;
@@ -144,7 +272,7 @@ chrome.storage.sync.get(
         logArr.push({
           msg,
           t: ctx.currentTime,
-          delay: stretcher.delayTime.value,
+          delay: stretcherInitialDelay,
           speed: video.playbackRate,
           inVol,
           outVol,
@@ -199,12 +327,11 @@ chrome.storage.sync.get(
 
           if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
             // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
-            stretcher.delayTime
-              .cancelAndHoldAtTime(marginBeforeStartOutputTime)
-              .linearRampToValueAtTime(marginBeforeStartOutputTimeStretcherDelay, marginBeforeStartOutputTime);
-              // Maybe it's more clear to write this as:
-              // .cancelAndHoldAtTime(lastScheduledStretcherDelayReset.startTime)
-              // .linearRampToValueAtTime(marginBeforeStartOutputTimeStretcherDelay, marginBeforeStartOutputTime)
+            stretcher.interruptLastScheduledStretch(
+              // A.k.a. `lastScheduledStretcherDelayReset.startTime`
+              marginBeforeStartOutputTimeStretcherDelay,
+              marginBeforeStartOutputTime
+            );
             if (logging) {
               log({
                 type: 'pauseReset',
@@ -216,19 +343,6 @@ chrome.storage.sync.get(
 
           const marginBeforePartAtSilenceSpeedStartOutputTime =
             marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
-          // Need to `setValueAtTime` to the same value again so further `linearRampToValueAtTime` makes increasing the
-          // delay from `marginBeforePartAtSilenceSpeedStartOutputTime`.
-          stretcher.delayTime.setValueAtTime(
-            marginBeforeStartOutputTimeStretcherDelay,
-            marginBeforePartAtSilenceSpeedStartOutputTime
-          );
-          if (logging) {
-            log({
-              type: 'setValueAtTime',
-              value: marginBeforeStartOutputTimeStretcherDelay,
-              time: marginBeforePartAtSilenceSpeedStartOutputTime,
-            });
-          }
           // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
           //   marginBeforePartAtSilenceSpeedRealTimeDuration,
           //   currValues.silenceSpeed,
@@ -241,16 +355,20 @@ chrome.storage.sync.get(
           );
           // I think currently it should always be equal to the max delay.
           const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-          stretcher.delayTime.linearRampToValueAtTime(
+          stretcher.stretch(
+            marginBeforeStartOutputTimeStretcherDelay,
             finalStretcherDelay,
+            marginBeforePartAtSilenceSpeedStartOutputTime,
             // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
             eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
           );
           if (logging) {
             log({
-              type: 'linearRampToValueAtTime',
-              value: finalStretcherDelay,
-              time: eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay),
+              type: 'stretch',
+              startValue: marginBeforeStartOutputTimeStretcherDelay,
+              endValue: finalStretcherDelay,
+              startTime: marginBeforePartAtSilenceSpeedStartOutputTime,
+              endTime: eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
             });
           }
         } else {
@@ -270,9 +388,12 @@ chrome.storage.sync.get(
           const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
           const startTime = eventTime + startIn;
           const endTime = startTime + snippetNewDuration;
-          stretcher.delayTime
-            .setValueAtTime(stretcherDelayStartValue, startTime)
-            .linearRampToValueAtTime(0, endTime);
+          stretcher.stretch(
+            stretcherDelayStartValue,
+            0,
+            startTime,
+            endTime
+          );
           lastScheduledStretcherDelayReset = {
             newSpeedStartInputTime: eventTime,
             startTime,
