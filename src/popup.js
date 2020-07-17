@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
    */
   document.getElementById('resetSoundedSpeed').onclick = function onResetSoundedSpeedClick(e) {
     const input = document.getElementById('soundedSpeed');
-    input.value = 1;
+    input.value = 1.1;
     input.dispatchEvent(new Event('input'));
   }
 
