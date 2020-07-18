@@ -1,6 +1,7 @@
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const path = require('path');
 
 module.exports = {
   devtool: process.env.NODE_ENV === 'production'
@@ -19,6 +20,7 @@ module.exports = {
   },
 
   output: {
+    path: path.resolve(__dirname, 'dist'),
     filename: '[name].js'
   },
 
