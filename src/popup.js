@@ -1,3 +1,5 @@
+import defaultSettings from './defaultSettings.json';
+
 document.addEventListener('DOMContentLoaded', function () {
   /**
    * @param {Event} e
@@ -22,14 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   chrome.storage.sync.get(
-    {
-      enabled: true,
-      volumeThreshold: 0.01,
-      silenceSpeed: 4,
-      soundedSpeed: 1.75,
-      marginBefore: 0.050,
-      marginAfter: 0.050,
-    },
+    defaultSettings,
     function (settings) {
       Object.entries(numberInputs).forEach(([name, el]) => {
         el.value = settings[name];

@@ -13,10 +13,10 @@ module.exports = {
     : 'inline-source-map',
 
   entry: {
-    content: './src/content.js',
+    content: './src/content/main.js',
     popup: './src/popup.js',
-    SilenceDetectorProcessor: './src/SilenceDetectorProcessor.js',
-    VolumeFilter: './src/VolumeFilter.js',
+    SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.js',
+    VolumeFilter: './src/content/VolumeFilter.js',
   },
 
   output: {
