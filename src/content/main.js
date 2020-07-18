@@ -17,7 +17,11 @@ chrome.storage.sync.get(
     const controller = new Controller(video, settings);
 
     chrome.storage.onChanged.addListener(function (changes) {
-      controller.updateSettings(changes);
+      const newValues = {};
+      for (const [settingName, change] of Object.entries(changes)) {
+        newValues[settingName] = change.newValue;
+      }
+      controller.updateSettings(newValues);
     });
 
     controller.init();

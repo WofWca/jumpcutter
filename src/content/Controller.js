@@ -15,8 +15,6 @@ const MAX_MARGIN_BEFORE_VIDEO_TIME = 0.5;
 const MIN_SPEED = 0.25;
 const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
-const numberSettingsNames = ['silenceSpeed', 'soundedSpeed', 'marginBefore', 'marginAfter'];
-
 const logging = process.env.NODE_ENV !== 'production';
 
 function getRealtimeMargin(marginBefore, speed) {
@@ -201,6 +199,13 @@ class PitchPreservingStretcherNode {
     }
     this.setOutputPitchAt('normal', interruptAtTime);
   }
+
+  /**
+   * @param {number} value
+   */
+  setDelay(value) {
+    this.delayNode.value = value;
+  }
 }
 
 export default class Controller {
@@ -234,20 +239,22 @@ export default class Controller {
     });
     const silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
       parameterData: {
-        volumeThreshold: this.settings.volumeThreshold,
-        durationThreshold: getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed),
+        durationThreshold: Controller._getSilenceDetectorNodeDurationThreshold(
+          this.settings.marginBefore,
+          this.settings.soundedSpeed
+        ),
       },
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
     });
+    this._silenceDetectorNode = silenceDetectorNode;
     const analyzerIn = ctx.createAnalyser();
     const analyzerOut = ctx.createAnalyser();
     const outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
     const lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-    lookahead.delayTime.value = getNewLookaheadDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const stretcherInitialDelay =
-      getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay, stretcherInitialDelay);
+    this._lookahead = lookahead;
+    const stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
+    this._stretcher = stretcher;
     const src = ctx.createMediaElementSource(this.element);
     src.connect(lookahead);
     src.connect(volumeFilter);
@@ -257,6 +264,7 @@ export default class Controller {
     stretcher.connectOutputTo(ctx.destination);
     stretcher.connectOutputTo(outVolumeFilter);
     outVolumeFilter.connect(analyzerOut);
+    this._setStateAccordingToSettings(this.settings);
 
     let lastScheduledStretcherDelayReset = null;
 
@@ -270,7 +278,7 @@ export default class Controller {
       logArr.push({
         msg,
         t: ctx.currentTime,
-        delay: stretcherInitialDelay,
+        // delay: stretcherInitialDelay, // TODO fix this. It's not `initialDelay` it should be `stretcher.delay`
         speed: this.element.playbackRate,
         inVol,
         outVol,
@@ -421,36 +429,60 @@ export default class Controller {
   }
 
   /**
-   * Can be called before the instance has been initialized.
+   * Can be called either when initializing or when updating settings.
+   * TODO It's more performant to only update the things that rely on settings that changed, in a reactive way, but for
+   * now it's like this so its harder to forget to update something.
    * @param {Settings} newSettings
+   * @param {Settings | null} oldSettings - better to provide this so the current state can be reconstructed and
+   * respected (e.g. if a silent part is currently playing it wont change speed to sounded speed as it would if the
+   * parameter is omitted).
+   * TODO maybe it's better to just store the state on the class instance?
    */
-  updateSettings(changes) {
-    numberSettingsNames.forEach(n => {
-      const change = changes[n];
-      if (change !== undefined) {
-        this.settings[n] = change.newValue;
+  _setStateAccordingToSettings(newSettings, oldSettings = null) {
+    if (!oldSettings) {
+      this.element.playbackRate = this.settings.soundedSpeed;
+    } else {
+      const currSpeedName = ['silenceSpeed', 'soundedSpeed'].find(
+        speedSettingName => this.element.playbackRate === oldSettings[speedSettingName]
+      );
+      if (currSpeedName) {
+        this.element.playbackRate = newSettings[currSpeedName];
       }
-    });
-
-    const marginBeforeChange = changes.marginBefore;
-    if (marginBeforeChange !== undefined) {
-      // TODO gradual change?
-      lookahead.delayTime.value = getNewLookaheadDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
     }
 
-    const marginAfterChange = changes.marginAfter;
-    // if (marginAfterChange !== undefined) {}
+    this._silenceDetectorNode.parameters.get('volumeThreshold').value = newSettings.volumeThreshold;
+    this._silenceDetectorNode.parameters.get('durationThreshold').value =
+      Controller._getSilenceDetectorNodeDurationThreshold(newSettings.marginBefore, newSettings.soundedSpeed);
+    this._lookahead.delayTime.value = getNewLookaheadDelay(
+      newSettings.marginBefore,
+      newSettings.soundedSpeed,
+      newSettings.silenceSpeed
+    );
+    this._stretcher.setDelay(
+      getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
+    );
+  }
 
-    if (marginBeforeChange !== undefined || marginAfterChange !== undefined) {
-      const durationThresholdParam = silenceDetectorNode.parameters.get('durationThreshold');
-      // TODO DRY with constructor.
-      durationThresholdParam.value = this.settings.marginBefore + this.settings.marginAfter;
-    }
+  /**
+   * Can be called before the instance has been initialized.
+   * @param {Partial<Settings>} newChangedSettings
+   */
+  updateSettings(newChangedSettings) {
+    const oldSettings = this.settings;
+    /**
+     * @type {Settings} For me intellisense sets `this.settings` to `any` if I remove this. Time to move to TypeScript.
+     */
+    const newSettings = {
+      ...this.settings,
+      ...newChangedSettings,
+    };
 
-    const volumeThresholdChange = changes.volumeThreshold;
-    if (volumeThresholdChange !== undefined) {
-      const volumeThresholdParam = silenceDetectorNode.parameters.get('volumeThreshold');
-      volumeThresholdParam.setValueAtTime(volumeThresholdChange.newValue, ctx.currentTime);
-    }
+    this._setStateAccordingToSettings(newSettings, oldSettings);
+
+    this.settings = newSettings;
+  }
+
+  static _getSilenceDetectorNodeDurationThreshold(marginBefore, soundedSpeed) {
+    return getRealtimeMargin(marginBefore, soundedSpeed);
   }
 }
