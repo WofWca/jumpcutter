@@ -1,6 +1,13 @@
 'use strict';
-
-import { PitchShift, connect as ToneConnect, setContext as toneSetContext } from 'tone';
+import PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
+import {
+  getRealtimeMargin,
+  getNewLookaheadDelay,
+  getTotalDelay,
+  getStretcherDelayChange,
+  getStretcherSoundedDelay,
+  getMomentOutputTime,
+} from './helpers';
 import defaultSettings from '../defaultSettings.json';
 
 /**
@@ -17,197 +24,6 @@ const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
 const logging = process.env.NODE_ENV !== 'production';
 
-function getRealtimeMargin(marginBefore, speed) {
-  return marginBefore / speed;
-}
-
-function getNewLookaheadDelay(videoTimeMargin, soundedSpeed, silenceSpeed) {
-  return videoTimeMargin / Math.min(soundedSpeed, silenceSpeed)
-}
-function getTotalDelay(lookaheadNodeDelay, stretcherNodeDelay) {
-  return lookaheadNodeDelay + stretcherNodeDelay;
-}
-function getNewSnippetDuration(originalRealtimeDuration, originalSpeed, newSpeed) {
-  const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
-  return videoSpeedSnippetDuration / newSpeed;
-}
-// The delay that the stretcher node is going to have when it's done slowing down a snippet
-function getStretcherDelayChange(snippetOriginalRealtimeDuration, originalSpeed, newSpeed) {
-  const snippetNewDuration = getNewSnippetDuration(snippetOriginalRealtimeDuration, originalSpeed, newSpeed);
-  const delayChange = snippetNewDuration - snippetOriginalRealtimeDuration;
-  return delayChange;
-}
-// TODO Is it always constant though? What about these short silence snippets, where we don't have to fully reset the margin?
-function getStretcherSoundedDelay(videoTimeMarginBefore, soundedSpeed, silenceSpeed) {
-  const realTimeMarginBefore = videoTimeMarginBefore / silenceSpeed;
-  const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
-  return 0 + delayChange;
-}
-function getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime }) {
-  return ((endTime - startTime) + (startValue - endValue)) / (endTime - startTime);
-}
-
-/**
- * The holy grail of this algorithm.
- * Answers the question "When is the sample that has been on the input at `momentTime` going to appear on the output?"
- * Contract:
- * * Only works for input values such that the correct answer is after the `lastScheduledStretcherDelayReset`'s start time.
- * * Assumes the video is never played backwards (i.e. stretcher delay never so quickly).
- */
-function getMomentOutputTime(momentTime, lookaheadDelay, lastScheduledStretcherDelayReset) {
-  const stretch = lastScheduledStretcherDelayReset;
-  const stretchEndTotalDelay = getTotalDelay(lookaheadDelay, stretch.endValue);
-  // Simpliest case. The target moment is after the `stretch`'s end time
-  // TODO DRY `const asdadsd = momentTime + stretchEndTotalDelay;`?
-  if (momentTime + stretchEndTotalDelay >= stretch.endTime) {
-    return momentTime + stretchEndTotalDelay;
-  } else {
-    // `lastScheduledStretcherDelayReset` is going to be in progress when the target moment is on the output.
-
-    // At which point between its start and end would the target moment be played if we were to not actually change the
-    // delay ?
-    const originalTargetMomentOffsetRelativeToStretchStart =
-      momentTime + getTotalDelay(lookaheadDelay, stretch.startValue) - stretch.startTime;
-    // By how much the snippet is going to be stretched?
-    const playbackSpeedupDuringStretch = getStretchSpeedChangeMultiplier(stretch);
-    // How much time will pass since the stretch start until the target moment is played on the output?
-    const finalTargetMomentOffsetRelativeToStretchStart =
-      originalTargetMomentOffsetRelativeToStretchStart / playbackSpeedupDuringStretch;
-    return stretch.startTime + finalTargetMomentOffsetRelativeToStretchStart;
-  }
-}
-
-class PitchPreservingStretcherNode {
-  // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
-  // scheduling.
-
-  /**
-   * @param {AudioContext} context
-   */
-  constructor(context, maxDelay, initialDelay=0) {
-    this.context = context;
-
-    this.speedUpGain = context.createGain();
-    this.slowDownGain = context.createGain();
-    this.normalSpeedGain = context.createGain();
-
-    this.speedUpPitchShift = new PitchShift();
-    this.slowDownPitchShift = new PitchShift();
-
-    // Why this value?
-    // 1. Withing the range recommended by Tone.js documentation:
-    // https://tonejs.github.io/docs/13.8.25/PitchShift#windowsize
-    // 2. I played around with it a bit and this sounded best for me.
-    // TODO make it into a setting?
-    const windowSize = 0.06;
-    this.speedUpPitchShift.windowSize = windowSize;
-    this.slowDownPitchShift.windowSize = windowSize;
-
-    this.delayNode = context.createDelay(maxDelay);
-    this.delayNode.delayTime.value = initialDelay;
-
-    ToneConnect(this.delayNode, this.speedUpPitchShift);
-    ToneConnect(this.delayNode, this.slowDownPitchShift);
-
-    this.delayNode.connect(this.normalSpeedGain);
-
-    this.speedUpPitchShift.connect(this.slowDownGain);
-    this.slowDownPitchShift.connect(this.speedUpGain);
-
-    this.setOutputPitchAt('normal', context.currentTime);
-  }
-
-  get allGainNodes() {
-    return [
-      this.speedUpGain,
-      this.slowDownGain,
-      this.normalSpeedGain,
-    ];
-  }
-
-  /**
-   * @param {AudioNode} sourceNode
-   */
-  connectInputFrom(sourceNode) {
-    sourceNode.connect(this.delayNode);
-  }
-  /**
-   * @param {AudioNode} destinationNode
-   */
-  connectOutputTo(destinationNode) {
-    for (const node of this.allGainNodes) {
-      node.connect(destinationNode);
-    }
-  }
-
-  /**
-   * @param {'slowdown' | 'speedup' | 'normal'} pitchSetting
-   */
-  setOutputPitchAt(pitchSetting, time) {
-    if (process.env.NODE_ENV !== 'production') {
-      if (!['slowdown', 'speedup', 'normal'].includes(pitchSetting)) {
-        // TODO replace with TypeScript?
-        throw new Error(`Invalid pitchSetting "${pitchSetting}"`);
-      }
-    }
-
-    this.speedUpGain    .gain.setValueAtTime(pitchSetting === 'speedup'  ? 1 : 0, time);
-    this.slowDownGain   .gain.setValueAtTime(pitchSetting === 'slowdown' ? 1 : 0, time);
-    this.normalSpeedGain.gain.setValueAtTime(pitchSetting === 'normal'   ? 1 : 0, time);
-  }
-
-  stretch(startValue, endValue, startTime, endTime) {
-    if (startValue === endValue) {
-      return;
-    }
-
-    this.delayNode.delayTime
-      .setValueAtTime(startValue, startTime)
-      .linearRampToValueAtTime(endValue, endTime);
-    const speedupOrSlowdown = endValue > startValue ? 'slowdown' : 'speedup';
-    this.setOutputPitchAt(
-      speedupOrSlowdown,
-      startTime
-    );
-    this.setOutputPitchAt('normal', endTime);
-    
-    const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
-    // Acutally we only need to do this when the user changes settings.
-    setTimeout(() => {
-      function speedChangeMultiplierToSemitones(m) {
-        return -12 * Math.log2(1 / m);
-      }
-      const node = speedupOrSlowdown === 'speedup'
-        ? this.speedUpPitchShift
-        : this.slowDownPitchShift;
-      node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
-    }, startTime - this.context.currentTime);
-  }
-
-  /**
-   * @param {number} interruptAtTime the time at which to stop changing the delay.
-   * @param {number} interruptAtTimeValue the value of the delay at `interruptAtTime`
-   */
-  interruptLastScheduledStretch(interruptAtTimeValue, interruptAtTime) {
-    // We don't need to specify the start time since it has been scheduled before in the `stretch` method
-    this.delayNode.delayTime
-      .cancelAndHoldAtTime(interruptAtTime)
-      .linearRampToValueAtTime(interruptAtTimeValue, interruptAtTime);
-
-    for (const node of this.allGainNodes) {
-      node.gain.cancelAndHoldAtTime(interruptAtTime);
-    }
-    this.setOutputPitchAt('normal', interruptAtTime);
-  }
-
-  /**
-   * @param {number} value
-   */
-  setDelay(value) {
-    this.delayNode.value = value;
-  }
-}
-
 export default class Controller {
   /**
    * @param {HTMLVideoElement} videoElement
@@ -222,7 +38,6 @@ export default class Controller {
     this.element.playbackRate = this.settings.soundedSpeed;
 
     const ctx = new AudioContext();
-    toneSetContext(ctx);
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeFilter.js'));
 
