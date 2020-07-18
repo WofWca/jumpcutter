@@ -63,9 +63,12 @@ export default class Controller {
       numberOfOutputs: 0,
     });
     this._silenceDetectorNode = silenceDetectorNode;
-    const analyzerIn = ctx.createAnalyser();
-    const analyzerOut = ctx.createAnalyser();
-    const outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
+    let analyzerIn, outVolumeFilter, analyzerOut;
+    if (logging) {
+      analyzerIn = ctx.createAnalyser();
+      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
+      analyzerOut = ctx.createAnalyser();
+    }
     const lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
     this._lookahead = lookahead;
     const stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
@@ -74,30 +77,35 @@ export default class Controller {
     src.connect(lookahead);
     src.connect(volumeFilter);
     volumeFilter.connect(silenceDetectorNode);
-    volumeFilter.connect(analyzerIn);
     stretcher.connectInputFrom(lookahead);
     stretcher.connectOutputTo(ctx.destination);
-    stretcher.connectOutputTo(outVolumeFilter);
-    outVolumeFilter.connect(analyzerOut);
+    if (logging) {
+      volumeFilter.connect(analyzerIn);
+      stretcher.connectOutputTo(outVolumeFilter);
+      outVolumeFilter.connect(analyzerOut);
+    }
     this._setStateAccordingToSettings(this.settings);
 
     let lastScheduledStretcherDelayReset = null;
 
-    const logArr = [];
-    const logBuffer = new Float32Array(analyzerOut.fftSize);
-    const log = (msg = null) => {
-      analyzerOut.getFloatTimeDomainData(logBuffer);
-      const outVol = logBuffer[logBuffer.length - 1];
-      analyzerIn.getFloatTimeDomainData(logBuffer);
-      const inVol = logBuffer[logBuffer.length - 1];
-      logArr.push({
-        msg,
-        t: ctx.currentTime,
-        // delay: stretcherInitialDelay, // TODO fix this. It's not `initialDelay` it should be `stretcher.delay`
-        speed: this.element.playbackRate,
-        inVol,
-        outVol,
-      });
+    let logArr, logBuffer, log;
+    if (logging) {
+      logArr = [];
+      logBuffer = new Float32Array(analyzerOut.fftSize);
+      log = (msg = null) => {
+        analyzerOut.getFloatTimeDomainData(logBuffer);
+        const outVol = logBuffer[logBuffer.length - 1];
+        analyzerIn.getFloatTimeDomainData(logBuffer);
+        const inVol = logBuffer[logBuffer.length - 1];
+        logArr.push({
+          msg,
+          t: ctx.currentTime,
+          // delay: stretcherInitialDelay, // TODO fix this. It's not `initialDelay` it should be `stretcher.delay`
+          speed: this.element.playbackRate,
+          inVol,
+          outVol,
+        });
+      }
     }
 
     silenceDetectorNode.port.onmessage = (msg) => {
