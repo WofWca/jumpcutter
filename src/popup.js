@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const enabledEl = document.getElementById('enabled');
+  const enableExperimentalFeaturesEl = document.getElementById('enable-experimental-features')
   const numberInputsNames = [
     'volumeThreshold',
     'silenceSpeed',
@@ -18,6 +19,10 @@ document.addEventListener('DOMContentLoaded', function () {
     'marginBefore',
     // 'marginAfter'
   ];
+  
+  function reactToEnableExperimentalFeatures(newValue) {
+    document.getElementById('marginBeforeField').style.display = newValue ? null : 'none';
+  }
   const numberInputs = {};
   numberInputsNames.forEach(n => {
     numberInputs[n] = document.getElementById(n)
@@ -30,6 +35,8 @@ document.addEventListener('DOMContentLoaded', function () {
         el.value = settings[name];
       });
       enabledEl.checked = settings.enabled;
+      enableExperimentalFeaturesEl.checked = settings.enableExperimentalFeatures;
+      reactToEnableExperimentalFeatures(settings.enableExperimentalFeatures);
 
       /**
        * @param {InputEvent} e
@@ -47,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function saveSettings() {
     const newSettings = {
       enabled: enabledEl.checked,
+      enableExperimentalFeatures: enableExperimentalFeaturesEl.checked,
     };
     Object.entries(numberInputs).forEach(([name, el]) => {
       newSettings[name] = parseFloat(el.value);
@@ -60,6 +68,10 @@ document.addEventListener('DOMContentLoaded', function () {
     saveSettingsDebounceTimeout = setTimeout(saveSettings, 200);
   }
   enabledEl.addEventListener('input', saveSettings);
+  enableExperimentalFeaturesEl.addEventListener('input', saveSettings);
+  enableExperimentalFeaturesEl.addEventListener('input', e => {
+    reactToEnableExperimentalFeatures(e.target.checked);
+  });
   Object.values(numberInputs).forEach(el => {
     el.addEventListener('input', debounceSaveSettings);
   });

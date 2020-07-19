@@ -42,11 +42,18 @@ chrome.storage.sync.get(
       }
 
       if (controller) {
-        const newValues = {};
-        for (const [settingName, change] of Object.entries(changes)) {
-          newValues[settingName] = change.newValue;
+        if (!changes.enableExperimentalFeatures) {
+          const newValues = {};
+          for (const [settingName, change] of Object.entries(changes)) {
+            newValues[settingName] = change.newValue;
+          }
+          controller.updateSettings(newValues);
+        } else {
+          // A change requires instance re-initialization.
+          controller.destroy();
+          controller = null;
+          initIfVideoPresent()
         }
-        controller.updateSettings(newValues);
       }
     });
   }

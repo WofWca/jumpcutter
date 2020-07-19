@@ -16,6 +16,13 @@ import defaultSettings from '../defaultSettings.json';
  * @type {typeof defaultSettings}
  */
 
+/**
+ * @param {Settings} settings 
+ */
+function isStretcherEnabled(settings) {
+  return settings.enableExperimentalFeatures;
+}
+
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
 const MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE = 8000;
 const MAX_MARGIN_BEFORE_VIDEO_TIME = 0.5;
@@ -75,8 +82,10 @@ export default class Controller {
       outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
       analyzerOut = ctx.createAnalyser();
     }
-    this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-    this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
+    if (isStretcherEnabled(this.settings)) {
+      this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
+      this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
+    }
     const srcFromMap = mediaElementSourcesMap.get(this.element);
     if (srcFromMap) {
       this._mediaElementSource = srcFromMap;
@@ -85,14 +94,24 @@ export default class Controller {
       this._mediaElementSource = ctx.createMediaElementSource(this.element);
       mediaElementSourcesMap.set(this.element, this._mediaElementSource)
     }
-    this._mediaElementSource.connect(this._lookahead);
+    if (isStretcherEnabled(this.settings)) {
+      this._mediaElementSource.connect(this._lookahead);
+    } else {
+      this._mediaElementSource.connect(audioContext.destination);
+    }
     this._mediaElementSource.connect(this._volumeFilter);
     this._volumeFilter.connect(this._silenceDetectorNode);
-    this._stretcher.connectInputFrom(this._lookahead);
-    this._stretcher.connectOutputTo(ctx.destination);
+    if (isStretcherEnabled(this.settings)) {
+      this._stretcher.connectInputFrom(this._lookahead);
+      this._stretcher.connectOutputTo(ctx.destination);
+    }
     if (logging) {
       this._volumeFilter.connect(analyzerIn);
-      this._stretcher.connectOutputTo(outVolumeFilter);
+      if (isStretcherEnabled(this.settings)) {
+        this._stretcher.connectOutputTo(outVolumeFilter);
+      } else {
+        this._mediaElementSource.connect(outVolumeFilter);
+      }
       outVolumeFilter.connect(analyzerOut);
     }
     this._setStateAccordingToSettings(this.settings);
@@ -124,11 +143,15 @@ export default class Controller {
       if (silenceStartOrEnd === 'silenceEnd') {
         this.element.playbackRate = this.settings.soundedSpeed;
 
-        this._doOnSilenceEndStretcherStuff(eventTime);
+        if (isStretcherEnabled(this.settings)) {
+          this._doOnSilenceEndStretcherStuff(eventTime);
+        }
       } else {
         this.element.playbackRate = this.settings.silenceSpeed;
 
-        this._doOnSilenceStartStretcherStuff(eventTime);
+        if (isStretcherEnabled(this.settings)) {
+          this._doOnSilenceStartStretcherStuff(eventTime);
+        }
       }
     }
     if (logging) {
@@ -291,7 +314,9 @@ export default class Controller {
 
     this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
 
-    this._stretcher.destroy();
+    if (isStretcherEnabled(this.settings)) {
+      this._stretcher.destroy();
+    }
     // TODO make `AudioWorkletProcessor`'s get collected.
     // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process#Return_value
     // Currently they always return `true`.
@@ -327,14 +352,16 @@ export default class Controller {
     this._silenceDetectorNode.parameters.get('volumeThreshold').value = newSettings.volumeThreshold;
     this._silenceDetectorNode.parameters.get('durationThreshold').value =
       Controller._getSilenceDetectorNodeDurationThreshold(newSettings.marginBefore, newSettings.soundedSpeed);
-    this._lookahead.delayTime.value = getNewLookaheadDelay(
-      newSettings.marginBefore,
-      newSettings.soundedSpeed,
-      newSettings.silenceSpeed
-    );
-    this._stretcher.setDelay(
-      getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
-    );
+    if (isStretcherEnabled(this.settings)) {
+      this._lookahead.delayTime.value = getNewLookaheadDelay(
+        newSettings.marginBefore,
+        newSettings.soundedSpeed,
+        newSettings.silenceSpeed
+      );
+      this._stretcher.setDelay(
+        getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
+      );
+    }
   }
 
   /**
@@ -350,6 +377,13 @@ export default class Controller {
       ...this.settings,
       ...newChangedSettings,
     };
+
+    // TODO check for all unknown/unsupported settings. Don't allow passing them at all, warn?
+    if (process.env.NODE_ENV !== 'production') {
+      if (oldSettings.enableExperimentalFeatures !== oldSettings.enableExperimentalFeatures) {
+        throw new Error('Chaning this setting with this method is not supported. Re-create the instance instead');
+      }
+    }
 
     this._setStateAccordingToSettings(newSettings, oldSettings);
 
