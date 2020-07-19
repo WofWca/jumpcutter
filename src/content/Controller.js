@@ -125,134 +125,11 @@ export default class Controller {
       if (silenceStartOrEnd === 'silenceEnd') {
         this.element.playbackRate = this.settings.soundedSpeed;
 
-        // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
-        // Or just use if-else?
-
-        const lastSilenceSpeedLastsForRealtime =
-          eventTime - this._lastScheduledStretcherDelayReset.newSpeedStartInputTime;
-        const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
-
-        const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
-          lastSilenceSpeedLastsForVideoTime,
-          this.settings.marginBefore
-        );
-        const marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration =
-          this.settings.marginBefore - marginBeforePartAtSilenceSpeedVideoTimeDuration;
-        const marginBeforePartAtSilenceSpeedRealTimeDuration =
-          marginBeforePartAtSilenceSpeedVideoTimeDuration / this.settings.silenceSpeed;
-        const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
-          marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration / this.settings.soundedSpeed;
-        // The time at which the moment from which the speed of the video needs to be slow has been on the input.
-        const marginBeforeStartInputTime =
-          eventTime
-          - marginBeforePartAtSilenceSpeedRealTimeDuration
-          - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
-        // Same, but when it's going to be on the output.
-        const marginBeforeStartOutputTime = getMomentOutputTime(
-          marginBeforeStartInputTime,
-          this._lookahead.delayTime.value,
-          this._lastScheduledStretcherDelayReset
-        );
-        const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
-        const marginBeforeStartOutputTimeStretcherDelay =
-          marginBeforeStartOutputTimeTotalDelay - this._lookahead.delayTime.value;
-
-        // As you remember, silence on the input must last for some time before we speed up the video.
-        // We then speed up these sections by reducing the stretcher delay.
-        // And sometimes we may stumble upon a silence period long enough to make us speed up the video, but short
-        // enough for us to not be done with speeding up that last part, so the margin before and that last part
-        // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
-        // snippet, because the first one is already at required (sounded) speed, due to that delay before we speed up
-        // the video after some silence.
-        // This is also the reason why `getMomentOutputTime` function is so long.
-        // Let's find this breakpoint.
-
-        if (marginBeforeStartOutputTime < this._lastScheduledStretcherDelayReset.endTime) {
-          // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
-          this._stretcher.interruptLastScheduledStretch(
-            // A.k.a. `this._lastScheduledStretcherDelayReset.startTime`
-            marginBeforeStartOutputTimeStretcherDelay,
-            marginBeforeStartOutputTime
-          );
-          if (logging) {
-            this._log({
-              type: 'pauseReset',
-              value: marginBeforeStartOutputTimeStretcherDelay,
-              time: marginBeforeStartOutputTime,
-            });
-          }
-        }
-
-        const marginBeforePartAtSilenceSpeedStartOutputTime =
-          marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
-        // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
-        //   marginBeforePartAtSilenceSpeedRealTimeDuration,
-        //   this.settings.silenceSpeed,
-        //   this.settings.soundedSpeed
-        // );
-        const stretcherDelayIncrease = getStretcherDelayChange(
-          marginBeforePartAtSilenceSpeedRealTimeDuration,
-          this.settings.silenceSpeed,
-          this.settings.soundedSpeed
-        );
-        // I think currently it should always be equal to the max delay.
-        const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-        this._stretcher.stretch(
-          marginBeforeStartOutputTimeStretcherDelay,
-          finalStretcherDelay,
-          marginBeforePartAtSilenceSpeedStartOutputTime,
-          // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-          eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
-        );
-        if (logging) {
-          this._log({
-            type: 'stretch',
-            startValue: marginBeforeStartOutputTimeStretcherDelay,
-            endValue: finalStretcherDelay,
-            startTime: marginBeforePartAtSilenceSpeedStartOutputTime,
-            endTime: eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
-          });
-        }
+        this._doOnSilenceEndStretcherStuff(eventTime);
       } else {
-        // (Almost) same calculations as obove.
         this.element.playbackRate = this.settings.silenceSpeed;
 
-        const oldRealtimeMargin = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
-        // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
-        const stretcherDelayStartValue =
-          getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-        const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
-
-        const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
-
-        const originalRealtimeSpeed = 1;
-        const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
-        const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
-        const startTime = eventTime + startIn;
-        const endTime = startTime + snippetNewDuration;
-        this._stretcher.stretch(
-          stretcherDelayStartValue,
-          0,
-          startTime,
-          endTime
-        );
-        this._lastScheduledStretcherDelayReset = {
-          newSpeedStartInputTime: eventTime,
-          startTime,
-          startValue: stretcherDelayStartValue,
-          endTime,
-          endValue: 0,
-        };
-
-        if (logging) {
-          this._log({
-            type: 'reset',
-            startValue: stretcherDelayStartValue,
-            startTime: startTime,
-            endTime: endTime,
-            lastScheduledStretcherDelayReset: this._lastScheduledStretcherDelayReset,
-          });
-        }
+        this._doOnSilenceStartStretcherStuff(eventTime);
       }
     }
     if (logging) {
@@ -263,6 +140,143 @@ export default class Controller {
 
     resolveInitPromise(this);
     return this;
+  }
+
+  /**
+   * This only changes the state of `this._stretcher`
+   * @param {number} eventTime 
+   */
+  _doOnSilenceEndStretcherStuff(eventTime) {
+    // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
+    // Or just use if-else?
+
+    const lastSilenceSpeedLastsForRealtime =
+      eventTime - this._lastScheduledStretcherDelayReset.newSpeedStartInputTime;
+    const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
+
+    const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
+      lastSilenceSpeedLastsForVideoTime,
+      this.settings.marginBefore
+    );
+    const marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration =
+      this.settings.marginBefore - marginBeforePartAtSilenceSpeedVideoTimeDuration;
+    const marginBeforePartAtSilenceSpeedRealTimeDuration =
+      marginBeforePartAtSilenceSpeedVideoTimeDuration / this.settings.silenceSpeed;
+    const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
+      marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration / this.settings.soundedSpeed;
+    // The time at which the moment from which the speed of the video needs to be slow has been on the input.
+    const marginBeforeStartInputTime =
+      eventTime
+      - marginBeforePartAtSilenceSpeedRealTimeDuration
+      - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
+    // Same, but when it's going to be on the output.
+    const marginBeforeStartOutputTime = getMomentOutputTime(
+      marginBeforeStartInputTime,
+      this._lookahead.delayTime.value,
+      this._lastScheduledStretcherDelayReset
+    );
+    const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
+    const marginBeforeStartOutputTimeStretcherDelay =
+      marginBeforeStartOutputTimeTotalDelay - this._lookahead.delayTime.value;
+
+    // As you remember, silence on the input must last for some time before we speed up the video.
+    // We then speed up these sections by reducing the stretcher delay.
+    // And sometimes we may stumble upon a silence period long enough to make us speed up the video, but short
+    // enough for us to not be done with speeding up that last part, so the margin before and that last part
+    // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
+    // snippet, because the first one is already at required (sounded) speed, due to that delay before we speed up
+    // the video after some silence.
+    // This is also the reason why `getMomentOutputTime` function is so long.
+    // Let's find this breakpoint.
+
+    if (marginBeforeStartOutputTime < this._lastScheduledStretcherDelayReset.endTime) {
+      // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
+      this._stretcher.interruptLastScheduledStretch(
+        // A.k.a. `this._lastScheduledStretcherDelayReset.startTime`
+        marginBeforeStartOutputTimeStretcherDelay,
+        marginBeforeStartOutputTime
+      );
+      if (logging) {
+        this._log({
+          type: 'pauseReset',
+          value: marginBeforeStartOutputTimeStretcherDelay,
+          time: marginBeforeStartOutputTime,
+        });
+      }
+    }
+
+    const marginBeforePartAtSilenceSpeedStartOutputTime =
+      marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
+    // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
+    //   marginBeforePartAtSilenceSpeedRealTimeDuration,
+    //   this.settings.silenceSpeed,
+    //   this.settings.soundedSpeed
+    // );
+    const stretcherDelayIncrease = getStretcherDelayChange(
+      marginBeforePartAtSilenceSpeedRealTimeDuration,
+      this.settings.silenceSpeed,
+      this.settings.soundedSpeed
+    );
+    // I think currently it should always be equal to the max delay.
+    const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
+    this._stretcher.stretch(
+      marginBeforeStartOutputTimeStretcherDelay,
+      finalStretcherDelay,
+      marginBeforePartAtSilenceSpeedStartOutputTime,
+      // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
+      eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
+    );
+    if (logging) {
+      this._log({
+        type: 'stretch',
+        startValue: marginBeforeStartOutputTimeStretcherDelay,
+        endValue: finalStretcherDelay,
+        startTime: marginBeforePartAtSilenceSpeedStartOutputTime,
+        endTime: eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
+      });
+    }
+  }
+  /**
+   * @see this._doOnSilenceEndStretcherStuff
+   * @param {number} eventTime 
+   */
+  _doOnSilenceStartStretcherStuff(eventTime) {
+    const oldRealtimeMargin = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
+    // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
+    const stretcherDelayStartValue =
+      getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
+    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
+
+    const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
+
+    const originalRealtimeSpeed = 1;
+    const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
+    const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
+    const startTime = eventTime + startIn;
+    const endTime = startTime + snippetNewDuration;
+    this._stretcher.stretch(
+      stretcherDelayStartValue,
+      0,
+      startTime,
+      endTime
+    );
+    this._lastScheduledStretcherDelayReset = {
+      newSpeedStartInputTime: eventTime,
+      startTime,
+      startValue: stretcherDelayStartValue,
+      endTime,
+      endValue: 0,
+    };
+
+    if (logging) {
+      this._log({
+        type: 'reset',
+        startValue: stretcherDelayStartValue,
+        startTime: startTime,
+        endTime: endTime,
+        lastScheduledStretcherDelayReset: this._lastScheduledStretcherDelayReset,
+      });
+    }
   }
 
   /**
