@@ -9,13 +9,6 @@ chrome.storage.sync.get(
      */
     let controller = null;
 
-    function watchInstanceSettings(changes) {
-      const newValues = {};
-      for (const [settingName, change] of Object.entries(changes)) {
-        newValues[settingName] = change.newValue;
-      }
-      controller.updateSettings(newValues);
-    }
     function initIfVideoPresent() {
       const v = document.querySelector('video');
       if (!v) {
@@ -27,7 +20,6 @@ chrome.storage.sync.get(
         defaultSettings,
         function (settings) {
           controller = new Controller(v, settings);
-          chrome.storage.onChanged.addListener(watchInstanceSettings);
           controller.init();
         }
       );
@@ -44,13 +36,18 @@ chrome.storage.sync.get(
         if (changes.enabled.newValue === false) {
           controller.destroy();
           controller = null;
-          chrome.storage.onChanged.removeListener(watchInstanceSettings);
         } else {
           initIfVideoPresent();
         }
       }
-    });
 
-    controller.init();
+      if (controller) {
+        const newValues = {};
+        for (const [settingName, change] of Object.entries(changes)) {
+          newValues[settingName] = change.newValue;
+        }
+        controller.updateSettings(newValues);
+      }
+    });
   }
 );
