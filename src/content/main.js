@@ -50,7 +50,5 @@ chrome.storage.sync.get(
         }
       }
     });
-
-    controller.init();
   }
 );
