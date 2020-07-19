@@ -77,17 +77,16 @@ export default class Controller {
     }
     this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
     this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
-    let src;
     const srcFromMap = mediaElementSourcesMap.get(this.element);
     if (srcFromMap) {
-      src = srcFromMap;
-      src.disconnect();
+      this._mediaElementSource = srcFromMap;
+      this._mediaElementSource.disconnect();
     } else {
-      src = ctx.createMediaElementSource(this.element);
-      mediaElementSourcesMap.set(this.element, src)
+      this._mediaElementSource = ctx.createMediaElementSource(this.element);
+      mediaElementSourcesMap.set(this.element, this._mediaElementSource)
     }
-    src.connect(this._lookahead);
-    src.connect(this._volumeFilter);
+    this._mediaElementSource.connect(this._lookahead);
+    this._mediaElementSource.connect(this._volumeFilter);
     this._volumeFilter.connect(this._silenceDetectorNode);
     this._stretcher.connectInputFrom(this._lookahead);
     this._stretcher.connectOutputTo(ctx.destination);
@@ -286,9 +285,8 @@ export default class Controller {
   async destroy() {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
 
-    const src = mediaElementSourcesMap.get(this.element);
-    src.disconnect();
-    src.connect(audioContext.destination);
+    this._mediaElementSource.disconnect();
+    this._mediaElementSource.connect(audioContext.destination);
 
 
     this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
