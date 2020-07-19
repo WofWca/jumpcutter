@@ -1,7 +1,7 @@
 {
   "volumeThreshold": 0.010,
   "silenceSpeed": 4,
-  "soundedSpeed": 1.75,
+  "soundedSpeed": 1.5,
   "enabled": true,
   "marginBefore": 0.100,
   "marginAfter": 0.100
