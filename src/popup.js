@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
       Object.entries(numberInputs).forEach(([name, el]) => {
         el.value = settings[name];
       });
-      enabledEl.checked = enabled;
+      enabledEl.checked = settings.enabled;
 
       /**
        * @param {InputEvent} e
