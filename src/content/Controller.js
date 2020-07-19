@@ -100,11 +100,11 @@ export default class Controller {
 
     this._lastScheduledStretcherDelayReset = null;
 
-    let logArr, logBuffer, log;
+    let logArr, logBuffer;
     if (logging) {
       logArr = [];
       logBuffer = new Float32Array(analyzerOut.fftSize);
-      log = (msg = null) => {
+      this._log = (msg = null) => {
         analyzerOut.getFloatTimeDomainData(logBuffer);
         const outVol = logBuffer[logBuffer.length - 1];
         analyzerIn.getFloatTimeDomainData(logBuffer);
@@ -175,7 +175,7 @@ export default class Controller {
             marginBeforeStartOutputTime
           );
           if (logging) {
-            log({
+            this._log({
               type: 'pauseReset',
               value: marginBeforeStartOutputTimeStretcherDelay,
               time: marginBeforeStartOutputTime,
@@ -205,7 +205,7 @@ export default class Controller {
           eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
         );
         if (logging) {
-          log({
+          this._log({
             type: 'stretch',
             startValue: marginBeforeStartOutputTimeStretcherDelay,
             endValue: finalStretcherDelay,
@@ -245,7 +245,7 @@ export default class Controller {
         };
 
         if (logging) {
-          log({
+          this._log({
             type: 'reset',
             startValue: stretcherDelayStartValue,
             startTime: startTime,
@@ -257,7 +257,7 @@ export default class Controller {
     }
     if (logging) {
       setInterval(() => {
-        log();
+        this._log();
       }, 1);
     }
 
