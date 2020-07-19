@@ -98,7 +98,7 @@ export default class Controller {
     }
     this._setStateAccordingToSettings(this.settings);
 
-    let lastScheduledStretcherDelayReset = null;
+    this._lastScheduledStretcherDelayReset = null;
 
     let logArr, logBuffer, log;
     if (logging) {
@@ -128,7 +128,8 @@ export default class Controller {
         // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
         // Or just use if-else?
 
-        const lastSilenceSpeedLastsForRealtime = eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
+        const lastSilenceSpeedLastsForRealtime =
+          eventTime - this._lastScheduledStretcherDelayReset.newSpeedStartInputTime;
         const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
 
         const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
@@ -150,7 +151,7 @@ export default class Controller {
         const marginBeforeStartOutputTime = getMomentOutputTime(
           marginBeforeStartInputTime,
           this._lookahead.delayTime.value,
-          lastScheduledStretcherDelayReset
+          this._lastScheduledStretcherDelayReset
         );
         const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
         const marginBeforeStartOutputTimeStretcherDelay =
@@ -166,10 +167,10 @@ export default class Controller {
         // This is also the reason why `getMomentOutputTime` function is so long.
         // Let's find this breakpoint.
 
-        if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
+        if (marginBeforeStartOutputTime < this._lastScheduledStretcherDelayReset.endTime) {
           // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
           this._stretcher.interruptLastScheduledStretch(
-            // A.k.a. `lastScheduledStretcherDelayReset.startTime`
+            // A.k.a. `this._lastScheduledStretcherDelayReset.startTime`
             marginBeforeStartOutputTimeStretcherDelay,
             marginBeforeStartOutputTime
           );
@@ -235,7 +236,7 @@ export default class Controller {
           startTime,
           endTime
         );
-        lastScheduledStretcherDelayReset = {
+        this._lastScheduledStretcherDelayReset = {
           newSpeedStartInputTime: eventTime,
           startTime,
           startValue: stretcherDelayStartValue,
@@ -249,7 +250,7 @@ export default class Controller {
             startValue: stretcherDelayStartValue,
             startTime: startTime,
             endTime: endTime,
-            lastScheduledStretcherDelayReset,
+            lastScheduledStretcherDelayReset: this._lastScheduledStretcherDelayReset,
           });
         }
       }
