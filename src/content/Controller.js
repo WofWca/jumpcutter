@@ -51,7 +51,7 @@ export default class Controller {
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
-    const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+    this._volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
       processorOptions: {
         maxSmoothingWindowLength: 0.03,
       },
@@ -59,7 +59,7 @@ export default class Controller {
         smoothingWindowLength: 0.03, // TODO make a setting out of it.
       },
     });
-    const silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
+    this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
       parameterData: {
         durationThreshold: Controller._getSilenceDetectorNodeDurationThreshold(
           this.settings.marginBefore,
@@ -69,17 +69,14 @@ export default class Controller {
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
     });
-    this._silenceDetectorNode = silenceDetectorNode;
     let analyzerIn, outVolumeFilter, analyzerOut;
     if (logging) {
       analyzerIn = ctx.createAnalyser();
       outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
       analyzerOut = ctx.createAnalyser();
     }
-    const lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-    this._lookahead = lookahead;
-    const stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
-    this._stretcher = stretcher;
+    this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
+    this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
     let src;
     const srcFromMap = mediaElementSourcesMap.get(this.element);
     if (srcFromMap) {
@@ -89,14 +86,14 @@ export default class Controller {
       src = ctx.createMediaElementSource(this.element);
       mediaElementSourcesMap.set(this.element, src)
     }
-    src.connect(lookahead);
-    src.connect(volumeFilter);
-    volumeFilter.connect(silenceDetectorNode);
-    stretcher.connectInputFrom(lookahead);
-    stretcher.connectOutputTo(ctx.destination);
+    src.connect(this._lookahead);
+    src.connect(this._volumeFilter);
+    this._volumeFilter.connect(this._silenceDetectorNode);
+    this._stretcher.connectInputFrom(this._lookahead);
+    this._stretcher.connectOutputTo(ctx.destination);
     if (logging) {
-      volumeFilter.connect(analyzerIn);
-      stretcher.connectOutputTo(outVolumeFilter);
+      this._volumeFilter.connect(analyzerIn);
+      this._stretcher.connectOutputTo(outVolumeFilter);
       outVolumeFilter.connect(analyzerOut);
     }
     this._setStateAccordingToSettings(this.settings);
@@ -123,7 +120,7 @@ export default class Controller {
       }
     }
 
-    silenceDetectorNode.port.onmessage = (msg) => {
+    this._silenceDetectorNode.port.onmessage = (msg) => {
       const { time: eventTime, type: silenceStartOrEnd } = msg.data;
       if (silenceStartOrEnd === 'silenceEnd') {
         this.element.playbackRate = this.settings.soundedSpeed;
@@ -152,12 +149,12 @@ export default class Controller {
         // Same, but when it's going to be on the output.
         const marginBeforeStartOutputTime = getMomentOutputTime(
           marginBeforeStartInputTime,
-          lookahead.delayTime.value,
+          this._lookahead.delayTime.value,
           lastScheduledStretcherDelayReset
         );
         const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
         const marginBeforeStartOutputTimeStretcherDelay =
-          marginBeforeStartOutputTimeTotalDelay - lookahead.delayTime.value;
+          marginBeforeStartOutputTimeTotalDelay - this._lookahead.delayTime.value;
 
         // As you remember, silence on the input must last for some time before we speed up the video.
         // We then speed up these sections by reducing the stretcher delay.
@@ -171,7 +168,7 @@ export default class Controller {
 
         if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
           // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
-          stretcher.interruptLastScheduledStretch(
+          this._stretcher.interruptLastScheduledStretch(
             // A.k.a. `lastScheduledStretcherDelayReset.startTime`
             marginBeforeStartOutputTimeStretcherDelay,
             marginBeforeStartOutputTime
@@ -199,12 +196,12 @@ export default class Controller {
         );
         // I think currently it should always be equal to the max delay.
         const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-        stretcher.stretch(
+        this._stretcher.stretch(
           marginBeforeStartOutputTimeStretcherDelay,
           finalStretcherDelay,
           marginBeforePartAtSilenceSpeedStartOutputTime,
           // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-          eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
+          eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
         );
         if (logging) {
           log({
@@ -212,7 +209,7 @@ export default class Controller {
             startValue: marginBeforeStartOutputTimeStretcherDelay,
             endValue: finalStretcherDelay,
             startTime: marginBeforePartAtSilenceSpeedStartOutputTime,
-            endTime: eventTime + getTotalDelay(lookahead.delayTime.value, finalStretcherDelay)
+            endTime: eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
           });
         }
       } else {
@@ -223,7 +220,7 @@ export default class Controller {
         // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
         const stretcherDelayStartValue =
           getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-        const startIn = getTotalDelay(lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
+        const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
 
         const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
 
@@ -232,7 +229,7 @@ export default class Controller {
         const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
         const startTime = eventTime + startIn;
         const endTime = startTime + snippetNewDuration;
-        stretcher.stretch(
+        this._stretcher.stretch(
           stretcherDelayStartValue,
           0,
           startTime,
