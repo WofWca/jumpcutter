@@ -34,8 +34,11 @@ chrome.storage.sync.get(
       // initialized/deinitialized in accordance to the setting a few lines above.
       if (changes.enabled != undefined) {
         if (changes.enabled.newValue === false) {
-          controller.destroy();
-          controller = null;
+          // `if` because it might not have been created because there's no video.
+          if (controller) {
+            controller.destroy();
+            controller = null;
+          }
         } else {
           initIfVideoPresent();
         }
