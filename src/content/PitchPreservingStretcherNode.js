@@ -1,4 +1,4 @@
-import { PitchShift, connect as ToneConnect, setContext as toneSetContext } from 'tone';
+import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
 import { getStretchSpeedChangeMultiplier } from './helpers';
 
 export default class PitchPreservingStretcherNode {
@@ -130,5 +130,20 @@ export default class PitchPreservingStretcherNode {
    */
   setDelay(value) {
     this.delayNode.value = value;
+  }
+
+  destroy() {
+    const toneAudioNodes = [this.speedUpPitchShift, this.slowDownPitchShift];
+    for (const node of toneAudioNodes) {
+      node.dispose();
+    }
+    
+    if (process.env.NODE_ENV !== 'production') {
+      Object.values(this).forEach(propertyVal => {
+        if (propertyVal instanceof ToneAudioNode && !toneAudioNodes.includes(propertyVal)) {
+          console.warn('Undisposed ToneAudioNode found. Expected all to be disposed upon `destroy()` call');
+        }
+      })
+    }
   }
 }

@@ -1,4 +1,5 @@
 'use strict';
+import { audioContext, mediaElementSourcesMap } from './audioContext';
 import PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import {
   getRealtimeMargin,
@@ -35,9 +36,15 @@ export default class Controller {
   }
 
   async init() {
+    let resolveInitPromise;
+    // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
+    // executor?
+    this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
+
     this.element.playbackRate = this.settings.soundedSpeed;
 
-    const ctx = new AudioContext();
+    const ctx = audioContext;
+    this.audioContext = ctx;
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeFilter.js'));
 
@@ -73,7 +80,15 @@ export default class Controller {
     this._lookahead = lookahead;
     const stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
     this._stretcher = stretcher;
-    const src = ctx.createMediaElementSource(this.element);
+    let src;
+    const srcFromMap = mediaElementSourcesMap.get(this.element);
+    if (srcFromMap) {
+      src = srcFromMap;
+      src.disconnect();
+    } else {
+      src = ctx.createMediaElementSource(this.element);
+      mediaElementSourcesMap.set(this.element, src)
+    }
     src.connect(lookahead);
     src.connect(volumeFilter);
     volumeFilter.connect(silenceDetectorNode);
@@ -248,7 +263,33 @@ export default class Controller {
       }, 1);
     }
 
+    resolveInitPromise(this);
     return this;
+  }
+
+  /**
+   * Assumes `init()` has been called (but not necessarily that its return promise has been resolved).
+   * TODO make it work when it's false?
+   */
+  async destroy() {
+    await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
+
+    const src = mediaElementSourcesMap.get(this.element);
+    src.disconnect();
+    src.connect(audioContext.destination);
+
+
+    this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
+
+    this._stretcher.destroy();
+    // TODO make `AudioWorkletProcessor`'s get collected.
+    // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process#Return_value
+    // Currently they always return `true`.
+
+    // TODO close `AudioWorkletProcessor`'s message ports?
+
+    // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
+    this.element.playbackRate = 1; // TODO how about store the initial speed
   }
 
   /**
