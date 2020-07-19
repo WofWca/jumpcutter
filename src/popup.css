@@ -49,6 +49,11 @@ input[type="range"] {
   text-align: end;
 }
 
+.enable-experimental-features-field {
+  display: flex;
+  align-items: center;
+}
+
 #repo-link {
   margin-top: 1rem;
   display: block;
