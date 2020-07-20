@@ -1,0 +1,12 @@
+image: node
+stages:
+  - build
+before_script:
+  - yarn install
+build:
+  stage: build
+  script:
+    - yarn build
+  artifacts:
+    paths:
+      - dist/

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="popup.js"></script>
+  <link rel="stylesheet" href="popup.css"/>
+</head>
+
+<body>
+  <label class="enabled-input">
+    <input
+      id="enabled"
+      type="checkbox"
+      autofocus
+    >
+    <span>Enabled</span>
+  </label>
+  <label class="volume-threshold-input">
+    <span>Volume threshold</span>
+    <!-- (default 0.010, recommended 0.001-0.030) -->
+    <div class="range-and-value">
+      <input
+        id="volumeThreshold"
+        type="range"
+        min="0"
+        max="0.15"
+        step="0.0005"
+      >
+      <span
+        aria-hidden="true"
+        class="slider-number-representation"
+      />
+    </div>
+  </label>
+  <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
+  Also min should be 0 for the same reason. -->
+  <label>
+    Sounded speed (default 1.75)
+    <div class="range-and-value">
+      <input
+        id="soundedSpeed"
+        type="range"
+        min="0"
+        max="15"
+        step="0.1"
+      >
+      <span
+        aria-hidden="true"
+        class="slider-number-representation"
+      />
+    </div>
+  </label>
+  <button
+    type="button"
+    id="resetSoundedSpeed"
+  >Reset to 1.1 (not 1 to avoid glitches)</button>
+  <label>
+    Silence speed (default 4)
+    <!-- Be aware, at least Chromim doesn't allow to set values higher than 16. -->
+    <div class="range-and-value">
+      <input
+        id="silenceSpeed"
+        type="range"
+        min="0"
+        max="15"
+        step="0.1"
+      >
+      <span
+        aria-hidden="true"
+        class="slider-number-representation"
+      />
+    </div>
+  </label>
+  <label class="enable-experimental-features-field">
+    <input
+      id="enable-experimental-features"
+      type="checkbox"
+    >
+    <span>Experimental features</span>
+  </label>
+  <label
+    id="marginBeforeField"
+    style="display: none;"
+  >
+    Before margin
+    <div class="range-and-value">
+      <input
+        id="marginBefore"
+        type="range"
+        min="0"
+        max="0.3"
+        step="0.005"
+      >
+      <span
+        aria-hidden="true"
+        class="slider-number-representation"
+      />
+    </div>
+  </label>
+  <!-- <label>
+    After margin
+    <input
+      id="marginAfter"
+      type="range"
+      min="0"
+      step="0.005"
+    >
+  </label> -->
+  <a
+    id="repo-link"
+    target="new"
+    href="https://github.com/WofWca/jumpcutter"
+  >About / feedback</a>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 {
   "name": "Jump Cutter",
-  "version": "1.0",
+  "version": "1.1.0",
   "description": "Save your time watching videos. Removes silent parts from the video on the fly",
   "permissions": ["activeTab", "storage", "declarativeContent"],
   "browser_action": {
@@ -20,7 +20,8 @@
     }
   ],
   "web_accessible_resources": [
-    "ThresholdDetectorProcessor.js"
+    "SilenceDetectorProcessor.js",
+    "VolumeFilter.js"
   ],
   "manifest_version": 2
 }
