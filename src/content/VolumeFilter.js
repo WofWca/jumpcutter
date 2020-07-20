@@ -45,18 +45,19 @@ class VolumeFilter extends AudioWorkletProcessor {
   // _sampleSquaresRingBuffer;
   // _currWindowSquaresSum = 0;
   // _options;
-  constructor({ processorOptions, parameterData }) {
-    super({
-      numberOfInputs: 1,
-      numberOfOutputs: 1,
-      outputChannelCount: 1,
-      parameterData,
-    });
+  constructor(options, ...rest) {
+    if (process.env.NODE_ENV !== 'production') {
+      // Looks like just passing "1" to `super()` doen't do anythin. Will have to force the user to specify it.
+      if (options.outputChannelCount.length !== 1 || options.outputChannelCount[0] !== 1) {
+        throw new Error('`outputChannelCount` other than `[1]` is not supported');
+      }
+    }
+    super(options, ...rest);
     this._currWindowSquaresSum = 0;
     this._options = {
       maxChannels: DEFAULT_MAX_NUM_CHANNELS,
       maxSmoothingWindowLength: 1,
-      ...processorOptions,
+      ...options.processorOptions,
     };
     const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
     this._sampleSquaresRingBuffer = new SingleChannelRingBuffer(bufferLength);

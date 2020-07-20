@@ -59,6 +59,7 @@ export default class Controller {
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
     this._volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+      outputChannelCount: [1],
       processorOptions: {
         maxSmoothingWindowLength: 0.03,
       },
@@ -79,7 +80,9 @@ export default class Controller {
     let analyzerIn, outVolumeFilter, analyzerOut;
     if (logging) {
       analyzerIn = ctx.createAnalyser();
-      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
+      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+        outputChannelCount: [1],
+      });
       analyzerOut = ctx.createAnalyser();
     }
     if (isStretcherEnabled(this.settings)) {
