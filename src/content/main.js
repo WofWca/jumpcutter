@@ -24,20 +24,16 @@ chrome.runtime.onConnect.addListener(port => {
 
 const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
 
-function initIfVideoPresent() {
+async function initIfVideoPresent() {
   const v = document.querySelector('video');
   if (!v) {
     // TODO search again when document updates? Or just after some time?
     console.log('Jump cutter: no video found. Exiting');
     return;
   }
-  chrome.storage.sync.get(
-    defaultSettings,
-    function (settings) {
-      controller = new Controller(v, settings);
-      controller.init();
-    }
-  );
+  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  controller = new Controller(v, settings);
+  controller.init();
 }
 
 if (settings.enabled) {
