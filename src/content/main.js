@@ -1,14 +1,29 @@
 import Controller from './Controller';
 import defaultSettings from '../defaultSettings';
 
+/**
+ * @type {null | Controller}
+ */
+let controller = null;
+
+// TODO can we not do this when `enabled` is false?
+chrome.runtime.onConnect.addListener(port => {
+  if (port.name !== 'telemetry') {
+    return;
+  }
+  port.onMessage.addListener(msg => {
+    if (process.env.NODE_ENV !== 'production') {
+      if (msg !== 'getTelemetry') {
+        throw new Error('Unsupported message type')
+      }
+    }
+    port.postMessage(controller && controller.getTelemetry() || null);
+  });
+});
+
 chrome.storage.sync.get(
   defaultSettings,
   function (settings) {
-    /**
-     * @type {null | Controller}
-     */
-    let controller = null;
-
     function initIfVideoPresent() {
       const v = document.querySelector('video');
       if (!v) {
@@ -34,8 +49,11 @@ chrome.storage.sync.get(
       // initialized/deinitialized in accordance to the setting a few lines above.
       if (changes.enabled != undefined) {
         if (changes.enabled.newValue === false) {
-          controller.destroy();
-          controller = null;
+          // `if` because it might not have been created because there's no video.
+          if (controller) {
+            controller.destroy();
+            controller = null;
+          }
         } else {
           initIfVideoPresent();
         }

@@ -40,6 +40,7 @@ export default class Controller {
   constructor(videoElement, settings) {
     this.element = videoElement;
     this.settings = settings;
+    this.initialized = false;
   }
 
   async init() {
@@ -59,6 +60,7 @@ export default class Controller {
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
     this._volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+      outputChannelCount: [1],
       processorOptions: {
         maxSmoothingWindowLength: 0.03,
       },
@@ -76,10 +78,15 @@ export default class Controller {
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
     });
-    let analyzerIn, outVolumeFilter, analyzerOut;
+    this._analyzerIn = ctx.createAnalyser();
+    // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
+    this._analyzerIn.fftSize = 2 ** 5;
+    this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
+    let outVolumeFilter, analyzerOut;
     if (logging) {
-      analyzerIn = ctx.createAnalyser();
-      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter');
+      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+        outputChannelCount: [1],
+      });
       analyzerOut = ctx.createAnalyser();
     }
     if (isStretcherEnabled(this.settings)) {
@@ -105,8 +112,8 @@ export default class Controller {
       this._stretcher.connectInputFrom(this._lookahead);
       this._stretcher.connectOutputTo(ctx.destination);
     }
+    this._volumeFilter.connect(this._analyzerIn);
     if (logging) {
-      this._volumeFilter.connect(analyzerIn);
       if (isStretcherEnabled(this.settings)) {
         this._stretcher.connectOutputTo(outVolumeFilter);
       } else {
@@ -125,7 +132,7 @@ export default class Controller {
       this._log = (msg = null) => {
         analyzerOut.getFloatTimeDomainData(logBuffer);
         const outVol = logBuffer[logBuffer.length - 1];
-        analyzerIn.getFloatTimeDomainData(logBuffer);
+        this._analyzerIn.getFloatTimeDomainData(logBuffer);
         const inVol = logBuffer[logBuffer.length - 1];
         logArr.push({
           msg,
@@ -160,6 +167,7 @@ export default class Controller {
       }, 1);
     }
 
+    this.initialized = true;
     resolveInitPromise(this);
     return this;
   }
@@ -392,5 +400,16 @@ export default class Controller {
 
   static _getSilenceDetectorNodeDurationThreshold(marginBefore, soundedSpeed) {
     return getRealtimeMargin(marginBefore, soundedSpeed);
+  }
+
+  getTelemetry() {
+    if (!this.initialized) {
+      return null;
+    }
+    this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
+    const volume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
+    return {
+      volume,
+    };
   }
 }

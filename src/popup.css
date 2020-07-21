@@ -39,11 +39,23 @@ input[type="range"] {
   margin: 0 0.5rem;
 }
 
+.volume-meter-wrapper {
+  display: flex;
+}
+
+.volume-meter-wrapper > meter {
+  flex-grow: 1;
+  /* Adjusted so it looks better on Windows. TODO make a custom one so it's uniform? */
+  height: 1.3rem;
+  padding: 0 0.25rem;
+}
+
 .range-and-value {
   display: flex;
   align-items: center;
 }
-.slider-number-representation {
+.slider-number-representation,
+.volume-meter-number-representation {
   /* So they don't chane width when thir value changes. */
   min-width: 6ch;
   text-align: end;
