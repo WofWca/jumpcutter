@@ -59,11 +59,12 @@ document.querySelectorAll('input[type="range"]').forEach(el => {
   el.addEventListener('input', e => updateRangeNumberRepresentation(e.target));
 });
 
-// TODO how do we close it on popup close? Do we have to?
-// https://developer.chrome.com/extensions/messaging#port-lifetime
-// TODO try-catch for "Receiving end does not exist", e.g. for when the page is being refreshed? Perhaps the content
-// script should send a message for when it is ready to accept connections?
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+(async function startGettingTelemetry() {
+  // TODO how do we close it on popup close? Do we have to?
+  // https://developer.chrome.com/extensions/messaging#port-lifetime
+  // TODO try-catch for "Receiving end does not exist", e.g. for when the page is being refreshed? Perhaps the content
+  // script should send a message for when it is ready to accept connections?
+  const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
   const volumeInfoPort = chrome.tabs.connect(tabs[0].id, { name: 'telemetry' });
   const getTelemetryAndScheduleAnother = () => {
     volumeInfoPort.postMessage('getTelemetry');
@@ -76,7 +77,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   });
   // TODO don't spam messages if the controller is not there.
   getTelemetryAndScheduleAnother();
-});
+})();
 
 function saveSettings() {
   const newSettings = {
@@ -103,4 +104,4 @@ Object.values(numberInputs).forEach(el => {
   el.addEventListener('input', debounceSaveSettings);
 });
 
-})()
+})();
