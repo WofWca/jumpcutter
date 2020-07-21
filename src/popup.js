@@ -40,28 +40,24 @@ numberInputsNames.forEach(n => {
   numberInputs[n] = document.getElementById(n)
 });
 
-chrome.storage.sync.get(
-  defaultSettings,
-  function (settings) {
-    Object.entries(numberInputs).forEach(([name, el]) => {
-      el.value = settings[name];
-    });
-    enabledEl.checked = settings.enabled;
-    enableExperimentalFeaturesEl.checked = settings.enableExperimentalFeatures;
-    reactToEnableExperimentalFeatures(settings.enableExperimentalFeatures);
+const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+Object.entries(numberInputs).forEach(([name, el]) => {
+  el.value = settings[name];
+});
+enabledEl.checked = settings.enabled;
+enableExperimentalFeaturesEl.checked = settings.enableExperimentalFeatures;
+reactToEnableExperimentalFeatures(settings.enableExperimentalFeatures);
 
-    /**
-     * @param {InputEvent} e
-     */
-    function updateRangeNumberRepresentation(el) {
-      el.nextElementSibling.innerText = parseFloat(el.value).toFixed(numberRepresentationNumFractionalDigits);
-    }
-    document.querySelectorAll('input[type="range"]').forEach(el => {
-      updateRangeNumberRepresentation(el);
-      el.addEventListener('input', e => updateRangeNumberRepresentation(e.target));
-    });
-  }
-);
+/**
+ * @param {InputEvent} e
+ */
+function updateRangeNumberRepresentation(el) {
+  el.nextElementSibling.innerText = parseFloat(el.value).toFixed(numberRepresentationNumFractionalDigits);
+}
+document.querySelectorAll('input[type="range"]').forEach(el => {
+  updateRangeNumberRepresentation(el);
+  el.addEventListener('input', e => updateRangeNumberRepresentation(e.target));
+});
 
 // TODO how do we close it on popup close? Do we have to?
 // https://developer.chrome.com/extensions/messaging#port-lifetime
