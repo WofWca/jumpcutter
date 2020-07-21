@@ -4,7 +4,10 @@ import defaultSettings from './defaultSettings.json';
 
 const numberRepresentationNumFractionalDigits = 3;
 
+const settingsPromise = new Promise(r => chrome.storage.sync.get(defaultSettings, r));
 await new Promise(r => document.addEventListener('DOMContentLoaded', r));
+const settings = await settingsPromise;
+  // new Promise(r => chrome.storage.sync.get(defaultSettings, r))
 
 /**
  * @param {Event} e
@@ -40,7 +43,6 @@ numberInputsNames.forEach(n => {
   numberInputs[n] = document.getElementById(n)
 });
 
-const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
 Object.entries(numberInputs).forEach(([name, el]) => {
   el.value = settings[name];
 });
