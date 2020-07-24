@@ -1,67 +1,33 @@
 <script>
+  import { onMount } from 'svelte';
   import defaultSettings from '../defaultSettings.json';
 
-  (async function () { // Just for top-level `await`.
-
-  const numberRepresentationNumFractionalDigits = 3;
-
-  const settingsPromise = new Promise(r => chrome.storage.sync.get(defaultSettings, r));
-  await new Promise(r => document.addEventListener('DOMContentLoaded', r));
-  const settings = await settingsPromise;
-    // new Promise(r => chrome.storage.sync.get(defaultSettings, r))
-
-  /**
-   * @param {Event} e
-   */
-  document.getElementById('resetSoundedSpeed').onclick = function onResetSoundedSpeedClick(e) {
-    const input = document.getElementById('soundedSpeed');
-    input.value = 1.1;
-    input.dispatchEvent(new Event('input'));
+  let settings = { ...defaultSettings };
+  if (process.env.NODE_ENV !== 'production') {
+    function isPrimitive(value) {
+      return ['boolean', 'string', 'number'].includes(typeof value) || [null, undefined].includes(value)
+    }
+    for (const [key, value] of Object.entries(defaultSettings)) {
+      if (!isPrimitive(value)) {
+        throw new Error('`defaultSettings` is now a more complex object, consider using lodash.clone instead to clone '
+          + 'it');
+      }
+    }
   }
 
-  const enabledEl = document.getElementById('enabled');
-  const enableExperimentalFeaturesEl = document.getElementById('enable-experimental-features')
-  const numberInputsNames = [
-    'volumeThreshold',
-    'silenceSpeed',
-    'soundedSpeed',
-    'marginBefore',
-    // 'marginAfter'
-  ];
+  onMount(async () => {
+    settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  })
 
-  const volumeMeter = document.getElementById('volume-meter-value');
-  function updateVolumeMeterValue(volume) {
-    volumeMeter.value = volume.toFixed(3);
-    volumeMeter.nextElementSibling.innerText = parseFloat(volume).toFixed(numberRepresentationNumFractionalDigits);
+  function resetSoundedSpeed() {
+    settings.soundedSpeed = 1.1;
   }
-  updateVolumeMeterValue(0);
 
-  function reactToEnableExperimentalFeatures(newValue) {
-    document.getElementById('marginBeforeField').style.display = newValue ? null : 'none';
+  function toFixed(number) {
+    return number.toFixed(3);
   }
-  const numberInputs = {};
-  numberInputsNames.forEach(n => {
-    numberInputs[n] = document.getElementById(n)
-  });
 
-  Object.entries(numberInputs).forEach(([name, el]) => {
-    el.value = settings[name];
-  });
-  enabledEl.checked = settings.enabled;
-  enableExperimentalFeaturesEl.checked = settings.enableExperimentalFeatures;
-  reactToEnableExperimentalFeatures(settings.enableExperimentalFeatures);
-
-  /**
-   * @param {InputEvent} e
-   */
-  function updateRangeNumberRepresentation(el) {
-    el.nextElementSibling.innerText = parseFloat(el.value).toFixed(numberRepresentationNumFractionalDigits);
-  }
-  document.querySelectorAll('input[type="range"]').forEach(el => {
-    updateRangeNumberRepresentation(el);
-    el.addEventListener('input', e => updateRangeNumberRepresentation(e.target));
-  });
-
+  let currVolume = 0;
   (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
@@ -75,7 +41,7 @@
     }
     volumeInfoPort.onMessage.addListener(msg => {
       if (msg) {
-        updateVolumeMeterValue(msg.volume);
+        currVolume = msg.volume;
       }
     });
     // TODO don't spam messages if the controller is not there.
@@ -83,14 +49,7 @@
   })();
 
   function saveSettings() {
-    const newSettings = {
-      enabled: enabledEl.checked,
-      enableExperimentalFeatures: enableExperimentalFeaturesEl.checked,
-    };
-    Object.entries(numberInputs).forEach(([name, el]) => {
-      newSettings[name] = parseFloat(el.value);
-    });
-    chrome.storage.sync.set(newSettings);
+    chrome.storage.sync.set(settings);
   }
   let saveSettingsDebounceTimeout = -1;
   function debounceSaveSettings() {
@@ -98,21 +57,20 @@
     // TODO make sure settings are saved when the popup is closed.
     saveSettingsDebounceTimeout = setTimeout(saveSettings, 200);
   }
-  enabledEl.addEventListener('input', saveSettings);
-  enableExperimentalFeaturesEl.addEventListener('input', saveSettings);
-  enableExperimentalFeaturesEl.addEventListener('input', e => {
-    reactToEnableExperimentalFeatures(e.target.checked);
-  });
-  Object.values(numberInputs).forEach(el => {
-    el.addEventListener('input', debounceSaveSettings);
-  });
+  $: {
+    // This is analogical to Vue's watch expression. Though I'm not sure if this isn't going to be optimized away on
+    // some later release of something.
+    settings;
 
-  })();
+    debounceSaveSettings(); // TODO not debounce for checkboxes,
+  }
+
+  const maxVolume = 0.15;
 </script>
 
 <label class="enabled-input">
   <input
-    id="enabled"
+    bind:checked={settings.enabled}
     type="checkbox"
     autofocus
   >
@@ -121,28 +79,28 @@
 <label>Volume</label>
 <div class="volume-meter-wrapper">
   <meter
-    id="volume-meter-value"
-    max="0.15"
+    value={currVolume}
+    max={maxVolume}
   ></meter>
   <span
     class="volume-meter-number-representation"
-  ></span>
+  >{toFixed(currVolume)}</span>
 </div>
 <label class="volume-threshold-input">
   <span>Volume threshold</span>
   <!-- (default 0.010, recommended 0.001-0.030) -->
   <div class="range-and-value">
     <input
-      id="volumeThreshold"
+      bind:value={settings.volumeThreshold}
       type="range"
       min="0"
-      max="0.15"
+      max={maxVolume}
       step="0.0005"
     >
     <span
       aria-hidden="true"
       class="slider-number-representation"
-    />
+    >{toFixed(settings.volumeThreshold)}</span>
   </div>
 </label>
 <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
@@ -151,7 +109,7 @@ Also min should be 0 for the same reason. -->
   Sounded speed (default 1.75)
   <div class="range-and-value">
     <input
-      id="soundedSpeed"
+      bind:value={settings.soundedSpeed}
       type="range"
       min="0"
       max="15"
@@ -160,19 +118,19 @@ Also min should be 0 for the same reason. -->
     <span
       aria-hidden="true"
       class="slider-number-representation"
-    />
+    >{toFixed(settings.soundedSpeed)}</span>
   </div>
 </label>
 <button
+  on:click={resetSoundedSpeed}
   type="button"
-  id="resetSoundedSpeed"
 >Reset to 1.1 (not 1 to avoid glitches)</button>
 <label>
   Silence speed (default 4)
   <!-- Be aware, at least Chromim doesn't allow to set values higher than 16. -->
   <div class="range-and-value">
     <input
-      id="silenceSpeed"
+      bind:value={settings.silenceSpeed}
       type="range"
       min="0"
       max="15"
@@ -181,24 +139,22 @@ Also min should be 0 for the same reason. -->
     <span
       aria-hidden="true"
       class="slider-number-representation"
-    />
+    >{toFixed(settings.silenceSpeed)}</span>
   </div>
 </label>
 <label class="enable-experimental-features-field">
   <input
-    id="enable-experimental-features"
+    bind:checked={settings.enableExperimentalFeatures}
     type="checkbox"
   >
   <span>Experimental features</span>
 </label>
-<label
-  id="marginBeforeField"
-  style="display: none;"
->
+{#if settings.enableExperimentalFeatures}
+<label>
   Before margin
   <div class="range-and-value">
     <input
-      id="marginBefore"
+      bind:value={settings.marginBefore}
       type="range"
       min="0"
       max="0.3"
@@ -207,9 +163,10 @@ Also min should be 0 for the same reason. -->
     <span
       aria-hidden="true"
       class="slider-number-representation"
-    />
+    >{toFixed(settings.marginBefore)}</span>
   </div>
 </label>
+{/if}
 <!-- <label>
   After margin
   <input
