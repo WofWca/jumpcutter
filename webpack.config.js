@@ -10,6 +10,32 @@ module.exports = {
     // Content Security Policy directive:". This occurs when you try to open the popup.
     : 'inline-source-map',
 
+  // Taken from https://github.com/sveltejs/svelte-loader#usage
+  resolve: {
+    alias: {
+      svelte: path.resolve('node_modules', 'svelte')
+    },
+    extensions: ['.mjs', '.js', '.svelte', '.json'],
+    mainFields: ['svelte', 'browser', 'module', 'main'],
+  },
+
+  module: {
+    rules: [
+      {
+        test: /\.(html|svelte)$/,
+        // exclude: /node_modules/, // Not sure if we need this.
+        use: {
+          loader: 'svelte-loader',
+          options: {
+            // TODO `emitCss: true`, `ExtractTextPlugin`?
+            // https://github.com/sveltejs/svelte-loader#usage
+            hotReload: true,
+          },
+        },
+      },
+    ],
+  },
+
   entry: {
     content: './src/content/main.js',
     popup: './src/popup/main.js',
