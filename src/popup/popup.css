@@ -1,3 +1,7 @@
+:root {
+  --number-representation-min-width: 6ch;
+}
+
 html, body {
   font-size: 12px;
 }
@@ -5,69 +9,4 @@ html, body {
 body {
   font-family: 'Open Sans', sans-serif;
   background: #FBFBFB;
-}
-
-label {
-  display: block;
-}
-
-label:not(:first-child) {
-  margin-top: 1rem;
-}
-
-input {
-  border-radius: 0.25rem;
-  border-width: 1px;
-  padding: 0.25rem;
-}
-input[type="range"] {
-  width: 28rem;
-}
-
-.enabled-input {
-  margin: 2rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-}
-.enabled-input > input {
-  width: 2rem;
-  height: 2rem;
-}
-.enabled-input > span {
-  margin: 0 0.5rem;
-}
-
-.volume-meter-wrapper {
-  display: flex;
-}
-
-.volume-meter-wrapper > meter {
-  flex-grow: 1;
-  /* Adjusted so it looks better on Windows. TODO make a custom one so it's uniform? */
-  height: 1.3rem;
-  padding: 0 0.25rem;
-}
-
-.range-and-value {
-  display: flex;
-  align-items: center;
-}
-.slider-number-representation,
-.volume-meter-number-representation {
-  /* So they don't chane width when thir value changes. */
-  min-width: 6ch;
-  text-align: end;
-}
-
-.enable-experimental-features-field {
-  display: flex;
-  align-items: center;
-}
-
-#repo-link {
-  margin-top: 1rem;
-  display: block;
-  text-align: end;
 }

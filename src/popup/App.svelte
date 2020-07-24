@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import defaultSettings from '../defaultSettings.json';
+  import RangeSlider from './RangeSlider';
 
   let settings = { ...defaultSettings };
   if (process.env.NODE_ENV !== 'production') {
@@ -21,10 +22,6 @@
 
   function resetSoundedSpeed() {
     settings.soundedSpeed = 1.1;
-  }
-
-  function toFixed(number) {
-    return number.toFixed(3);
   }
 
   let currVolume = 0;
@@ -84,64 +81,40 @@
   ></meter>
   <span
     class="volume-meter-number-representation"
-  >{toFixed(currVolume)}</span>
+  >{currVolume.toFixed(3)}</span>
 </div>
-<label class="volume-threshold-input">
-  <span>Volume threshold</span>
-  <!-- (default 0.010, recommended 0.001-0.030) -->
-  <div class="range-and-value">
-    <input
-      bind:value={settings.volumeThreshold}
-      type="range"
-      min="0"
-      max={maxVolume}
-      step="0.0005"
-    >
-    <span
-      aria-hidden="true"
-      class="slider-number-representation"
-    >{toFixed(settings.volumeThreshold)}</span>
-  </div>
-</label>
+<RangeSlider
+  label="Volume threshold"
+  value={settings.volumeThreshold}
+  on:input={({ detail }) => settings.volumeThreshold = detail}
+  min="0"
+  max={maxVolume}
+  step="0.0005"
+/>
 <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
 Also min should be 0 for the same reason. -->
-<label>
-  Sounded speed (default 1.75)
-  <div class="range-and-value">
-    <input
-      bind:value={settings.soundedSpeed}
-      type="range"
-      min="0"
-      max="15"
-      step="0.1"
-    >
-    <span
-      aria-hidden="true"
-      class="slider-number-representation"
-    >{toFixed(settings.soundedSpeed)}</span>
-  </div>
-</label>
+<RangeSlider
+  label="Sounded speed"
+  value={settings.soundedSpeed}
+  on:input={({ detail }) => settings.soundedSpeed = detail}
+  min="0"
+  max="15"
+  step="0.1"
+/>
 <button
   on:click={resetSoundedSpeed}
   type="button"
 >Reset to 1.1 (not 1 to avoid glitches)</button>
-<label>
-  Silence speed (default 4)
-  <!-- Be aware, at least Chromim doesn't allow to set values higher than 16. -->
-  <div class="range-and-value">
-    <input
-      bind:value={settings.silenceSpeed}
-      type="range"
-      min="0"
-      max="15"
-      step="0.1"
-    >
-    <span
-      aria-hidden="true"
-      class="slider-number-representation"
-    >{toFixed(settings.silenceSpeed)}</span>
-  </div>
-</label>
+<!-- Be aware, at least Chromim doesn't allow to set values higher than 16. -->
+<RangeSlider
+  label="Silence speed"
+  value={settings.silenceSpeed}
+  on:input={({ detail }) => settings.silenceSpeed = detail}
+  min="0"
+  max="15"
+  step="0.1"
+/>
+
 <label class="enable-experimental-features-field">
   <input
     bind:checked={settings.enableExperimentalFeatures}
@@ -150,22 +123,14 @@ Also min should be 0 for the same reason. -->
   <span>Experimental features</span>
 </label>
 {#if settings.enableExperimentalFeatures}
-<label>
-  Before margin
-  <div class="range-and-value">
-    <input
-      bind:value={settings.marginBefore}
-      type="range"
-      min="0"
-      max="0.3"
-      step="0.005"
-    >
-    <span
-      aria-hidden="true"
-      class="slider-number-representation"
-    >{toFixed(settings.marginBefore)}</span>
-  </div>
-</label>
+<RangeSlider
+  label="Before margin"
+  value={settings.marginBefore}
+  on:input={({ detail }) => settings.marginBefore = detail}
+  min="0"
+  max="0.3"
+  step="0.005"
+/>
 {/if}
 <!-- <label>
   After margin
@@ -181,3 +146,50 @@ Also min should be 0 for the same reason. -->
   target="new"
   href="https://github.com/WofWca/jumpcutter"
 >About / feedback</a>
+
+<style>
+  label:not(:first-child) {
+    margin-top: 1rem;
+  }
+
+  .enabled-input {
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+  }
+  .enabled-input > input {
+    width: 2rem;
+    height: 2rem;
+  }
+  .enabled-input > span {
+    margin: 0 0.5rem;
+  }
+
+  .volume-meter-wrapper {
+    display: flex;
+  }
+  .volume-meter-wrapper > meter {
+    flex-grow: 1;
+    /* Adjusted so it looks better on Windows. TODO make a custom one so it's uniform? */
+    height: 1.3rem;
+    padding: 0 0.25rem;
+  }
+  .volume-meter-number-representation {
+    /* So they don't chane width when thir value changes. */
+    min-width: var(--number-representation-min-width);
+    text-align: end;
+  }
+
+  .enable-experimental-features-field {
+    display: flex;
+    align-items: center;
+  }
+
+  #repo-link {
+    margin-top: 1rem;
+    display: block;
+    text-align: end;
+  }
+</style>
