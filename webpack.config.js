@@ -12,7 +12,7 @@ module.exports = {
 
   entry: {
     content: './src/content/main.js',
-    popup: './src/popup.js',
+    popup: './src/popup/main.js',
     SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.js',
     VolumeFilter: './src/content/VolumeFilter.js',
   },
@@ -28,7 +28,7 @@ module.exports = {
       patterns: [
         { context: 'src', from: 'manifest.json' },
         { context: 'src', from: 'icons/**' },
-        { context: 'src', from: '**/*.(html|css)' },
+        { context: 'src', from: 'popup/*.(html|css)', to: '[name].[ext]' },
       ],
     }),
   ],
