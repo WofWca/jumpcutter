@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import defaultSettings from '../defaultSettings.json';
   import RangeSlider from './RangeSlider';
+  import throttle from 'lodash.throttle';
 
   let settings = { ...defaultSettings };
   if (process.env.NODE_ENV !== 'production') {
@@ -16,8 +17,10 @@
     }
   }
 
+  let settingsLoaded = false;
   onMount(async () => {
     settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+    settingsLoaded = true;
   })
 
   function resetSoundedSpeed() {
@@ -45,21 +48,15 @@
     getTelemetryAndScheduleAnother();
   })();
 
-  function saveSettings() {
+  function saveSettings(settings) {
     chrome.storage.sync.set(settings);
   }
-  let saveSettingsDebounceTimeout = -1;
-  function debounceSaveSettings() {
-    clearTimeout(saveSettingsDebounceTimeout);
-    // TODO make sure settings are saved when the popup is closed.
-    saveSettingsDebounceTimeout = setTimeout(saveSettings, 200);
-  }
+  const throttleSaveSettings = throttle(saveSettings, 200);
+  $: onSettingsChange = settingsLoaded
+    ? throttleSaveSettings
+    : () => {};
   $: {
-    // This is analogical to Vue's watch expression. Though I'm not sure if this isn't going to be optimized away on
-    // some later release of something.
-    settings;
-
-    debounceSaveSettings(); // TODO not debounce for checkboxes,
+    onSettingsChange(settings);
   }
 
   const maxVolume = 0.15;

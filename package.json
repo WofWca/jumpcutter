@@ -18,6 +18,7 @@
     "serve": "webpack --mode=development --watch"
   },
   "dependencies": {
+    "lodash.throttle": "^4.1.1",
     "tone": "^14.7.12"
   },
   "devDependencies": {
