@@ -1,7 +1,7 @@
 {
   "name": "Jump Cutter",
   "version": "1.2.1",
-  "description": "Save your time watching videos. Removes silent parts from the video on the fly",
+  "description": "Skips silent parts in videos on the fly",
   "permissions": ["activeTab", "storage", "declarativeContent"],
   "browser_action": {
     "default_popup": "popup.html",
