@@ -45,7 +45,13 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js'
+    filename: (pathData, assetInfo) => {
+      const chunkName = pathData.chunk.name;
+      if (['SilenceDetectorProcessor', 'VolumeFilter'].includes(chunkName)) {
+        return `content/${chunkName}.js`;
+      }
+      return `${chunkName}/main.js`;
+    },
   },
 
   plugins: [
@@ -54,7 +60,7 @@ module.exports = {
       patterns: [
         { context: 'src', from: 'manifest.json' },
         { context: 'src', from: 'icons/**' },
-        { context: 'src', from: 'popup/*.(html|css)', to: '[name].[ext]' },
+        { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name].[ext]' },
       ],
     }),
   ],

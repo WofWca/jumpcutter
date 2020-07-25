@@ -4,7 +4,7 @@
   "description": "Skips silent parts in videos on the fly",
   "permissions": ["activeTab", "storage", "declarativeContent"],
   "browser_action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -15,13 +15,13 @@
   "content_scripts": [
     {
       "matches": [ "http://*/*", "https://*/*", "file:///*" ],
-      "js": ["content.js"],
+      "js": ["content/main.js"],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
-    "SilenceDetectorProcessor.js",
-    "VolumeFilter.js"
+    "content/SilenceDetectorProcessor.js",
+    "content/VolumeFilter.js"
   ],
   "icons": {
     "16": "icons/icon16.png",

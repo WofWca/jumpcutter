@@ -53,8 +53,8 @@ export default class Controller {
 
     const ctx = audioContext;
     this.audioContext = ctx;
-    await ctx.audioWorklet.addModule(chrome.runtime.getURL('SilenceDetectorProcessor.js'));
-    await ctx.audioWorklet.addModule(chrome.runtime.getURL('VolumeFilter.js'));
+    await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
+    await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
 
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
