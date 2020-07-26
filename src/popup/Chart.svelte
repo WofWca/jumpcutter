@@ -48,22 +48,22 @@
   });
   // Making these weird wrappers so these reactive blocks are not run on each tick, because apparently putting these
   // statements directly inside them makes them behave like that.
-  let onDataUpdated = latestTelemetryRecord => {
-    if (!smoothie || !latestTelemetryRecord) {
-      return;
-    } else {
-      onDataUpdated = latestTelemetryRecord => volumeSeries.append(Date.now(), latestTelemetryRecord.volume);
-      onDataUpdated(latestTelemetryRecord);
-    }
+  function updateSmoothieData() {
+    volumeSeries.append(Date.now(), latestTelemetryRecord.volume)
   }
-  $: onDataUpdated(latestTelemetryRecord);
+  $: if (smoothie && latestTelemetryRecord) {
+    latestTelemetryRecord;
+    updateSmoothieData();
+  }
   $: maxVolume = volumeThreshold * 6 || undefined;
-  function onVolumeThresholdUpdated(volumeThreshold, maxVolume) {
-    if (!smoothie) return;
+  function updateSmoothieVolumeThreshold() {
     volumeHorizontalLine.value = volumeThreshold;
     smoothie.options.maxValue = maxVolume;
   }
-  $: onVolumeThresholdUpdated(volumeThreshold, maxVolume);
+  $: if (smoothie) {
+    volumeThreshold, maxVolume;
+    updateSmoothieVolumeThreshold()
+  }
 </script>
 
 <canvas
