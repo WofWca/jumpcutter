@@ -41,7 +41,7 @@
     align-items: center;
   }
   input {
-    width: 28rem;
+    flex-grow: 1;
   }
   .number-representation {
     /* So they don't chane width when thir value changes. */

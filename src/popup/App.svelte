@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import defaultSettings from '../defaultSettings.json';
   import RangeSlider from './RangeSlider';
+  import Chart from './Chart';
   import throttle from 'lodash.throttle';
 
   let settings = { ...defaultSettings };
@@ -27,7 +28,17 @@
     settings.soundedSpeed = 1.1;
   }
 
-  let currVolume = 0;
+  const telemetryUpdatePeriod = 0.02;
+  const telemetryHistoryMaxLengthSeconds = 3;
+  const telemetryHistoryMaxLengthRecords = Math.floor(telemetryHistoryMaxLengthSeconds / telemetryUpdatePeriod);
+  const telemetryHistory = [];
+  let disposeOfOutdatedTelemetry = () => {
+    if (telemetryHistory.length >= telemetryHistoryMaxLengthRecords - 1) {
+      disposeOfOutdatedTelemetry = () => telemetryHistory.shift();
+    }
+  };
+  // $: lastTelemetryHistoryEl = telemetryHistory[telemetryHistory.length - 1]
+  // $: currVolume = lastTelemetryHistoryEl && lastTelemetryHistoryEl.volume || 0;
   (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
@@ -35,17 +46,20 @@
     // script should send a message for when it is ready to accept connections?
     const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
     const volumeInfoPort = chrome.tabs.connect(tabs[0].id, { name: 'telemetry' });
-    const getTelemetryAndScheduleAnother = () => {
-      volumeInfoPort.postMessage('getTelemetry');
-      requestAnimationFrame(getTelemetryAndScheduleAnother);
-    }
     volumeInfoPort.onMessage.addListener(msg => {
       if (msg) {
-        currVolume = msg.volume;
+        disposeOfOutdatedTelemetry();
+        telemetryHistory.push(msg);
+        telemetryHistory = telemetryHistory;
+        if (process.env.NODE_ENV !== 'production') {
+          if (telemetryHistory.length > telemetryHistoryMaxLengthRecords) {
+            console.error('`telemetryHistory` max size exceeded. May be a memory leak.');
+          }
+        }
       }
     });
     // TODO don't spam messages if the controller is not there.
-    getTelemetryAndScheduleAnother();
+    setInterval(() => volumeInfoPort.postMessage('getTelemetry'), telemetryUpdatePeriod * 1000);
   })();
 
   function saveSettings(settings) {
@@ -70,7 +84,11 @@
   >
   <span>Enabled</span>
 </label>
-<label>Volume</label>
+<Chart
+  history={telemetryHistory}
+  volumeThreshold={settings.volumeThreshold}
+/>
+<!-- <label>Volume</label>
 <div class="volume-meter-wrapper">
   <meter
     value={currVolume}
@@ -79,7 +97,7 @@
   <span
     class="volume-meter-number-representation"
   >{currVolume.toFixed(3)}</span>
-</div>
+</div> -->
 <RangeSlider
   label="Volume threshold"
   value={settings.volumeThreshold}
@@ -162,21 +180,6 @@ Also min should be 0 for the same reason. -->
   }
   .enabled-input > span {
     margin: 0 0.5rem;
-  }
-
-  .volume-meter-wrapper {
-    display: flex;
-  }
-  .volume-meter-wrapper > meter {
-    flex-grow: 1;
-    /* Adjusted so it looks better on Windows. TODO make a custom one so it's uniform? */
-    height: 1.3rem;
-    padding: 0 0.25rem;
-  }
-  .volume-meter-number-representation {
-    /* So they don't chane width when thir value changes. */
-    min-width: var(--number-representation-min-width);
-    text-align: end;
   }
 
   .enable-experimental-features-field {
