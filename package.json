@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "lodash.throttle": "^4.1.1",
+    "smoothie": "^1.35.0",
     "tone": "^14.7.12"
   },
   "devDependencies": {

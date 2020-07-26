@@ -1862,6 +1862,11 @@ slash@^3.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
+smoothie@^1.35.0:
+  version "1.35.0"
+  resolved "https://registry.yarnpkg.com/smoothie/-/smoothie-1.35.0.tgz#91dff7f22ec770044c7e6a1323a694a4fd96d001"
+  integrity sha512-tA+p9hDOeLOkETO6HyTgo3ZzGF2mHOGS+Vbc9d9M/iHMlSIsQvVJYuOBIYW21naaAi+eU1NxvVDQ8V9UM56hvQ==
+
 snapdragon-node@^2.0.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/snapdragon-node/-/snapdragon-node-2.1.1.tgz#6c175f86ff14bdb0724563e8f3c1b021a286853b"
