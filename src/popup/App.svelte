@@ -74,16 +74,6 @@
   {latestTelemetryRecord}
   volumeThreshold={settings.volumeThreshold}
 />
-<!-- <label>Volume</label>
-<div class="volume-meter-wrapper">
-  <meter
-    value={currVolume}
-    max={maxVolume}
-  ></meter>
-  <span
-    class="volume-meter-number-representation"
-  >{currVolume.toFixed(3)}</span>
-</div> -->
 <RangeSlider
   label="Volume threshold"
   value={settings.volumeThreshold}
