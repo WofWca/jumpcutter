@@ -50,7 +50,7 @@
         scales: {
           xAxes: [{
             display: false,
-            type: 'time',
+            // type: 'time',
           }],
           yAxes: [{
             ticks: {

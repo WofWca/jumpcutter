@@ -36,6 +36,12 @@ module.exports = {
     ],
   },
 
+  externals: {
+    // To exclude `moment.js` from the popup build, as Chart.js requires it by default, even when it's not used.
+    // https://www.chartjs.org/docs/latest/getting-started/integration.html#bundlers-webpack-rollup-etc.
+    moment: 'moment',
+  },
+
   entry: {
     content: './src/content/main.js',
     popup: './src/popup/main.js',
