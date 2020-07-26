@@ -37,8 +37,6 @@
       disposeOfOutdatedTelemetry = () => telemetryHistory.shift();
     }
   };
-  // $: lastTelemetryHistoryEl = telemetryHistory[telemetryHistory.length - 1]
-  // $: currVolume = lastTelemetryHistoryEl && lastTelemetryHistoryEl.volume || 0;
   (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
