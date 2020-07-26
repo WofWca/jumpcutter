@@ -1,107 +1,76 @@
 <script>
   import { onMount } from 'svelte';
-  import Chart from 'chart.js';
+  import { SmoothieChart, TimeSeries, IHorizontalLine } from 'smoothie';
 
-  export let history;
+  export let latestTelemetryRecord;
   export let volumeThreshold;
 
   let canvasEl;
 
-  $: volumes = history.map(({ volume }) => volume);
-  $: lastVolume = volumes[volumes.length - 1] || 0;
-  // TODO just get datasets and labels as separate arrays?
-  $: labels = history.map(({ contextTime }) => contextTime);
+  $: lastVolume = latestTelemetryRecord && latestTelemetryRecord.volume || 0;
 
-
-  let chart = null;
-  const chartVolumeDataset = {
-    label: 'Volume',
-    data: [],
-    steppedLine: true,
-    // RGB taken from Audacity.
-    borderColor: 'rgba(100, 100, 220, 0.8)',
-    backgroundColor: 'rgba(100, 100, 220, 0.3)',
-    borderWidth: 1,
-    pointRadius: 0,
-  };
-  const chartVolumeThresholdDataset = {
-    label: 'Volume Threshold',
-    data: [],
-    fill: false,
+  let smoothie;
+  let volumeSeries;
+  /**
+   * @type {IHorizontalLine}
+   */
+  const volumeHorizontalLine = {
+    color: '#f44',
   };
   onMount(() => {
-    const ctx = canvasEl.getContext('2d');
-
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [chartVolumeDataset, chartVolumeThresholdDataset],
+    // TODO make all these numbers customizable.
+    smoothie = new SmoothieChart({
+      millisPerPixel: 20,
+      interpolation: 'linear',
+      // responsive: true, ?
+      grid: {
+        fillStyle: '#fff',
+        strokeStyle: '#eaeaea',
+        verticalSections: 0,
+        millisPerLine: 1000,
+        sharpLines: true,
       },
-      options: {
-        scales: {
-          xAxes: [{
-            display: false,
-            // type: 'time',
-          }],
-          yAxes: [{
-            ticks: {
-              min: 0,
-            },
-            gridLines: {
-              display: false,
-            }
-          }],
-        },
-
-        // TODO: `responsive: false`, and set fixed width for performance?
-        animation: {
-          duration: 0,
-        },
-        hover: {
-          animationDuration: 0,
-        },
-        responsiveAnimationDuration: 0
+      horizontalLines: [volumeHorizontalLine],
+      labels: {
+        disabled: true,
       },
+      minValue: 0,
+      scaleSmoothing: 1,
+    });
+    smoothie.streamTo(canvasEl, );
+    volumeSeries = new TimeSeries();
+    smoothie.addTimeSeries(volumeSeries, {
+      // RGB taken from Audacity.
+      lineWidth: 1,
+      strokeStyle: 'rgba(100, 100, 220, 0.7)',
+      fillStyle: 'rgba(100, 100, 220, 0.2)',
     });
   });
-  
-  let lastRAFFulfilled = true;
-  function throttledUpdateChart() {
-    // Don't call `update` if it has already been scheduled for the next frame.
-    // Not sure if chart.js does this internally. TODO?
-    if (lastRAFFulfilled) {
-      requestAnimationFrame(() => {
-        chart.update();
-        lastRAFFulfilled = true;
-      });
-      lastRAFFulfilled = false;
+  // Making these weird wrappers so these reactive blocks are not run on each tick, because apparently putting these
+  // statements directly inside them makes them behave like that.
+  let onDataUpdated = latestTelemetryRecord => {
+    if (!smoothie || !latestTelemetryRecord) {
+      return;
+    } else {
+      onDataUpdated = latestTelemetryRecord => volumeSeries.append(Date.now(), latestTelemetryRecord.volume);
+      onDataUpdated(latestTelemetryRecord);
     }
   }
-  // Making these weird wrappers to not run these reactive blocks on each tick, because apparently putting these
-  // statements directly inside them makes them behave like that.
-  function onDataUpdated(volumes, labels) {
-    if (!chart) return;
-    chartVolumeDataset.data = volumes;
-    chart.data.labels = labels;
+  $: onDataUpdated(latestTelemetryRecord);
+  $: maxVolume = volumeThreshold * 6 || undefined;
+  function onVolumeThresholdUpdated(volumeThreshold, maxVolume) {
+    if (!smoothie) return;
+    volumeHorizontalLine.value = volumeThreshold;
+    smoothie.options.maxValue = maxVolume;
   }
-  $: {
-    onDataUpdated(volumes, labels);
-    throttledUpdateChart();
-  }
-  $: maxVolume = volumeThreshold * 10 || undefined;
-  function onVolumeUpdated(maxVolume, volumeThreshold) {
-    if (!chart) return;
-    chart.options.scales.yAxes[0].ticks.max = maxVolume;
-    chartVolumeThresholdDataset.data = [volumeThreshold];
-    throttledUpdateChart();
-  }
-  $: {
-    onVolumeUpdated(maxVolume, volumeThreshold);
-  }
+  $: onVolumeThresholdUpdated(volumeThreshold, maxVolume);
 </script>
 
-<canvas bind:this={canvasEl}>
+<canvas
+  bind:this={canvasEl}
+  width=400
+  height=200
+>
   <label>
     Volume
     <meter

@@ -28,15 +28,8 @@
     settings.soundedSpeed = 1.1;
   }
 
+  let latestTelemetryRecord;
   const telemetryUpdatePeriod = 0.02;
-  const telemetryHistoryMaxLengthSeconds = 3;
-  const telemetryHistoryMaxLengthRecords = Math.floor(telemetryHistoryMaxLengthSeconds / telemetryUpdatePeriod);
-  const telemetryHistory = [];
-  let disposeOfOutdatedTelemetry = () => {
-    if (telemetryHistory.length >= telemetryHistoryMaxLengthRecords - 1) {
-      disposeOfOutdatedTelemetry = () => telemetryHistory.shift();
-    }
-  };
   (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
@@ -46,18 +39,13 @@
     const volumeInfoPort = chrome.tabs.connect(tabs[0].id, { name: 'telemetry' });
     volumeInfoPort.onMessage.addListener(msg => {
       if (msg) {
-        disposeOfOutdatedTelemetry();
-        telemetryHistory.push(msg);
-        telemetryHistory = telemetryHistory;
-        if (process.env.NODE_ENV !== 'production') {
-          if (telemetryHistory.length > telemetryHistoryMaxLengthRecords) {
-            console.error('`telemetryHistory` max size exceeded. May be a memory leak.');
-          }
-        }
+        latestTelemetryRecord = msg;
       }
     });
     // TODO don't spam messages if the controller is not there.
-    setInterval(() => volumeInfoPort.postMessage('getTelemetry'), telemetryUpdatePeriod * 1000);
+    setInterval(() => {
+      volumeInfoPort.postMessage('getTelemetry')
+    }, telemetryUpdatePeriod * 1000);
   })();
 
   function saveSettings(settings) {
@@ -83,7 +71,7 @@
   <span>Enabled</span>
 </label>
 <Chart
-  history={telemetryHistory}
+  {latestTelemetryRecord}
   volumeThreshold={settings.volumeThreshold}
 />
 <!-- <label>Volume</label>
