@@ -52,6 +52,9 @@ module.exports = {
       }
       return `${chunkName}/main.js`;
     },
+    // Added this so 'popup/popup.html' can load chunks (which are located in 'dist/'). May want to instead move
+    // 'popup.html' to 'dist/popup.html'.
+    publicPath: '/',
   },
 
   plugins: [

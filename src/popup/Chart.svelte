@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { SmoothieChart, TimeSeries, IHorizontalLine } from 'smoothie';
+  // import { IHorizontalLine } from 'smoothie'; // Uncommenting this makes it bundle it into this file
 
   export let latestTelemetryRecord;
   export let volumeThreshold;
@@ -17,7 +17,12 @@
   const volumeHorizontalLine = {
     color: '#f44',
   };
-  onMount(() => {
+  async function initSmoothie() {
+    const { SmoothieChart, TimeSeries } = await import(
+      /* webpackPreload: true */
+      /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
+      'smoothie'
+    );
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
       millisPerPixel: 20,
@@ -45,7 +50,8 @@
       strokeStyle: 'rgba(100, 100, 220, 0.7)',
       fillStyle: 'rgba(100, 100, 220, 0.2)',
     });
-  });
+  }
+  onMount(initSmoothie);
   // Making these weird wrappers so these reactive blocks are not run on each tick, because apparently putting these
   // statements directly inside them makes them behave like that.
   function updateSmoothieData() {
