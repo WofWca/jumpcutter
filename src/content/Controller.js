@@ -407,11 +407,11 @@ export default class Controller {
       return null;
     }
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
-    const volume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
+    const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
     return {
       videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
-      volume,
+      inputVolume,
     };
   }
 }

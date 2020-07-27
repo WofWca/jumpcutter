@@ -7,7 +7,7 @@
 
   let canvasEl;
 
-  $: lastVolume = latestTelemetryRecord && latestTelemetryRecord.volume || 0;
+  $: lastVolume = latestTelemetryRecord && latestTelemetryRecord.inputVolume || 0;
 
   let smoothie;
   let volumeSeries;
@@ -55,7 +55,7 @@
   // Making these weird wrappers so these reactive blocks are not run on each tick, because apparently putting these
   // statements directly inside them makes them behave like that.
   function updateSmoothieData() {
-    volumeSeries.append(Date.now(), latestTelemetryRecord.volume)
+    volumeSeries.append(Date.now(), latestTelemetryRecord.inputVolume)
   }
   $: if (smoothie && latestTelemetryRecord) {
     latestTelemetryRecord;
