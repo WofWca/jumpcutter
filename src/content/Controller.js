@@ -408,10 +408,13 @@ export default class Controller {
     }
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
+    const { playbackRate } = this.element;
     return {
       videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
+      actualPlaybackRateValue: playbackRate,
+      actualPlaybackRateName: ['silenceSpeed', 'soundedSpeed'].find(key => this.settings[key] === playbackRate),
     };
   }
 }
