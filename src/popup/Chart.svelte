@@ -1,11 +1,14 @@
 <script>
   import { onMount } from 'svelte';
-  // import { IHorizontalLine } from 'smoothie'; // Uncommenting this makes it bundle it into this file
 
   export let latestTelemetryRecord;
   export let volumeThreshold;
 
   let canvasEl;
+  const canvasWidth = 400;
+  const millisPerPixel = 10;
+  // May not be precise (and doesn't need to be currently).
+  const bufferDurationMillliseconds = Math.ceil(canvasWidth * millisPerPixel);
 
   $: lastVolume = latestTelemetryRecord && latestTelemetryRecord.inputVolume || 0;
 
@@ -14,12 +17,12 @@
   // Need two series because they're of different colors.
   let soundedSpeedSeries;
   let silenceSpeedSeries;
+  // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
+  // lines, so it's poorly visible.
+  let volumeThresholdSeries;
   /**
    * @type {IHorizontalLine}
    */
-  const volumeHorizontalLine = {
-    color: '#f44',
-  };
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
@@ -28,7 +31,7 @@
     );
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
-      millisPerPixel: 10,
+      millisPerPixel,
       interpolation: 'linear',
       // responsive: true, ?
       grid: {
@@ -38,7 +41,6 @@
         millisPerLine: 1000,
         sharpLines: true,
       },
-      horizontalLines: [volumeHorizontalLine],
       labels: {
         disabled: true,
       },
@@ -49,6 +51,7 @@
     volumeSeries = new TimeSeries();
     soundedSpeedSeries = new TimeSeries();
     silenceSpeedSeries = new TimeSeries();
+    volumeThresholdSeries = new TimeSeries();
     // Order determines z-index
     smoothie.addTimeSeries(soundedSpeedSeries, {
       lineWidth: 0,
@@ -63,6 +66,11 @@
       lineWidth: 1,
       strokeStyle: 'rgba(100, 100, 220, 0)',
       fillStyle: 'rgba(100, 100, 220, 0.8)',
+    });
+    smoothie.addTimeSeries(volumeThresholdSeries, {
+      lineWidth: 2,
+      strokeStyle: '#f44',
+      fillStyle: 'transparent',
     });
   }
   onMount(initSmoothie);
@@ -91,7 +99,12 @@
   }
   $: maxVolume = volumeThreshold * 6 || undefined;
   function updateSmoothieVolumeThreshold() {
-    volumeHorizontalLine.value = volumeThreshold;
+    volumeThresholdSeries.clear();
+    // Not sure if using larger values makes it consume more memory.
+    volumeThresholdSeries.append(Date.now() - bufferDurationMillliseconds, volumeThreshold);
+    const largeNumber = 1000 * 60 * 60 * 24;
+    volumeThresholdSeries.append(Date.now() + largeNumber, volumeThreshold);
+
     smoothie.options.maxValue = maxVolume;
   }
   $: if (smoothie) {
