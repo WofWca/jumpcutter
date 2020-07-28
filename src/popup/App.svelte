@@ -115,7 +115,7 @@ Also min should be 0 for the same reason. -->
 </label>
 {#if settings.enableExperimentalFeatures}
 <RangeSlider
-  label="Before margin"
+  label="Margin before"
   value={settings.marginBefore}
   on:input={({ detail }) => settings.marginBefore = detail}
   min="0"
