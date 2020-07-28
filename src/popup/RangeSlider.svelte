@@ -1,0 +1,51 @@
+<script>
+  import { createEventDispatcher } from 'svelte';
+
+  export let value;
+  export let label;
+  // export let max;
+  // export let min;
+  // export let step;
+
+  const dispatch = createEventDispatcher();
+
+  $: if (typeof value !== 'number') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`Expected \`value\` prop to be a number, got ${value}`);
+    }
+  }
+</script>
+
+<label>
+  <span>{label}</span>
+  <div class="range-and-value">
+    <input
+      type="range"
+      {...$$props}
+      on:input={e => dispatch('input', parseFloat(e.target.value))}
+    >
+    <span
+      aria-hidden="true"
+      class="number-representation"
+    >{value.toFixed(3)}</span>
+  </div>
+</label>
+
+<style>
+  label {
+    display: block;
+    margin-top: 1rem;
+  }
+  .range-and-value {
+    display: flex;
+    align-items: center;
+  }
+  input {
+    flex-grow: 1;
+  }
+  .number-representation {
+    /* So they don't chane width when thir value changes. */
+    min-width: var(--number-representation-min-width);
+    text-align: end;
+  }
+</style>

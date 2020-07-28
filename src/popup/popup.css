@@ -1,0 +1,12 @@
+:root {
+  --number-representation-min-width: 6ch;
+}
+
+html, body {
+  font-size: 12px;
+}
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  background: #FBFBFB;
+}
