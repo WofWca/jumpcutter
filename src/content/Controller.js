@@ -121,7 +121,7 @@ export default class Controller {
       }
       outVolumeFilter.connect(analyzerOut);
     }
-    this._setStateAccordingToSettings(this.settings);
+    this._setStateAccordingToNewSettings();
 
     this._lastScheduledStretcherDelayReset = null;
 
@@ -339,13 +339,12 @@ export default class Controller {
    * Can be called either when initializing or when updating settings.
    * TODO It's more performant to only update the things that rely on settings that changed, in a reactive way, but for
    * now it's like this so its harder to forget to update something.
-   * @param {Settings} newSettings
    * @param {Settings | null} oldSettings - better to provide this so the current state can be reconstructed and
    * respected (e.g. if a silent part is currently playing it wont change speed to sounded speed as it would if the
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  _setStateAccordingToSettings(newSettings, oldSettings = null) {
+  _setStateAccordingToNewSettings(oldSettings = null) {
     if (!oldSettings) {
       this.element.playbackRate = this.settings.soundedSpeed;
     } else {
@@ -353,18 +352,18 @@ export default class Controller {
         speedSettingName => this.element.playbackRate === oldSettings[speedSettingName]
       );
       if (currSpeedName) {
-        this.element.playbackRate = newSettings[currSpeedName];
+        this.element.playbackRate = this.settings[currSpeedName];
       }
     }
 
-    this._silenceDetectorNode.parameters.get('volumeThreshold').value = newSettings.volumeThreshold;
+    this._silenceDetectorNode.parameters.get('volumeThreshold').value = this.settings.volumeThreshold;
     this._silenceDetectorNode.parameters.get('durationThreshold').value =
-      Controller._getSilenceDetectorNodeDurationThreshold(newSettings.marginBefore, newSettings.soundedSpeed);
+      Controller._getSilenceDetectorNodeDurationThreshold(this.settings.marginBefore, this.settings.soundedSpeed);
     if (isStretcherEnabled(this.settings)) {
       this._lookahead.delayTime.value = getNewLookaheadDelay(
-        newSettings.marginBefore,
-        newSettings.soundedSpeed,
-        newSettings.silenceSpeed
+        this.settings.marginBefore,
+        this.settings.soundedSpeed,
+        this.settings.silenceSpeed
       );
       this._stretcher.setDelay(
         getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
@@ -393,9 +392,8 @@ export default class Controller {
       }
     }
 
-    this._setStateAccordingToSettings(newSettings, oldSettings);
-
     this.settings = newSettings;
+    this._setStateAccordingToNewSettings(oldSettings);
   }
 
   static _getSilenceDetectorNodeDurationThreshold(marginBefore, soundedSpeed) {
