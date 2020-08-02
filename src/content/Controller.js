@@ -302,13 +302,7 @@ export default class Controller {
     };
 
     if (logging) {
-      this._log({
-        type: 'reset',
-        startValue: stretcherDelayStartValue,
-        startTime: startTime,
-        endTime: endTime,
-        lastScheduledStretch: this._lastScheduledStretch,
-      });
+      this._log({ type: 'reset', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
 
