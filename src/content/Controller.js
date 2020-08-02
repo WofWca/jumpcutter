@@ -405,6 +405,7 @@ export default class Controller {
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
     const { playbackRate } = this.element;
     return {
+      unixTime: Date.now() / 1000,
       videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
