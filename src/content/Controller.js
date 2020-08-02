@@ -123,7 +123,7 @@ export default class Controller {
     }
     this._setStateAccordingToNewSettings();
 
-    this._lastScheduledStretcherDelayReset = null;
+    this._lastScheduledStretch = null;
 
     let logArr, logBuffer;
     if (logging) {
@@ -180,8 +180,10 @@ export default class Controller {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
+    const lastScheduledStretcherDelayReset = this._lastScheduledStretch;
+
     const lastSilenceSpeedLastsForRealtime =
-      eventTime - this._lastScheduledStretcherDelayReset.newSpeedStartInputTime;
+      eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
     const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
 
     const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
@@ -203,7 +205,7 @@ export default class Controller {
     const marginBeforeStartOutputTime = getMomentOutputTime(
       marginBeforeStartInputTime,
       this._lookahead.delayTime.value,
-      this._lastScheduledStretcherDelayReset
+      lastScheduledStretcherDelayReset
     );
     const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
     const marginBeforeStartOutputTimeStretcherDelay =
@@ -219,10 +221,10 @@ export default class Controller {
     // This is also the reason why `getMomentOutputTime` function is so long.
     // Let's find this breakpoint.
 
-    if (marginBeforeStartOutputTime < this._lastScheduledStretcherDelayReset.endTime) {
+    if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
       // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
       this._stretcher.interruptLastScheduledStretch(
-        // A.k.a. `this._lastScheduledStretcherDelayReset.startTime`
+        // A.k.a. `lastScheduledStretcherDelayReset.startTime`
         marginBeforeStartOutputTimeStretcherDelay,
         marginBeforeStartOutputTime
       );
@@ -249,21 +251,22 @@ export default class Controller {
     );
     // I think currently it should always be equal to the max delay.
     const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-    this._stretcher.stretch(
-      marginBeforeStartOutputTimeStretcherDelay,
-      finalStretcherDelay,
-      marginBeforePartAtSilenceSpeedStartOutputTime,
-      // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-      eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
-    );
+
+    const startValue = marginBeforeStartOutputTimeStretcherDelay;
+    const endValue = finalStretcherDelay;
+    const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
+    // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
+    const endTime = eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay);
+    this._stretcher.stretch(startValue, endValue, startTime, endTime);
+    this._lastScheduledStretch = {
+      newSpeedStartInputTime: eventTime,
+      startValue,
+      endValue,
+      startTime,
+      endTime,
+    }
     if (logging) {
-      this._log({
-        type: 'stretch',
-        startValue: marginBeforeStartOutputTimeStretcherDelay,
-        endValue: finalStretcherDelay,
-        startTime: marginBeforePartAtSilenceSpeedStartOutputTime,
-        endTime: eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
-      });
+      this._log({ type: 'stretch', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
   /**
@@ -290,7 +293,7 @@ export default class Controller {
       startTime,
       endTime
     );
-    this._lastScheduledStretcherDelayReset = {
+    this._lastScheduledStretch = {
       newSpeedStartInputTime: eventTime,
       startTime,
       startValue: stretcherDelayStartValue,
@@ -304,7 +307,7 @@ export default class Controller {
         startValue: stretcherDelayStartValue,
         startTime: startTime,
         endTime: endTime,
-        lastScheduledStretcherDelayReset: this._lastScheduledStretcherDelayReset,
+        lastScheduledStretch: this._lastScheduledStretch,
       });
     }
   }
