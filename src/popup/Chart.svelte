@@ -20,9 +20,6 @@
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries;
-  /**
-   * @type {IHorizontalLine}
-   */
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
