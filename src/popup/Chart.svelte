@@ -75,18 +75,44 @@
   function sToMs(seconds) {
     return seconds * 1000;
   }
+  const smoothieAtomicTime = 0.001;
+  // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
+  // the previous value on that time.
+  // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
+  // const unreachableFutureMomentMs = Date.now() + 1000 * 60 * 60 * 24 * 365 * 1e10;
+  const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
 
   // Making these weird wrappers so these reactive blocks are not run on each tick, because apparently putting these
   // statements directly inside them makes them behave like that.
-  function updateSmoothieData() {
+  function updateVolumeSeries() {
     const r = latestTelemetryRecord;
+    volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
+  }
+  $: if (smoothie && latestTelemetryRecord) {
+    latestTelemetryRecord;
+    updateVolumeSeries();
+  }
+  function updateSpeedSeries() {
+    const r = latestTelemetryRecord;
+    const speedName = r.lastActualPlaybackRateChange.name;
     // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
     // too far beyond the chart bounds, the line is hidden.
     const hugeNumber = 9999;
-    volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
-    soundedSpeedSeries.append(sToMs(r.unixTime), r.actualPlaybackRateName === 'soundedSpeed' ? hugeNumber : 0);
-    silenceSpeedSeries.append(sToMs(r.unixTime), r.actualPlaybackRateName === 'silenceSpeed' ? hugeNumber : 0);
-    
+    const timeMs = sToMs(r.unixTime + (r.lastActualPlaybackRateChange.time - r.contextTime));
+    function getOldSpeedSeriesVal(newVal) {
+      return newVal === hugeNumber ? 0 : hugeNumber;
+    }
+    const soundedNewVal = speedName === 'sounded' ? hugeNumber : 0;
+    const soundedOldVal = getOldSpeedSeriesVal(soundedNewVal);
+    const silenceNewVal = speedName === 'silence' ? hugeNumber : 0;
+    const silenceOldVal = getOldSpeedSeriesVal(silenceNewVal);
+    soundedSpeedSeries.append(timeMs - smoothieAtomicTime, soundedOldVal);
+    silenceSpeedSeries.append(timeMs - smoothieAtomicTime, silenceOldVal);
+    soundedSpeedSeries.append(timeMs,                      soundedNewVal);
+    silenceSpeedSeries.append(timeMs,                      silenceNewVal);
+    soundedSpeedSeries.append(unreachableFutureMomentMs,   soundedNewVal);
+    silenceSpeedSeries.append(unreachableFutureMomentMs,   silenceNewVal);
+
     if (process.env.NODE_ENV !== 'production') {
       if (r.inputVolume > hugeNumber) {
         console.warn('hugeNumber is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
@@ -94,17 +120,27 @@
       }
     }
   }
-  $: if (smoothie && latestTelemetryRecord) {
-    latestTelemetryRecord;
-    updateSmoothieData();
+  function arePlaybackRateChangeObjectsEqual(a, b) {
+    return (a && a.time) === (b && b.time);
+  }
+  let lastActualPlaybackRateChange;
+  $: if (
+    smoothie
+    && latestTelemetryRecord
+    && !arePlaybackRateChangeObjectsEqual(
+      lastActualPlaybackRateChange,
+      latestTelemetryRecord.lastActualPlaybackRateChange
+    )
+  ) {
+    lastActualPlaybackRateChange = latestTelemetryRecord.lastActualPlaybackRateChange;
+    updateSpeedSeries();
   }
   $: maxVolume = volumeThreshold * 6 || undefined;
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     // Not sure if using larger values makes it consume more memory.
     volumeThresholdSeries.append(Date.now() - bufferDurationMillliseconds, volumeThreshold);
-    const largeNumber = 1000 * 60 * 60 * 24;
-    volumeThresholdSeries.append(Date.now() + largeNumber, volumeThreshold);
+    volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
 
     smoothie.options.maxValue = maxVolume;
   }

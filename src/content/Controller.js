@@ -146,13 +146,13 @@ export default class Controller {
     this._silenceDetectorNode.port.onmessage = (msg) => {
       const { time: eventTime, type: silenceStartOrEnd } = msg.data;
       if (silenceStartOrEnd === 'silenceEnd') {
-        this.element.playbackRate = this.settings.soundedSpeed;
+        this._setSpeedAndLog('sounded');
 
         if (isStretcherEnabled(this.settings)) {
           this._doOnSilenceEndStretcherStuff(eventTime);
         }
       } else {
-        this.element.playbackRate = this.settings.silenceSpeed;
+        this._setSpeedAndLog('silence');
 
         if (isStretcherEnabled(this.settings)) {
           this._doOnSilenceStartStretcherStuff(eventTime);
@@ -341,7 +341,7 @@ export default class Controller {
    */
   _setStateAccordingToNewSettings(oldSettings = null) {
     if (!oldSettings) {
-      this.element.playbackRate = this.settings.soundedSpeed;
+      this._setSpeedAndLog('sounded');
     } else {
       const currSpeedName = ['silenceSpeed', 'soundedSpeed'].find(
         speedSettingName => this.element.playbackRate === oldSettings[speedSettingName]
@@ -395,20 +395,31 @@ export default class Controller {
     return getRealtimeMargin(marginBefore, soundedSpeed);
   }
 
+  /**
+   * @param {'sounded' | 'silence'} speedName
+   */
+  _setSpeedAndLog(speedName) {
+    const speedVal = this.settings[`${speedName}Speed`];
+    this.element.playbackRate = speedVal;
+    this._lastActualPlaybackRateChange = {
+      time: this.audioContext.currentTime,
+      value: speedVal,
+      name: speedName,
+    };
+  }
+
   getTelemetry() {
     if (!this.initialized) {
       return null;
     }
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
-    const { playbackRate } = this.element;
     return {
       unixTime: Date.now() / 1000,
       videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
-      actualPlaybackRateValue: playbackRate,
-      actualPlaybackRateName: ['silenceSpeed', 'soundedSpeed'].find(key => this.settings[key] === playbackRate),
+      lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
     };
   }
 }
