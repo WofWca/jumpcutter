@@ -82,18 +82,8 @@
   // const unreachableFutureMomentMs = Date.now() + 1000 * 60 * 60 * 24 * 365 * 1e10;
   const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
 
-  // Making these weird wrappers so these reactive blocks are not run on each tick, because apparently putting these
-  // statements directly inside them makes them behave like that.
-  function updateVolumeSeries() {
-    const r = latestTelemetryRecord;
-    volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
-  }
-  $: if (smoothie && latestTelemetryRecord) {
-    latestTelemetryRecord;
-    updateVolumeSeries();
-  }
-  function updateSpeedSeries() {
-    const r = latestTelemetryRecord;
+  function updateSpeedSeries(newTelemetryRecord) {
+    const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
     // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
     // too far beyond the chart bounds, the line is hidden.
@@ -119,22 +109,34 @@
           + ' background, but now it has been exceeded by inutVolume value');
       }
     }
+  };
+
+  let lastHandledTelemetryRecord;
+  function onNewTelemetry(newTelemetryRecord) {
+    if (!smoothie || !newTelemetryRecord) {
+      return;
+    }
+    const r = newTelemetryRecord;
+
+    (function updateVolumeSeries() {
+      volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
+    })();
+
+    function arePlaybackRateChangeObjectsEqual(a, b) {
+      return (a && a.time) === (b && b.time);
+    }
+    const speedChanged = !arePlaybackRateChangeObjectsEqual(
+      lastHandledTelemetryRecord && lastHandledTelemetryRecord.lastActualPlaybackRateChange,
+      newTelemetryRecord.lastActualPlaybackRateChange,
+    );
+    if (speedChanged) {
+      updateSpeedSeries(r);
+    }
+
+    lastHandledTelemetryRecord = newTelemetryRecord;
   }
-  function arePlaybackRateChangeObjectsEqual(a, b) {
-    return (a && a.time) === (b && b.time);
-  }
-  let lastActualPlaybackRateChange;
-  $: if (
-    smoothie
-    && latestTelemetryRecord
-    && !arePlaybackRateChangeObjectsEqual(
-      lastActualPlaybackRateChange,
-      latestTelemetryRecord.lastActualPlaybackRateChange
-    )
-  ) {
-    lastActualPlaybackRateChange = latestTelemetryRecord.lastActualPlaybackRateChange;
-    updateSpeedSeries();
-  }
+  $: onNewTelemetry(latestTelemetryRecord);
+
   $: maxVolume = volumeThreshold * 6 || undefined;
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
