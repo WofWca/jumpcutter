@@ -49,8 +49,6 @@ export default class Controller {
     // executor?
     this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
 
-    this.element.playbackRate = this.settings.soundedSpeed;
-
     const ctx = audioContext;
     this.audioContext = ctx;
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
