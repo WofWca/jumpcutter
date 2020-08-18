@@ -75,6 +75,9 @@
   function sToMs(seconds) {
     return seconds * 1000;
   }
+  // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
+  // too far beyond the chart bounds, the line is hidden.
+  const offTheChartsValue = 9999;
   const smoothieAtomicTime = 0.001;
   // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
   // the previous value on that time.
@@ -85,16 +88,13 @@
   function updateSpeedSeries(newTelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
-    // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
-    // too far beyond the chart bounds, the line is hidden.
-    const hugeNumber = 9999;
     const timeMs = sToMs(r.unixTime + (r.lastActualPlaybackRateChange.time - r.contextTime));
     function getOldSpeedSeriesVal(newVal) {
-      return newVal === hugeNumber ? 0 : hugeNumber;
+      return newVal === offTheChartsValue ? 0 : offTheChartsValue;
     }
-    const soundedNewVal = speedName === 'sounded' ? hugeNumber : 0;
+    const soundedNewVal = speedName === 'sounded' ? offTheChartsValue : 0;
     const soundedOldVal = getOldSpeedSeriesVal(soundedNewVal);
-    const silenceNewVal = speedName === 'silence' ? hugeNumber : 0;
+    const silenceNewVal = speedName === 'silence' ? offTheChartsValue : 0;
     const silenceOldVal = getOldSpeedSeriesVal(silenceNewVal);
     soundedSpeedSeries.append(timeMs - smoothieAtomicTime, soundedOldVal);
     silenceSpeedSeries.append(timeMs - smoothieAtomicTime, silenceOldVal);
@@ -104,8 +104,8 @@
     silenceSpeedSeries.append(unreachableFutureMomentMs,   silenceNewVal);
 
     if (process.env.NODE_ENV !== 'production') {
-      if (r.inputVolume > hugeNumber) {
-        console.warn('hugeNumber is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
+      if (r.inputVolume > offTheChartsValue) {
+        console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
           + ' background, but now it has been exceeded by inutVolume value');
       }
     }
