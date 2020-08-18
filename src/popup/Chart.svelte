@@ -89,6 +89,18 @@
   function sToMs(seconds) {
     return seconds * 1000;
   }
+  function toUnixTime(audioContextTime, anyTelemetryRecord) {
+    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
+    // time everywhere?
+    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
+    return audioContextCreationTimeUnix + audioContextTime;
+  }
+  /**
+   * @param {Parameters<toUnixTime>} args
+   */
+  function toUnixTimeMs(...args) {
+    return sToMs(toUnixTime(...args));
+  }
   // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
   // too far beyond the chart bounds, the line is hidden.
   const offTheChartsValue = 9999;
@@ -102,7 +114,7 @@
   function updateSpeedSeries(newTelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
-    const timeMs = sToMs(r.unixTime + (r.lastActualPlaybackRateChange.time - r.contextTime));
+    const timeMs = toUnixTimeMs(r.lastActualPlaybackRateChange.time, r);
     function getOldSpeedSeriesVal(newVal) {
       return newVal === offTheChartsValue ? 0 : offTheChartsValue;
     }
@@ -127,22 +139,18 @@
 
   function updateStretchSeries(newTelemetryRecord) {
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
-    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
-    // time everywhere?
-    const stretchStartOffset = stretch.startTime - newTelemetryRecord.contextTime;
-    const stretchEndOffset = stretch.endTime - newTelemetryRecord.contextTime;
-    const stretchStartUnix = newTelemetryRecord.unixTime + stretchStartOffset;
-    const stretchEndUnix = newTelemetryRecord.unixTime + stretchEndOffset;
+    const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
+    const stretchEndUnixMs = toUnixTimeMs(stretch.endTime, newTelemetryRecord);
     const stretchOrShrink = stretch.endValue > stretch.startValue
       ? 'stretch'
       : 'shrink';
     const series = stretchOrShrink === 'stretch'
       ? stretchSeries
       : shrinkSeries;
-    series.append(sToMs(stretchStartUnix) - smoothieAtomicTime, 0);
-    series.append(sToMs(stretchStartUnix), offTheChartsValue);
-    series.append(sToMs(stretchEndUnix) - smoothieAtomicTime, offTheChartsValue);
-    series.append(sToMs(stretchEndUnix), 0);
+    series.append(stretchStartUnixMs - smoothieAtomicTime, 0);
+    series.append(stretchStartUnixMs, offTheChartsValue);
+    series.append(stretchEndUnixMs - smoothieAtomicTime, offTheChartsValue);
+    series.append(stretchEndUnixMs, 0);
   }
 
   let lastHandledTelemetryRecord;
