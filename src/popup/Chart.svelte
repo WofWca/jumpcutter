@@ -20,6 +20,10 @@
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries;
+
+  let stretchSeries;
+  let shrinkSeries;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
@@ -49,6 +53,8 @@
     soundedSpeedSeries = new TimeSeries();
     silenceSpeedSeries = new TimeSeries();
     volumeThresholdSeries = new TimeSeries();
+    stretchSeries = new TimeSeries();
+    shrinkSeries = new TimeSeries();
     // Order determines z-index
     smoothie.addTimeSeries(soundedSpeedSeries, {
       strokeStyle: 'none',
@@ -58,6 +64,14 @@
       strokeStyle: 'none',
       fillStyle: 'rgba(255, 0, 0, 0.3)',
     });
+    smoothie.addTimeSeries(stretchSeries, {
+      strokeStyle: 'none',
+      fillStyle: 'rgba(0, 255, 0, 0.4)',
+    })
+    smoothie.addTimeSeries(shrinkSeries, {
+      strokeStyle: 'none',
+      fillStyle: 'rgba(255, 0, 0, 0.4)',
+    })
     smoothie.addTimeSeries(volumeSeries, {
       // RGB taken from Audacity.
       lineWidth: 1,
@@ -111,6 +125,26 @@
     }
   };
 
+  function updateStretchSeries(newTelemetryRecord) {
+    const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
+    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
+    // time everywhere?
+    const stretchStartOffset = stretch.startTime - newTelemetryRecord.contextTime;
+    const stretchEndOffset = stretch.endTime - newTelemetryRecord.contextTime;
+    const stretchStartUnix = newTelemetryRecord.unixTime + stretchStartOffset;
+    const stretchEndUnix = newTelemetryRecord.unixTime + stretchEndOffset;
+    const stretchOrShrink = stretch.endValue > stretch.startValue
+      ? 'stretch'
+      : 'shrink';
+    const series = stretchOrShrink === 'stretch'
+      ? stretchSeries
+      : shrinkSeries;
+    series.append(sToMs(stretchStartUnix) - smoothieAtomicTime, 0);
+    series.append(sToMs(stretchStartUnix), offTheChartsValue);
+    series.append(sToMs(stretchEndUnix) - smoothieAtomicTime, offTheChartsValue);
+    series.append(sToMs(stretchEndUnix), 0);
+  }
+
   let lastHandledTelemetryRecord;
   function onNewTelemetry(newTelemetryRecord) {
     if (!smoothie || !newTelemetryRecord) {
@@ -131,6 +165,18 @@
     );
     if (speedChanged) {
       updateSpeedSeries(r);
+    }
+
+    function areStretchObjectsEqual(stretchA, stretchB) {
+      return (stretchA && stretchA.startTime) === (stretchB && stretchB.startTime);
+    }
+    // TODO rewrite this mouthful (and the one above it) with optional chaining.
+    const newStretch = !areStretchObjectsEqual(
+      lastHandledTelemetryRecord && lastHandledTelemetryRecord.lastScheduledStretchInputTime,
+      r.lastScheduledStretchInputTime
+    );
+    if (newStretch) {
+      updateStretchSeries(r);
     }
 
     lastHandledTelemetryRecord = newTelemetryRecord;
