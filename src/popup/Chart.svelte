@@ -51,11 +51,11 @@
     volumeThresholdSeries = new TimeSeries();
     // Order determines z-index
     smoothie.addTimeSeries(soundedSpeedSeries, {
-      lineWidth: 0,
+      strokeStyle: 'none',
       fillStyle: 'rgba(0, 255, 0, 0.3)',
     });
     smoothie.addTimeSeries(silenceSpeedSeries, {
-      lineWidth: 0,
+      strokeStyle: 'none',
       fillStyle: 'rgba(255, 0, 0, 0.3)',
     });
     smoothie.addTimeSeries(volumeSeries, {
