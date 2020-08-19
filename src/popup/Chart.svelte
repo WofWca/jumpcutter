@@ -56,21 +56,25 @@
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
     // Order determines z-index
+    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
+    const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
       strokeStyle: 'none',
-      fillStyle: 'rgba(0, 255, 0, 0.3)',
+      fillStyle: soundedSpeedColor,
     });
     smoothie.addTimeSeries(silenceSpeedSeries, {
       strokeStyle: 'none',
-      fillStyle: 'rgba(255, 0, 0, 0.3)',
+      fillStyle: silenceSpeedColor,
     });
     smoothie.addTimeSeries(stretchSeries, {
       strokeStyle: 'none',
-      fillStyle: 'rgba(0, 255, 0, 0.4)',
+      // fillStyle: 'rgba(0, 255, 0, 0.4)',
+      fillStyle: soundedSpeedColor,
     })
     smoothie.addTimeSeries(shrinkSeries, {
       strokeStyle: 'none',
-      fillStyle: 'rgba(255, 0, 0, 0.4)',
+      // fillStyle: 'rgba(255, 0, 0, 0.4)',
+      fillStyle: silenceSpeedColor,
     })
     smoothie.addTimeSeries(volumeSeries, {
       // RGB taken from Audacity.
@@ -138,7 +142,7 @@
     appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
-  function updateStretchSeries(newTelemetryRecord) {
+  function updateStretchAndAdjustSpeedSeries(newTelemetryRecord) {
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
     const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
     const stretchEndUnixMs = toUnixTimeMs(stretch.endTime, newTelemetryRecord);
@@ -152,6 +156,18 @@
     series.append(stretchStartUnixMs, offTheChartsValue);
     series.append(stretchEndUnixMs - smoothieAtomicTime, offTheChartsValue);
     series.append(stretchEndUnixMs, 0);
+
+    // Don't draw actual video playback speed at that period so they don't overlap with stretches.
+    const actualPlaybackRateDuringStretch = stretchOrShrink === 'shrink'
+      ? 'sounded'
+      : 'silence';
+    appendToSpeedSeries(stretchStartUnixMs - smoothieAtomicTime, actualPlaybackRateDuringStretch);
+    silenceSpeedSeries.append(stretchStartUnixMs, 0);
+    soundedSpeedSeries.append(stretchStartUnixMs, 0);
+    silenceSpeedSeries.append(stretchEndUnixMs - smoothieAtomicTime, 0);
+    soundedSpeedSeries.append(stretchEndUnixMs - smoothieAtomicTime, 0);
+    // We don't have to restore the actual speed line's value after the stretch end, because stretches are always
+    // followed by a speed change (at least at the moment of writing this).
   }
 
   let lastHandledTelemetryRecord;
@@ -185,7 +201,7 @@
       r.lastScheduledStretchInputTime
     );
     if (newStretch) {
-      updateStretchSeries(r);
+      updateStretchAndAdjustSpeedSeries(r);
     }
 
     lastHandledTelemetryRecord = newTelemetryRecord;
