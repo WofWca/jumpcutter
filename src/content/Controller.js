@@ -414,12 +414,28 @@ export default class Controller {
     }
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
+
+    /**
+     * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
+     * it would be on the input timeline.
+     * @param {Controller['_lastScheduledStretch']} stretch
+     * @returns {Controller['_lastScheduledStretch']}
+     */
+    const stretchToInputTime = (stretch) => ({
+      ...stretch,
+      startTime: stretch.startTime - getTotalDelay(this._lookahead.delayTime.value, stretch.startValue),
+      endTime: stretch.endTime - getTotalDelay(this._lookahead.delayTime.value, stretch.endValue),
+    });
+
     return {
       unixTime: Date.now() / 1000,
       videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      // TODO also log `interruptLastScheduledStretch` calls.
+      lastScheduledStretch: this._lastScheduledStretch,
+      lastScheduledStretchInputTime: stretchToInputTime(this._lastScheduledStretch),
     };
   }
 }

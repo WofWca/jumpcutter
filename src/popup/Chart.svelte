@@ -20,6 +20,10 @@
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries;
+
+  let stretchSeries;
+  let shrinkSeries;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
@@ -49,15 +53,29 @@
     soundedSpeedSeries = new TimeSeries();
     silenceSpeedSeries = new TimeSeries();
     volumeThresholdSeries = new TimeSeries();
+    stretchSeries = new TimeSeries();
+    shrinkSeries = new TimeSeries();
     // Order determines z-index
+    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
+    const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
       strokeStyle: 'none',
-      fillStyle: 'rgba(0, 255, 0, 0.3)',
+      fillStyle: soundedSpeedColor,
     });
     smoothie.addTimeSeries(silenceSpeedSeries, {
       strokeStyle: 'none',
-      fillStyle: 'rgba(255, 0, 0, 0.3)',
+      fillStyle: silenceSpeedColor,
     });
+    smoothie.addTimeSeries(stretchSeries, {
+      strokeStyle: 'none',
+      // fillStyle: 'rgba(0, 255, 0, 0.4)',
+      fillStyle: soundedSpeedColor,
+    })
+    smoothie.addTimeSeries(shrinkSeries, {
+      strokeStyle: 'none',
+      // fillStyle: 'rgba(255, 0, 0, 0.4)',
+      fillStyle: silenceSpeedColor,
+    })
     smoothie.addTimeSeries(volumeSeries, {
       // RGB taken from Audacity.
       lineWidth: 1,
@@ -75,6 +93,36 @@
   function sToMs(seconds) {
     return seconds * 1000;
   }
+  function toUnixTime(audioContextTime, anyTelemetryRecord) {
+    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
+    // time everywhere?
+    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
+    return audioContextCreationTimeUnix + audioContextTime;
+  }
+  /**
+   * @param {Parameters<toUnixTime>} args
+   */
+  function toUnixTimeMs(...args) {
+    return sToMs(toUnixTime(...args));
+  }
+  /**
+   * @param {'sounded' | 'silence'} speedName
+   */
+  function appendToSpeedSeries(timeMs, speedName) {
+    soundedSpeedSeries.append(timeMs, speedName === 'sounded' ? offTheChartsValue : 0);
+    silenceSpeedSeries.append(timeMs, speedName === 'silence' ? offTheChartsValue : 0);
+
+    if (process.env.NODE_ENV !== 'production') {
+      if ((latestTelemetryRecord && latestTelemetryRecord.inputVolume) > offTheChartsValue) {
+        console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
+          + ' background, but now it has been exceeded by inutVolume value');
+      }
+    }
+  }
+
+  // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
+  // too far beyond the chart bounds, the line is hidden.
+  const offTheChartsValue = 9999;
   const smoothieAtomicTime = 0.001;
   // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
   // the previous value on that time.
@@ -85,31 +133,42 @@
   function updateSpeedSeries(newTelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
-    // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
-    // too far beyond the chart bounds, the line is hidden.
-    const hugeNumber = 9999;
-    const timeMs = sToMs(r.unixTime + (r.lastActualPlaybackRateChange.time - r.contextTime));
-    function getOldSpeedSeriesVal(newVal) {
-      return newVal === hugeNumber ? 0 : hugeNumber;
-    }
-    const soundedNewVal = speedName === 'sounded' ? hugeNumber : 0;
-    const soundedOldVal = getOldSpeedSeriesVal(soundedNewVal);
-    const silenceNewVal = speedName === 'silence' ? hugeNumber : 0;
-    const silenceOldVal = getOldSpeedSeriesVal(silenceNewVal);
-    soundedSpeedSeries.append(timeMs - smoothieAtomicTime, soundedOldVal);
-    silenceSpeedSeries.append(timeMs - smoothieAtomicTime, silenceOldVal);
-    soundedSpeedSeries.append(timeMs,                      soundedNewVal);
-    silenceSpeedSeries.append(timeMs,                      silenceNewVal);
-    soundedSpeedSeries.append(unreachableFutureMomentMs,   soundedNewVal);
-    silenceSpeedSeries.append(unreachableFutureMomentMs,   silenceNewVal);
-
-    if (process.env.NODE_ENV !== 'production') {
-      if (r.inputVolume > hugeNumber) {
-        console.warn('hugeNumber is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
-          + ' background, but now it has been exceeded by inutVolume value');
-      }
-    }
+    const timeMs = toUnixTimeMs(r.lastActualPlaybackRateChange.time, r);
+    const oldSpeedName = speedName === 'sounded'
+      ? 'silence'
+      : 'sounded';
+    appendToSpeedSeries(timeMs - smoothieAtomicTime, oldSpeedName);
+    appendToSpeedSeries(timeMs, speedName);
+    appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
+
+  function updateStretchAndAdjustSpeedSeries(newTelemetryRecord) {
+    const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
+    const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
+    const stretchEndUnixMs = toUnixTimeMs(stretch.endTime, newTelemetryRecord);
+    const stretchOrShrink = stretch.endValue > stretch.startValue
+      ? 'stretch'
+      : 'shrink';
+    const series = stretchOrShrink === 'stretch'
+      ? stretchSeries
+      : shrinkSeries;
+    series.append(stretchStartUnixMs - smoothieAtomicTime, 0);
+    series.append(stretchStartUnixMs, offTheChartsValue);
+    series.append(stretchEndUnixMs - smoothieAtomicTime, offTheChartsValue);
+    series.append(stretchEndUnixMs, 0);
+
+    // Don't draw actual video playback speed at that period so they don't overlap with stretches.
+    const actualPlaybackRateDuringStretch = stretchOrShrink === 'shrink'
+      ? 'sounded'
+      : 'silence';
+    appendToSpeedSeries(stretchStartUnixMs - smoothieAtomicTime, actualPlaybackRateDuringStretch);
+    silenceSpeedSeries.append(stretchStartUnixMs, 0);
+    soundedSpeedSeries.append(stretchStartUnixMs, 0);
+    silenceSpeedSeries.append(stretchEndUnixMs - smoothieAtomicTime, 0);
+    soundedSpeedSeries.append(stretchEndUnixMs - smoothieAtomicTime, 0);
+    // We don't have to restore the actual speed line's value after the stretch end, because stretches are always
+    // followed by a speed change (at least at the moment of writing this).
+  }
 
   let lastHandledTelemetryRecord;
   function onNewTelemetry(newTelemetryRecord) {
@@ -131,6 +190,18 @@
     );
     if (speedChanged) {
       updateSpeedSeries(r);
+    }
+
+    function areStretchObjectsEqual(stretchA, stretchB) {
+      return (stretchA && stretchA.startTime) === (stretchB && stretchB.startTime);
+    }
+    // TODO rewrite this mouthful (and the one above it) with optional chaining.
+    const newStretch = !areStretchObjectsEqual(
+      lastHandledTelemetryRecord && lastHandledTelemetryRecord.lastScheduledStretchInputTime,
+      r.lastScheduledStretchInputTime
+    );
+    if (newStretch) {
+      updateStretchAndAdjustSpeedSeries(r);
     }
 
     lastHandledTelemetryRecord = newTelemetryRecord;
