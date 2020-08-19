@@ -33,7 +33,7 @@
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
       millisPerPixel,
-      interpolation: 'linear',
+      interpolation: 'step',
       // responsive: true, ?
       grid: {
         fillStyle: '#fff',
@@ -123,7 +123,6 @@
   // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
   // too far beyond the chart bounds, the line is hidden.
   const offTheChartsValue = 9999;
-  const smoothieAtomicTime = 0.001;
   // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
   // the previous value on that time.
   // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
@@ -132,12 +131,7 @@
   function updateSpeedSeries(newTelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
-    const timeMs = toUnixTimeMs(r.lastActualPlaybackRateChange.time, r);
-    const oldSpeedName = speedName === 'sounded'
-      ? 'silence'
-      : 'sounded';
-    appendToSpeedSeries(timeMs - smoothieAtomicTime, oldSpeedName);
-    appendToSpeedSeries(timeMs, speedName);
+    appendToSpeedSeries(toUnixTimeMs(r.lastActualPlaybackRateChange.time, r), speedName);
     appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
@@ -151,20 +145,15 @@
     const series = stretchOrShrink === 'stretch'
       ? stretchSeries
       : shrinkSeries;
-    series.append(stretchStartUnixMs - smoothieAtomicTime, 0);
     series.append(stretchStartUnixMs, offTheChartsValue);
-    series.append(stretchEndUnixMs - smoothieAtomicTime, offTheChartsValue);
     series.append(stretchEndUnixMs, 0);
 
     // Don't draw actual video playback speed at that period so they don't overlap with stretches.
     const actualPlaybackRateDuringStretch = stretchOrShrink === 'shrink'
       ? 'sounded'
       : 'silence';
-    appendToSpeedSeries(stretchStartUnixMs - smoothieAtomicTime, actualPlaybackRateDuringStretch);
     silenceSpeedSeries.append(stretchStartUnixMs, 0);
     soundedSpeedSeries.append(stretchStartUnixMs, 0);
-    silenceSpeedSeries.append(stretchEndUnixMs - smoothieAtomicTime, 0);
-    soundedSpeedSeries.append(stretchEndUnixMs - smoothieAtomicTime, 0);
     // We don't have to restore the actual speed line's value after the stretch end, because stretches are always
     // followed by a speed change (at least at the moment of writing this).
   }
