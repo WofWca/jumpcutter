@@ -127,7 +127,6 @@
   // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
   // the previous value on that time.
   // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
-  // const unreachableFutureMomentMs = Date.now() + 1000 * 60 * 60 * 24 * 365 * 1e10;
   const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
 
   function updateSpeedSeries(newTelemetryRecord) {
