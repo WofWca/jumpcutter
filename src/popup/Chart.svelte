@@ -101,6 +101,21 @@
   function toUnixTimeMs(...args) {
     return sToMs(toUnixTime(...args));
   }
+  /**
+   * @param {'sounded' | 'silence'} speedName
+   */
+  function appendToSpeedSeries(timeMs, speedName) {
+    soundedSpeedSeries.append(timeMs, speedName === 'sounded' ? offTheChartsValue : 0);
+    silenceSpeedSeries.append(timeMs, speedName === 'silence' ? offTheChartsValue : 0);
+
+    if (process.env.NODE_ENV !== 'production') {
+      if ((latestTelemetryRecord && latestTelemetryRecord.inputVolume) > offTheChartsValue) {
+        console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
+          + ' background, but now it has been exceeded by inutVolume value');
+      }
+    }
+  }
+
   // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
   // too far beyond the chart bounds, the line is hidden.
   const offTheChartsValue = 9999;
@@ -115,26 +130,12 @@
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
     const timeMs = toUnixTimeMs(r.lastActualPlaybackRateChange.time, r);
-    function getOldSpeedSeriesVal(newVal) {
-      return newVal === offTheChartsValue ? 0 : offTheChartsValue;
-    }
-    const soundedNewVal = speedName === 'sounded' ? offTheChartsValue : 0;
-    const soundedOldVal = getOldSpeedSeriesVal(soundedNewVal);
-    const silenceNewVal = speedName === 'silence' ? offTheChartsValue : 0;
-    const silenceOldVal = getOldSpeedSeriesVal(silenceNewVal);
-    soundedSpeedSeries.append(timeMs - smoothieAtomicTime, soundedOldVal);
-    silenceSpeedSeries.append(timeMs - smoothieAtomicTime, silenceOldVal);
-    soundedSpeedSeries.append(timeMs,                      soundedNewVal);
-    silenceSpeedSeries.append(timeMs,                      silenceNewVal);
-    soundedSpeedSeries.append(unreachableFutureMomentMs,   soundedNewVal);
-    silenceSpeedSeries.append(unreachableFutureMomentMs,   silenceNewVal);
-
-    if (process.env.NODE_ENV !== 'production') {
-      if (r.inputVolume > offTheChartsValue) {
-        console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
-          + ' background, but now it has been exceeded by inutVolume value');
-      }
-    }
+    const oldSpeedName = speedName === 'sounded'
+      ? 'silence'
+      : 'sounded';
+    appendToSpeedSeries(timeMs - smoothieAtomicTime, oldSpeedName);
+    appendToSpeedSeries(timeMs, speedName);
+    appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
   function updateStretchSeries(newTelemetryRecord) {
