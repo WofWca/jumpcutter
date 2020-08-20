@@ -343,11 +343,11 @@ export default class Controller {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
-      const currSpeedName = ['silenceSpeed', 'soundedSpeed'].find(
-        speedSettingName => this.element.playbackRate === oldSettings[speedSettingName]
+      const currSpeedName = ['silence', 'sounded'].find(
+        speedName => this.element.playbackRate === oldSettings[`${speedName}Speed`]
       );
       if (currSpeedName) {
-        this.element.playbackRate = this.settings[currSpeedName];
+        this._setSpeedAndLog(currSpeedName);
       }
     }
 
