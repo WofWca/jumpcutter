@@ -435,7 +435,7 @@ export default class Controller {
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       // TODO also log `interruptLastScheduledStretch` calls.
       lastScheduledStretch: this._lastScheduledStretch,
-      lastScheduledStretchInputTime: stretchToInputTime(this._lastScheduledStretch),
+      lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),
     };
   }
 }
