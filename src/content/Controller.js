@@ -68,10 +68,7 @@ export default class Controller {
     });
     this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
       parameterData: {
-        durationThreshold: Controller._getSilenceDetectorNodeDurationThreshold(
-          this.settings.marginBefore,
-          this.settings.soundedSpeed
-        ),
+        durationThreshold: this._getSilenceDetectorNodeDurationThreshold(),
       },
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
@@ -272,11 +269,11 @@ export default class Controller {
    * @param {number} eventTime 
    */
   _doOnSilenceStartStretcherStuff(eventTime) {
-    const oldRealtimeMargin = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
+    const oldRealtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
       getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
+    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMarginBefore;
 
     const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
 
@@ -353,7 +350,7 @@ export default class Controller {
 
     this._silenceDetectorNode.parameters.get('volumeThreshold').value = this.settings.volumeThreshold;
     this._silenceDetectorNode.parameters.get('durationThreshold').value =
-      Controller._getSilenceDetectorNodeDurationThreshold(this.settings.marginBefore, this.settings.soundedSpeed);
+      this._getSilenceDetectorNodeDurationThreshold();
     if (isStretcherEnabled(this.settings)) {
       this._lookahead.delayTime.value = getNewLookaheadDelay(
         this.settings.marginBefore,
@@ -391,8 +388,11 @@ export default class Controller {
     this._setStateAccordingToNewSettings(oldSettings);
   }
 
-  static _getSilenceDetectorNodeDurationThreshold(marginBefore, soundedSpeed) {
-    return getRealtimeMargin(marginBefore, soundedSpeed);
+  _getSilenceDetectorNodeDurationThreshold() {
+    const marginBeforeAddition = isStretcherEnabled(this.settings)
+      ? this.settings.marginBefore
+      : 0;
+    return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
   /**

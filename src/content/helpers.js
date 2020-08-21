@@ -1,5 +1,5 @@
-export function getRealtimeMargin(marginBefore, speed) {
-  return marginBefore / speed;
+export function getRealtimeMargin(margin, speed) {
+  return margin / speed;
 }
 
 export function getNewLookaheadDelay(videoTimeMargin, soundedSpeed, silenceSpeed) {
