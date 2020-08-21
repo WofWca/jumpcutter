@@ -110,7 +110,7 @@ Also min should be 0 for the same reason. -->
   value={settings.marginAfter}
   on:input={({ detail }) => settings.marginAfter = detail}
   min="0"
-  max="0.3"
+  max="0.5"
   step="0.005"
 />
 
@@ -129,7 +129,7 @@ Also min should be 0 for the same reason. -->
   value={settings.marginBefore}
   on:input={({ detail }) => settings.marginBefore = detail}
   min="0"
-  max="0.3"
+  max="0.5"
   step="0.005"
 />
 {/if}
