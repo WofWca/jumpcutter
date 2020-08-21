@@ -105,6 +105,15 @@ Also min should be 0 for the same reason. -->
   max="15"
   step="0.1"
 />
+<RangeSlider
+  label="Margin after"
+  value={settings.marginAfter}
+  on:input={({ detail }) => settings.marginAfter = detail}
+  min="0"
+  max="0.3"
+  step="0.005"
+/>
+
 
 <label class="enable-experimental-features-field">
   <input
@@ -114,6 +123,7 @@ Also min should be 0 for the same reason. -->
   <span>Experimental features</span>
 </label>
 {#if settings.enableExperimentalFeatures}
+<!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
 <RangeSlider
   label="Margin before"
   value={settings.marginBefore}
