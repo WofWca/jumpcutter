@@ -269,11 +269,11 @@ export default class Controller {
    * @param {number} eventTime 
    */
   _doOnSilenceStartStretcherStuff(eventTime) {
-    const oldRealtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
+    const realtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
       getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMarginBefore;
+    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - realtimeMarginBefore;
 
     const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
 
