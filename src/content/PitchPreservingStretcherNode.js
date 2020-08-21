@@ -1,4 +1,5 @@
-import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
+// import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
+import PitchShift from './jungle';
 import { getStretchSpeedChangeMultiplier } from './helpers';
 
 export default class PitchPreservingStretcherNode {
@@ -15,29 +16,19 @@ export default class PitchPreservingStretcherNode {
     this.slowDownGain = context.createGain();
     this.normalSpeedGain = context.createGain();
 
-    toneSetContext(context);
-    this.speedUpPitchShift = new PitchShift();
-    this.slowDownPitchShift = new PitchShift();
-
-    // Why this value?
-    // 1. Withing the range recommended by Tone.js documentation:
-    // https://tonejs.github.io/docs/13.8.25/PitchShift#windowsize
-    // 2. I played around with it a bit and this sounded best for me.
-    // TODO make it into a setting?
-    const windowSize = 0.06;
-    this.speedUpPitchShift.windowSize = windowSize;
-    this.slowDownPitchShift.windowSize = windowSize;
+    this.speedUpPitchShift = new PitchShift(context);
+    this.slowDownPitchShift = new PitchShift(context);
 
     this.delayNode = context.createDelay(maxDelay);
     this.delayNode.delayTime.value = initialDelay;
 
-    ToneConnect(this.delayNode, this.speedUpPitchShift);
-    ToneConnect(this.delayNode, this.slowDownPitchShift);
+    this.delayNode.connect(this.speedUpPitchShift.input);
+    this.delayNode.connect(this.slowDownPitchShift.input);
 
     this.delayNode.connect(this.normalSpeedGain);
 
-    this.speedUpPitchShift.connect(this.slowDownGain);
-    this.slowDownPitchShift.connect(this.speedUpGain);
+    this.speedUpPitchShift.output.connect(this.slowDownGain);
+    this.slowDownPitchShift.output.connect(this.speedUpGain);
 
     this.setOutputPitchAt('normal', context.currentTime);
   }
@@ -99,13 +90,23 @@ export default class PitchPreservingStretcherNode {
     const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
     // Acutally we only need to do this when the user changes settings.
     setTimeout(() => {
-      function speedChangeMultiplierToSemitones(m) {
-        return -12 * Math.log2(1 / m);
+      // function speedChangeMultiplierToSemitones(m) {
+      //   return -12 * Math.log2(1 / m);
+      // }
+      function speedChangeMultiplierToOctaves(m) {
+        // TODO figure out the formula
+        // Roughly:
+        // 2 sounds good for x1.1 & x2.2
+        // 4 sounds good for x1.1 & x3.3
+
+        return 7;
+
+        // return -1 * Math.log2(1 / m);
       }
       const node = speedupOrSlowdown === 'speedup'
         ? this.speedUpPitchShift
         : this.slowDownPitchShift;
-      node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
+      node.setPitchOffset(speedChangeMultiplierToOctaves(speedChangeMultiplier));
     }, startTime - this.context.currentTime);
   }
 
@@ -132,18 +133,5 @@ export default class PitchPreservingStretcherNode {
     this.delayNode.value = value;
   }
 
-  destroy() {
-    const toneAudioNodes = [this.speedUpPitchShift, this.slowDownPitchShift];
-    for (const node of toneAudioNodes) {
-      node.dispose();
-    }
-    
-    if (process.env.NODE_ENV !== 'production') {
-      Object.values(this).forEach(propertyVal => {
-        if (propertyVal instanceof ToneAudioNode && !toneAudioNodes.includes(propertyVal)) {
-          console.warn('Undisposed ToneAudioNode found. Expected all to be disposed upon `destroy()` call');
-        }
-      })
-    }
-  }
+  destroy() {}
 }

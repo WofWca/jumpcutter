@@ -60,10 +60,10 @@ export default class Controller {
     this._volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
       outputChannelCount: [1],
       processorOptions: {
-        maxSmoothingWindowLength: 0.03,
+        maxSmoothingWindowLength: 0.3,
       },
       parameterData: {
-        smoothingWindowLength: 0.03, // TODO make a setting out of it.
+        smoothingWindowLength: 0.3, // TODO make a setting out of it.
       },
     });
     this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
