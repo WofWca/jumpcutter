@@ -1,6 +1,15 @@
 import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
 import { getStretchSpeedChangeMultiplier } from './helpers';
 
+
+// TODO make it into a setting?
+const CROSS_FADE_DURATION = 0.01;
+
+/**
+ * @typedef PitchSetting
+ * @type {'slowdown' | 'speedup' | 'normal'}
+ */
+
 export default class PitchPreservingStretcherNode {
   // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
   // scheduling.
@@ -14,6 +23,9 @@ export default class PitchPreservingStretcherNode {
     this.speedUpGain = context.createGain();
     this.slowDownGain = context.createGain();
     this.normalSpeedGain = context.createGain();
+    this.speedUpGain.gain.value = 0;
+    this.slowDownGain.gain.value = 0
+    this.normalSpeedGain.gain.value = 1;
 
     toneSetContext(context);
     this.speedUpPitchShift = new PitchShift();
@@ -21,33 +33,29 @@ export default class PitchPreservingStretcherNode {
 
     // Why this value?
     // 1. Withing the range recommended by Tone.js documentation:
-    // https://tonejs.github.io/docs/13.8.25/PitchShift#windowsize
+    // https://tonejs.github.io/docs/14.7.39/PitchShift#windowSize
     // 2. I played around with it a bit and this sounded best for me.
     // TODO make it into a setting?
-    const windowSize = 0.06;
+    const windowSize = 0.1;
     this.speedUpPitchShift.windowSize = windowSize;
     this.slowDownPitchShift.windowSize = windowSize;
 
+    // `PitchShift` nodes introduce a delay:
+    // https://github.com/Tonejs/Tone.js/blob/ed0d3b08be2b95220fffe7cce7eac32a5b77580e/Tone/effect/PitchShift.ts#L97-L117
+    // This is so their outputs and original pitch outputs are in sync.
+    const averagePitchShiftDelay = windowSize / 2;
+    this.originalPitchCompensationDelay = context.createDelay(averagePitchShiftDelay);
+    this.originalPitchCompensationDelay.delayTime.value = averagePitchShiftDelay;
     this.delayNode = context.createDelay(maxDelay);
     this.delayNode.delayTime.value = initialDelay;
 
-    ToneConnect(this.delayNode, this.speedUpPitchShift);
-    ToneConnect(this.delayNode, this.slowDownPitchShift);
-
+    this.delayNode.connect(this.speedUpGain);
+    this.delayNode.connect(this.slowDownGain);
     this.delayNode.connect(this.normalSpeedGain);
 
-    this.speedUpPitchShift.connect(this.slowDownGain);
-    this.slowDownPitchShift.connect(this.speedUpGain);
-
-    this.setOutputPitchAt('normal', context.currentTime);
-  }
-
-  get allGainNodes() {
-    return [
-      this.speedUpGain,
-      this.slowDownGain,
-      this.normalSpeedGain,
-    ];
+    ToneConnect(this.speedUpGain, this.speedUpPitchShift);
+    ToneConnect(this.slowDownGain, this.slowDownPitchShift);
+    this.normalSpeedGain.connect(this.originalPitchCompensationDelay);
   }
 
   /**
@@ -60,25 +68,49 @@ export default class PitchPreservingStretcherNode {
    * @param {AudioNode} destinationNode
    */
   connectOutputTo(destinationNode) {
-    for (const node of this.allGainNodes) {
-      node.connect(destinationNode);
-    }
+    this.speedUpPitchShift.connect(destinationNode)
+    this.slowDownPitchShift.connect(destinationNode)
+    this.originalPitchCompensationDelay.connect(destinationNode)
   }
 
   /**
-   * @param {'slowdown' | 'speedup' | 'normal'} pitchSetting
+   * @param {PitchSetting} pitchSetting
+   * @param {PitchSetting} oldPitchSetting
    */
-  setOutputPitchAt(pitchSetting, time) {
+  setOutputPitchAt(pitchSetting, time, oldPitchSetting) {
     if (process.env.NODE_ENV !== 'production') {
       if (!['slowdown', 'speedup', 'normal'].includes(pitchSetting)) {
         // TODO replace with TypeScript?
         throw new Error(`Invalid pitchSetting "${pitchSetting}"`);
       }
+      if (pitchSetting === oldPitchSetting) {
+        console.warn(`New pitchSetting is the same as oldPitchSetting: ${pitchSetting}`);
+      }
+      if (
+        pitchSetting === 'speedup' && oldPitchSetting === 'slowdown'
+        || pitchSetting === 'slowdown' && oldPitchSetting === 'speedup'
+      ) {
+        console.warn(`Switching from ${oldPitchSetting} to ${pitchSetting} immediately. It hasn't been happening`
+          + 'at the time of writing, so not sure if it works as intended.');
+      }
     }
 
-    this.speedUpGain    .gain.setValueAtTime(pitchSetting === 'speedup'  ? 1 : 0, time);
-    this.slowDownGain   .gain.setValueAtTime(pitchSetting === 'slowdown' ? 1 : 0, time);
-    this.normalSpeedGain.gain.setValueAtTime(pitchSetting === 'normal'   ? 1 : 0, time);
+    // Cross-fade to avoid glitches.
+    // TODO make sure the cross-fade behaves well in cases when `interruptLastScheduledStretch()` is called.
+    const crossFadeHalfDuration = CROSS_FADE_DURATION / 2;
+    const crossFadeStart = time - crossFadeHalfDuration;
+    const crossFadeEnd = time + crossFadeHalfDuration;
+    const pitchSettingToItsGainNode = {
+      'normal': this.normalSpeedGain,
+      'speedup': this.speedUpGain,
+      'slowdown': this.slowDownGain,
+    };
+    const fromNode = pitchSettingToItsGainNode[oldPitchSetting];
+    const toNode = pitchSettingToItsGainNode[pitchSetting];
+    fromNode.gain.setValueAtTime(1, crossFadeStart);
+    toNode.gain.setValueAtTime(0, crossFadeStart);
+    fromNode.gain.linearRampToValueAtTime(0, crossFadeEnd);
+    toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
   }
 
   stretch(startValue, endValue, startTime, endTime) {
@@ -92,21 +124,30 @@ export default class PitchPreservingStretcherNode {
     const speedupOrSlowdown = endValue > startValue ? 'slowdown' : 'speedup';
     this.setOutputPitchAt(
       speedupOrSlowdown,
-      startTime
+      startTime,
+      'normal'
     );
-    this.setOutputPitchAt('normal', endTime);
+    this.setOutputPitchAt('normal', endTime, speedupOrSlowdown);
     
     const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
     // Acutally we only need to do this when the user changes settings.
     setTimeout(() => {
       function speedChangeMultiplierToSemitones(m) {
-        return -12 * Math.log2(1 / m);
+        return -12 * Math.log2(m);
       }
       const node = speedupOrSlowdown === 'speedup'
         ? this.speedUpPitchShift
         : this.slowDownPitchShift;
       node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
     }, startTime - this.context.currentTime);
+
+    this._lastScheduledStretch = {
+      startValue,
+      endValue,
+      startTime,
+      endTime,
+      speedupOrSlowdown,
+    };
   }
 
   /**
@@ -119,10 +160,15 @@ export default class PitchPreservingStretcherNode {
       .cancelAndHoldAtTime(interruptAtTime)
       .linearRampToValueAtTime(interruptAtTimeValue, interruptAtTime);
 
-    for (const node of this.allGainNodes) {
+    const allGainNodes = [
+      this.speedUpGain,
+      this.slowDownGain,
+      this.normalSpeedGain,
+    ];
+    for (const node of allGainNodes) {
       node.gain.cancelAndHoldAtTime(interruptAtTime);
     }
-    this.setOutputPitchAt('normal', interruptAtTime);
+    this.setOutputPitchAt('normal', interruptAtTime, this._lastScheduledStretch.speedupOrSlowdown);
   }
 
   /**

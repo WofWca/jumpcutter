@@ -76,21 +76,21 @@
 />
 <RangeSlider
   label="Volume threshold"
-  value={settings.volumeThreshold}
-  on:input={({ detail }) => settings.volumeThreshold = detail}
   min="0"
   max={maxVolume}
   step="0.0005"
+  value={settings.volumeThreshold}
+  on:input={({ detail }) => settings.volumeThreshold = detail}
 />
 <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
 Also min should be 0 for the same reason. -->
 <RangeSlider
   label="Sounded speed"
-  value={settings.soundedSpeed}
-  on:input={({ detail }) => settings.soundedSpeed = detail}
   min="0"
   max="15"
   step="0.1"
+  value={settings.soundedSpeed}
+  on:input={({ detail }) => settings.soundedSpeed = detail}
 />
 <button
   on:click={resetSoundedSpeed}
@@ -99,12 +99,21 @@ Also min should be 0 for the same reason. -->
 <!-- Be aware, at least Chromim doesn't allow to set values higher than 16. -->
 <RangeSlider
   label="Silence speed"
-  value={settings.silenceSpeed}
-  on:input={({ detail }) => settings.silenceSpeed = detail}
   min="0"
   max="15"
   step="0.1"
+  value={settings.silenceSpeed}
+  on:input={({ detail }) => settings.silenceSpeed = detail}
 />
+<RangeSlider
+  label="Margin after"
+  min="0"
+  max="0.5"
+  step="0.005"
+  value={settings.marginAfter}
+  on:input={({ detail }) => settings.marginAfter = detail}
+/>
+
 
 <label class="enable-experimental-features-field">
   <input
@@ -114,13 +123,14 @@ Also min should be 0 for the same reason. -->
   <span>Experimental features</span>
 </label>
 {#if settings.enableExperimentalFeatures}
+<!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
 <RangeSlider
-  label="Before margin"
+  label="Margin before"
+  min="0"
+  max="0.5"
+  step="0.005"
   value={settings.marginBefore}
   on:input={({ detail }) => settings.marginBefore = detail}
-  min="0"
-  max="0.3"
-  step="0.005"
 />
 {/if}
 <!-- <label>

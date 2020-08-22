@@ -49,8 +49,6 @@ export default class Controller {
     // executor?
     this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
 
-    this.element.playbackRate = this.settings.soundedSpeed;
-
     const ctx = audioContext;
     this.audioContext = ctx;
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
@@ -70,10 +68,7 @@ export default class Controller {
     });
     this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
       parameterData: {
-        durationThreshold: Controller._getSilenceDetectorNodeDurationThreshold(
-          this.settings.marginBefore,
-          this.settings.soundedSpeed
-        ),
+        durationThreshold: this._getSilenceDetectorNodeDurationThreshold(),
       },
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
@@ -121,9 +116,9 @@ export default class Controller {
       }
       outVolumeFilter.connect(analyzerOut);
     }
-    this._setStateAccordingToSettings(this.settings);
+    this._setStateAccordingToNewSettings();
 
-    this._lastScheduledStretcherDelayReset = null;
+    this._lastScheduledStretch = null;
 
     let logArr, logBuffer;
     if (logging) {
@@ -148,13 +143,13 @@ export default class Controller {
     this._silenceDetectorNode.port.onmessage = (msg) => {
       const { time: eventTime, type: silenceStartOrEnd } = msg.data;
       if (silenceStartOrEnd === 'silenceEnd') {
-        this.element.playbackRate = this.settings.soundedSpeed;
+        this._setSpeedAndLog('sounded');
 
         if (isStretcherEnabled(this.settings)) {
           this._doOnSilenceEndStretcherStuff(eventTime);
         }
       } else {
-        this.element.playbackRate = this.settings.silenceSpeed;
+        this._setSpeedAndLog('silence');
 
         if (isStretcherEnabled(this.settings)) {
           this._doOnSilenceStartStretcherStuff(eventTime);
@@ -180,8 +175,10 @@ export default class Controller {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
+    const lastScheduledStretcherDelayReset = this._lastScheduledStretch;
+
     const lastSilenceSpeedLastsForRealtime =
-      eventTime - this._lastScheduledStretcherDelayReset.newSpeedStartInputTime;
+      eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
     const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
 
     const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
@@ -203,7 +200,7 @@ export default class Controller {
     const marginBeforeStartOutputTime = getMomentOutputTime(
       marginBeforeStartInputTime,
       this._lookahead.delayTime.value,
-      this._lastScheduledStretcherDelayReset
+      lastScheduledStretcherDelayReset
     );
     const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
     const marginBeforeStartOutputTimeStretcherDelay =
@@ -219,10 +216,10 @@ export default class Controller {
     // This is also the reason why `getMomentOutputTime` function is so long.
     // Let's find this breakpoint.
 
-    if (marginBeforeStartOutputTime < this._lastScheduledStretcherDelayReset.endTime) {
+    if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
       // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
       this._stretcher.interruptLastScheduledStretch(
-        // A.k.a. `this._lastScheduledStretcherDelayReset.startTime`
+        // A.k.a. `lastScheduledStretcherDelayReset.startTime`
         marginBeforeStartOutputTimeStretcherDelay,
         marginBeforeStartOutputTime
       );
@@ -249,21 +246,22 @@ export default class Controller {
     );
     // I think currently it should always be equal to the max delay.
     const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-    this._stretcher.stretch(
-      marginBeforeStartOutputTimeStretcherDelay,
-      finalStretcherDelay,
-      marginBeforePartAtSilenceSpeedStartOutputTime,
-      // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-      eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
-    );
+
+    const startValue = marginBeforeStartOutputTimeStretcherDelay;
+    const endValue = finalStretcherDelay;
+    const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
+    // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
+    const endTime = eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay);
+    this._stretcher.stretch(startValue, endValue, startTime, endTime);
+    this._lastScheduledStretch = {
+      newSpeedStartInputTime: eventTime,
+      startValue,
+      endValue,
+      startTime,
+      endTime,
+    }
     if (logging) {
-      this._log({
-        type: 'stretch',
-        startValue: marginBeforeStartOutputTimeStretcherDelay,
-        endValue: finalStretcherDelay,
-        startTime: marginBeforePartAtSilenceSpeedStartOutputTime,
-        endTime: eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay)
-      });
+      this._log({ type: 'stretch', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
   /**
@@ -271,11 +269,11 @@ export default class Controller {
    * @param {number} eventTime 
    */
   _doOnSilenceStartStretcherStuff(eventTime) {
-    const oldRealtimeMargin = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
+    const realtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
       getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - oldRealtimeMargin;
+    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - realtimeMarginBefore;
 
     const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
 
@@ -290,7 +288,7 @@ export default class Controller {
       startTime,
       endTime
     );
-    this._lastScheduledStretcherDelayReset = {
+    this._lastScheduledStretch = {
       newSpeedStartInputTime: eventTime,
       startTime,
       startValue: stretcherDelayStartValue,
@@ -299,13 +297,7 @@ export default class Controller {
     };
 
     if (logging) {
-      this._log({
-        type: 'reset',
-        startValue: stretcherDelayStartValue,
-        startTime: startTime,
-        endTime: endTime,
-        lastScheduledStretcherDelayReset: this._lastScheduledStretcherDelayReset,
-      });
+      this._log({ type: 'reset', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
 
@@ -339,32 +331,31 @@ export default class Controller {
    * Can be called either when initializing or when updating settings.
    * TODO It's more performant to only update the things that rely on settings that changed, in a reactive way, but for
    * now it's like this so its harder to forget to update something.
-   * @param {Settings} newSettings
    * @param {Settings | null} oldSettings - better to provide this so the current state can be reconstructed and
    * respected (e.g. if a silent part is currently playing it wont change speed to sounded speed as it would if the
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  _setStateAccordingToSettings(newSettings, oldSettings = null) {
+  _setStateAccordingToNewSettings(oldSettings = null) {
     if (!oldSettings) {
-      this.element.playbackRate = this.settings.soundedSpeed;
+      this._setSpeedAndLog('sounded');
     } else {
-      const currSpeedName = ['silenceSpeed', 'soundedSpeed'].find(
-        speedSettingName => this.element.playbackRate === oldSettings[speedSettingName]
+      const currSpeedName = ['silence', 'sounded'].find(
+        speedName => this.element.playbackRate === oldSettings[`${speedName}Speed`]
       );
       if (currSpeedName) {
-        this.element.playbackRate = newSettings[currSpeedName];
+        this._setSpeedAndLog(currSpeedName);
       }
     }
 
-    this._silenceDetectorNode.parameters.get('volumeThreshold').value = newSettings.volumeThreshold;
+    this._silenceDetectorNode.parameters.get('volumeThreshold').value = this.settings.volumeThreshold;
     this._silenceDetectorNode.parameters.get('durationThreshold').value =
-      Controller._getSilenceDetectorNodeDurationThreshold(newSettings.marginBefore, newSettings.soundedSpeed);
+      this._getSilenceDetectorNodeDurationThreshold();
     if (isStretcherEnabled(this.settings)) {
       this._lookahead.delayTime.value = getNewLookaheadDelay(
-        newSettings.marginBefore,
-        newSettings.soundedSpeed,
-        newSettings.silenceSpeed
+        this.settings.marginBefore,
+        this.settings.soundedSpeed,
+        this.settings.silenceSpeed
       );
       this._stretcher.setDelay(
         getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
@@ -393,13 +384,28 @@ export default class Controller {
       }
     }
 
-    this._setStateAccordingToSettings(newSettings, oldSettings);
-
     this.settings = newSettings;
+    this._setStateAccordingToNewSettings(oldSettings);
   }
 
-  static _getSilenceDetectorNodeDurationThreshold(marginBefore, soundedSpeed) {
-    return getRealtimeMargin(marginBefore, soundedSpeed);
+  _getSilenceDetectorNodeDurationThreshold() {
+    const marginBeforeAddition = isStretcherEnabled(this.settings)
+      ? this.settings.marginBefore
+      : 0;
+    return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
+  }
+
+  /**
+   * @param {'sounded' | 'silence'} speedName
+   */
+  _setSpeedAndLog(speedName) {
+    const speedVal = this.settings[`${speedName}Speed`];
+    this.element.playbackRate = speedVal;
+    this._lastActualPlaybackRateChange = {
+      time: this.audioContext.currentTime,
+      value: speedVal,
+      name: speedName,
+    };
   }
 
   getTelemetry() {
@@ -408,13 +414,28 @@ export default class Controller {
     }
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
-    const { playbackRate } = this.element;
+
+    /**
+     * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
+     * it would be on the input timeline.
+     * @param {Controller['_lastScheduledStretch']} stretch
+     * @returns {Controller['_lastScheduledStretch']}
+     */
+    const stretchToInputTime = (stretch) => ({
+      ...stretch,
+      startTime: stretch.startTime - getTotalDelay(this._lookahead.delayTime.value, stretch.startValue),
+      endTime: stretch.endTime - getTotalDelay(this._lookahead.delayTime.value, stretch.endValue),
+    });
+
     return {
+      unixTime: Date.now() / 1000,
       videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
-      actualPlaybackRateValue: playbackRate,
-      actualPlaybackRateName: ['silenceSpeed', 'soundedSpeed'].find(key => this.settings[key] === playbackRate),
+      lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      // TODO also log `interruptLastScheduledStretch` calls.
+      lastScheduledStretch: this._lastScheduledStretch,
+      lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),
     };
   }
 }
