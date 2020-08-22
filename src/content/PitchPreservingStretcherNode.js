@@ -41,8 +41,8 @@ export default class PitchPreservingStretcherNode {
     ToneConnect(this.delayNode, this.slowDownPitchShift);
     this.delayNode.connect(this.originalPitchCompensationDelay);
 
-    this.speedUpPitchShift.connect(this.slowDownGain);
-    this.slowDownPitchShift.connect(this.speedUpGain);
+    this.speedUpPitchShift.connect(this.speedUpGain);
+    this.slowDownPitchShift.connect(this.slowDownGain);
     this.originalPitchCompensationDelay.connect(this.normalSpeedGain);
 
     this.setOutputPitchAt('normal', context.currentTime);
@@ -106,7 +106,7 @@ export default class PitchPreservingStretcherNode {
     // Acutally we only need to do this when the user changes settings.
     setTimeout(() => {
       function speedChangeMultiplierToSemitones(m) {
-        return -12 * Math.log2(1 / m);
+        return -12 * Math.log2(m);
       }
       const node = speedupOrSlowdown === 'speedup'
         ? this.speedUpPitchShift
