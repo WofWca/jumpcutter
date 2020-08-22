@@ -24,7 +24,7 @@ export default class PitchPreservingStretcherNode {
     // https://tonejs.github.io/docs/14.7.39/PitchShift#windowSize
     // 2. I played around with it a bit and this sounded best for me.
     // TODO make it into a setting?
-    const windowSize = 0.06;
+    const windowSize = 0.1;
     this.speedUpPitchShift.windowSize = windowSize;
     this.slowDownPitchShift.windowSize = windowSize;
 
