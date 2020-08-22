@@ -21,7 +21,7 @@ export default class PitchPreservingStretcherNode {
 
     // Why this value?
     // 1. Withing the range recommended by Tone.js documentation:
-    // https://tonejs.github.io/docs/13.8.25/PitchShift#windowsize
+    // https://tonejs.github.io/docs/14.7.39/PitchShift#windowSize
     // 2. I played around with it a bit and this sounded best for me.
     // TODO make it into a setting?
     const windowSize = 0.06;
