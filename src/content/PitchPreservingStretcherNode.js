@@ -28,16 +28,22 @@ export default class PitchPreservingStretcherNode {
     this.speedUpPitchShift.windowSize = windowSize;
     this.slowDownPitchShift.windowSize = windowSize;
 
+    // `PitchShift` nodes introduce a delay:
+    // https://github.com/Tonejs/Tone.js/blob/ed0d3b08be2b95220fffe7cce7eac32a5b77580e/Tone/effect/PitchShift.ts#L97-L117
+    // This is so their outputs and original pitch outputs are in sync.
+    const averagePitchShiftDelay = windowSize / 2;
+    this.originalPitchCompensationDelay = context.createDelay(averagePitchShiftDelay);
+    this.originalPitchCompensationDelay.delayTime.value = averagePitchShiftDelay;
     this.delayNode = context.createDelay(maxDelay);
     this.delayNode.delayTime.value = initialDelay;
 
     ToneConnect(this.delayNode, this.speedUpPitchShift);
     ToneConnect(this.delayNode, this.slowDownPitchShift);
-
-    this.delayNode.connect(this.normalSpeedGain);
+    this.delayNode.connect(this.originalPitchCompensationDelay);
 
     this.speedUpPitchShift.connect(this.slowDownGain);
     this.slowDownPitchShift.connect(this.speedUpGain);
+    this.originalPitchCompensationDelay.connect(this.normalSpeedGain);
 
     this.setOutputPitchAt('normal', context.currentTime);
   }
