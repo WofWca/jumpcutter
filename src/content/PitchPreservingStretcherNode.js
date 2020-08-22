@@ -37,23 +37,15 @@ export default class PitchPreservingStretcherNode {
     this.delayNode = context.createDelay(maxDelay);
     this.delayNode.delayTime.value = initialDelay;
 
-    ToneConnect(this.delayNode, this.speedUpPitchShift);
-    ToneConnect(this.delayNode, this.slowDownPitchShift);
-    this.delayNode.connect(this.originalPitchCompensationDelay);
+    this.delayNode.connect(this.speedUpGain);
+    this.delayNode.connect(this.slowDownGain);
+    this.delayNode.connect(this.normalSpeedGain);
 
-    this.speedUpPitchShift.connect(this.speedUpGain);
-    this.slowDownPitchShift.connect(this.slowDownGain);
-    this.originalPitchCompensationDelay.connect(this.normalSpeedGain);
+    ToneConnect(this.speedUpGain, this.speedUpPitchShift);
+    ToneConnect(this.slowDownGain, this.slowDownPitchShift);
+    this.normalSpeedGain.connect(this.originalPitchCompensationDelay);
 
     this.setOutputPitchAt('normal', context.currentTime);
-  }
-
-  get allGainNodes() {
-    return [
-      this.speedUpGain,
-      this.slowDownGain,
-      this.normalSpeedGain,
-    ];
   }
 
   /**
@@ -66,9 +58,9 @@ export default class PitchPreservingStretcherNode {
    * @param {AudioNode} destinationNode
    */
   connectOutputTo(destinationNode) {
-    for (const node of this.allGainNodes) {
-      node.connect(destinationNode);
-    }
+    this.speedUpPitchShift.connect(destinationNode)
+    this.slowDownPitchShift.connect(destinationNode)
+    this.originalPitchCompensationDelay.connect(destinationNode)
   }
 
   /**
@@ -125,7 +117,12 @@ export default class PitchPreservingStretcherNode {
       .cancelAndHoldAtTime(interruptAtTime)
       .linearRampToValueAtTime(interruptAtTimeValue, interruptAtTime);
 
-    for (const node of this.allGainNodes) {
+    const allGainNodes = [
+      this.speedUpGain,
+      this.slowDownGain,
+      this.normalSpeedGain,
+    ];
+    for (const node of allGainNodes) {
       node.gain.cancelAndHoldAtTime(interruptAtTime);
     }
     this.setOutputPitchAt('normal', interruptAtTime);
