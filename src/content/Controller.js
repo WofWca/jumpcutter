@@ -1,6 +1,5 @@
 'use strict';
 import { audioContext, mediaElementSourcesMap } from './audioContext';
-import PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import {
   getRealtimeMargin,
   getNewLookaheadDelay,
@@ -86,6 +85,10 @@ export default class Controller {
     }
     if (isStretcherEnabled(this.settings)) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
+      const { default: PitchPreservingStretcherNode } = await import(
+        /* webpackMode: 'eager' */
+        './PitchPreservingStretcherNode'
+      );
       this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
     }
     const srcFromMap = mediaElementSourcesMap.get(this.element);
