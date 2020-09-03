@@ -436,6 +436,9 @@ export default class Controller {
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      totalOutputDelay: this._lookahead && this._stretcher
+        ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
+        : 0,
       // TODO also log `interruptLastScheduledStretch` calls.
       lastScheduledStretch: this._lastScheduledStretch,
       lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),

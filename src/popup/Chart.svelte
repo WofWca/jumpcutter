@@ -24,6 +24,9 @@
   let stretchSeries;
   let shrinkSeries;
 
+  // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+  let currentOutputMarkSeries;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
@@ -55,6 +58,7 @@
     volumeThresholdSeries = new TimeSeries();
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
+    currentOutputMarkSeries = new TimeSeries();
     // Order determines z-index
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
@@ -82,6 +86,9 @@
       strokeStyle: 'rgba(100, 100, 220, 0)',
       fillStyle: 'rgba(100, 100, 220, 0.8)',
     });
+    smoothie.addTimeSeries(currentOutputMarkSeries, {
+      strokeStyle: 'rgba(0, 0, 0, 0.5)',
+    })
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
       strokeStyle: '#f44',
@@ -158,6 +165,8 @@
     // followed by a speed change (at least at the moment of writing this).
   }
 
+  let totalOutputDelay = 0;
+
   let lastHandledTelemetryRecord;
   function onNewTelemetry(newTelemetryRecord) {
     if (!smoothie || !newTelemetryRecord) {
@@ -192,6 +201,8 @@
       updateStretchAndAdjustSpeedSeries(r);
     }
 
+    totalOutputDelay = r.totalOutputDelay;
+
     lastHandledTelemetryRecord = newTelemetryRecord;
   }
   $: onNewTelemetry(latestTelemetryRecord);
@@ -209,6 +220,20 @@
     volumeThreshold, maxVolume;
     updateSmoothieVolumeThreshold()
   }
+
+  (function updateCurrentOutputMarkAndScheduleAnother() {
+    if (smoothie) {
+      currentOutputMarkSeries.clear();
+      if (totalOutputDelay !== 0) {
+        const currentOutputTimeMs = Date.now() - sToMs(totalOutputDelay);
+        // Draw a vertical line.
+        const offTheChartsPastMoment = currentOutputTimeMs - 1e8;
+        currentOutputMarkSeries.append(offTheChartsPastMoment, offTheChartsValue);
+        currentOutputMarkSeries.append(currentOutputTimeMs, 0);
+      }
+    }
+    requestAnimationFrame(updateCurrentOutputMarkAndScheduleAnother);
+  })();
 </script>
 
 <canvas
