@@ -3,6 +3,7 @@
 
   export let latestTelemetryRecord;
   export let volumeThreshold;
+  export let loadedPromise;
 
   let canvasEl;
   const canvasWidth = 400;
@@ -28,8 +29,11 @@
   let currentOutputMarkSeries;
 
   const bestYAxisRelativeVolumeThreshold = 1/6;
-  // TODO `volumeThreshold` takes the default value at this point. Frick.
-  let chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
+  let chartMaxValue;
+  function setBestChartMaxValue() {
+    chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
+  }
+  setBestChartMaxValue();
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
   async function initSmoothie() {
@@ -62,18 +66,21 @@
           yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
           || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
         ) {
-          chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
+          setBestChartMaxValue();
         }
         return { min: 0, max: chartMaxValue };
       },
     });
     smoothie.streamTo(canvasEl);
 
-    // So it doesn't play the scaling animation upon initial render. TODO pretty hacky. Isn't this a bug?
-    const scaleSmoothing = smoothie.options.scaleSmoothing;
-    smoothie.options.scaleSmoothing = 1;
-    smoothie.render();
-    smoothie.options.scaleSmoothing = scaleSmoothing;
+    loadedPromise.then(() => {
+      setBestChartMaxValue();
+      // So it doesn't play the scaling animation.
+      const scaleSmoothing = smoothie.options.scaleSmoothing;
+      smoothie.options.scaleSmoothing = 1;
+      smoothie.render();
+      smoothie.options.scaleSmoothing = scaleSmoothing;
+    });
 
     volumeSeries = new TimeSeries();
     soundedSpeedSeries = new TimeSeries();
