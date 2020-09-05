@@ -19,8 +19,9 @@
   }
 
   let settingsLoaded = false;
-  onMount(async () => {
-    settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  let settingsPromise = new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  settingsPromise.then(s => {
+    settings = s;
     settingsLoaded = true;
   })
 
@@ -76,6 +77,7 @@
 <Chart
   {latestTelemetryRecord}
   volumeThreshold={settings.volumeThreshold}
+  loadedPromise={settingsPromise}
 />
 <RangeSlider
   label="Volume threshold"
