@@ -27,6 +27,11 @@
   // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
   let currentOutputMarkSeries;
 
+  const bestYAxisRelativeVolumeThreshold = 1/6;
+  // TODO `volumeThreshold` takes the default value at this point. Frick.
+  let chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
+  $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
@@ -49,9 +54,27 @@
         disabled: true,
       },
       minValue: 0,
-      scaleSmoothing: 1,
+      yRangeFunction() {
+        const maxYAxisRelativeVolumeThreshold = 0.95;
+        const minYAxisRelativeVolumeThreshold = 0.05;
+        const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
+        if (
+          yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
+          || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
+        ) {
+          chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
+        }
+        return { min: 0, max: chartMaxValue };
+      },
     });
-    smoothie.streamTo(canvasEl, );
+    smoothie.streamTo(canvasEl);
+
+    // So it doesn't play the scaling animation upon initial render. TODO pretty hacky. Isn't this a bug?
+    const scaleSmoothing = smoothie.options.scaleSmoothing;
+    smoothie.options.scaleSmoothing = 1;
+    smoothie.render();
+    smoothie.options.scaleSmoothing = scaleSmoothing;
+
     volumeSeries = new TimeSeries();
     soundedSpeedSeries = new TimeSeries();
     silenceSpeedSeries = new TimeSeries();
@@ -207,17 +230,14 @@
   }
   $: onNewTelemetry(latestTelemetryRecord);
 
-  $: maxVolume = volumeThreshold * 6 || undefined;
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     // Not sure if using larger values makes it consume more memory.
     volumeThresholdSeries.append(Date.now() - bufferDurationMillliseconds, volumeThreshold);
     volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
-
-    smoothie.options.maxValue = maxVolume;
   }
   $: if (smoothie) {
-    volumeThreshold, maxVolume;
+    volumeThreshold;
     updateSmoothieVolumeThreshold()
   }
 
@@ -246,7 +266,7 @@
     <meter
       aria-label='volume'
       value={lastVolume}
-      max={maxVolume}
+      max={meterMaxValue}
     />
     <span
       aria-hidden='true'
