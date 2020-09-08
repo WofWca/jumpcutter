@@ -19,12 +19,16 @@
   }
 
   let settingsLoaded = false;
-  onMount(async () => {
-    settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  let settingsPromise = new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  settingsPromise.then(s => {
+    settings = s;
     settingsLoaded = true;
   })
 
   function resetSoundedSpeed() {
+    // It's 1.1, because Chromium uses different audio data pipelines for normal (1.0) and non-normal speeds, and
+    // switching them causes a glitch:
+    // https://github.com/chromium/chromium/blob/8af9895458f5ac16b2059ca8a336da6367188409/media/renderers/audio_renderer_impl.h#L16-L17
     settings.soundedSpeed = 1.1;
   }
 
@@ -73,6 +77,7 @@
 <Chart
   {latestTelemetryRecord}
   volumeThreshold={settings.volumeThreshold}
+  loadedPromise={settingsPromise}
 />
 <RangeSlider
   label="Volume threshold"
@@ -96,7 +101,8 @@ Also min should be 0 for the same reason. -->
   on:click={resetSoundedSpeed}
   type="button"
 >Reset to 1.1 (not 1 to avoid glitches)</button>
-<!-- Be aware, at least Chromim doesn't allow to set values higher than 16. -->
+<!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
+https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
 <RangeSlider
   label="Silence speed"
   min="0"

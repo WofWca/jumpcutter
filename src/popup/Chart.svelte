@@ -3,6 +3,7 @@
 
   export let latestTelemetryRecord;
   export let volumeThreshold;
+  export let loadedPromise;
 
   let canvasEl;
   const canvasWidth = 400;
@@ -23,6 +24,17 @@
 
   let stretchSeries;
   let shrinkSeries;
+
+  // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+  let currentOutputMarkSeries;
+
+  const bestYAxisRelativeVolumeThreshold = 1/6;
+  let chartMaxValue;
+  function setBestChartMaxValue() {
+    chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
+  }
+  setBestChartMaxValue();
+  $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
@@ -46,15 +58,37 @@
         disabled: true,
       },
       minValue: 0,
-      scaleSmoothing: 1,
+      yRangeFunction() {
+        const maxYAxisRelativeVolumeThreshold = 0.95;
+        const minYAxisRelativeVolumeThreshold = 0.05;
+        const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
+        if (
+          yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
+          || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
+        ) {
+          setBestChartMaxValue();
+        }
+        return { min: 0, max: chartMaxValue };
+      },
     });
-    smoothie.streamTo(canvasEl, );
+    smoothie.streamTo(canvasEl);
+
+    loadedPromise.then(() => {
+      setBestChartMaxValue();
+      // So it doesn't play the scaling animation.
+      const scaleSmoothing = smoothie.options.scaleSmoothing;
+      smoothie.options.scaleSmoothing = 1;
+      smoothie.render();
+      smoothie.options.scaleSmoothing = scaleSmoothing;
+    });
+
     volumeSeries = new TimeSeries();
     soundedSpeedSeries = new TimeSeries();
     silenceSpeedSeries = new TimeSeries();
     volumeThresholdSeries = new TimeSeries();
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
+    currentOutputMarkSeries = new TimeSeries();
     // Order determines z-index
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
@@ -82,6 +116,9 @@
       strokeStyle: 'rgba(100, 100, 220, 0)',
       fillStyle: 'rgba(100, 100, 220, 0.8)',
     });
+    smoothie.addTimeSeries(currentOutputMarkSeries, {
+      strokeStyle: 'rgba(0, 0, 0, 0.5)',
+    })
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
       strokeStyle: '#f44',
@@ -158,6 +195,8 @@
     // followed by a speed change (at least at the moment of writing this).
   }
 
+  let totalOutputDelay = 0;
+
   let lastHandledTelemetryRecord;
   function onNewTelemetry(newTelemetryRecord) {
     if (!smoothie || !newTelemetryRecord) {
@@ -192,23 +231,36 @@
       updateStretchAndAdjustSpeedSeries(r);
     }
 
+    totalOutputDelay = r.totalOutputDelay;
+
     lastHandledTelemetryRecord = newTelemetryRecord;
   }
   $: onNewTelemetry(latestTelemetryRecord);
 
-  $: maxVolume = volumeThreshold * 6 || undefined;
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     // Not sure if using larger values makes it consume more memory.
     volumeThresholdSeries.append(Date.now() - bufferDurationMillliseconds, volumeThreshold);
     volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
-
-    smoothie.options.maxValue = maxVolume;
   }
   $: if (smoothie) {
-    volumeThreshold, maxVolume;
+    volumeThreshold;
     updateSmoothieVolumeThreshold()
   }
+
+  (function updateCurrentOutputMarkAndScheduleAnother() {
+    if (smoothie) {
+      currentOutputMarkSeries.clear();
+      if (totalOutputDelay !== 0) {
+        const currentOutputTimeMs = Date.now() - sToMs(totalOutputDelay);
+        // Draw a vertical line.
+        const offTheChartsPastMoment = currentOutputTimeMs - 1e8;
+        currentOutputMarkSeries.append(offTheChartsPastMoment, offTheChartsValue);
+        currentOutputMarkSeries.append(currentOutputTimeMs, 0);
+      }
+    }
+    requestAnimationFrame(updateCurrentOutputMarkAndScheduleAnother);
+  })();
 </script>
 
 <canvas
@@ -221,7 +273,7 @@
     <meter
       aria-label='volume'
       value={lastVolume}
-      max={maxVolume}
+      max={meterMaxValue}
     />
     <span
       aria-hidden='true'

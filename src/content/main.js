@@ -1,4 +1,3 @@
-import Controller from './Controller';
 import defaultSettings from '../defaultSettings';
 
 (async function () { // Just for top-level `await`
@@ -32,6 +31,10 @@ async function initIfVideoPresent() {
     return;
   }
   const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  const { default: Controller } = await import(
+    /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
+    './Controller'
+  );
   controller = new Controller(v, settings);
   controller.init();
 }
