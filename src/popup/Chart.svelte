@@ -15,7 +15,7 @@
   // May not be precise (and doesn't need to be currently).
   const bufferDurationMillliseconds = Math.ceil(canvasWidth * millisPerPixel);
 
-  $: lastVolume = latestTelemetryRecord && latestTelemetryRecord.inputVolume || 0;
+  $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
   let smoothie: SmoothieChart | undefined;
   let volumeSeries: TimeSeries;
@@ -149,7 +149,7 @@
     silenceSpeedSeries.append(timeMs, speedName === 'silence' ? offTheChartsValue : 0);
 
     if (process.env.NODE_ENV !== 'production') {
-      if ((latestTelemetryRecord && latestTelemetryRecord.inputVolume) > offTheChartsValue) {
+      if (latestTelemetryRecord?.inputVolume > offTheChartsValue) {
         console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
           + ' background, but now it has been exceeded by inutVolume value');
       }
