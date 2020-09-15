@@ -1,9 +1,11 @@
-'use strict';
+import { Time } from "../helpers";
 
 const assumeSoundedWhenUnknown = true;
 
 class SilenceDetectorProcessor extends AudioWorkletProcessor {
-  constructor(options) {
+  _lastLoudSampleTime: Time;
+  _lastTimePostedSilenceStart: boolean;
+  constructor(options: any) {
     super(options);
     const initialDuration = options.processorOptions.initialDuration !== undefined
       ? options.processorOptions.initialDuration
@@ -12,7 +14,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
   }
-  static get parameterDescriptors() {
+  static get parameterDescriptors(): AudioParamDescriptor[] {
     return [
       {
         name: 'volumeThreshold',
@@ -31,11 +33,11 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
   }
 
   // Just so we don't mess up `>=` and `>` somewhere.
-  isPastDurationThreshold(durationThreshold) {
+  isPastDurationThreshold(durationThreshold: number) {
     return currentTime >= this._lastLoudSampleTime + durationThreshold;
   }
 
-  process(inputs, outputs, parameters) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
     const volumeThreshold = parameters.volumeThreshold[0];
     const input = inputs[0];
     if (input.length === 0) {

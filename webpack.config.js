@@ -15,18 +15,24 @@ module.exports = {
     alias: {
       svelte: path.resolve('node_modules', 'svelte')
     },
-    extensions: ['.mjs', '.js', '.svelte', '.json'],
+    extensions: ['.tsx', '.ts', '.mjs', '.js', '.svelte', '.json'],
     mainFields: ['svelte', 'browser', 'module', 'main'],
   },
 
   module: {
     rules: [
       {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
         test: /\.(html|svelte)$/,
         // exclude: /node_modules/, // Not sure if we need this.
         use: {
           loader: 'svelte-loader',
           options: {
+            preprocess: require('svelte-preprocess')(),
             // TODO `emitCss: true`, `ExtractTextPlugin`?
             // https://github.com/sveltejs/svelte-loader#usage
             hotReload: true,
@@ -37,11 +43,11 @@ module.exports = {
   },
 
   entry: {
-    background: './src/background/main.js',
-    content: './src/content/main.js',
-    popup: './src/popup/main.js',
-    SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.js',
-    VolumeFilter: './src/content/VolumeFilter.js',
+    background: './src/background/main.ts',
+    content: './src/content/main.ts',
+    popup: './src/popup/main.ts',
+    SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.ts',
+    VolumeFilter: './src/content/VolumeFilter.ts',
   },
 
   output: {

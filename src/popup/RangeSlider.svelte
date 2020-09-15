@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  export let value;
-  export let label;
+  export let value: number;
+  export let label: string;
   // export let max;
   // export let min;
   // export let step;
