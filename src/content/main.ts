@@ -1,10 +1,9 @@
-import defaultSettings from '../defaultSettings';
+import defaultSettings from '../defaultSettings.json';
+import type Controller from './Controller';
 
 (async function () { // Just for top-level `await`
-/**
- * @type {null | Controller}
- */
-let controller = null;
+
+let controller: Controller | null = null;
 
 // TODO can we not do this when `enabled` is false?
 chrome.runtime.onConnect.addListener(port => {
@@ -17,11 +16,11 @@ chrome.runtime.onConnect.addListener(port => {
         throw new Error('Unsupported message type')
       }
     }
-    port.postMessage(controller && controller.getTelemetry() || null);
+    port.postMessage(controller?.initialized && controller.getTelemetry() || null);
   });
 });
 
-const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as typeof defaultSettings;
 
 async function initIfVideoPresent() {
   const v = document.querySelector('video');
@@ -30,7 +29,7 @@ async function initIfVideoPresent() {
     console.log('Jump cutter: no video found. Exiting');
     return;
   }
-  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as typeof defaultSettings;
   const { default: Controller } = await import(
     /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
     './Controller'
@@ -60,9 +59,9 @@ chrome.storage.onChanged.addListener(function (changes) {
 
   if (controller) {
     if (!changes.enableExperimentalFeatures) {
-      const newValues = {};
+      const newValues: Partial<typeof defaultSettings> = {};
       for (const [settingName, change] of Object.entries(changes)) {
-        newValues[settingName] = change.newValue;
+        newValues[settingName as keyof typeof defaultSettings] = change.newValue;
       }
       controller.updateSettings(newValues);
     } else {

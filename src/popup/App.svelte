@@ -1,14 +1,15 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import defaultSettings from '../defaultSettings.json';
-  import RangeSlider from './RangeSlider';
-  import Chart from './Chart';
+  import RangeSlider from './RangeSlider.svelte';
+  import Chart from './Chart.svelte';
   import throttle from 'lodash.throttle';
+  import type Controller from '../content/Controller';
 
   let settings = { ...defaultSettings };
   if (process.env.NODE_ENV !== 'production') {
-    function isPrimitive(value) {
-      return ['boolean', 'string', 'number'].includes(typeof value) || [null, undefined].includes(value)
+    function isPrimitive(value: typeof defaultSettings[keyof typeof defaultSettings]) {
+      return ['boolean', 'string', 'number'].includes(typeof value) || ([null, undefined] as any[]).includes(value)
     }
     for (const [key, value] of Object.entries(defaultSettings)) {
       if (!isPrimitive(value)) {
@@ -19,7 +20,7 @@
   }
 
   let settingsLoaded = false;
-  let settingsPromise = new Promise(r => chrome.storage.sync.get(defaultSettings, r));
+  let settingsPromise = new Promise<typeof defaultSettings>(r => chrome.storage.sync.get(defaultSettings, r as any));
   settingsPromise.then(s => {
     settings = s;
     settingsLoaded = true;
@@ -32,15 +33,15 @@
     settings.soundedSpeed = 1.1;
   }
 
-  let latestTelemetryRecord;
+  let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
   (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
     // TODO try-catch for "Receiving end does not exist", e.g. for when the page is being refreshed? Perhaps the content
     // script should send a message for when it is ready to accept connections?
-    const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
-    const volumeInfoPort = chrome.tabs.connect(tabs[0].id, { name: 'telemetry' });
+    const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r)) as any;
+    const volumeInfoPort = chrome.tabs.connect(tabs[0].id!, { name: 'telemetry' });
     volumeInfoPort.onMessage.addListener(msg => {
       if (msg) {
         latestTelemetryRecord = msg;
@@ -52,7 +53,7 @@
     }, telemetryUpdatePeriod * 1000);
   })();
 
-  function saveSettings(settings) {
+  function saveSettings(settings: typeof defaultSettings) {
     chrome.storage.sync.set(settings);
   }
   const throttleSaveSettings = throttle(saveSettings, 200);

@@ -1,11 +1,11 @@
-'use strict';
+import type { Time } from '../helpers';
+
 const SAMPLES_PER_QUANTUM = 128;
 // This is the minimum number a broswer should support, apparently. TODO make sure this is correct.
 // https://webaudio.github.io/web-audio-api/#BaseAudioContent-methods
 const DEFAULT_MAX_NUM_CHANNELS = 32;
 
-
-function windowLengthNumSecondsToSamples(numSeconds) {
+function windowLengthNumSecondsToSamples(numSeconds: Time) {
   // Why round? Because there may be a sligh difference between a custom parameter (`maxSmoothingWindowLength`) and
   // `process()`'s `parameters.smoothingWindowLength[0]` even if they were the same number at the time of passing to the
   // processor constructor (I assume because one is float32, the other is float64).
@@ -15,12 +15,12 @@ function windowLengthNumSecondsToSamples(numSeconds) {
 }
 
 class SingleChannelRingBuffer extends Float32Array {
-  // _lastSampleI;
-  constructor(length) {
+  private _lastSampleI: number;
+  constructor(length: number) {
     super(length);
     this._lastSampleI = length - 1;
   }
-  push(val) {
+  push(val: any) {
     ++this._lastSampleI;
     if (this._lastSampleI >= this.length) {
       this._lastSampleI = 0;
@@ -28,9 +28,9 @@ class SingleChannelRingBuffer extends Float32Array {
     this[this._lastSampleI] = val;
   }
   /**
-   * @param {numer} depth how many elements have been pushed after the one that we want to get.
+   * @param depth how many elements have been pushed after the one that we want to get.
    */
-  getReverse(depth) {
+  getReverse(depth: number) {
     if (process.env.NODE_ENV !== 'production') {
       if (depth >= this.length) {
         throw new RangeError();
@@ -42,10 +42,10 @@ class SingleChannelRingBuffer extends Float32Array {
 
 // Simple rectangular window and RMS.
 class VolumeFilter extends AudioWorkletProcessor {
-  // _sampleSquaresRingBuffer;
-  // _currWindowSquaresSum = 0;
-  // _options;
-  constructor(options, ...rest) {
+  _sampleSquaresRingBuffer: SingleChannelRingBuffer;
+  _currWindowSquaresSum: number;
+  _options: any;
+  constructor(options: any, ...rest: any) {
     if (process.env.NODE_ENV !== 'production') {
       // Looks like just passing "1" to `super()` doen't do anythin. Will have to force the user to specify it.
       if (options.outputChannelCount.length !== 1 || options.outputChannelCount[0] !== 1) {
@@ -62,7 +62,7 @@ class VolumeFilter extends AudioWorkletProcessor {
     const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
     this._sampleSquaresRingBuffer = new SingleChannelRingBuffer(bufferLength);
   }
-  static get parameterDescriptors() {
+  static get parameterDescriptors(): AudioParamDescriptor[] {
     return [
       // The length (duration, one could say) of the window, values of which affect the output.
       {
@@ -74,7 +74,7 @@ class VolumeFilter extends AudioWorkletProcessor {
       },
     ];
   }
-  process(inputs, outputs, parameters) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
     const smoothingWindowLength = parameters.smoothingWindowLength[0];
     const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
     const input = inputs[0];
