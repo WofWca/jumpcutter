@@ -20,7 +20,7 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
-const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as typeof defaultSettings;
+const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r)) as any as typeof defaultSettings;
 
 async function initIfVideoPresent() {
   const v = document.querySelector('video');

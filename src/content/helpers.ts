@@ -1,16 +1,16 @@
 import type { Time, StretchInfo } from '../helpers';
 
-export function getRealtimeMargin(margin: Time, speed: number) {
+export function getRealtimeMargin(margin: Time, speed: number): Time {
   return margin / speed;
 }
 
-export function getNewLookaheadDelay(videoTimeMargin: Time, soundedSpeed: number, silenceSpeed: number) {
+export function getNewLookaheadDelay(videoTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
   return videoTimeMargin / Math.min(soundedSpeed, silenceSpeed)
 }
-export function getTotalDelay(lookaheadNodeDelay: Time, stretcherNodeDelay: Time) {
+export function getTotalDelay(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
   return lookaheadNodeDelay + stretcherNodeDelay;
 }
-export function getNewSnippetDuration(originalRealtimeDuration: Time, originalSpeed: number, newSpeed: number) {
+export function getNewSnippetDuration(originalRealtimeDuration: Time, originalSpeed: number, newSpeed: number): Time {
   const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
   return videoSpeedSnippetDuration / newSpeed;
 }
@@ -19,20 +19,24 @@ export function getStretcherDelayChange(
   snippetOriginalRealtimeDuration: Time,
   originalSpeed: number,
   newSpeed: number
-) {
+): Time {
   const snippetNewDuration = getNewSnippetDuration(snippetOriginalRealtimeDuration, originalSpeed, newSpeed);
   const delayChange = snippetNewDuration - snippetOriginalRealtimeDuration;
   return delayChange;
 }
 // TODO Is it always constant though? What about these short silence snippets, where we don't have to fully reset the margin?
-export function getStretcherSoundedDelay(videoTimeMarginBefore: Time, soundedSpeed: number, silenceSpeed: number) {
+export function getStretcherSoundedDelay(
+  videoTimeMarginBefore: Time,
+  soundedSpeed: number,
+  silenceSpeed: number
+): Time {
   const realTimeMarginBefore = videoTimeMarginBefore / silenceSpeed;
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
 }
 export function getStretchSpeedChangeMultiplier(
   { startValue, endValue, startTime, endTime }: Pick<StretchInfo, 'startValue' | 'endValue' | 'startTime' | 'endTime'>
-) {
+): number {
   return ((endTime - startTime) + (startValue - endValue)) / (endTime - startTime);
 }
 
@@ -47,7 +51,7 @@ export function getMomentOutputTime(
   momentTime: Time,
   lookaheadDelay: Time,
   lastScheduledStretcherDelayReset: StretchInfo
-) {
+): Time {
   const stretch = lastScheduledStretcherDelayReset;
   const stretchEndTotalDelay = getTotalDelay(lookaheadDelay, stretch.endValue);
   // Simpliest case. The target moment is after the `stretch`'s end time

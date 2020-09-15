@@ -65,16 +65,16 @@ export default class PitchPreservingStretcherNode {
     this.normalSpeedGain.connect(this.originalPitchCompensationDelay);
   }
 
-  connectInputFrom(sourceNode: AudioNode) {
+  connectInputFrom(sourceNode: AudioNode): void {
     sourceNode.connect(this.delayNode);
   }
-  connectOutputTo(destinationNode: AudioNode) {
+  connectOutputTo(destinationNode: AudioNode): void {
     this.speedUpPitchShift.connect(destinationNode)
     this.slowDownPitchShift.connect(destinationNode)
     this.originalPitchCompensationDelay.connect(destinationNode)
   }
 
-  setOutputPitchAt(pitchSetting: PitchSetting, time: Time, oldPitchSetting: PitchSetting) {
+  private setOutputPitchAt(pitchSetting: PitchSetting, time: Time, oldPitchSetting: PitchSetting) {
     if (process.env.NODE_ENV !== 'production') {
       if (!['slowdown', 'speedup', 'normal'].includes(pitchSetting)) {
         // TODO replace with TypeScript?
@@ -110,7 +110,7 @@ export default class PitchPreservingStretcherNode {
     toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
   }
 
-  stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time) {
+  stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
     if (startValue === endValue) {
       return;
     }
@@ -151,7 +151,7 @@ export default class PitchPreservingStretcherNode {
    * @param interruptAtTime the time at which to stop changing the delay.
    * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
    */
-  interruptLastScheduledStretch(interruptAtTimeValue: Time, interruptAtTime: Time) {
+  interruptLastScheduledStretch(interruptAtTimeValue: Time, interruptAtTime: Time): void {
     assert(!!this._lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
       + 'yet');
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method
@@ -170,11 +170,11 @@ export default class PitchPreservingStretcherNode {
     this.setOutputPitchAt('normal', interruptAtTime, this._lastScheduledStretch.speedupOrSlowdown);
   }
 
-  setDelay(value: Time) {
+  setDelay(value: Time): void {
     this.delayNode.delayTime.value = value;
   }
 
-  destroy() {
+  destroy(): void {
     const toneAudioNodes = [this.speedUpPitchShift, this.slowDownPitchShift];
     for (const node of toneAudioNodes) {
       node.dispose();

@@ -4,7 +4,7 @@
 
 import defaultSettings from '../defaultSettings.json';
 
-export default function () {
+export default function (): void {
   chrome.runtime.onInstalled.addListener(async function () {
     const settings =
       await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as typeof defaultSettings;

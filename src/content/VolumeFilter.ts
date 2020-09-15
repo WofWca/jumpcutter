@@ -20,12 +20,12 @@ class SingleChannelRingBuffer extends Float32Array {
     super(length);
     this._lastSampleI = length - 1;
   }
-  push(val: any) {
+  push(val: unknown) {
     ++this._lastSampleI;
     if (this._lastSampleI >= this.length) {
       this._lastSampleI = 0;
     }
-    this[this._lastSampleI] = val;
+    (this[this._lastSampleI] as unknown) = val;
   }
   /**
    * @param depth how many elements have been pushed after the one that we want to get.
@@ -45,7 +45,7 @@ class VolumeFilter extends AudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
   _currWindowSquaresSum: number;
   _options: any;
-  constructor(options: any, ...rest: any) {
+  constructor(options: any, ...rest: unknown[]) {
     if (process.env.NODE_ENV !== 'production') {
       // Looks like just passing "1" to `super()` doen't do anythin. Will have to force the user to specify it.
       if (options.outputChannelCount.length !== 1 || options.outputChannelCount[0] !== 1) {

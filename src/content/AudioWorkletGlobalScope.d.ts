@@ -7,13 +7,13 @@ interface AudioWorkletProcessor {
     parameters: Record<string, Float32Array>
   ): boolean;
 }
-declare var AudioWorkletProcessor: {
+declare const AudioWorkletProcessor: {
   prototype: AudioWorkletProcessor;
-  new(options?: AudioWorkletNodeOptions, ...rest: any[]): AudioWorkletProcessor;
+  new(options?: AudioWorkletNodeOptions, ...rest: unknown[]): AudioWorkletProcessor;
   readonly parameterDescriptors: AudioParamDescriptor[];
 };
-declare var sampleRate: number;
-declare var currentTime: number;
+declare const sampleRate: number;
+declare const currentTime: number;
 declare function registerProcessor(
   name: string,
   processorCtor: (new (
@@ -21,4 +21,4 @@ declare function registerProcessor(
   ) => AudioWorkletProcessor) & {
     parameterDescriptors?: AudioParamDescriptor[];
   }
-): any;
+): unknown;

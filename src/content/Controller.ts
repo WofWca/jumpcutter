@@ -57,7 +57,8 @@ export default class Controller {
   };
   _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
-  _log?: Function;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  _log?: (msg?: any) => void;
 
   constructor(videoElement: HTMLVideoElement, settings: Settings) {
     this.element = videoElement;
@@ -74,8 +75,8 @@ export default class Controller {
     return logging;
   }
 
-  async init() {
-    let resolveInitPromise: Function;
+  async init(): Promise<this> {
+    let resolveInitPromise: (result: this) => void;
     // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
     // executor?
     this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
@@ -200,7 +201,7 @@ export default class Controller {
   }
 
   /** This only changes the state of `this._stretcher` */
-  _doOnSilenceEndStretcherStuff(eventTime: Time) {
+  private _doOnSilenceEndStretcherStuff(eventTime: Time) {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
     assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
@@ -296,7 +297,7 @@ export default class Controller {
     }
   }
   /** @see this._doOnSilenceEndStretcherStuff */
-  _doOnSilenceStartStretcherStuff(eventTime: Time) {
+  private _doOnSilenceStartStretcherStuff(eventTime: Time) {
     assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
 
     const realtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
@@ -335,7 +336,7 @@ export default class Controller {
    * Assumes `init()` has been called (but not necessarily that its return promise has been resolved).
    * TODO make it work when it's false?
    */
-  async destroy() {
+  async destroy(): Promise<void> {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assert(this.isInitialized());
 
@@ -367,7 +368,7 @@ export default class Controller {
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  _setStateAccordingToNewSettings(oldSettings: Settings | null = null) {
+  private _setStateAccordingToNewSettings(oldSettings: Settings | null = null) {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
@@ -397,7 +398,7 @@ export default class Controller {
   }
 
   /** Can be called before the instance has been initialized. */
-  updateSettings(newChangedSettings: Partial<Settings>) {
+  updateSettings(newChangedSettings: Partial<Settings>): void {
     const oldSettings = this.settings;
     const newSettings = {
       ...this.settings,
@@ -415,14 +416,14 @@ export default class Controller {
     this._setStateAccordingToNewSettings(oldSettings);
   }
 
-  _getSilenceDetectorNodeDurationThreshold() {
+  private _getSilenceDetectorNodeDurationThreshold() {
     const marginBeforeAddition = this.isStretcherEnabled()
       ? this.settings.marginBefore
       : 0;
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
-  _setSpeedAndLog(speedName: 'sounded' | 'silence') {
+  private _setSpeedAndLog(speedName: 'sounded' | 'silence') {
     let speedVal;
     switch (speedName) {
       case 'sounded': speedVal = this.settings.soundedSpeed; break;

@@ -1,5 +1,5 @@
 // TODO but calls of this function are still not eliminated in production.
-export function assert(condition: boolean, msg?: any): asserts condition {
+export function assert(condition: boolean, msg?: string): asserts condition {
   if (process.env.NODE_ENV !== 'production') {
     if (!condition) {
       throw new Error(msg);
