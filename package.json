@@ -24,7 +24,6 @@
     "tone": "^14.7.12"
   },
   "devDependencies": {
-    "@tsconfig/svelte": "^1.0.10",
     "@types/chrome": "^0.0.123",
     "@types/lodash.throttle": "^4.1.6",
     "@types/node": "^14.10.1",
