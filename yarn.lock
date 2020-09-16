@@ -166,9 +166,9 @@
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
 
 "@types/node@*", "@types/node@^14.10.1":
-  version "14.10.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.10.1.tgz#cc323bad8e8a533d4822f45ce4e5326f36e42177"
-  integrity sha512-aYNbO+FZ/3KGeQCEkNhHFRIzBOUgc7QvcVNKXbfnhDkSfwUv91JsQQa10rDgKSTSLkXZ1UIyPe4FJJNVgw1xWQ==
+  version "14.10.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.10.2.tgz#9b47a2c8e4dabd4db73b57e750b24af689600514"
+  integrity sha512-IzMhbDYCpv26pC2wboJ4MMOa9GKtjplXfcAqrMeNJpUUwpM/2ATt2w1JPUXwS6spu856TvKZL2AOmeU2rAxskw==
 
 "@types/parse-json@^4.0.0":
   version "4.0.0"
@@ -473,20 +473,10 @@ ajv-keywords@^3.5.2:
   resolved "https://registry.yarnpkg.com/ajv-keywords/-/ajv-keywords-3.5.2.tgz#31f29da5ab6e00d1c2d329acf7b5929614d5014d"
   integrity sha512-5p6WTN0DdTGVQk6VjcEju19IgaHudalcfabD7yhDGeA6bcQnmL+CpveLJq/3hvfwd1aof6L386Ougkx6RfyMIQ==
 
-ajv@^6.10.0, ajv@^6.10.2:
+ajv@^6.10.0, ajv@^6.10.2, ajv@^6.12.4:
   version "6.12.5"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.5.tgz#19b0e8bae8f476e5ba666300387775fb1a00a4da"
   integrity sha512-lRF8RORchjpKG50/WFf8xmg7sgCLFiYNNnqdKflk63whMQcWR5ngGjiSXkL9bjxy6B2npOK2HSMN49jEBMSkag==
-  dependencies:
-    fast-deep-equal "^3.1.1"
-    fast-json-stable-stringify "^2.0.0"
-    json-schema-traverse "^0.4.1"
-    uri-js "^4.2.2"
-
-ajv@^6.12.4:
-  version "6.12.4"
-  resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.4.tgz#0614facc4522127fa713445c6bfd3ebd376e2234"
-  integrity sha512-eienB2c9qVQs2KWexhkrdMLVDoIQCz5KSeLxwg9Lzk4DOfBtIK9PQwwufcsn1jjGuf9WZmqPMbGxOzfcuphJCQ==
   dependencies:
     fast-deep-equal "^3.1.1"
     fast-json-stable-stringify "^2.0.0"
@@ -2316,7 +2306,7 @@ prelude-ls@^1.2.1:
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.2.1.tgz#debc6489d7a6e6b0e7611888cec880337d316396"
   integrity sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==
 
-prettier-plugin-svelte@~1.2.0:
+prettier-plugin-svelte@~1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/prettier-plugin-svelte/-/prettier-plugin-svelte-1.2.1.tgz#2af472cb7ebf7f8254a132e44cce18ed3bf2ef6f"
   integrity sha512-oULQ6cmqAVA3PmtgagM3139UXJHbLOLQjzGOKkH/pRQbT9vXcWQtbWXEO1fAePWQis5TiDgm2p/PIKh5w1fd/A==
@@ -2527,6 +2517,13 @@ serialize-javascript@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/serialize-javascript/-/serialize-javascript-4.0.0.tgz#b525e1238489a5ecfc42afacc3fe99e666f4b1aa"
   integrity sha512-GaNA54380uFefWghODBWEGisLZFj00nS5ACs6yHa9nLqlLpVLO8ChDGeKRjZnV4Nh4n0Qi7nhYZD/9fCPzEqkw==
+  dependencies:
+    randombytes "^2.1.0"
+
+serialize-javascript@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/serialize-javascript/-/serialize-javascript-5.0.1.tgz#7886ec848049a462467a97d3d918ebb2aaf934f4"
+  integrity sha512-SaaNal9imEO737H2c05Og0/8LUXG7EnsZyMa8MzkmuHoELfT6txuj0cMqRj6zfPKnmQ1yasR4PCJc8x+M4JSPA==
   dependencies:
     randombytes "^2.1.0"
 
@@ -2762,9 +2759,9 @@ supports-color@^7.0.0, supports-color@^7.1.0:
     has-flag "^4.0.0"
 
 svelte-check@^1.0.41:
-  version "1.0.41"
-  resolved "https://registry.yarnpkg.com/svelte-check/-/svelte-check-1.0.41.tgz#dbf2f2181cf551e1de193095c43ee30869f87719"
-  integrity sha512-B04OocX9YFMb2+rYBAs4VZIOWgDUL6dcyObHy+IWQQRsH1qRWUjgVrQoTOolL25ZnwzfwyZkW2A/sc9UWYjspw==
+  version "1.0.42"
+  resolved "https://registry.yarnpkg.com/svelte-check/-/svelte-check-1.0.42.tgz#2703481350afb8d4f2020c70e81de3fc95cde919"
+  integrity sha512-AFa6+Vm5dTtEavknjuOxk2GyUA1MEA/XBTQMNBE2v5FGd44PRRrHRglxX+RfBo5ADMGSpuzLfYrrKa26tiMR7w==
   dependencies:
     chalk "^4.0.0"
     chokidar "^3.4.1"
@@ -2782,18 +2779,18 @@ svelte-dev-helper@^1.1.9:
   integrity sha1-fRh9tcbNu9ZNdaMvkbiZi94yc8M=
 
 svelte-language-server@*:
-  version "0.10.119"
-  resolved "https://registry.yarnpkg.com/svelte-language-server/-/svelte-language-server-0.10.119.tgz#429c601f38e048dbd300e961a1ed4b15150102f3"
-  integrity sha512-F9uSGVnFCcgyB9ajDwtsF8rUPaeHWyPRjCkc5e2ECM81CqwWI2KBWyWyzDv9G2PZ2UPLvevCrANIxDylCfa4Lg==
+  version "0.10.121"
+  resolved "https://registry.yarnpkg.com/svelte-language-server/-/svelte-language-server-0.10.121.tgz#cf72e68547d0280befc23b78f341ffc4b25b6b21"
+  integrity sha512-TjvSswAbcaVbivPjVQomWzuVAPy15rctCX1Pkhmd/HGWn1ECz3M+KqyjNoXVhK1mhVxY74dlOLiNo2pslRhy0g==
   dependencies:
     chokidar "^3.4.1"
     cosmiconfig "^6.0.0"
     estree-walker "^2.0.1"
     lodash "^4.17.19"
     prettier "2.1.1"
-    prettier-plugin-svelte "~1.2.0"
+    prettier-plugin-svelte "~1.2.1"
     source-map "^0.7.3"
-    svelte "3.24.1"
+    svelte "3.25.0"
     svelte-preprocess "~4.2.0"
     svelte2tsx "*"
     typescript "*"
@@ -2812,10 +2809,20 @@ svelte-loader@^2.13.6:
     loader-utils "^1.1.0"
     svelte-dev-helper "^1.1.9"
 
-svelte-preprocess@^4.2.1, svelte-preprocess@~4.2.0:
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/svelte-preprocess/-/svelte-preprocess-4.2.1.tgz#46a936ade6e7b14f407167bff3318df4528484d3"
-  integrity sha512-iagQGcKgCwlSKcKJ2GA3SznjWKwz4Q4yAkYdVMvgE8hQ+vTlvjjRcpCo/9P7u+otr5DLG16PPMwgVQZ3h51cKQ==
+svelte-preprocess@^4.2.1:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/svelte-preprocess/-/svelte-preprocess-4.3.0.tgz#7db318e9da4ac3fe22ec9671095533806ad76219"
+  integrity sha512-7FGpPrnRWMqNuQ/FnP0T52yHw1qgFYXisTM3JnQCzXkSdPMNDU2Wts0O3x1ovM+mPzWiAQ0PWHFeFhP5+fnRJQ==
+  dependencies:
+    "@types/pug" "^2.0.4"
+    "@types/sass" "^1.16.0"
+    detect-indent "^6.0.0"
+    strip-indent "^3.0.0"
+
+svelte-preprocess@~4.2.0:
+  version "4.2.2"
+  resolved "https://registry.yarnpkg.com/svelte-preprocess/-/svelte-preprocess-4.2.2.tgz#862118cb579b68bd8fa7e7949237462c729eec32"
+  integrity sha512-YicmOEIP0dfqUBHrhBAT256etfY8GthncaK8DbmpBnvYMjuiO3mLlLxVIAoLc0x4GCy5ZG5IK2hNGTmota1ANg==
   dependencies:
     "@types/pug" "^2.0.4"
     "@types/sass" "^1.16.0"
@@ -2823,22 +2830,22 @@ svelte-preprocess@^4.2.1, svelte-preprocess@~4.2.0:
     strip-indent "^3.0.0"
 
 svelte2tsx@*:
-  version "0.1.107"
-  resolved "https://registry.yarnpkg.com/svelte2tsx/-/svelte2tsx-0.1.107.tgz#d65706aa8321c4683c7861515ee70ed564d19f82"
-  integrity sha512-Mk4xSqjInOqKuPJ3SaL6Hq7aLIc+I3/BoWGO+4VZcHb46ehapGKGbnp9bgAo/EVSutu+AJ9hoO4bvLqizY4iIA==
+  version "0.1.109"
+  resolved "https://registry.yarnpkg.com/svelte2tsx/-/svelte2tsx-0.1.109.tgz#879ad71a77b88e03ba33034cd3948ee3fecaf826"
+  integrity sha512-DVappt4I7Ih7VAOnuhUdmcsY49u8A1XpyMVYVlNenxKjUq6AoY/XxSh7On+Dg+Lky8kKoN3scKtAJDvVhsZVnA==
   dependencies:
     dedent-js "^1.0.1"
     pascal-case "^3.1.1"
 
-svelte@3.24.1:
-  version "3.24.1"
-  resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.24.1.tgz#aca364937dd1df27fe131e2a4c234acb6061db4b"
-  integrity sha512-OX/IBVUJSFo1rnznXdwf9rv6LReJ3qQ0PwRjj76vfUWyTfbHbR9OXqJBnUrpjyis2dwYcbT2Zm1DFjOOF1ZbbQ==
-
-svelte@^3.24.0:
+svelte@3.25.0:
   version "3.25.0"
   resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.25.0.tgz#e7f89d11a2223ac02d29f75f82b2a9cca7fd7a54"
   integrity sha512-CUfq+YTC5Q0tBg7Q9X/QxNutdEYp7ogdbcTZF3mrowOlp3+OF1ZexHwI0Io2VqFSDxht7TlA2lTIQC4RnhR1MQ==
+
+svelte@^3.24.0:
+  version "3.25.1"
+  resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.25.1.tgz#218def1243fea5a97af6eb60f5e232315bb57ac4"
+  integrity sha512-IbrVKTmuR0BvDw4ii8/gBNy8REu7nWTRy9uhUz+Yuae5lIjWgSGwKlWtJGC2Vg95s+UnXPqDu0Kk/sUwe0t2GQ==
 
 table@^5.2.3:
   version "5.4.6"
@@ -2873,21 +2880,21 @@ tar@^6.0.2:
     yallist "^4.0.0"
 
 terser-webpack-plugin@^4.1.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/terser-webpack-plugin/-/terser-webpack-plugin-4.2.0.tgz#6240a71101a55c6823d84e11c8fff380b9dfd26f"
-  integrity sha512-Wi0YFbWKG8gBXhbJmrMusRcoXl/C9U5BzIPC2Tn3Si0hejGhhIh0gPf9rEfOCxwigzRPLC8PXv42qDiRTocMXg==
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/terser-webpack-plugin/-/terser-webpack-plugin-4.2.1.tgz#44b88ef4d7443129fb136a68b5ec3e80d63ec471"
+  integrity sha512-D0IZQNl1ZN/JivFNDFzOeU2Bk2LdQQESHJhKTHsodpUmISkaeRwVFk7gzHzX4OuQwanDGelOxIEsBt1SZ+s6nA==
   dependencies:
     cacache "^15.0.5"
     find-cache-dir "^3.3.1"
     jest-worker "^26.3.0"
     p-limit "^3.0.2"
     schema-utils "^2.7.1"
-    serialize-javascript "^4.0.0"
+    serialize-javascript "^5.0.1"
     source-map "^0.6.1"
-    terser "^5.3.0"
+    terser "^5.3.1"
     webpack-sources "^1.4.3"
 
-terser@^5.3.0:
+terser@^5.3.1:
   version "5.3.1"
   resolved "https://registry.yarnpkg.com/terser/-/terser-5.3.1.tgz#f50fe20ab48b15234fe9bdd86b10148ad5fca787"
   integrity sha512-yD80f4hdwCWTH5mojzxe1q8bN1oJbsK/vfJGLcPZM/fl+/jItIVNKhFIHqqR71OipFWMLgj3Kc+GIp6CeIqfnA==
