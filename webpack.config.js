@@ -46,11 +46,12 @@ module.exports = {
   },
 
   entry: {
-    background: './src/background/main.ts',
     content: './src/content/main.ts',
-    popup: './src/popup/main.ts',
     SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.ts',
     VolumeFilter: './src/content/VolumeFilter.ts',
+
+    popup: './src/popup/main.ts',
+    background: './src/background/main.ts',
   },
 
   output: {
