@@ -1,4 +1,13 @@
-# jumpcutter
+<div align="center">
+
+  <!-- ![Logo](./src/icons/icon.svg) -->
+  <img src="./src/icons/icon.svg" alt="Logo" height="50"/>
+  <!-- <h1 align="center">Jump Cutter</h> -->
+
+  <!-- # Jump Cutter -->
+  <h1>Jump Cutter</h1>
+
+</div>
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/users/lmppdpldfpfdlipofacekcfleacbbncp?logo=google-chrome)](https://chrome.google.com/webstore/detail/jump-cutter/lmppdpldfpfdlipofacekcfleacbbncp)
 [![Discord](https://img.shields.io/discord/678444692592918548?logo=discord)](https://discord.gg/HCjghyT)
