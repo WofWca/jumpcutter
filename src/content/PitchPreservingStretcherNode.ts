@@ -1,7 +1,7 @@
 import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
 import { getStretchSpeedChangeMultiplier } from './helpers';
-import type { Time, StretchInfo } from '../helpers';
-import { assert } from '../helpers';
+import type { Time, StretchInfo } from '@/helpers';
+import { assert } from '@/helpers';
 
 
 // TODO make it into a setting?

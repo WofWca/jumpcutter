@@ -1,4 +1,4 @@
-import { Time } from "../helpers";
+import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 

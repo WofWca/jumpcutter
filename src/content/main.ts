@@ -1,4 +1,4 @@
-import defaultSettings from '../defaultSettings.json';
+import defaultSettings from '@/defaultSettings.json';
 import type Controller from './Controller';
 
 (async function () { // Just for top-level `await`

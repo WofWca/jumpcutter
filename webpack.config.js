@@ -15,7 +15,8 @@ module.exports = {
   // Taken from https://github.com/sveltejs/svelte-loader#usage
   resolve: {
     alias: {
-      svelte: path.resolve('node_modules', 'svelte')
+      svelte: path.resolve('node_modules', 'svelte'),
+      '@': path.resolve(__dirname, 'src'),
     },
     extensions: ['.tsx', '.ts', '.mjs', '.js', '.svelte', '.json'],
     mainFields: ['svelte', 'browser', 'module', 'main'],

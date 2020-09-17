@@ -1,4 +1,4 @@
-import type { Time, StretchInfo } from '../helpers';
+import type { Time, StretchInfo } from '@/helpers';
 
 export function getRealtimeMargin(margin: Time, speed: number): Time {
   return margin / speed;

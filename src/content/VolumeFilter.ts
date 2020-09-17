@@ -1,4 +1,4 @@
-import type { Time } from '../helpers';
+import type { Time } from '@/helpers';
 
 const SAMPLES_PER_QUANTUM = 128;
 // This is the minimum number a broswer should support, apparently. TODO make sure this is correct.

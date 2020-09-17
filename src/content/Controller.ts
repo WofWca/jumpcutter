@@ -8,10 +8,10 @@ import {
   getStretcherSoundedDelay,
   getMomentOutputTime,
 } from './helpers';
-import type { Time, StretchInfo } from '../helpers';
-import type defaultSettings from '../defaultSettings.json';
+import type { Time, StretchInfo } from '@/helpers';
+import type defaultSettings from '@/defaultSettings.json';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
-import { assert } from '../helpers';
+import { assert } from '@/helpers';
 
 type Settings = typeof defaultSettings;
 

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from 'smoothie';
-  import { assert, StretchInfo, Time as TimeS } from '../helpers';
-  import type Controller from '../content/Controller';
+  import { assert, StretchInfo, Time as TimeS } from '@/helpers';
+  import type Controller from '@/content/Controller';
 
   type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;

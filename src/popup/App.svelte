@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import defaultSettings from '../defaultSettings.json';
+  import defaultSettings from '@/defaultSettings.json';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import throttle from 'lodash.throttle';
-  import type Controller from '../content/Controller';
+  import type Controller from '@/content/Controller';
 
   let settings = { ...defaultSettings };
   if (process.env.NODE_ENV !== 'production') {
