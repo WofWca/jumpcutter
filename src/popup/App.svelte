@@ -140,15 +140,6 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
   on:input={({ detail }) => settings.marginBefore = detail}
 />
 {/if}
-<!-- <label>
-  After margin
-  <input
-    id="marginAfter"
-    type="range"
-    min="0"
-    step="0.005"
-  >
-</label> -->
 <a
   id="repo-link"
   target="new"

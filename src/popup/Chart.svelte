@@ -229,7 +229,6 @@
     ) {
       return stretchA?.startTime === stretchB?.startTime;
     }
-    // TODO rewrite this mouthful (and the one above it) with optional chaining.
     const newStretch = r.lastScheduledStretchInputTime && !areStretchObjectsEqual(
       lastHandledTelemetryRecord?.lastScheduledStretchInputTime,
       r.lastScheduledStretchInputTime
