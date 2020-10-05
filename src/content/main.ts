@@ -1,4 +1,4 @@
-import defaultSettings from '@/defaultSettings.json';
+import { defaultSettings, Settings } from '@/settings';
 import type Controller from './Controller';
 
 (async function () { // Just for top-level `await`
@@ -20,7 +20,7 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
-const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r)) as any as typeof defaultSettings;
+const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r)) as any as Settings;
 
 async function initIfVideoPresent() {
   const v = document.querySelector('video');
@@ -29,7 +29,7 @@ async function initIfVideoPresent() {
     console.log('Jump cutter: no video found. Exiting');
     return;
   }
-  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as typeof defaultSettings;
+  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as Settings;
   const { default: Controller } = await import(
     /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
     './Controller'
@@ -56,9 +56,9 @@ chrome.storage.onChanged.addListener(function (changes) {
 
   if (controller) {
     if (!changes.enableExperimentalFeatures) {
-      const newValues: Partial<typeof defaultSettings> = {};
+      const newValues: Partial<Settings> = {};
       for (const [settingName, change] of Object.entries(changes)) {
-        newValues[settingName as keyof typeof defaultSettings] = change.newValue;
+        newValues[settingName as keyof Settings] = change.newValue;
       }
       controller.updateSettings(newValues);
     } else {

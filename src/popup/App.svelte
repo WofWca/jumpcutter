@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import defaultSettings from '@/defaultSettings.json';
+  import { defaultSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import throttle from 'lodash.throttle';
@@ -8,7 +8,7 @@
 
   let settings = { ...defaultSettings };
   if (process.env.NODE_ENV !== 'production') {
-    function isPrimitive(value: typeof defaultSettings[keyof typeof defaultSettings]) {
+    function isPrimitive(value: Settings[keyof Settings]) {
       return ['boolean', 'string', 'number'].includes(typeof value) || ([null, undefined] as any[]).includes(value)
     }
     for (const [key, value] of Object.entries(defaultSettings)) {
@@ -20,7 +20,7 @@
   }
 
   let settingsLoaded = false;
-  let settingsPromise = new Promise<typeof defaultSettings>(r => chrome.storage.sync.get(defaultSettings, r as any));
+  let settingsPromise = new Promise<Settings>(r => chrome.storage.sync.get(defaultSettings, r as any));
   settingsPromise.then(s => {
     settings = s;
     settingsLoaded = true;
@@ -53,7 +53,7 @@
     }, telemetryUpdatePeriod * 1000);
   })();
 
-  function saveSettings(settings: typeof defaultSettings) {
+  function saveSettings(settings: Settings) {
     chrome.storage.sync.set(settings);
   }
   const throttleSaveSettings = throttle(saveSettings, 200);

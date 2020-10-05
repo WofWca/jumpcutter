@@ -9,11 +9,9 @@ import {
   getMomentOutputTime,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
-import type defaultSettings from '@/defaultSettings.json';
+import type { Settings } from '@/settings';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
-
-type Settings = typeof defaultSettings;
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
