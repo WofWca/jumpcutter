@@ -20,7 +20,7 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
-const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r)) as any as Settings;
+const settings = await new Promise(r => chrome.storage.local.get(defaultSettings, r)) as any as Settings;
 
 async function initIfVideoPresent() {
   const v = document.querySelector('video');
@@ -29,7 +29,7 @@ async function initIfVideoPresent() {
     console.log('Jump cutter: no video found. Exiting');
     return;
   }
-  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as Settings;
+  const settings = await new Promise(r => chrome.storage.local.get(defaultSettings, r as any)) as Settings;
   const { default: Controller } = await import(
     /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
     './Controller'
@@ -42,7 +42,8 @@ if (settings.enabled) {
   initIfVideoPresent();
 }
 
-chrome.storage.onChanged.addListener(function (changes) {
+chrome.storage.onChanged.addListener(function (changes, areaName) {
+  if (areaName !== 'local') return;
   // Don't need to check if it's already initialized/deinitialized because it's a setting CHANGE, and it's already
   // initialized/deinitialized in accordance to the setting a few lines above.
   if (changes.enabled != undefined) {

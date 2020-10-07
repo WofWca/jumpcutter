@@ -3,7 +3,6 @@
   import { defaultSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
-  import throttle from 'lodash.throttle';
   import type Controller from '@/content/Controller';
 
   let settings = { ...defaultSettings };
@@ -20,7 +19,7 @@
   }
 
   let settingsLoaded = false;
-  let settingsPromise = new Promise<Settings>(r => chrome.storage.sync.get(defaultSettings, r as any));
+  let settingsPromise = new Promise<Settings>(r => chrome.storage.local.get(defaultSettings, r as any));
   settingsPromise.then(s => {
     settings = s;
     settingsLoaded = true;
@@ -54,11 +53,10 @@
   })();
 
   function saveSettings(settings: Settings) {
-    chrome.storage.sync.set(settings);
+    chrome.storage.local.set(settings);
   }
-  const throttleSaveSettings = throttle(saveSettings, 200);
   $: onSettingsChange = settingsLoaded
-    ? throttleSaveSettings
+    ? saveSettings
     : () => {};
   $: {
     onSettingsChange(settings);

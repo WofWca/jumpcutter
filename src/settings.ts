@@ -17,3 +17,11 @@ export const defaultSettings: Settings = {
   marginBefore: 0.100,
   marginAfter: 0.100,
 };
+
+// https://developer.chrome.com/apps/storage#property-onChanged-changes
+export type MyStorageChanges = {
+  [P in keyof Settings]?: {
+    newValue?: Settings[P],
+    oldValue?: Settings[P],
+  }
+};
