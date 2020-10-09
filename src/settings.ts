@@ -34,14 +34,28 @@ export async function getSettings(): Promise<Settings> {
 export async function setSettings(items: Partial<Settings>): Promise<void> {
   return new Promise(r => storage.set(items, r));
 }
-export function addOnChangedListener(listener: (changes: MyStorageChanges) => void): void {
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    // As said in `src/background.ts`, we primarily use `chrome.storage.local`, and `chrome.storage.sync` just copies
-    // data from it.
+type MyOnChangedListener = (changes: MyStorageChanges) => void;
+type NativeOnChangedListener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
+const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnChangedListener>();
+/**
+ * This is a wrapper around the native `chrome.storage.onChanged.addListener`. The reason we need this is so listeners
+ * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
+ */
+export function addOnChangedListener(listener: MyOnChangedListener): void {
+  const actualListener: NativeOnChangedListener = (changes, areaName) => {
     if (areaName !== 'local') return;
     listener(changes);
-  })
+  };
+  srcListenerToWrapperListener.set(listener, actualListener);
+  chrome.storage.onChanged.addListener(actualListener);
 }
-// export function removeOnChangedListener(listener: Parameters<typeof addOnChangedListener>[0]): void {
-//   chrome.storage.onChanged.removeListener(listener);
-// }
+export function removeOnChangedListener(listener: MyOnChangedListener): void {
+  const actualListener = srcListenerToWrapperListener.get(listener);
+  if (!actualListener) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Did not remove listener because it\'s already not attached');
+    }
+    return;
+  }
+  chrome.storage.onChanged.removeListener(actualListener);
+}
