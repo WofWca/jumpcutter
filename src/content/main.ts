@@ -38,6 +38,11 @@ async function initIfVideoPresent() {
   controller.init();
 }
 
+function destroyIfInited() {
+  controller?.destroy();
+  controller = null;
+}
+
 if (settings.enabled) {
   initIfVideoPresent();
 }
@@ -47,8 +52,7 @@ addOnSettingsChangedListener(function (changes) {
   // initialized/deinitialized in accordance to the setting a few lines above.
   if (changes.enabled != undefined) {
     if (changes.enabled.newValue === false) {
-      controller?.destroy();
-      controller = null;
+      destroyIfInited();
     } else {
       initIfVideoPresent();
     }
@@ -56,6 +60,7 @@ addOnSettingsChangedListener(function (changes) {
 
   if (controller) {
     if (!changes.enableExperimentalFeatures) {
+      // TODO also check for hotkey changes.
       const newValues: Partial<Settings> = {};
       for (const [settingName, change] of Object.entries(changes)) {
         (newValues[settingName as keyof Settings] as any) = change!.newValue;
@@ -63,8 +68,7 @@ addOnSettingsChangedListener(function (changes) {
       controller.updateSettings(newValues);
     } else {
       // A change requires instance re-initialization.
-      controller.destroy();
-      controller = null;
+      destroyIfInited();
       initIfVideoPresent()
     }
   }
