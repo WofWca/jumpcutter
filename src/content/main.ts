@@ -1,4 +1,4 @@
-import { defaultSettings, Settings } from '@/settings';
+import { Settings, getSettings, addOnChangedListener as addOnSettingsChangedListener } from '@/settings';
 import type Controller from './Controller';
 
 (async function () { // Just for top-level `await`
@@ -20,7 +20,7 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
-const settings = await new Promise(r => chrome.storage.local.get(defaultSettings, r)) as any as Settings;
+const settings = await getSettings();
 
 async function initIfVideoPresent() {
   const v = document.querySelector('video');
@@ -29,7 +29,7 @@ async function initIfVideoPresent() {
     console.log('Jump cutter: no video found. Exiting');
     return;
   }
-  const settings = await new Promise(r => chrome.storage.local.get(defaultSettings, r as any)) as Settings;
+  const settings = await getSettings();
   const { default: Controller } = await import(
     /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
     './Controller'
@@ -42,8 +42,7 @@ if (settings.enabled) {
   initIfVideoPresent();
 }
 
-chrome.storage.onChanged.addListener(function (changes, areaName) {
-  if (areaName !== 'local') return;
+addOnSettingsChangedListener(function (changes) {
   // Don't need to check if it's already initialized/deinitialized because it's a setting CHANGE, and it's already
   // initialized/deinitialized in accordance to the setting a few lines above.
   if (changes.enabled != undefined) {
@@ -59,7 +58,7 @@ chrome.storage.onChanged.addListener(function (changes, areaName) {
     if (!changes.enableExperimentalFeatures) {
       const newValues: Partial<Settings> = {};
       for (const [settingName, change] of Object.entries(changes)) {
-        newValues[settingName as keyof Settings] = change.newValue;
+        (newValues[settingName as keyof Settings] as any) = change!.newValue;
       }
       controller.updateSettings(newValues);
     } else {

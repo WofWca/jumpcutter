@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { defaultSettings, Settings } from '@/settings';
+  import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
@@ -19,7 +19,7 @@
   }
 
   let settingsLoaded = false;
-  let settingsPromise = new Promise<Settings>(r => chrome.storage.local.get(defaultSettings, r as any));
+  let settingsPromise = getSettings();
   settingsPromise.then(s => {
     settings = s;
     settingsLoaded = true;
@@ -53,7 +53,7 @@
   })();
 
   function saveSettings(settings: Settings) {
-    chrome.storage.local.set(settings);
+    setSettings(settings);
   }
   $: onSettingsChange = settingsLoaded
     ? saveSettings
