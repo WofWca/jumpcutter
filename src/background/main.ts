@@ -5,7 +5,7 @@
 import fixSettingsIfNeeded from './fixSettingsIfNeeded'; // TODO also rename this to `ensureMigrateTo1_1_0`?
 import ensureMigrateTo1_7_0 from './ensureMigrateTo1_7_0';
 
-import throttle from 'lodash.throttle';
+import { throttle } from 'lodash';
 import type { Settings, MyStorageChanges } from '@/settings';
 
 // Run migrations.
