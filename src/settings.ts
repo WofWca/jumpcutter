@@ -8,7 +8,7 @@ export interface Settings {
   marginAfter: number,
 }
 
-export const defaultSettings: Settings = {
+export const defaultSettings: Readonly<Settings> = {
   volumeThreshold: 0.010,
   silenceSpeed: 4,
   soundedSpeed: 1.5,
