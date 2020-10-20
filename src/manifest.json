@@ -25,6 +25,11 @@
     "content/SilenceDetectorProcessor.js",
     "content/VolumeFilter.js"
   ],
+  "options_ui": {
+    "page": "options/index.html",
+    "chrome_style": true,
+    "open_in_tab": false
+  },
   "icons": {
     "32": "icons/icon32.png",
     "128": "icons/icon128.png"

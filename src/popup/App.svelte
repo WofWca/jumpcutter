@@ -1,22 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { cloneDeepJson } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
 
-  let settings = { ...defaultSettings };
-  if (process.env.NODE_ENV !== 'production') {
-    function isPrimitive(value: Settings[keyof Settings]) {
-      return ['boolean', 'string', 'number'].includes(typeof value) || ([null, undefined] as any[]).includes(value)
-    }
-    for (const [key, value] of Object.entries(defaultSettings)) {
-      if (!isPrimitive(value)) {
-        throw new Error('`defaultSettings` is now a more complex object, consider using lodash.clone instead to clone '
-          + 'it');
-      }
-    }
-  }
+  let settings = cloneDeepJson(defaultSettings) as Settings;
 
   let settingsLoaded = false;
   let settingsPromise = getSettings();
@@ -138,11 +128,13 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
   on:input={({ detail }) => settings.marginBefore = detail}
 />
 {/if}
+<!-- TODO but this is technically a button. Is this ok? -->
+<!-- TODO make this button a gear and move it to the top-right corner. -->
 <a
-  id="repo-link"
-  target="new"
-  href="https://github.com/WofWca/jumpcutter"
->About / feedback</a>
+  id="options-button"
+  href="javascript;"
+  on:click={() => chrome.runtime.openOptionsPage()}
+>Options</a>
 
 <style>
   label:not(:first-child) {
@@ -169,9 +161,8 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
     align-items: center;
   }
 
-  #repo-link {
+  #options-button {
     margin-top: 1rem;
-    display: block;
-    text-align: end;
+    display: inline-block;
   }
 </style>
