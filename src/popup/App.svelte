@@ -63,6 +63,12 @@
   >
   <span>Enabled</span>
 </label>
+<!-- TODO but this is technically a button. Is this ok? -->
+<a
+  id="options-button"
+  href="javascript;"
+  on:click={() => chrome.runtime.openOptionsPage()}
+>⚙️</a>
 <Chart
   {latestTelemetryRecord}
   volumeThreshold={settings.volumeThreshold}
@@ -128,13 +134,6 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
   on:input={({ detail }) => settings.marginBefore = detail}
 />
 {/if}
-<!-- TODO but this is technically a button. Is this ok? -->
-<!-- TODO make this button a gear and move it to the top-right corner. -->
-<a
-  id="options-button"
-  href="javascript;"
-  on:click={() => chrome.runtime.openOptionsPage()}
->Options</a>
 
 <style>
   label:not(:first-child) {
@@ -162,7 +161,11 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
   }
 
   #options-button {
-    margin-top: 1rem;
-    display: inline-block;
+    position: absolute;
+    padding: 0.25rem;
+    top: 0.75rem;
+    right: 0.75rem;
+    text-decoration: none;
+    font-size: 1.125rem;
   }
 </style>
