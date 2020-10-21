@@ -42,7 +42,7 @@ function reactToSettingsNewValues(newValues: Partial<Settings>) {
   const oldSettings = settings;
   settings = { ...settings, ...newValues };
   if (oldSettings.enableExperimentalFeatures === settings.enableExperimentalFeatures) {
-    // TODO also check for hotkey changes.
+    // TODO also check for `enableHotkeys` and hotkey changes.
     controller.updateSettings(newValues);
   } else {
     // A change requires instance re-initialization.
@@ -71,30 +71,34 @@ async function initIfVideoPresent() {
     controller = new Controller(v, settings);
     controller.init();
   })();
-  const hotkeyListenerP = (async () => {
-    const { default: keydownEventToSettingsNewValues } = await import(
-      /* webpackMode: 'eager' */
-      './hotkeys'
-    );
-    handleKeydown = (e: KeyboardEvent) => {
-      assert(!!settings);
-      // TODO show what changed on the popup text.
-      const newValues = keydownEventToSettingsNewValues(e, settings);
-      // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
-      // Nothing critical, but not great for performance.
-      // How about we only update the`settings` object synchronously (so sequential changes can be made, as
-      // `keydownEventToSettingsNewValues` depends on it), but do not take any action until the onChanged event fires?
-      reactToSettingsNewValues(newValues);
-      setSettings(newValues);
-    };
-    // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
-    // which wrap around a video element, which is not ever supposed to be in focus.
-    document.addEventListener('keydown', handleKeydown);
-  })();
+
+  let hotkeyListenerP;
+  if (settings.enableHotkeys) {
+    hotkeyListenerP = (async () => {
+      const { default: keydownEventToSettingsNewValues } = await import(
+        /* webpackMode: 'eager' */
+        './hotkeys'
+      );
+      handleKeydown = (e: KeyboardEvent) => {
+        assert(!!settings);
+        // TODO show what changed on the popup text.
+        const newValues = keydownEventToSettingsNewValues(e, settings);
+        // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
+        // Nothing critical, but not great for performance.
+        // How about we only update the`settings` object synchronously (so sequential changes can be made, as
+        // `keydownEventToSettingsNewValues` depends on it), but do not take any action until the onChanged event fires?
+        reactToSettingsNewValues(newValues);
+        setSettings(newValues);
+      };
+      // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
+      // which wrap around a video element, which is not ever supposed to be in focus.
+      document.addEventListener('keydown', handleKeydown);
+    })();
+  }
 
   // TODO start listening before the components have been fully initialized so setting changes can't be missed.
   await controllerP;
-  await hotkeyListenerP;
+  hotkeyListenerP && await hotkeyListenerP;
   addOnSettingsChangedListener(reactToSettingsChanges);
 }
 

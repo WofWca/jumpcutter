@@ -9,6 +9,7 @@ export interface Settings {
   marginBefore: number,
   marginAfter: number,
 
+  enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
 }
 
@@ -21,7 +22,7 @@ export const defaultSettings: Readonly<Settings> = {
   marginBefore: 0.100,
   marginAfter: 0.100,
 
-  // useHotkeys: true, TODO
+  enableHotkeys: false,
   hotkeys: [
     // volumeThreshold
     {
