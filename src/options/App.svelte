@@ -96,60 +96,74 @@
     >
       <section>
         <h3>Hotkeys</h3>
-        <p>Modifier keys (Ctrl, Shift, etc.) are supported.<br>Several actions can be bound to a single key. This can be utilized to create "profiles".</p>
-        <table>
-          <thead>
-            <th>Action</th>
-            <th>Hotkey</th>
-            <th>Value</th>
-          </thead>
-          <tbody>
-            {#each settings.hotkeys as binding, bindingInd}
-              <tr>
-                <td>
-                  <select
-                    bind:value={binding.action}
-                    required
-                  >
-                    {#each Object.entries(hotkeyActionToString) as [id, string]}
-                      <option value={id}>{string}</option>
-                    {/each}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    readonly
-                    required
-                    value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
-                    on:keydown={e => onCombinationInputKeydown(bindingInd, e)}
-                  />
-                </td>
-                <td>
-                  <!-- TODO in the future, the argument isn't necessarily going to be a number, and isn't
-                  necessarily going to be required at all. -->
-                  <input
-                    bind:value={binding.actionArgument}
-                    required
-                    type="number"
-                    step="any"
-                  >
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    on:click={e => removeBinding(bindingInd)}
-                    aria-label="Remove binding"
-                  >🗑️</button>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-        <button
-          type="button"
-          on:click={addNewBinding}
-          aria-label="Add new hotkey"
-        >➕</button>
+        <label>
+          <input
+            type="checkbox"
+            bind:checked={settings.enableHotkeys}
+          > Enable hotkeys
+        </label>
+        <!-- TODO how about we hide the table entirely? But keep in mind that it would make it possible to save
+        invalid settings as the table inputs would stop being validated. Consider replacing it with
+        `<fieldset disabled={...}`. and rewriting saving logic so that `saveSettings` is called on form submit
+        and new values are constructed from FormData (so disabled fields are ignored and don't have effect on the
+        settings). This would require us to provide inputs with names though.
+        https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects#Retrieving_a_FormData_object_from_an_HTML_form. -->
+        <div style={settings.enableHotkeys ? '' : 'opacity: 0.5;'}>
+          <p>Modifier keys (Ctrl, Shift, etc.) are supported.<br>Several actions can be bound to a single key. This can be utilized to create "profiles".</p>
+          <table>
+            <thead>
+              <th>Action</th>
+              <th>Hotkey</th>
+              <th>Value</th>
+            </thead>
+            <tbody>
+              {#each settings.hotkeys as binding, bindingInd}
+                <tr>
+                  <td>
+                    <select
+                      bind:value={binding.action}
+                      required
+                    >
+                      {#each Object.entries(hotkeyActionToString) as [id, string]}
+                        <option value={id}>{string}</option>
+                      {/each}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      readonly
+                      required
+                      value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
+                      on:keydown={e => onCombinationInputKeydown(bindingInd, e)}
+                    />
+                  </td>
+                  <td>
+                    <!-- TODO in the future, the argument isn't necessarily going to be a number, and isn't
+                    necessarily going to be required at all. -->
+                    <input
+                      bind:value={binding.actionArgument}
+                      required
+                      type="number"
+                      step="any"
+                    >
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      on:click={e => removeBinding(bindingInd)}
+                      aria-label="Remove binding"
+                    >🗑️</button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+          <button
+            type="button"
+            on:click={addNewBinding}
+            aria-label="Add new hotkey"
+          >➕</button>
+        </div>
       </section>
 
       <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
