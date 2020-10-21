@@ -90,6 +90,19 @@ async function initIfVideoPresent() {
         reactToSettingsNewValues(newValues);
         setSettings(newValues);
       };
+      // You might ask "Why don't you just use the native [commands API](https://developer.chrome.com/apps/commands)?"
+      // And the answer is – you may be right. But here's a longer version:
+      // * Our hotkeys are different from hotkeys you might have seen in videogames in the fact that ours are mostyly
+      //   associated with an argument. Native hotkeys don't have this feature. We might have just strapped arguments to
+      // native hotkeys on the options page, but it'd be a bit confusing.
+      // * Docs say, "An extension can have many commands but only 4 suggested keys can be specified". Our extension has
+      // quite a lot of hotkeys, each user would have to manually bind each of them.
+      // * Native hotkeys are global to the browser, so it's quite nice when our hotkeys are only active when the
+      // extension is enabled (with `enabled` setting) and is attached to a video.
+      // * What gains are there? Would performance overhead be that much lower? Would it be lower at all?
+      // * Keeps opportunities for more fine-grained control.
+      // * Because I haven't considered it thorougly enough.
+      //
       // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
       // which wrap around a video element, which is not ever supposed to be in focus.
       document.addEventListener('keydown', handleKeydown);
