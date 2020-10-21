@@ -19,6 +19,10 @@
   let settings: PotentiallyInvalidSettings;
   const settingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
+  type Commands = Parameters<Parameters<typeof chrome.commands.getAll>[0]>[0];
+  let commands: Commands;
+  const commandsPromise = new Promise<Commands>(r => chrome.commands.getAll(r));
+  commandsPromise.then(c => commands = c);
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -117,6 +121,38 @@
               <th>Value</th>
             </thead>
             <tbody>
+              <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
+              TODO move this comment to `manifest.json` somehow? -->
+              {#await commandsPromise then _}
+                {#each commands as command}
+                  <tr>
+                    <!-- _execute_page_action is unhandled. Though we don't use it. -->
+                    <td>{command.name === '_execute_browser_action' ? 'Open popup' : command.description}</td>
+                    <td>
+                      <input
+                        disabled
+                        readonly
+                        value={command.shortcut}
+                      />
+                    </td>
+                    <td></td> <!-- No argument -->
+                    <td style="text-align: center;">
+                      <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
+                      to not work fully (no scrolling to anchor). Just 'href' doesn't work. Link is taken from
+                      https://developer.chrome.com/apps/commands#usage. -->
+                      <a
+                        href="chrome://extensions/configureCommands"
+                        on:click|preventDefault={_ => chrome.tabs.create({
+                          url: 'chrome://extensions/configureCommands',
+                          active: true,
+                        })}
+                        aria-label="Edit"
+                        style="text-decoration: none; padding: 0.125rem;"
+                      >✏️</a>
+                    </td>
+                  </tr>
+                {/each}
+              {/await}
               {#each settings.hotkeys as binding, bindingInd}
                 <tr>
                   <td>
