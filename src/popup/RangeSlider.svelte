@@ -3,6 +3,7 @@
 
   export let value: number;
   export let label: string;
+  export let fractionalDigits: number = 3;
   // export let max;
   // export let min;
   // export let step;
@@ -27,7 +28,7 @@
     <span
       aria-hidden="true"
       class="number-representation"
-    >{value.toFixed(3)}</span>
+    >{value.toFixed(fractionalDigits)}</span>
   </div>
 </label>
 
