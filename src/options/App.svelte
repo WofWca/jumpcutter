@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import CustomValueInput from './CustomValueInput.svelte';
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import { eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString } from '@/hotkeys';
@@ -41,11 +42,14 @@
     settings.hotkeys.splice(bindingInd, 1);
     settings = settings;
   }
-  // TODO accesibility and UI in general sucks here. E.g. if the user just wants to navigate away from the input by 
-  // pressing `Tab` after recoding a hotkey, it would get overriden with `Tab`.
-  // I think what we need here is a typical recorder where you press a "Record" button, `Enter` to finish recording and
-  // `Esc` to stop it. Or some library.
-  function onCombinationInputKeydown(bindingInd: number, event: KeyboardEvent) {
+  async function onCombinationInputKeydown(bindingInd: number, event: KeyboardEvent) {
+    // In case the user just wanted to focus another input and pressed "Tab".
+    // Though if you press "Shift+Tab", "Shift" is still recorded.
+    await new Promise(r => setTimeout(r)); // Not a huge event loop expert. TODO make sure it's consistent.
+    if (document.activeElement !== event.target) {
+      return;
+    }
+
     const combination = eventToCombination(event);
     settings.hotkeys[bindingInd].keyCombination = combination;
     settings = settings;
@@ -166,8 +170,7 @@
                     </select>
                   </td>
                   <td>
-                    <input
-                      readonly
+                    <CustomValueInput
                       required
                       value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
                       on:keydown={e => onCombinationInputKeydown(bindingInd, e)}
