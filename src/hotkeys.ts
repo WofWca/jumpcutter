@@ -43,7 +43,6 @@ export const enum HotkeyAction {
   // REWIND = 'rewind',
 }
 
-// TODO add units (like seconds) where applicable?
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
   // TODO check if emojis are ok with screen readers, though I think they should be.
 
@@ -62,13 +61,13 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.SET_SILENCE_SPEED]: '🙊⏩ Silence speed =',
 
   // 📏? Couldn't find anything better.
-  [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before 🔼',
-  [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before 🔽',
-  [HotkeyAction.SET_MARGIN_BEFORE]: '⏱⬅️ Margin before =',
+  [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔼',
+  [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔽',
+  [HotkeyAction.SET_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) =',
 
-  [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱➡️ Margin after 🔼',
-  [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱➡️ Margin after 🔽',
-  [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after =',
+  [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔼',
+  [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔽',
+  [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after (s) =',
 };
 
 type HotkeyActionArguments<T extends HotkeyAction> = number; // Maybe some day this won't be just number.
