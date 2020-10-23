@@ -3,7 +3,7 @@
 type ModifierPropName = keyof Pick<KeyboardEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>;
 const modifierFlagPropNames: ModifierPropName[] = ['ctrlKey', 'altKey', 'shiftKey', 'metaKey']
 // Consider replacing it with a tuple to save some storage space (to fit the `QUOTA_BYTES_PER_ITEM` quota).
-interface KeyCombination {
+export interface KeyCombination {
   code: KeyboardEvent['code'];
   modifiers?: ModifierPropName[];
 }

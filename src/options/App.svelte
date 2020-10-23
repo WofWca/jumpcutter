@@ -1,13 +1,20 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import CustomValueInput from './CustomValueInput.svelte';
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
-  import { eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString } from '@/hotkeys';
+  import {
+    eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, KeyCombination
+  } from '@/hotkeys';
   import { debounce } from 'lodash';
 
   let unsaved = false;
   let formValid = true;
   let formEl: HTMLFormElement;
+  let recordKeyCombinationDialogEl: HTMLDialogElement;
+  // let recordKeyCombinationDialogInput: HTMLInputElement;
+  let recordingKeyCombinationForBindingInd: number | null = null;
+  let recordedKeyCombination: KeyCombination | null = null;
 
   type PotentiallyInvalidHotkeyBinding = {
     [P in keyof HotkeyBinding]?: HotkeyBinding[P];
@@ -41,14 +48,40 @@
     settings.hotkeys.splice(bindingInd, 1);
     settings = settings;
   }
-  // TODO accesibility and UI in general sucks here. E.g. if the user just wants to navigate away from the input by 
-  // pressing `Tab` after recoding a hotkey, it would get overriden with `Tab`.
-  // I think what we need here is a typical recorder where you press a "Record" button, `Enter` to finish recording and
-  // `Esc` to stop it. Or some library.
-  function onCombinationInputKeydown(bindingInd: number, event: KeyboardEvent) {
+  function enterEditKeyCombinationMode(bindingInd: number) {
+    recordingKeyCombinationForBindingInd = bindingInd;
+    recordKeyCombinationDialogEl.showModal();
+  }
+  async function onCombinationInputKeydown(event: KeyboardEvent) {
     const combination = eventToCombination(event);
-    settings.hotkeys[bindingInd].keyCombination = combination;
-    settings = settings;
+    // // TODO maybe instead of checking for what key exacty was pressed we could check if the dialog is still open.
+    // if (['Enter', 'Esc'].includes(combination.code) && (combination.modifiers ?? []).length === 0) {
+
+
+    // Unfortunately, I'm not a huge expert in the event loop and things related to it. This is to wait for the dialog
+    // to react to changes, and get closed, if it needs to.
+    await tick();
+    await new Promise(r => setTimeout(r));
+    if (!recordKeyCombinationDialogEl.open) {
+
+
+
+      // In this case the dialog will get closed, which indicates (probably) that the user is done recording.
+      // TODO but this restrains us from using "Enter" and "Esc" as a hotkey.
+      return;
+    }
+    recordedKeyCombination = combination;
+  }
+  function onKeyCombinationDialogSubmit() {
+    // assert(!!recordedKeyCombination);
+
+    if (!recordedKeyCombination) {
+      // For when "Enter" is pressed on an empty input.
+      return;
+    }
+
+    assert(recordingKeyCombinationForBindingInd !== null);
+    settings.hotkeys[recordingKeyCombinationForBindingInd].keyCombination = recordedKeyCombination;
   }
 
   function onResetToDefaultsClick() {
@@ -165,14 +198,37 @@
                       {/each}
                     </select>
                   </td>
-                  <td>
-                    <input
+                  <td><div
+                    style="display: flex; align-items: stretch;"
+                  >
+                    <!-- <input
                       readonly
                       required
                       value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
                       on:keydown={e => onCombinationInputKeydown(bindingInd, e)}
+                    /> -->
+
+                    <!-- TODO might need to improve accessibility here. E.g. when validity is reported, the input is
+                    focused, but not the "Edit" button. Somehow combine them into a single input-button, kind of like
+                    <select>?
+                    Recording hotkeys right in this input is worse though, because when the user "Tab"s over it, tab
+                    would get recorded. -->
+                    <CustomValueInput
+                      on:input={_ => enterEditKeyCombinationMode(bindingInd)}
+                      required
+                      tabindex="-1"
+                      value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
+                      style="border-right: none; border-radius: 2px 0 0 2px;"
                     />
-                  </td>
+                    <!-- The `margin:` hack – it's so we don't have to remove the borders entirely as they light up
+                    when the button is in focus. -->
+                    <button
+                      on:click={_ => enterEditKeyCombinationMode(bindingInd)}
+                      type="button"
+                      id="edit-custom-key-combination-button-{bindingInd}"
+                      style="min-width: unset; padding: 0.25rem; margin: 0; border-radius: 0px 2px 2px 0;"
+                    >✏️</button>
+                  </div></td>
                   <td>
                     <!-- TODO in the future, the argument isn't necessarily going to be a number, and isn't
                     necessarily going to be required at all. -->
@@ -199,6 +255,54 @@
             on:click={addNewBinding}
             aria-label="Add new hotkey"
           >➕</button>
+                <!-- <dialog on:keydown={e => onCombinationInputKeydown(e)}> -->
+          <dialog
+            bind:this={recordKeyCombinationDialogEl}
+            on:close={_ => {
+              recordedKeyCombination = null;
+              // Focus the button that caused the popup to open. Otherwise focus would be shifted to where the dialog
+              // element is in the DOM. https://github.com/w3c/html/issues/773#issuecomment-276060898
+              document.getElementById(`edit-custom-key-combination-button-${recordingKeyCombinationForBindingInd}`)
+                ?.focus();
+            }}
+          >
+            <form
+              method="dialog"
+              on:submit={onKeyCombinationDialogSubmit}
+            >
+              <!-- https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element:attr-fe-autofocus -->
+                    <!-- bind:this={recordKeyCombinationDialogInput} -->
+              <p>Enter the combination, then press "Enter". "Esc" to cancel.</p>
+
+                <!-- readonly -->
+              <!-- <input
+                required
+                autofocus
+                value={recordedKeyCombination ? combinationToString(recordedKeyCombination) : ''}
+                on:change={_ => recordedKeyCombination = recordedKeyCombination}
+                on:keydown={e => onCombinationInputKeydown(e)}
+                style="width: 100%;"
+              /> -->
+              <CustomValueInput
+                autofocus
+                value={recordedKeyCombination ? combinationToString(recordedKeyCombination) : ''}
+                on:keydown={e => onCombinationInputKeydown(e)}
+                style="width: 100%;"
+              />
+
+              <!-- This input will get triggered when the user presses "Enter". TODO gotta make sure that the fact that
+              it still works even though it has `display: none;` is conventional.-->
+              <input
+                type="submit"
+                style="display: none;"
+              />
+            </form>
+            <button
+              on:click={_ => { recordKeyCombinationDialogEl.close() }}
+              type="button"
+              style="color: red; margin-top: 0.25rem;"
+            >Cancel</button>
+          </dialog>
         </div>
       </section>
 
@@ -258,3 +362,10 @@
     >About</a>
   </div>
 </div>
+
+<!-- <style>
+  .edit-key-combination-button {
+    min-width: unset;
+    padding: 0.25rem;
+  }
+</style> -->
