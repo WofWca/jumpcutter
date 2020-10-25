@@ -50,13 +50,7 @@ export const defaultSettings: Readonly<Settings> = {
 
     // soundedSpeed
     {
-      // TODO maybe some remove this one. See the button in popup.
       keyCombination: { code: 'KeyA', },
-      action: HotkeyAction.SET_SOUNDED_SPEED,
-      actionArgument: 1.1,
-    },
-    {
-      keyCombination: { code: 'KeyA', modifiers: ['shiftKey', 'ctrlKey'],},
       action: HotkeyAction.SET_SOUNDED_SPEED,
       actionArgument: 1,
     },
