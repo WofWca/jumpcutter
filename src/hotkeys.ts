@@ -19,22 +19,27 @@ export const enum HotkeyAction {
   INCREASE_VOLUME_THRESHOLD = 'volume_threshold+',
   DECREASE_VOLUME_THRESHOLD = 'volume_threshold-',
   SET_VOLUME_THRESHOLD = 'volume_threshold=',
+  TOGGLE_VOLUME_THRESHOLD = 'volume_threshold_toggle',
 
   INCREASE_SOUNDED_SPEED = 'sounded_speed+',
   DECREASE_SOUNDED_SPEED = 'sounded_speed-',
   SET_SOUNDED_SPEED = 'sounded_speed=',
+  TOGGLE_SOUNDED_SPEED = 'sounded_speed_toggle',
 
   INCREASE_SILENCE_SPEED = 'silence_speed+',
   DECREASE_SILENCE_SPEED = 'silence_speed-',
   SET_SILENCE_SPEED = 'silence_speed=',
+  TOGGLE_SILENCE_SPEED = 'silence_speed_toggle',
 
   INCREASE_MARGIN_BEFORE = 'margin_before+',
   DECREASE_MARGIN_BEFORE = 'margin_before-',
   SET_MARGIN_BEFORE = 'margin_before=',
+  TOGGLE_MARGIN_BEFORE = 'margin_before_toggle',
 
   INCREASE_MARGIN_AFTER = 'margin_after+',
   DECREASE_MARGIN_AFTER = 'margin_after-',
   SET_MARGIN_AFTER = 'margin_after=',
+  TOGGLE_MARGIN_AFTER = 'margin_after_toggle',
 
   // TODO enable stretcher. Or is it fine if we just let the user set `marginBefore` to 0 and call it a day?
 
@@ -49,25 +54,30 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.INCREASE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold 🔼',
   [HotkeyAction.DECREASE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold 🔽',
   [HotkeyAction.SET_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold =',
+  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold toggle 🔄',
 
   // Maybe 📢📣 are could also fit here.
   [HotkeyAction.INCREASE_SOUNDED_SPEED]: '💬▶️ Sounded speed 🔼',
   [HotkeyAction.DECREASE_SOUNDED_SPEED]: '💬▶️ Sounded speed 🔽',
   [HotkeyAction.SET_SOUNDED_SPEED]: '💬▶️ Sounded speed =',
+  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: '💬▶️ Sounded speed toggle 🔄',
 
   // 🤐 could also fit.
   [HotkeyAction.INCREASE_SILENCE_SPEED]: '🙊⏩ Silence speed 🔼',
   [HotkeyAction.DECREASE_SILENCE_SPEED]: '🙊⏩ Silence speed 🔽',
   [HotkeyAction.SET_SILENCE_SPEED]: '🙊⏩ Silence speed =',
+  [HotkeyAction.TOGGLE_SILENCE_SPEED]: '🙊⏩ Silence speed toggle 🔄',
 
   // 📏? Couldn't find anything better.
   [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔼',
   [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔽',
   [HotkeyAction.SET_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) =',
+  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) toggle 🔄',
 
   [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔼',
   [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔽',
   [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after (s) =',
+  [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱➡️ Margin after (s) toggle 🔄',
 };
 
 type HotkeyActionArguments<T extends HotkeyAction> = number; // Maybe some day this won't be just number.

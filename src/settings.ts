@@ -2,40 +2,58 @@ import { HotkeyBinding, HotkeyAction } from './hotkeys';
 
 export interface Settings {
   volumeThreshold: number,
+  previousVolumeThreshold: number,
   silenceSpeed: number,
+  previousSilenceSpeed: number,
   soundedSpeed: number,
+  previousSoundedSpeed: number,
   enabled: boolean,
   enableExperimentalFeatures: boolean,
   marginBefore: number,
+  previousMarginBefore: number,
   marginAfter: number,
+  previousMarginAfter: number,
 
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
 }
+export type CorrespondingPreviousValueSetting<T extends TogglableSettings> =
+  T extends   'volumeThreshold' ? 'previousVolumeThreshold'
+  : T extends 'silenceSpeed'    ? 'previousSilenceSpeed'
+  : T extends 'soundedSpeed'    ? 'previousSoundedSpeed'
+  : T extends 'marginBefore'    ? 'previousMarginBefore'
+  : T extends 'marginAfter'     ? 'previousMarginAfter'
+  : never;
+export type TogglableSettings = 'volumeThreshold' | 'silenceSpeed' | 'soundedSpeed' | 'marginBefore' | 'marginAfter';
+export const settingKeyToPreviousValueKey: { [P in TogglableSettings]: CorrespondingPreviousValueSetting<P> } = {
+  volumeThreshold: 'previousVolumeThreshold',
+  silenceSpeed: 'previousSilenceSpeed',
+  soundedSpeed: 'previousSoundedSpeed',
+  marginBefore: 'previousMarginBefore',
+  marginAfter: 'previousMarginAfter',
+}
 
 export const defaultSettings: Readonly<Settings> = {
-  volumeThreshold: 0.010,
-  silenceSpeed: 4,
-  soundedSpeed: 1.5,
+  volumeThreshold:          0.010,
+  previousVolumeThreshold:  0.010,
+  silenceSpeed:         4,
+  previousSilenceSpeed: 4,
+  soundedSpeed:         1.5,
+  previousSoundedSpeed: 1.5,
   enabled: true,
   enableExperimentalFeatures: false,
-  marginBefore: 0.100,
-  marginAfter: 0.100,
+  marginBefore:         0.100,
+  previousMarginBefore: 0.100,
+  marginAfter:          0.100,
+  previousMarginAfter:  0.100,
 
   enableHotkeys: false,
   hotkeys: [
     // volumeThreshold
     {
       keyCombination: { code: 'KeyQ', },
-      action: HotkeyAction.SET_VOLUME_THRESHOLD,
+      action: HotkeyAction.TOGGLE_VOLUME_THRESHOLD,
       actionArgument: 0,
-    },
-    {
-      // TODO it would be cool if we could toggle `volumeThreshold` between current value and 0, but we'd need to
-      // rewrite some stuff for this.
-      keyCombination: { code: 'KeyQ', modifiers: ['shiftKey'],},
-      action: HotkeyAction.SET_VOLUME_THRESHOLD,
-      actionArgument: 0.015,
     },
     {
       keyCombination: { code: 'KeyE', },
@@ -51,7 +69,7 @@ export const defaultSettings: Readonly<Settings> = {
     // soundedSpeed
     {
       keyCombination: { code: 'KeyA', },
-      action: HotkeyAction.SET_SOUNDED_SPEED,
+      action: HotkeyAction.TOGGLE_SOUNDED_SPEED,
       actionArgument: 1,
     },
     {
@@ -68,7 +86,7 @@ export const defaultSettings: Readonly<Settings> = {
     // silenceSpeed
     {
       keyCombination: { code: 'KeyA', modifiers: ['shiftKey'], },
-      action: HotkeyAction.SET_SILENCE_SPEED,
+      action: HotkeyAction.TOGGLE_SILENCE_SPEED,
       actionArgument: 3,
     },
     {

@@ -1,4 +1,4 @@
-import type { Settings } from '@/settings';
+import { Settings, TogglableSettings, settingKeyToPreviousValueKey } from '@/settings';
 import { combinationIsEqual, eventToCombination, HotkeyAction } from '@/hotkeys';
 import { assertNever, KeysOfType } from '@/helpers';
 
@@ -38,6 +38,18 @@ export default function keydownEventToSettingsNewValues(e: KeyboardEvent, curren
       const unclamped = currentSettings[settingName] + (sign === '-' ? -1 : 1) * binding.actionArgument;
       updates[settingName] = clamp(unclamped, min, max);
     };
+    // Gosh frick it. We only update previous values in this function and nowhere else. So when the user changes,
+    // for example, volumeThreshold from X to Y and then presses a hotkey to toggle volumeThreshold to X, it would not
+    // set the value back to X, but to some other value. If the hotkey's argument is different from X, this bug doesn't
+    // surface, so it's not super crucial. TODO fix.
+    const toggleSettingValue = (key: TogglableSettings) => {
+      const prevValueSettingKey = settingKeyToPreviousValueKey[key];
+      const currValue = currentSettings[key];
+      updates[key] = currValue === arg
+        ? currentSettings[prevValueSettingKey]
+        : arg;
+      updates[prevValueSettingKey] = currValue;
+    };
     switch (binding.action) {
       // TODO DRY max and min values with values in `@/popup`. Make them adjustable even?
       //
@@ -48,18 +60,23 @@ export default function keydownEventToSettingsNewValues(e: KeyboardEvent, curren
       case HotkeyAction.INCREASE_VOLUME_THRESHOLD:  updateClamped('volumeThreshold', '+', 0, 1); break;
       case HotkeyAction.DECREASE_VOLUME_THRESHOLD:  updateClamped('volumeThreshold', '-', 0, 1); break;
       case HotkeyAction.SET_VOLUME_THRESHOLD:       updates.volumeThreshold = arg; break;
+      case HotkeyAction.TOGGLE_VOLUME_THRESHOLD:    toggleSettingValue('volumeThreshold'); break;
       case HotkeyAction.INCREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '+', 0, 15); break;
       case HotkeyAction.DECREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '-', 0, 15); break;
       case HotkeyAction.SET_SOUNDED_SPEED:      updates.soundedSpeed = arg; break;
+      case HotkeyAction.TOGGLE_SOUNDED_SPEED:   toggleSettingValue('soundedSpeed'); break;
       case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeed', '+', 0, 15); break;
       case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeed', '-', 0, 15); break;
       case HotkeyAction.SET_SILENCE_SPEED:      updates.silenceSpeed = arg; break;
+      case HotkeyAction.TOGGLE_SILENCE_SPEED:   toggleSettingValue('silenceSpeed'); break;
       case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;
       case HotkeyAction.DECREASE_MARGIN_BEFORE: updateClamped('marginBefore', '-', 0, 1); break;
       case HotkeyAction.SET_MARGIN_BEFORE:      updates.marginBefore = arg; break;
+      case HotkeyAction.TOGGLE_MARGIN_BEFORE:   toggleSettingValue('marginBefore'); break;
       case HotkeyAction.INCREASE_MARGIN_AFTER:  updateClamped('marginAfter', '+', 0, 10); break;
       case HotkeyAction.DECREASE_MARGIN_AFTER:  updateClamped('marginAfter', '-', 0, 10); break;
       case HotkeyAction.SET_MARGIN_AFTER:       updates.marginAfter = arg; break;
+      case HotkeyAction.TOGGLE_MARGIN_AFTER:    toggleSettingValue('marginAfter'); break;
       default: assertNever(binding.action);
     }
   }
