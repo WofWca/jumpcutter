@@ -15,13 +15,6 @@
     settingsLoaded = true;
   })
 
-  function resetSoundedSpeed() {
-    // It's 1.1, because Chromium uses different audio data pipelines for normal (1.0) and non-normal speeds, and
-    // switching them causes a glitch:
-    // https://github.com/chromium/chromium/blob/8af9895458f5ac16b2059ca8a336da6367188409/media/renderers/audio_renderer_impl.h#L16-L17
-    settings.soundedSpeed = 1.1;
-  }
-
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
   (async function startGettingTelemetry() {
@@ -82,24 +75,27 @@
   value={settings.volumeThreshold}
   on:input={({ detail }) => settings.volumeThreshold = detail}
 />
+<datalist id="speed-datalist">
+  <option>1</option>
+</datalist>
 <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
 Also min should be 0 for the same reason. -->
 <RangeSlider
   label="Sounded speed"
+  list="speed-datalist"
+  fractionalDigits={2}
   min="0"
   max="15"
   step="0.1"
   value={settings.soundedSpeed}
   on:input={({ detail }) => settings.soundedSpeed = detail}
 />
-<button
-  on:click={resetSoundedSpeed}
-  type="button"
->Reset to 1.1 (not 1 to avoid glitches)</button>
 <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
 https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
 <RangeSlider
   label="Silence speed"
+  list="speed-datalist"
+  fractionalDigits={2}
   min="0"
   max="15"
   step="0.1"
