@@ -7,6 +7,7 @@ import {
   getStretcherDelayChange,
   getStretcherSoundedDelay,
   getMomentOutputTime,
+  transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type defaultSettings from '@/defaultSettings.json';
@@ -429,7 +430,7 @@ export default class Controller {
       case 'sounded': speedVal = this.settings.soundedSpeed; break;
       case 'silence': speedVal = this.settings.silenceSpeed; break;
     }
-    this.element.playbackRate = speedVal;
+    this.element.playbackRate = transformSpeed(speedVal);
     this._lastActualPlaybackRateChange = {
       time: this.audioContext!.currentTime,
       value: speedVal,

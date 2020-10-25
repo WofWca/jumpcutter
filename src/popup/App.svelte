@@ -26,31 +26,6 @@
     settingsLoaded = true;
   })
 
-  /**
-   * Chromium uses different audio data pipelines for normal (1.0) and non-normal speeds, and
-   * switching between them causes an audio glitch:
-   * https://github.com/chromium/chromium/blob/8af9895458f5ac16b2059ca8a336da6367188409/media/renderers/audio_renderer_impl.h#L16-L17
-   * This is to make it impossible for the user to set speed to no normal.
-   * TODO give users an option (on the options page) to skip this transformation.
-   */
-  function transformSpeed(speed: number): number {
-    // On Chromium 86.0.4240.99, it appears that 1.0 is not the only "normal" speed. It's a small proximity of 1.0.
-    //
-    // It's not the smallest, but a value close to the smallest value for which the audio
-    // stream start going through the stretcher algorithm. Determined from a bit of experimentation.
-    // TODO DRY this, as it may change.
-    const smallestNonNormalAbove1 = 1.00105;
-    // Actually I'm not sure if there's such a relation between the biggest and the smallest.
-    const biggestNonNormalBelow1 = 1 - (smallestNonNormalAbove1 - 1);
-
-    if (biggestNonNormalBelow1 < speed && speed < smallestNonNormalAbove1) {
-      return smallestNonNormalAbove1 - speed < speed - biggestNonNormalBelow1
-        ? biggestNonNormalBelow1
-        : smallestNonNormalAbove1;
-    }
-    return speed;
-  }
-
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
   (async function startGettingTelemetry() {
@@ -111,10 +86,6 @@
 </datalist>
 <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
 Also min should be 0 for the same reason. -->
-<!-- There are 2 reasons to set the amount of fractional digits to 1 for speed:
-1. Greater precision is not required, more precise numbers would just be harder to read.
-2. Do not puzzle the user on why when he tries to set speed to 1, it never actually becomes 1 but 1.001 (see
-`transformSpeed` function). -->
 <RangeSlider
   label="Sounded speed"
   list="speed-datalist"
@@ -123,7 +94,7 @@ Also min should be 0 for the same reason. -->
   max="15"
   step="0.1"
   value={settings.soundedSpeed}
-  on:input={({ detail }) => settings.soundedSpeed = transformSpeed(detail)}
+  on:input={({ detail }) => settings.soundedSpeed = detail}
 />
 <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
 https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
@@ -135,7 +106,7 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
   max="15"
   step="0.1"
   value={settings.silenceSpeed}
-  on:input={({ detail }) => settings.silenceSpeed = transformSpeed(detail)}
+  on:input={({ detail }) => settings.silenceSpeed = detail}
 />
 <RangeSlider
   label="Margin after"
