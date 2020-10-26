@@ -3,8 +3,9 @@ import {
   removeOnChangedListener as removeOnSettingsChangedListener,
   settingsChanges2NewValues,
 } from '@/settings';
-import { assert } from '@/helpers';
+import { assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
+import { HotkeyAction } from '@/hotkeys';
 
 (async function () { // Just for top-level `await`
 
@@ -75,20 +76,32 @@ async function initIfVideoPresent() {
   let hotkeyListenerP;
   if (settings.enableHotkeys) {
     hotkeyListenerP = (async () => {
-      const { default: keydownEventToSettingsNewValues } = await import(
+      const { default: keydownEventToActions } = await import(
         /* webpackMode: 'eager' */
         './hotkeys'
       );
+      // TODO how about put this into './hotkeys.ts' in the form of a curried function that takes arguments that look
+      // something like `getSettings: () => Settings`?
       handleKeydown = (e: KeyboardEvent) => {
         assert(!!settings);
         // TODO show what changed on the popup text.
-        const newValues = keydownEventToSettingsNewValues(e, settings);
+        const actions = keydownEventToActions(e, settings);
+        if (!actions) return;
+        const { settingsNewValues, nonSettingsActions } = actions;
         // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
         // Nothing critical, but not great for performance.
         // How about we only update the`settings` object synchronously (so sequential changes can be made, as
-        // `keydownEventToSettingsNewValues` depends on it), but do not take any action until the onChanged event fires?
-        reactToSettingsNewValues(newValues);
-        setSettings(newValues);
+        // `keydownEventToActions` depends on it), but do not take any action until the onChanged event fires?
+        reactToSettingsNewValues(settingsNewValues);
+        setSettings(settingsNewValues);
+
+        for (const action of nonSettingsActions) {
+          switch (action.action) {
+            case HotkeyAction.REWIND:   v.currentTime -= action.actionArgument; break;
+            case HotkeyAction.ADVANCE:  v.currentTime += action.actionArgument; break;
+            default: assertNever(action.action);
+          }
+        }
       };
       // You might ask "Why don't you just use the native [commands API](https://developer.chrome.com/apps/commands)?"
       // And the answer is – you may be right. But here's a longer version:

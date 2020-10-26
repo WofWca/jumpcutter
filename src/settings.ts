@@ -49,6 +49,18 @@ export const defaultSettings: Readonly<Settings> = {
 
   enableHotkeys: false,
   hotkeys: [
+    // Rewind/advance +
+    {
+      keyCombination: { code: 'KeyZ', },
+      action: HotkeyAction.REWIND,
+      actionArgument: 5,
+    },
+    {
+      keyCombination: { code: 'KeyX', },
+      action: HotkeyAction.ADVANCE,
+      actionArgument: 5,
+    },
+
     // volumeThreshold
     {
       keyCombination: { code: 'KeyQ', },

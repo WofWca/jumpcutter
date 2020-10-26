@@ -43,9 +43,8 @@ export const enum HotkeyAction {
 
   // TODO enable stretcher. Or is it fine if we just let the user set `marginBefore` to 0 and call it a day?
 
-  // TODO
-  // ADVANCE = 'advance',
-  // REWIND = 'rewind',
+  ADVANCE = 'advance',
+  REWIND = 'rewind',
 }
 
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
@@ -78,9 +77,16 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔽',
   [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after (s) =',
   [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱➡️ Margin after (s) toggle 🔄',
+
+  [HotkeyAction.ADVANCE]: '➡️ Advance',
+  [HotkeyAction.REWIND]: '⬅️ Rewind',
 };
 
-type HotkeyActionArguments<T extends HotkeyAction> = number; // Maybe some day this won't be just number.
+export type NonSettingsAction =
+  HotkeyAction.REWIND
+  | HotkeyAction.ADVANCE;
+
+export type HotkeyActionArguments<T extends HotkeyAction> = number; // Maybe some day this won't be just number.
 
 // Consider replacing it with a tuple to save some storage space (to fit the `QUOTA_BYTES_PER_ITEM` quota).
 export interface HotkeyBinding<T extends HotkeyAction = HotkeyAction> {

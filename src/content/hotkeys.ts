@@ -1,5 +1,7 @@
 import { Settings, TogglableSettings, settingKeyToPreviousValueKey } from '@/settings';
-import { combinationIsEqual, eventToCombination, HotkeyAction } from '@/hotkeys';
+import {
+  combinationIsEqual, eventToCombination, HotkeyAction, NonSettingsAction, HotkeyActionArguments
+} from '@/hotkeys';
 import { assertNever, KeysOfType } from '@/helpers';
 
 /**
@@ -20,10 +22,21 @@ function filterOut(event: KeyboardEvent): boolean {
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
-/** @return Possibly an empty object, possibly with unchanged settings values (compared to current settings). */
-export default function keydownEventToSettingsNewValues(e: KeyboardEvent, currentSettings: Settings): Partial<Settings> {
-  const updates: Partial<Settings> = {};
-  if (filterOut(e)) return updates;
+type NonSettingActionWithArgument<T extends NonSettingsAction = NonSettingsAction> = {
+  action: NonSettingsAction,
+  actionArgument: HotkeyActionArguments<T>,
+};
+/** @return `null` if nothing needs to be done. */
+export default function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings): null | {
+  settingsNewValues: Partial<Settings>,
+  nonSettingsActions: Array<NonSettingActionWithArgument>,
+}
+{
+  if (filterOut(e)) return null;
+  const actions: ReturnType<typeof keydownEventToActions> = {
+    settingsNewValues: {},
+    nonSettingsActions: [],
+  };
   const executedCombination = eventToCombination(e);
   // Yes, bindings, with an "S". Binding one key to multiple actions is allowed.
   const matchedBindings = currentSettings.hotkeys.filter(
@@ -36,7 +49,7 @@ export default function keydownEventToSettingsNewValues(e: KeyboardEvent, curren
     type NumberSettings = KeysOfType<Settings, number>;
     const updateClamped = function(settingName: NumberSettings, sign: '+' | '-', min: number, max: number) {
       const unclamped = currentSettings[settingName] + (sign === '-' ? -1 : 1) * binding.actionArgument;
-      updates[settingName] = clamp(unclamped, min, max);
+      actions.settingsNewValues[settingName] = clamp(unclamped, min, max);
     };
     // Gosh frick it. We only update previous values in this function and nowhere else. So when the user changes,
     // for example, volumeThreshold from X to Y and then presses a hotkey to toggle volumeThreshold to X, it would not
@@ -45,10 +58,10 @@ export default function keydownEventToSettingsNewValues(e: KeyboardEvent, curren
     const toggleSettingValue = (key: TogglableSettings) => {
       const prevValueSettingKey = settingKeyToPreviousValueKey[key];
       const currValue = currentSettings[key];
-      updates[key] = currValue === arg
+      actions.settingsNewValues[key] = currValue === arg
         ? currentSettings[prevValueSettingKey]
         : arg;
-      updates[prevValueSettingKey] = currValue;
+      actions.settingsNewValues[prevValueSettingKey] = currValue;
     };
     switch (binding.action) {
       // TODO DRY max and min values with values in `@/popup`. Make them adjustable even?
@@ -59,26 +72,38 @@ export default function keydownEventToSettingsNewValues(e: KeyboardEvent, curren
       // is a multiple of the step. Why can't it be 0.8/1.3/1.8, for example?
       case HotkeyAction.INCREASE_VOLUME_THRESHOLD:  updateClamped('volumeThreshold', '+', 0, 1); break;
       case HotkeyAction.DECREASE_VOLUME_THRESHOLD:  updateClamped('volumeThreshold', '-', 0, 1); break;
-      case HotkeyAction.SET_VOLUME_THRESHOLD:       updates.volumeThreshold = arg; break;
+      case HotkeyAction.SET_VOLUME_THRESHOLD:       actions.settingsNewValues.volumeThreshold = arg; break;
       case HotkeyAction.TOGGLE_VOLUME_THRESHOLD:    toggleSettingValue('volumeThreshold'); break;
       case HotkeyAction.INCREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '+', 0, 15); break;
       case HotkeyAction.DECREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '-', 0, 15); break;
-      case HotkeyAction.SET_SOUNDED_SPEED:      updates.soundedSpeed = arg; break;
+      case HotkeyAction.SET_SOUNDED_SPEED:      actions.settingsNewValues.soundedSpeed = arg; break;
       case HotkeyAction.TOGGLE_SOUNDED_SPEED:   toggleSettingValue('soundedSpeed'); break;
       case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeed', '+', 0, 15); break;
       case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeed', '-', 0, 15); break;
-      case HotkeyAction.SET_SILENCE_SPEED:      updates.silenceSpeed = arg; break;
+      case HotkeyAction.SET_SILENCE_SPEED:      actions.settingsNewValues.silenceSpeed = arg; break;
       case HotkeyAction.TOGGLE_SILENCE_SPEED:   toggleSettingValue('silenceSpeed'); break;
       case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;
       case HotkeyAction.DECREASE_MARGIN_BEFORE: updateClamped('marginBefore', '-', 0, 1); break;
-      case HotkeyAction.SET_MARGIN_BEFORE:      updates.marginBefore = arg; break;
+      case HotkeyAction.SET_MARGIN_BEFORE:      actions.settingsNewValues.marginBefore = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_BEFORE:   toggleSettingValue('marginBefore'); break;
       case HotkeyAction.INCREASE_MARGIN_AFTER:  updateClamped('marginAfter', '+', 0, 10); break;
       case HotkeyAction.DECREASE_MARGIN_AFTER:  updateClamped('marginAfter', '-', 0, 10); break;
-      case HotkeyAction.SET_MARGIN_AFTER:       updates.marginAfter = arg; break;
+      case HotkeyAction.SET_MARGIN_AFTER:       actions.settingsNewValues.marginAfter = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_AFTER:    toggleSettingValue('marginAfter'); break;
+      case HotkeyAction.ADVANCE:
+      case HotkeyAction.REWIND: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const assertNonSettingsAction: NonSettingsAction = binding.action; // TODO is there a not haсky way to do this?
+        // Actually this is practically equivalent to `actions.nonSettingsActions.push(binding);`, but TS isn't smart
+        // enough to realize this.
+        actions.nonSettingsActions.push({
+          action: binding.action,
+          actionArgument: binding.actionArgument,
+        });
+        break;
+      }
       default: assertNever(binding.action);
     }
   }
-  return updates;
+  return actions;
 }
