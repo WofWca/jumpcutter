@@ -48,6 +48,7 @@ export const defaultSettings: Readonly<Settings> = {
   previousMarginAfter:  0.100,
 
   enableHotkeys: false,
+  // TODO some code here is pretty WET, like duplicate hotkeys. DRY?
   hotkeys: [
     // Rewind/advance +
     {
@@ -59,6 +60,42 @@ export const defaultSettings: Readonly<Settings> = {
       keyCombination: { code: 'KeyX', },
       action: HotkeyAction.ADVANCE,
       actionArgument: 5,
+    },
+
+    // In case you coulnd't make it out. Practically turns on/off the extension. Why not actually turn it on/off?
+    // Because
+    // * We don't have such a hotkey action yet.
+    // * Hotkeys would also cease to work if we'd disable it.
+    // * It would create an audio glitch (at best), at worst it would remove/add audio delay (becaouse of how
+    // marginBefore) works.
+    // * It's computationally heavy.
+    // TODO these problems sound like then can be solved.
+    {
+      keyCombination: { code: 'KeyZ', modifiers: ['shiftKey'], },
+      action: HotkeyAction.TOGGLE_VOLUME_THRESHOLD,
+      actionArgument: 0,
+    },
+    {
+      keyCombination: { code: 'KeyZ', modifiers: ['shiftKey'], },
+      action: HotkeyAction.TOGGLE_SOUNDED_SPEED,
+      // Why this weird number? Because if it's exactly 1 and the user happens to already use 1 as their preferred
+      // soundedSpeed, using this hotkey would not work as intended (it would toggle the value back to its previous
+      // value, whatever it is). TODO this confuses the user. How about we use "SET" instead of "TOGGLE" for this
+      // hotkey? Toggling the values back with their individual keys doesn't sound too bad.
+      actionArgument: 1 - 1e-10,
+    },
+    // A duplicate of the previous two bindings. Why? Sometimes you want to rewind back for a big while, and then
+    // advance back to where you left off and set `volumeThreshold` and `soundedSpeed` back to normal. In this case 
+    // it is more intuitive to press "Shift+X", rather than "Shift+Z" as you had already been pressing X for a while.
+    {
+      keyCombination: { code: 'KeyX', modifiers: ['shiftKey'], },
+      action: HotkeyAction.TOGGLE_VOLUME_THRESHOLD,
+      actionArgument: 0,
+    },
+    {
+      keyCombination: { code: 'KeyX', modifiers: ['shiftKey'], },
+      action: HotkeyAction.TOGGLE_SOUNDED_SPEED,
+      actionArgument: 1 - 1e-10,
     },
 
     // volumeThreshold
