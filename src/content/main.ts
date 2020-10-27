@@ -6,30 +6,48 @@ import {
 import { assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
 import { HotkeyAction } from '@/hotkeys';
+import type { keydownEventToActions } from '@/hotkeys';
 
 (async function () { // Just for top-level `await`
 
+let v: HTMLVideoElement | null = null;
 let controller: Controller | null = null;
 let handleKeydown: (e: KeyboardEvent) => void;
 
 // TODO can we not do this when `enabled` is false?
 chrome.runtime.onConnect.addListener(port => {
-  if (port.name !== 'telemetry') {
-    return;
-  }
-  port.onMessage.addListener(msg => {
-    if (process.env.NODE_ENV !== 'production') {
-      if (msg !== 'getTelemetry') {
-        throw new Error('Unsupported message type')
+  switch (port.name) {
+    case 'telemetry': {
+      port.onMessage.addListener(msg => {
+        if (process.env.NODE_ENV !== 'production') {
+          if (msg !== 'getTelemetry') {
+            throw new Error('Unsupported message type')
+          }
+        }
+        port.postMessage(controller?.initialized && controller.getTelemetry() || null);
+      });
+      break;
+    }
+    case 'nonSettingsActions': {
+      port.onMessage.addListener(msg => {
+        if (v) {
+          executeNonSettingsActions(msg);
+        }
+      });
+      break;
+    }
+    default: {
+      if (process.env.NODE_ENV !== 'production') {
+        throw new Error(`Unrecognized port name "${port.name}"`);
       }
     }
-    port.postMessage(controller?.initialized && controller.getTelemetry() || null);
-  });
+  }
 });
 
 let settings: Settings | null = await getSettings();
 
 // These listeners must only be active when the controller is enabled.
+// TODO how about we instead put them inside the `initIfVideoPresent()` function.
 function reactToSettingsNewValues(newValues: Partial<Settings>) {
   // Currently, this function is an event listener, and while it gets detached when the extension gets disabled, it
   // still gets executed on that change, because it gets detached within another event listener. This is to check if
@@ -55,8 +73,19 @@ function reactToSettingsChanges(changes: MyStorageChanges) {
   reactToSettingsNewValues(settingsChanges2NewValues(changes));
 }
 
+function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydownEventToActions>['nonSettingsActions']) {
+  assert(!!v);
+  for (const action of nonSettingsActions) {
+    switch (action.action) {
+      case HotkeyAction.REWIND: v.currentTime -= action.actionArgument; break;
+      case HotkeyAction.ADVANCE: v.currentTime += action.actionArgument; break;
+      default: assertNever(action.action);
+    }
+  }
+}
+
 async function initIfVideoPresent() {
-  const v = document.querySelector('video');
+  v = document.querySelector('video');
   if (!v) {
     // TODO search again when document updates? Or just after some time?
     console.log('Jump cutter: no video found. Exiting');
@@ -76,17 +105,18 @@ async function initIfVideoPresent() {
   let hotkeyListenerP;
   if (settings.enableHotkeys) {
     hotkeyListenerP = (async () => {
-      const { default: keydownEventToActions } = await import(
+      const { keydownEventToActions, eventTargetIsInput } = await import(
         /* webpackMode: 'eager' */
-        './hotkeys'
+        /* webpackExports: ['keydownEventToActions', 'eventTargetIsInput'] */
+        '@/hotkeys'
       );
       // TODO how about put this into './hotkeys.ts' in the form of a curried function that takes arguments that look
       // something like `getSettings: () => Settings`?
       handleKeydown = (e: KeyboardEvent) => {
+        if (eventTargetIsInput(e)) return;
         assert(!!settings);
         // TODO show what changed on the popup text.
         const actions = keydownEventToActions(e, settings);
-        if (!actions) return;
         const { settingsNewValues, nonSettingsActions } = actions;
         // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
         // Nothing critical, but not great for performance.
@@ -95,13 +125,7 @@ async function initIfVideoPresent() {
         reactToSettingsNewValues(settingsNewValues);
         setSettings(settingsNewValues);
 
-        for (const action of nonSettingsActions) {
-          switch (action.action) {
-            case HotkeyAction.REWIND:   v.currentTime -= action.actionArgument; break;
-            case HotkeyAction.ADVANCE:  v.currentTime += action.actionArgument; break;
-            default: assertNever(action.action);
-          }
-        }
+        executeNonSettingsActions(nonSettingsActions);
       };
       // You might ask "Why don't you just use the native [commands API](https://developer.chrome.com/apps/commands)?"
       // And the answer is – you may be right. But here's a longer version:

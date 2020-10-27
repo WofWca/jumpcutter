@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { ResolveType } from '@/helpers';
   import { getSettings, setSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
+  import type createKeydownListener from './hotkeys';
 
   let settings: Settings;
 
@@ -33,6 +35,21 @@
     }, telemetryUpdatePeriod * 1000);
   })();
 
+  // Make a setings or a flag or something.
+  const LISTEN_TO_HOTKEYS_IN_POPUP = true;
+  let keydownListener: ResolveType<ReturnType<typeof createKeydownListener>> | (() => {}) = () => {};
+  settingsPromise.then(async () => {
+    if (!LISTEN_TO_HOTKEYS_IN_POPUP || !settings.enableHotkeys) return;
+    const { default: createKeydownListener } = (await import('./hotkeys'));
+    keydownListener = await createKeydownListener(
+      () => settings,
+      newValues => {
+        Object.assign(settings, newValues);
+        settings = settings;
+      },
+    );
+  })
+
   function saveSettings(settings: Settings) {
     setSettings(settings);
   }
@@ -46,6 +63,9 @@
   const maxVolume = 0.15;
 </script>
 
+<svelte:window
+  on:keydown={keydownListener}
+/>
 {#await settingsPromise then _}
   <label class="enabled-input">
     <input
