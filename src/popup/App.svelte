@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { cloneDeepJson } from '@/helpers';
-  import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
+  import { getSettings, setSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
 
-  let settings = cloneDeepJson(defaultSettings) as Settings;
+  let settings: Settings;
 
   let settingsLoaded = false;
   let settingsPromise = getSettings();
@@ -48,88 +46,90 @@
   const maxVolume = 0.15;
 </script>
 
-<label class="enabled-input">
-  <input
-    bind:checked={settings.enabled}
-    type="checkbox"
-    autofocus
-  >
-  <span>Enabled</span>
-</label>
-<!-- TODO but this is technically a button. Is this ok? -->
-<a
-  id="options-button"
-  href="javascript;"
-  on:click={() => chrome.runtime.openOptionsPage()}
->⚙️</a>
-<Chart
-  {latestTelemetryRecord}
-  volumeThreshold={settings.volumeThreshold}
-  loadedPromise={settingsPromise}
-/>
-<RangeSlider
-  label="Volume threshold"
-  min="0"
-  max={maxVolume}
-  step="0.0005"
-  value={settings.volumeThreshold}
-  on:input={({ detail }) => settings.volumeThreshold = detail}
-/>
-<datalist id="speed-datalist">
-  <option>1</option>
-</datalist>
-<!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
-Also min should be 0 for the same reason. -->
-<RangeSlider
-  label="Sounded speed"
-  list="speed-datalist"
-  fractionalDigits={2}
-  min="0"
-  max="15"
-  step="0.1"
-  value={settings.soundedSpeed}
-  on:input={({ detail }) => settings.soundedSpeed = detail}
-/>
-<!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
-https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
-<RangeSlider
-  label="Silence speed"
-  list="speed-datalist"
-  fractionalDigits={2}
-  min="0"
-  max="15"
-  step="0.1"
-  value={settings.silenceSpeed}
-  on:input={({ detail }) => settings.silenceSpeed = detail}
-/>
-<RangeSlider
-  label="Margin after"
-  min="0"
-  max="0.5"
-  step="0.005"
-  value={settings.marginAfter}
-  on:input={({ detail }) => settings.marginAfter = detail}
-/>
+{#await settingsPromise then _}
+  <label class="enabled-input">
+    <input
+      bind:checked={settings.enabled}
+      type="checkbox"
+      autofocus
+    >
+    <span>Enabled</span>
+  </label>
+  <!-- TODO but this is technically a button. Is this ok? -->
+  <a
+    id="options-button"
+    href="javascript;"
+    on:click={() => chrome.runtime.openOptionsPage()}
+  >⚙️</a>
+  <Chart
+    {latestTelemetryRecord}
+    volumeThreshold={settings.volumeThreshold}
+    loadedPromise={settingsPromise}
+  />
+  <RangeSlider
+    label="Volume threshold"
+    min="0"
+    max={maxVolume}
+    step="0.0005"
+    value={settings.volumeThreshold}
+    on:input={({ detail }) => settings.volumeThreshold = detail}
+  />
+  <datalist id="speed-datalist">
+    <option>1</option>
+  </datalist>
+  <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
+  Also min should be 0 for the same reason. -->
+  <RangeSlider
+    label="Sounded speed"
+    list="speed-datalist"
+    fractionalDigits={2}
+    min="0"
+    max="15"
+    step="0.1"
+    value={settings.soundedSpeed}
+    on:input={({ detail }) => settings.soundedSpeed = detail}
+  />
+  <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
+  https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
+  <RangeSlider
+    label="Silence speed"
+    list="speed-datalist"
+    fractionalDigits={2}
+    min="0"
+    max="15"
+    step="0.1"
+    value={settings.silenceSpeed}
+    on:input={({ detail }) => settings.silenceSpeed = detail}
+  />
+  <RangeSlider
+    label="Margin after"
+    min="0"
+    max="0.5"
+    step="0.005"
+    value={settings.marginAfter}
+    on:input={({ detail }) => settings.marginAfter = detail}
+  />
 
 
-<label class="enable-experimental-features-field">
-  <input
-    bind:checked={settings.enableExperimentalFeatures}
-    type="checkbox"
-  >
-  <span>Experimental features</span>
-</label>
-{#if settings.enableExperimentalFeatures}
-<!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
-<RangeSlider
-  label="Margin before"
-  min="0"
-  max="0.5"
-  step="0.005"
-  value={settings.marginBefore}
-  on:input={({ detail }) => settings.marginBefore = detail}
-/>
-{/if}
+  <label class="enable-experimental-features-field">
+    <input
+      bind:checked={settings.enableExperimentalFeatures}
+      type="checkbox"
+    >
+    <span>Experimental features</span>
+  </label>
+  {#if settings.enableExperimentalFeatures}
+  <!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
+  <RangeSlider
+    label="Margin before"
+    min="0"
+    max="0.5"
+    step="0.005"
+    value={settings.marginBefore}
+    on:input={({ detail }) => settings.marginBefore = detail}
+  />
+  {/if}
+{/await}
 
 <style>
   label:not(:first-child) {
