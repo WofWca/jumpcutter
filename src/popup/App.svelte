@@ -81,14 +81,14 @@
   value={settings.volumeThreshold}
   on:input={({ detail }) => settings.volumeThreshold = detail}
 />
-<datalist id="speed-datalist">
+<datalist id="sounded-speed-datalist">
   <option>1</option>
 </datalist>
 <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
 Also min should be 0 for the same reason. -->
 <RangeSlider
   label="Sounded speed"
-  list="speed-datalist"
+  list="sounded-speed-datalist"
   fractionalDigits={2}
   min="0"
   max="15"
@@ -100,7 +100,6 @@ Also min should be 0 for the same reason. -->
 https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
 <RangeSlider
   label="Silence speed"
-  list="speed-datalist"
   fractionalDigits={2}
   min="0"
   max="15"
