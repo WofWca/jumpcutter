@@ -1,4 +1,4 @@
-import { keydownEventToActions } from '@/hotkeys';
+import { keydownEventToActions, eventTargetIsInput } from '@/hotkeys';
 import { Settings } from '@/settings';
 
 export default async function createKeydownListener(
@@ -10,7 +10,9 @@ export default async function createKeydownListener(
   // TODO make sure it is closed when the listener returned by this function is discarded?
   const nonSettingsActionsPort = chrome.tabs.connect(tabs[0].id!, { name: 'nonSettingsActions' });
   return (e: KeyboardEvent): void => {
-    const actions = keydownEventToActions(e, getSettings());
+    const settings = getSettings();
+    if (eventTargetIsInput(e) && settings.popupDisableHotkeysWhileInputFocused) return;
+    const actions = keydownEventToActions(e, settings);
     const { settingsNewValues, nonSettingsActions } = actions;
     onNewSettingsValues(settingsNewValues);
     // TODO but this is still not fully convenient for the user as he won't be able to use hotkeys that are not provided

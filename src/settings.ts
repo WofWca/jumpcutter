@@ -16,6 +16,15 @@ export interface Settings {
 
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
+
+  // In case input controls and hotkeys are intersecting in popup.
+  // kind of looks like a half-assed solution, no? TODO.
+  popupDisableHotkeysWhileInputFocused: boolean,
+  // This comes in especially handy when `popupDisableHotkeysWhileInputFocused === true`.
+  // TODO but when `popupDisableHotkeysWhileInputFocused === true && popupAutofocusEnabledInput === true` it is
+  // practically impossible to use hotkeys in the popup as removing focus is done with "Esc", which also closes the
+  // popup. These options are considered "Advanced" so I think we can remove then without worrying too much.
+  popupAutofocusEnabledInput: boolean,
 }
 export type CorrespondingPreviousValueSetting<T extends TogglableSettings> =
   T extends   'volumeThreshold' ? 'previousVolumeThreshold'
@@ -173,6 +182,9 @@ export const defaultSettings: Readonly<Settings> = {
       actionArgument: 0.020,
     },
   ],
+
+  popupDisableHotkeysWhileInputFocused: false,
+  popupAutofocusEnabledInput: true,
 };
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes

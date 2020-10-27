@@ -71,7 +71,7 @@
     <input
       bind:checked={settings.enabled}
       type="checkbox"
-      autofocus
+      autofocus={settings.popupAutofocusEnabledInput}
     >
     <span>Enabled</span>
   </label>

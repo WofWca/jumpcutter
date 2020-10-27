@@ -209,6 +209,24 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
           >➕</button>
         </div>
       </section>
+      <section class="advanced-section">
+        <h3>Advanced</h3>
+        {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
+          <label>
+            <input
+              type="checkbox"
+              bind:checked={settings.popupDisableHotkeysWhileInputFocused}
+            > Popup: disable hotkeys while an input is in focus
+          </label>
+        {/if}
+        <label>
+          <input
+            type="checkbox"
+            bind:checked={settings.popupAutofocusEnabledInput}
+          > Popup: autofocus the "enabled" checkbox when popup opens
+        </label>
+      </section>
+
 
       <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
       pretty tall. TODO this can be removed when the button is gone). -->
@@ -266,3 +284,10 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
     >About</a>
   </div>
 </div>
+
+<style>
+  .advanced-section > label {
+    margin: 0.25rem 0;
+    display: block;
+  }
+</style>
