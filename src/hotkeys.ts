@@ -58,11 +58,11 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.SET_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold =',
   [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold toggle 🔄',
 
-  // Maybe 📢📣 are could also fit here.
-  [HotkeyAction.INCREASE_SOUNDED_SPEED]: '💬▶️ Sounded speed 🔼',
-  [HotkeyAction.DECREASE_SOUNDED_SPEED]: '💬▶️ Sounded speed 🔽',
-  [HotkeyAction.SET_SOUNDED_SPEED]: '💬▶️ Sounded speed =',
-  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: '💬▶️ Sounded speed toggle 🔄',
+  // Maybe 📢📣💬 could also fit here.
+  [HotkeyAction.INCREASE_SOUNDED_SPEED]: '🗣️▶️ Sounded speed 🔼',
+  [HotkeyAction.DECREASE_SOUNDED_SPEED]: '🗣️▶️ Sounded speed 🔽',
+  [HotkeyAction.SET_SOUNDED_SPEED]: '🗣️▶️ Sounded speed =',
+  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: '🗣️▶️ Sounded speed toggle 🔄',
 
   // 🤐 could also fit.
   [HotkeyAction.INCREASE_SILENCE_SPEED]: '🙊⏩ Silence speed 🔼',
