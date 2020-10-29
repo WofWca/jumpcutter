@@ -371,14 +371,9 @@ export default class Controller {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
-      let currSpeedName: 'sounded' | 'silence' | undefined = undefined;
-      switch (this.element.playbackRate) {
-        case oldSettings.soundedSpeed: currSpeedName = 'sounded'; break;
-        case oldSettings.silenceSpeed: currSpeedName = 'silence'; break;
-      }
-      if (currSpeedName) {
-        this._setSpeedAndLog(currSpeedName);
-      }
+      assert(!!this._lastActualPlaybackRateChange,
+        'Expected it speed to had been set at least at Controller initialization');
+      this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
 
     this._silenceDetectorNode!.parameters.get('volumeThreshold')!.value = this.settings.volumeThreshold;
