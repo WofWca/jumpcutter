@@ -5,7 +5,7 @@ import {
 } from '@/settings';
 import { assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
-import { HotkeyAction } from '@/hotkeys';
+import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 
 (async function () { // Just for top-level `await`
@@ -77,8 +77,10 @@ function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydown
   assert(!!v);
   for (const action of nonSettingsActions) {
     switch (action.action) {
-      case HotkeyAction.REWIND: v.currentTime -= action.actionArgument; break;
-      case HotkeyAction.ADVANCE: v.currentTime += action.actionArgument; break;
+      case HotkeyAction.REWIND: v.currentTime -= (action as HotkeyBinding<HotkeyAction.REWIND>).actionArgument; break;
+      case HotkeyAction.ADVANCE: v.currentTime += (action as HotkeyBinding<HotkeyAction.ADVANCE>).actionArgument; break;
+      case HotkeyAction.TOGGLE_PAUSE: v.paused ? v.play() : v.pause(); break;
+      case HotkeyAction.TOGGLE_MUTE: v.muted = !v.muted; break;
       default: assertNever(action.action);
     }
   }

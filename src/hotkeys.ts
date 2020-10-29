@@ -1,5 +1,5 @@
 import { settingKeyToPreviousValueKey, Settings, TogglableSettings } from "./settings";
-import { assertNever, KeysOfType } from "./helpers";
+import { assertNever, DeepReadonly, KeysOfType } from "./helpers";
 
 // I've got a feeling that this code will become obsolete sooner than it should. TODO maybe use a library?
 
@@ -48,6 +48,8 @@ export const enum HotkeyAction {
 
   ADVANCE = 'advance',
   REWIND = 'rewind',
+  TOGGLE_PAUSE = 'pause_toggle',
+  TOGGLE_MUTE = 'mute_toggle',
 }
 
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
@@ -83,20 +85,34 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
 
   [HotkeyAction.ADVANCE]: '➡️ Advance',
   [HotkeyAction.REWIND]: '⬅️ Rewind',
+  [HotkeyAction.TOGGLE_PAUSE]: '⏯️ Pause/unpause',
+  [HotkeyAction.TOGGLE_MUTE]: '🔇 Mute/unmute',
 };
 
 export type NonSettingsAction =
   HotkeyAction.REWIND
-  | HotkeyAction.ADVANCE;
+  | HotkeyAction.ADVANCE
+  | HotkeyAction.TOGGLE_PAUSE
+  | HotkeyAction.TOGGLE_MUTE
+;
 
-export type HotkeyActionArguments<T extends HotkeyAction> = number; // Maybe some day this won't be just number.
+type NoArgumentAction =
+  HotkeyAction.TOGGLE_PAUSE
+  | HotkeyAction.TOGGLE_MUTE
+;
+export type HotkeyActionArguments<T extends HotkeyAction> = T extends NoArgumentAction ? never : number;
 
 // Consider replacing it with a tuple to save some storage space (to fit the `QUOTA_BYTES_PER_ITEM` quota).
-export interface HotkeyBinding<T extends HotkeyAction = HotkeyAction> {
+export type HotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
   keyCombination: KeyCombination;
   action: T;
-  actionArgument: HotkeyActionArguments<T>;
-}
+  // actionArgument: HotkeyActionArguments<T>;
+} & (T extends NoArgumentAction
+  // Disabling a rule here, not sure how to write this better. TODO?
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  ? {}
+  : { actionArgument: HotkeyActionArguments<T> }
+);
 
 export function eventToCombination(e: KeyboardEvent): KeyCombination {
   const combination = {
@@ -148,13 +164,9 @@ export function eventTargetIsInput(event: KeyboardEvent): boolean {
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
-type NonSettingActionWithArgument<T extends NonSettingsAction = NonSettingsAction> = {
-  action: NonSettingsAction,
-  actionArgument: HotkeyActionArguments<T>,
-};
 export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings): {
   settingsNewValues: Partial<Settings>,
-  nonSettingsActions: Array<NonSettingActionWithArgument>,
+  nonSettingsActions: Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>,
 } {
   const actions: ReturnType<typeof keydownEventToActions> = {
     settingsNewValues: {},
@@ -168,10 +180,10 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
   // TODO. Fuck. This doesn't work properly. E.g. try binding the same key to two "decrease sounded speed" actions.
   // This will result in only the last binding taking effect.
   for (const binding of matchedBindings) {
-    const arg = binding.actionArgument;
+    const arg = 'actionArgument' in binding ? binding.actionArgument : undefined;
     type NumberSettings = KeysOfType<Settings, number>;
     const updateClamped = function (settingName: NumberSettings, sign: '+' | '-', min: number, max: number) {
-      const unclamped = currentSettings[settingName] + (sign === '-' ? -1 : 1) * binding.actionArgument;
+      const unclamped = currentSettings[settingName] + (sign === '-' ? -1 : 1) * arg!;
       actions.settingsNewValues[settingName] = clamp(unclamped, min, max);
     };
     // Gosh frick it. We only update previous values in this function and nowhere else. So when the user changes,
@@ -214,15 +226,13 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       case HotkeyAction.SET_MARGIN_AFTER: actions.settingsNewValues.marginAfter = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_AFTER: toggleSettingValue('marginAfter'); break;
       case HotkeyAction.ADVANCE:
-      case HotkeyAction.REWIND: {
+      case HotkeyAction.REWIND:
+      case HotkeyAction.TOGGLE_PAUSE:
+      case HotkeyAction.TOGGLE_MUTE:
+      {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const assertNonSettingsAction: NonSettingsAction = binding.action; // TODO is there a not haсky way to do this?
-        // Actually this is practically equivalent to `actions.nonSettingsActions.push(binding);`, but TS isn't smart
-        // enough to realize this.
-        actions.nonSettingsActions.push({
-          action: binding.action,
-          actionArgument: binding.actionArgument,
-        });
+        actions.nonSettingsActions.push(binding as HotkeyBinding<NonSettingsAction>)
         break;
       }
       default: assertNever(binding.action);
