@@ -289,7 +289,7 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
 
 <style>
   .advanced-section > label {
-    margin: 0.25rem 0;
-    display: block;
+    margin: 0.125rem 0;
+    display: inline-block;
   }
 </style>
