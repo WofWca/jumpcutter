@@ -27,3 +27,7 @@ export type StretchInfo = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type KeysOfType<T extends Record<string, any>, U> = { [P in keyof T]: T[P] extends U ? P : never; }[keyof T];
 export type ResolveType<T extends Promise<unknown>> = T extends Promise<infer U> ? U : never;
+export type DeepReadonly<T> =
+  T extends Record<string, unknown> ? { readonly [P in keyof T]: T[P] }
+  : T extends (infer I)[] ? ReadonlyArray<I>
+  : T;

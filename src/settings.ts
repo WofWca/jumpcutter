@@ -184,7 +184,7 @@ export const defaultSettings: Readonly<Settings> = {
   ],
 
   popupDisableHotkeysWhileInputFocused: false,
-  popupAutofocusEnabledInput: true,
+  popupAutofocusEnabledInput: false,
 };
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
