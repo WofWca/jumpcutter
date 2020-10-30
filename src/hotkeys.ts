@@ -162,17 +162,21 @@ export function eventTargetIsInput(event: KeyboardEvent): boolean {
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
-export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings): {
+/**
+ * @param bindings - custom keybindings array. Defaults to {@link currentSettings.hotkeys}
+ */
+export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): {
   settingsNewValues: Partial<Settings>,
   nonSettingsActions: Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>,
 } {
+  const bindingsDefinite = bindings ?? currentSettings.hotkeys;
   const actions: ReturnType<typeof keydownEventToActions> = {
     settingsNewValues: {},
     nonSettingsActions: [],
   };
   const executedCombination = eventToCombination(e);
   // Yes, bindings, with an "S". Binding one key to multiple actions is allowed.
-  const matchedBindings = currentSettings.hotkeys.filter(
+  const matchedBindings = bindingsDefinite.filter(
     binding => combinationIsEqual(executedCombination, binding.keyCombination)
   );
   // TODO. Fuck. This doesn't work properly. E.g. try binding the same key to two "decrease sounded speed" actions.
