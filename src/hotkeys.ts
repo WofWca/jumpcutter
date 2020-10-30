@@ -96,10 +96,8 @@ export type NonSettingsAction =
   | HotkeyAction.TOGGLE_MUTE
 ;
 
-type NoArgumentAction =
-  HotkeyAction.TOGGLE_PAUSE
-  | HotkeyAction.TOGGLE_MUTE
-;
+export const allNoArgumentActions = [HotkeyAction.TOGGLE_PAUSE, HotkeyAction.TOGGLE_MUTE] as const;
+export type NoArgumentAction = typeof allNoArgumentActions[number];
 export type HotkeyActionArguments<T extends HotkeyAction> = T extends NoArgumentAction ? never : number;
 
 // Consider replacing it with a tuple to save some storage space (to fit the `QUOTA_BYTES_PER_ITEM` quota).

@@ -3,15 +3,18 @@
   import CustomValueInput from './CustomValueInput.svelte';
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
-  import { eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString } from '@/hotkeys';
+  import {
+    eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, HotkeyAction, NoArgumentAction,
+    allNoArgumentActions,
+  } from '@/hotkeys';
   import { debounce } from 'lodash';
 
   let unsaved = false;
   let formValid = true;
   let formEl: HTMLFormElement;
 
-  type PotentiallyInvalidHotkeyBinding = {
-    [P in keyof HotkeyBinding]?: HotkeyBinding[P];
+  type PotentiallyInvalidHotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
+    [P in keyof HotkeyBinding<T>]?: HotkeyBinding<T>[P];
   }
   type PotentiallyInvalidSettingsChangedKeys = keyof Pick<Settings, 'hotkeys'>;
   type PotentiallyInvalidSettings = Omit<Settings, PotentiallyInvalidSettingsChangedKeys> & {
@@ -53,6 +56,11 @@
     const combination = eventToCombination(event);
     settings.hotkeys[bindingInd].keyCombination = combination;
     settings = settings;
+  }
+  function isPotentiallyInvalidBindingWithArgument(
+    binding: PotentiallyInvalidHotkeyBinding,
+  ): binding is PotentiallyInvalidHotkeyBinding<Exclude<HotkeyAction, NoArgumentAction>> {
+    return !!binding.action && !(allNoArgumentActions as any).includes(binding.action);
   }
 
   function onResetToDefaultsClick() {
@@ -184,14 +192,15 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
                     />
                   </td>
                   <td>
-                    <!-- TODO in the future, the argument isn't necessarily going to be a number, and isn't
-                    necessarily going to be required at all. -->
-                    <input
-                      bind:value={binding.actionArgument}
-                      required
-                      type="number"
-                      step="any"
-                    >
+                    {#if isPotentiallyInvalidBindingWithArgument(binding)}
+                    <!-- TODO in the future, the argument isn't necessarily going to be a number. -->
+                      <input
+                        bind:value={binding.actionArgument}
+                        required
+                        type="number"
+                        step="any"
+                      >
+                    {/if}
                   </td>
                   <td>
                     <button
