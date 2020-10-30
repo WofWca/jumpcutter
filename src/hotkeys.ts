@@ -104,6 +104,7 @@ export type HotkeyActionArguments<T extends HotkeyAction> = T extends NoArgument
 export type HotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
   keyCombination: KeyCombination;
   action: T;
+  overrideWebsiteHotkeys?: boolean,
   // actionArgument: HotkeyActionArguments<T>;
 } & (T extends NoArgumentAction
   // Disabling a rule here, not sure how to write this better. TODO?
@@ -168,6 +169,7 @@ function clamp(value: number, min: number, max: number) {
 export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): {
   settingsNewValues: Partial<Settings>,
   nonSettingsActions: Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>,
+  overrideWebsiteHotkeys?: true, // TODO. Doesn't this look a bit odd?
 } {
   const bindingsDefinite = bindings ?? currentSettings.hotkeys;
   const actions: ReturnType<typeof keydownEventToActions> = {
@@ -238,6 +240,10 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
         break;
       }
       default: assertNever(binding.action);
+    }
+
+    if (binding.overrideWebsiteHotkeys) {
+      actions.overrideWebsiteHotkeys = true;
     }
   }
   return actions;

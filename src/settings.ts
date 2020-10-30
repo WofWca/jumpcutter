@@ -61,12 +61,13 @@ export const defaultSettings: Readonly<Settings> = {
   hotkeys: [
     // Rewind/advance +
     {
-      keyCombination: { code: 'KeyZ', },
+      keyCombination: { code: 'KeyX', },
       action: HotkeyAction.REWIND,
       actionArgument: 5,
     },
     {
-      keyCombination: { code: 'KeyX', },
+      keyCombination: { code: 'KeyC', },
+      overrideWebsiteHotkeys: true, // Because on YouTube "C" toggles subtitles.
       action: HotkeyAction.ADVANCE,
       actionArgument: 5,
     },
@@ -80,30 +81,17 @@ export const defaultSettings: Readonly<Settings> = {
     // * It's computationally heavy.
     // TODO these problems sound like then can be solved.
     {
-      keyCombination: { code: 'KeyZ', modifiers: ['shiftKey'], },
+      keyCombination: { code: 'KeyZ', },
       action: HotkeyAction.TOGGLE_VOLUME_THRESHOLD,
       actionArgument: 0,
     },
     {
-      keyCombination: { code: 'KeyZ', modifiers: ['shiftKey'], },
+      keyCombination: { code: 'KeyZ', },
       action: HotkeyAction.TOGGLE_SOUNDED_SPEED,
       // Why this weird number? Because if it's exactly 1 and the user happens to already use 1 as their preferred
       // soundedSpeed, using this hotkey would not work as intended (it would toggle the value back to its previous
       // value, whatever it is). TODO this confuses the user. How about we use "SET" instead of "TOGGLE" for this
       // hotkey? Toggling the values back with their individual keys doesn't sound too bad.
-      actionArgument: 1 - 1e-10,
-    },
-    // A duplicate of the previous two bindings. Why? Sometimes you want to rewind back for a big while, and then
-    // advance back to where you left off and set `volumeThreshold` and `soundedSpeed` back to normal. In this case 
-    // it is more intuitive to press "Shift+X", rather than "Shift+Z" as you had already been pressing X for a while.
-    {
-      keyCombination: { code: 'KeyX', modifiers: ['shiftKey'], },
-      action: HotkeyAction.TOGGLE_VOLUME_THRESHOLD,
-      actionArgument: 0,
-    },
-    {
-      keyCombination: { code: 'KeyX', modifiers: ['shiftKey'], },
-      action: HotkeyAction.TOGGLE_SOUNDED_SPEED,
       actionArgument: 1 - 1e-10,
     },
 

@@ -138,6 +138,7 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
               <th>Action</th>
               <th>Hotkey</th>
               <th>Value</th>
+              <th>Override website hotkeys</th>
             </thead>
             <tbody>
               <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
@@ -155,6 +156,7 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
                       />
                     </td>
                     <td></td> <!-- No argument -->
+                    <td></td> <!-- No "overrideWebsiteHotkeys" -->
                     <td style="text-align: center;">
                       <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
                       to not work fully (no scrolling to anchor). Just 'href' doesn't work. Link is taken from
@@ -201,6 +203,12 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
                         step="any"
                       >
                     {/if}
+                  </td>
+                  <td style="text-align: center;">
+                    <input
+                      bind:checked={binding.overrideWebsiteHotkeys}
+                      type="checkbox"
+                    />
                   </td>
                   <td>
                     <button

@@ -119,7 +119,16 @@ async function initIfVideoPresent() {
         assert(!!settings);
         // TODO show what changed on the popup text.
         const actions = keydownEventToActions(e, settings);
-        const { settingsNewValues, nonSettingsActions } = actions;
+        const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
+
+        // Works because `useCapture` of `addEventListener` is `true`. However, it's not guaranteed to work on every
+        // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow.
+        // https://github.com/igrigorik/videospeed/blob/56eb7a08459d6746a0019b0b0c4edf974c022114/inject.js#L592-L596
+        if (overrideWebsiteHotkeys) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
         // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
         // Nothing critical, but not great for performance.
         // How about we only update the`settings` object synchronously (so sequential changes can be made, as
@@ -144,7 +153,9 @@ async function initIfVideoPresent() {
       //
       // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
       // which wrap around a video element, which is not ever supposed to be in focus.
-      document.addEventListener('keydown', handleKeydown);
+      //
+      // `useCapture` is true because see `overrideWebsiteHotkeys`.
+      document.addEventListener('keydown', handleKeydown, true);
     })();
   }
 
