@@ -89,12 +89,8 @@ export const defaultSettings: Readonly<Settings> = {
     },
     {
       keyCombination: { code: 'KeyZ', },
-      action: HotkeyAction.TOGGLE_SOUNDED_SPEED,
-      // Why this weird number? Because if it's exactly 1 and the user happens to already use 1 as their preferred
-      // soundedSpeed, using this hotkey would not work as intended (it would toggle the value back to its previous
-      // value, whatever it is). TODO this confuses the user. How about we use "SET" instead of "TOGGLE" for this
-      // hotkey? Toggling the values back with their individual keys doesn't sound too bad.
-      actionArgument: 1 - 1e-10,
+      action: HotkeyAction.SET_SOUNDED_SPEED,
+      actionArgument: 1,
     },
 
     // volumeThreshold
