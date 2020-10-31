@@ -83,8 +83,8 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after (s) =',
   [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱➡️ Margin after (s) toggle 🔄',
 
-  [HotkeyAction.ADVANCE]: '➡️ Advance',
-  [HotkeyAction.REWIND]: '⬅️ Rewind',
+  [HotkeyAction.ADVANCE]: '➡️ Advance (s)',
+  [HotkeyAction.REWIND]: '⬅️ Rewind (s)',
   [HotkeyAction.TOGGLE_PAUSE]: '⏯️ Pause/unpause',
   [HotkeyAction.TOGGLE_MUTE]: '🔇 Mute/unmute',
 };
