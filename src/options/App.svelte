@@ -231,19 +231,24 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
       <section class="advanced-section">
         <h3>Advanced</h3>
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
+          <!-- Wrapper div so they're displayed on top of each other. -->
+          <div>
+            <label>
+              <input
+                type="checkbox"
+                bind:checked={settings.popupDisableHotkeysWhileInputFocused}
+              > Popup: disable hotkeys while an input is in focus
+            </label>
+          </div>
+        {/if}
+        <div>
           <label>
             <input
               type="checkbox"
-              bind:checked={settings.popupDisableHotkeysWhileInputFocused}
-            > Popup: disable hotkeys while an input is in focus
+              bind:checked={settings.popupAutofocusEnabledInput}
+            > Popup: autofocus the "enabled" checkbox when popup opens
           </label>
-        {/if}
-        <label>
-          <input
-            type="checkbox"
-            bind:checked={settings.popupAutofocusEnabledInput}
-          > Popup: autofocus the "enabled" checkbox when popup opens
-        </label>
+        </div>
       </section>
 
 
@@ -305,8 +310,7 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
 </div>
 
 <style>
-  .advanced-section > label {
-    margin: 0.125rem 0;
-    display: inline-block;
+  .advanced-section > div {
+    margin: 0.25rem 0;
   }
 </style>
