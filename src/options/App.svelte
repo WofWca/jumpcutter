@@ -7,7 +7,7 @@
     eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, HotkeyAction, NoArgumentAction,
     allNoArgumentActions,
   } from '@/hotkeys';
-  import { debounce } from 'lodash';
+  import debounce from 'lodash/debounce';
 
   let unsaved = false;
   let formValid = true;
