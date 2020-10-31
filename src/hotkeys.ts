@@ -1,4 +1,4 @@
-import { settingKeyToPreviousValueKey, Settings, TogglableSettings } from "./settings";
+import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings } from "./settings";
 import { assertNever, DeepReadonly, KeysOfType } from "./helpers";
 
 // I've got a feeling that this code will become obsolete sooner than it should. TODO maybe use a library?
@@ -196,11 +196,9 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
     // surface, so it's not super crucial. TODO fix.
     const toggleSettingValue = (key: TogglableSettings) => {
       const prevValueSettingKey = settingKeyToPreviousValueKey[key];
-      const currValue = currentSettings[key];
-      actions.settingsNewValues[key] = currValue === arg
+      actions.settingsNewValues[key] = currentSettings[key] === arg
         ? currentSettings[prevValueSettingKey]
         : arg;
-      actions.settingsNewValues[prevValueSettingKey] = currValue;
     };
     switch (binding.action) {
       // TODO DRY max and min values with values in `@/popup`. Make them adjustable even?
@@ -246,5 +244,20 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       actions.overrideWebsiteHotkeys = true;
     }
   }
+
+  // TODO how about this needs to more to `syncSetSettings` or something?
+  for (const key_ of Object.keys(actions.settingsNewValues)) {
+    const key = key_ as keyof typeof actions.settingsNewValues;
+    if ((togglableSettings as any).includes(key)) {
+      const currValue = currentSettings[key as TogglableSettings];
+      const prevValueSettingKey = settingKeyToPreviousValueKey[key as TogglableSettings];
+      // Technically the code above should be responsible for the fact that this check always returns true.
+      // Or should it?
+      if (actions.settingsNewValues[key] !== currValue) {
+        actions.settingsNewValues[prevValueSettingKey] = currValue;
+      }
+    }
+  }
+
   return actions;
 }

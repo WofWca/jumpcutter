@@ -33,7 +33,9 @@ export type CorrespondingPreviousValueSetting<T extends TogglableSettings> =
   : T extends 'marginBefore'    ? 'previousMarginBefore'
   : T extends 'marginAfter'     ? 'previousMarginAfter'
   : never;
-export type TogglableSettings = 'volumeThreshold' | 'silenceSpeed' | 'soundedSpeed' | 'marginBefore' | 'marginAfter';
+export const togglableSettings = ['volumeThreshold', 'silenceSpeed', 'soundedSpeed', 'marginBefore',
+  'marginAfter'] as const;
+export type TogglableSettings = typeof togglableSettings[number];
 export const settingKeyToPreviousValueKey: { [P in TogglableSettings]: CorrespondingPreviousValueSetting<P> } = {
   volumeThreshold: 'previousVolumeThreshold',
   silenceSpeed: 'previousSilenceSpeed',
