@@ -25,6 +25,18 @@
     "content/SilenceDetectorProcessor.js",
     "content/VolumeFilter.js"
   ],
+  "options_ui": {
+    "page": "options/index.html",
+    "chrome_style": true,
+    "open_in_tab": false
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      }
+    }
+  },
   "icons": {
     "32": "icons/icon32.png",
     "128": "icons/icon128.png"

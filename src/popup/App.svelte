@@ -1,26 +1,15 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import defaultSettings from '@/defaultSettings.json';
+  import { ResolveType } from '@/helpers';
+  import { getSettings, setSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
-  import throttle from 'lodash.throttle';
   import type Controller from '@/content/Controller';
+  import type createKeydownListener from './hotkeys';
 
-  let settings = { ...defaultSettings };
-  if (process.env.NODE_ENV !== 'production') {
-    function isPrimitive(value: typeof defaultSettings[keyof typeof defaultSettings]) {
-      return ['boolean', 'string', 'number'].includes(typeof value) || ([null, undefined] as any[]).includes(value)
-    }
-    for (const [key, value] of Object.entries(defaultSettings)) {
-      if (!isPrimitive(value)) {
-        throw new Error('`defaultSettings` is now a more complex object, consider using lodash.clone instead to clone '
-          + 'it');
-      }
-    }
-  }
+  let settings: Settings;
 
   let settingsLoaded = false;
-  let settingsPromise = new Promise<typeof defaultSettings>(r => chrome.storage.sync.get(defaultSettings, r as any));
+  let settingsPromise = getSettings();
   settingsPromise.then(s => {
     settings = s;
     settingsLoaded = true;
@@ -46,12 +35,26 @@
     }, telemetryUpdatePeriod * 1000);
   })();
 
-  function saveSettings(settings: typeof defaultSettings) {
-    chrome.storage.sync.set(settings);
+  // Make a setings or a flag or something.
+  const LISTEN_TO_HOTKEYS_IN_POPUP = true;
+  let keydownListener: ResolveType<ReturnType<typeof createKeydownListener>> | (() => {}) = () => {};
+  settingsPromise.then(async () => {
+    if (!LISTEN_TO_HOTKEYS_IN_POPUP || !settings.enableHotkeys) return;
+    const { default: createKeydownListener } = (await import('./hotkeys'));
+    keydownListener = await createKeydownListener(
+      () => settings,
+      newValues => {
+        Object.assign(settings, newValues);
+        settings = settings;
+      },
+    );
+  })
+
+  function saveSettings(settings: Settings) {
+    setSettings(settings);
   }
-  const throttleSaveSettings = throttle(saveSettings, 200);
   $: onSettingsChange = settingsLoaded
-    ? throttleSaveSettings
+    ? saveSettings
     : () => {};
   $: {
     onSettingsChange(settings);
@@ -60,86 +63,92 @@
   const maxVolume = 0.15;
 </script>
 
-<label class="enabled-input">
-  <input
-    bind:checked={settings.enabled}
-    type="checkbox"
-    autofocus
-  >
-  <span>Enabled</span>
-</label>
-<Chart
-  {latestTelemetryRecord}
-  volumeThreshold={settings.volumeThreshold}
-  loadedPromise={settingsPromise}
+<svelte:window
+  on:keydown={keydownListener}
 />
-<RangeSlider
-  label="Volume threshold"
-  min="0"
-  max={maxVolume}
-  step="0.0005"
-  value={settings.volumeThreshold}
-  on:input={({ detail }) => settings.volumeThreshold = detail}
-/>
-<datalist id="sounded-speed-datalist">
-  <option>1</option>
-</datalist>
-<!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
-Also min should be 0 for the same reason. -->
-<RangeSlider
-  label="Sounded speed"
-  list="sounded-speed-datalist"
-  fractionalDigits={2}
-  min="0"
-  max="15"
-  step="0.1"
-  value={settings.soundedSpeed}
-  on:input={({ detail }) => settings.soundedSpeed = detail}
-/>
-<!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
-https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
-<RangeSlider
-  label="Silence speed"
-  fractionalDigits={2}
-  min="0"
-  max="15"
-  step="0.1"
-  value={settings.silenceSpeed}
-  on:input={({ detail }) => settings.silenceSpeed = detail}
-/>
-<RangeSlider
-  label="Margin after"
-  min="0"
-  max="0.5"
-  step="0.005"
-  value={settings.marginAfter}
-  on:input={({ detail }) => settings.marginAfter = detail}
-/>
+{#await settingsPromise then _}
+  <label class="enabled-input">
+    <input
+      bind:checked={settings.enabled}
+      type="checkbox"
+      autofocus={settings.popupAutofocusEnabledInput}
+    >
+    <span>Enabled</span>
+  </label>
+  <!-- TODO but this is technically a button. Is this ok? -->
+  <a
+    id="options-button"
+    href="javascript;"
+    on:click={() => chrome.runtime.openOptionsPage()}
+  >⚙️</a>
+  <Chart
+    {latestTelemetryRecord}
+    volumeThreshold={settings.volumeThreshold}
+    loadedPromise={settingsPromise}
+  />
+  <RangeSlider
+    label="Volume threshold"
+    min="0"
+    max={maxVolume}
+    step="0.0005"
+    value={settings.volumeThreshold}
+    on:input={({ detail }) => settings.volumeThreshold = detail}
+  />
+  <datalist id="sounded-speed-datalist">
+    <option>1</option>
+  </datalist>
+  <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
+  Also min should be 0 for the same reason. -->
+  <RangeSlider
+    label="Sounded speed"
+    list="sounded-speed-datalist"
+    fractionalDigits={2}
+    min="0"
+    max="15"
+    step="0.1"
+    value={settings.soundedSpeed}
+    on:input={({ detail }) => settings.soundedSpeed = detail}
+  />
+  <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
+  https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
+  <RangeSlider
+    label="Silence speed"
+    fractionalDigits={2}
+    min="0"
+    max="15"
+    step="0.1"
+    value={settings.silenceSpeed}
+    on:input={({ detail }) => settings.silenceSpeed = detail}
+  />
+  <RangeSlider
+    label="Margin after"
+    min="0"
+    max="0.5"
+    step="0.005"
+    value={settings.marginAfter}
+    on:input={({ detail }) => settings.marginAfter = detail}
+  />
 
 
-<label class="enable-experimental-features-field">
-  <input
-    bind:checked={settings.enableExperimentalFeatures}
-    type="checkbox"
-  >
-  <span>Experimental features</span>
-</label>
-{#if settings.enableExperimentalFeatures}
-<!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
-<RangeSlider
-  label="Margin before"
-  min="0"
-  max="0.5"
-  step="0.005"
-  value={settings.marginBefore}
-  on:input={({ detail }) => settings.marginBefore = detail}
-/>
-{/if}
-<a
-  id="repo-link"
-  target="new"
-  href="https://github.com/WofWca/jumpcutter"
->About / feedback</a>
+  <label class="enable-experimental-features-field">
+    <input
+      bind:checked={settings.enableExperimentalFeatures}
+      type="checkbox"
+    >
+    <span>Experimental features</span>
+  </label>
+  {#if settings.enableExperimentalFeatures}
+  <!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
+  <RangeSlider
+    label="Margin before"
+    min="0"
+    max="0.5"
+    step="0.005"
+    value={settings.marginBefore}
+    on:input={({ detail }) => settings.marginBefore = detail}
+  />
+  {/if}
+{/await}
 
 <style>
   label:not(:first-child) {
@@ -166,9 +175,12 @@ https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a6490
     align-items: center;
   }
 
-  #repo-link {
-    margin-top: 1rem;
-    display: block;
-    text-align: end;
+  #options-button {
+    position: absolute;
+    padding: 0.25rem;
+    top: 0.75rem;
+    right: 0.75rem;
+    text-decoration: none;
+    font-size: 1.125rem;
   }
 </style>
