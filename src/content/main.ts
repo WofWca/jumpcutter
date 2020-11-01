@@ -167,7 +167,7 @@ async function initIfVideoPresent() {
 
 function destroyIfInited() {
   removeOnSettingsChangedListener(reactToSettingsChanges);
-  document.removeEventListener('keydown', handleKeydown);
+  document.removeEventListener('keydown', handleKeydown, true);
 
   controller?.destroy();
   controller = null;
