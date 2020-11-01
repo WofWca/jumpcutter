@@ -122,7 +122,8 @@ async function initIfVideoPresent() {
         const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
 
         // Works because `useCapture` of `addEventListener` is `true`. However, it's not guaranteed to work on every
-        // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow.
+        // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow. Maybe attach it before
+        // website's listeners get attached, by adding a `"run_at": "document_start"` content script.
         // https://github.com/igrigorik/videospeed/blob/56eb7a08459d6746a0019b0b0c4edf974c022114/inject.js#L592-L596
         if (overrideWebsiteHotkeys) {
           e.preventDefault();
