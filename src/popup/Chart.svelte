@@ -11,6 +11,7 @@
 
   let canvasEl: HTMLCanvasElement;
   const canvasWidth = 400;
+  const canvasHeight = 200;
   const millisPerPixel = 10;
   // May not be precise (and doesn't need to be currently).
   const bufferDurationMillliseconds = Math.ceil(canvasWidth * millisPerPixel);
@@ -28,9 +29,6 @@
 
   let stretchSeries: TimeSeries;
   let shrinkSeries: TimeSeries;
-
-  // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-  let currentOutputMarkSeries: TimeSeries;
 
   const bestYAxisRelativeVolumeThreshold = 1/6;
   let chartMaxValue: number;
@@ -76,6 +74,7 @@
       },
     });
     smoothie.streamTo(canvasEl);
+    smoothie.stop();
 
     loadedPromise.then(() => {
       setBestChartMaxValue();
@@ -92,7 +91,6 @@
     volumeThresholdSeries = new TimeSeries();
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
-    currentOutputMarkSeries = new TimeSeries();
     // Order determines z-index
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
@@ -120,14 +118,30 @@
       strokeStyle: 'rgba(100, 100, 220, 0)',
       fillStyle: 'rgba(100, 100, 220, 0.8)',
     });
-    smoothie.addTimeSeries(currentOutputMarkSeries, {
-      strokeStyle: 'rgba(0, 0, 0, 0.5)',
-    })
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
       strokeStyle: '#f44',
       fillStyle: 'transparent',
     });
+    
+    const canvasContext = canvasEl.getContext('2d')!;
+    (function drawAndScheduleAnother() {
+      // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+      // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
+      // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
+      // TODO it appears to flicker sometimes. NOt when we put `smoothie.render()` above it. Why?
+      const x = canvasWidth - sToMs(totalOutputDelay) / millisPerPixel;
+      canvasContext.beginPath();
+      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      canvasContext.moveTo(x, 0);
+      canvasContext.lineTo(x, canvasHeight);
+      canvasContext.closePath();
+      canvasContext.stroke();
+
+      smoothie.render();
+
+      requestAnimationFrame(drawAndScheduleAnother);
+    })();
   }
   onMount(initSmoothie);
 
@@ -253,26 +267,12 @@
     volumeThreshold;
     updateSmoothieVolumeThreshold()
   }
-
-  (function updateCurrentOutputMarkAndScheduleAnother() {
-    if (smoothie) {
-      currentOutputMarkSeries!.clear();
-      if (totalOutputDelay !== 0) {
-        const currentOutputTimeMs = Date.now() - sToMs(totalOutputDelay);
-        // Draw a vertical line.
-        const offTheChartsPastMoment = currentOutputTimeMs - 1e8;
-        currentOutputMarkSeries!.append(offTheChartsPastMoment, offTheChartsValue);
-        currentOutputMarkSeries!.append(currentOutputTimeMs, 0);
-      }
-    }
-    requestAnimationFrame(updateCurrentOutputMarkAndScheduleAnother);
-  })();
 </script>
 
 <canvas
   bind:this={canvasEl}
-  width=400
-  height=200
+  width={canvasWidth}
+  height={canvasHeight}
 >
   <label>
     Volume
