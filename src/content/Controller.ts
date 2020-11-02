@@ -474,7 +474,7 @@ export default class Controller {
 
     return {
       unixTime: Date.now() / 1000,
-      videoTime: this.element.currentTime,
+      // videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
@@ -482,7 +482,7 @@ export default class Controller {
         ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
         : 0,
       // TODO also log `interruptLastScheduledStretch` calls.
-      lastScheduledStretch: this._lastScheduledStretch,
+      // lastScheduledStretch: this._lastScheduledStretch,
       lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),
     };
   }
