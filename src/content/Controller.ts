@@ -33,6 +33,9 @@ type ControllerInitialized =
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_outVolumeFilter' | '_analyzerOut'>>;
 
+// Not a method so it gets eliminated at optimization.
+const isLogging = (controller: Controller): controller is ControllerLogging => logging;
+
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
@@ -70,9 +73,6 @@ export default class Controller {
   isStretcherEnabled(): this is ControllerWithStretcher {
     return this.settings.enableExperimentalFeatures;
   }
-  isLogging(): this is ControllerLogging {
-    return logging;
-  }
 
   async init(): Promise<this> {
     let resolveInitPromise: (result: this) => void;
@@ -108,7 +108,7 @@ export default class Controller {
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
-    if (this.isLogging()) {
+    if (isLogging(this)) {
       this._outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
         outputChannelCount: [1],
       });
@@ -142,7 +142,7 @@ export default class Controller {
       this._stretcher.connectOutputTo(ctx.destination);
     }
     this._volumeFilter.connect(this._analyzerIn);
-    if (this.isLogging()) {
+    if (isLogging(this)) {
       if (this.isStretcherEnabled()) {
         this._stretcher.connectOutputTo(this._outVolumeFilter);
       } else {
@@ -152,7 +152,7 @@ export default class Controller {
     }
     this._setStateAccordingToNewSettings();
 
-    if (this.isLogging()) {
+    if (isLogging(this)) {
       const logArr = [];
       const logBuffer = new Float32Array(this._analyzerOut.fftSize);
       this._log = (msg = null) => {
@@ -188,7 +188,7 @@ export default class Controller {
         }
       }
     }
-    if (this.isLogging()) {
+    if (isLogging(this)) {
       setInterval(() => {
         this._log!();
       }, 1);
@@ -254,7 +254,7 @@ export default class Controller {
         marginBeforeStartOutputTimeStretcherDelay,
         marginBeforeStartOutputTime
       );
-      if (this.isLogging()) {
+      if (isLogging(this)) {
         this._log({
           type: 'pauseReset',
           value: marginBeforeStartOutputTimeStretcherDelay,
@@ -291,7 +291,7 @@ export default class Controller {
       startTime,
       endTime,
     }
-    if (this.isLogging()) {
+    if (isLogging(this)) {
       this._log({ type: 'stretch', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
@@ -326,7 +326,7 @@ export default class Controller {
       endValue: 0,
     };
 
-    if (this.isLogging()) {
+    if (isLogging(this)) {
       this._log({ type: 'reset', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
