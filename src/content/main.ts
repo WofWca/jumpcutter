@@ -56,8 +56,8 @@ function reactToSettingsNewValues(newValues: Partial<Settings>) {
 
   if (Object.keys(newValues).length === 0) return;
 
-  assert(!!controller);
-  assert(!!settings);
+  assert(controller);
+  assert(settings);
   const oldSettings = settings;
   settings = { ...settings, ...newValues };
   if (oldSettings.enableExperimentalFeatures === settings.enableExperimentalFeatures) {
@@ -74,7 +74,7 @@ function reactToSettingsChanges(changes: MyStorageChanges) {
 }
 
 function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydownEventToActions>['nonSettingsActions']) {
-  assert(!!v);
+  assert(v);
   for (const action of nonSettingsActions) {
     switch (action.action) {
       case HotkeyAction.REWIND: v.currentTime -= (action as HotkeyBinding<HotkeyAction.REWIND>).actionArgument; break;
@@ -116,7 +116,7 @@ async function initIfVideoPresent() {
       // something like `getSettings: () => Settings`?
       handleKeydown = (e: KeyboardEvent) => {
         if (eventTargetIsInput(e)) return;
-        assert(!!settings);
+        assert(settings);
         // TODO show what changed on the popup text.
         const actions = keydownEventToActions(e, settings);
         const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;

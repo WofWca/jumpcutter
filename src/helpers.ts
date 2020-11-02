@@ -2,7 +2,7 @@ export function cloneDeepJson<T>(jsonable: T): T {
   return JSON.parse(JSON.stringify(jsonable));
 }
 // TODO but `msg` arguments still not eliminated in production.
-export function assert(condition: boolean, msg?: string): asserts condition {
+export function assert(condition: unknown, msg?: string): asserts condition {
   if (!condition) {
     if (process.env.NODE_ENV !== 'production') {
       throw new Error(msg);

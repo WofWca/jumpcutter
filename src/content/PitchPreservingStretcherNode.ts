@@ -152,7 +152,7 @@ export default class PitchPreservingStretcherNode {
    * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
    */
   interruptLastScheduledStretch(interruptAtTimeValue: Time, interruptAtTime: Time): void {
-    assert(!!this._lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
+    assert(this._lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
       + 'yet');
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method
     this.delayNode.delayTime

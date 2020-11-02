@@ -172,7 +172,7 @@
   };
 
   function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
-    assert(!!newTelemetryRecord.lastScheduledStretchInputTime,
+    assert(newTelemetryRecord.lastScheduledStretchInputTime,
       'Attempted to update stretch series, but stretch is not defined');
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
     const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);

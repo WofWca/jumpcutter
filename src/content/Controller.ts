@@ -371,7 +371,7 @@ export default class Controller {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
-      assert(!!this._lastActualPlaybackRateChange,
+      assert(this._lastActualPlaybackRateChange,
         'Expected it speed to had been set at least at Controller initialization');
       this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
