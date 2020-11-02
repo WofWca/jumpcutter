@@ -75,14 +75,16 @@
   on:keydown={keydownListener}
 />
 {#await settingsPromise then _}
-  <label class="enabled-input">
-    <input
-      bind:checked={settings.enabled}
-      type="checkbox"
-      autofocus={settings.popupAutofocusEnabledInput}
-    >
-    <span>Enabled</span>
-  </label>
+  <div style="display: flex; justify-content: center;">
+    <label class="enabled-input">
+      <input
+        bind:checked={settings.enabled}
+        type="checkbox"
+        autofocus={settings.popupAutofocusEnabledInput}
+      >
+      <span>Enabled</span>
+    </label>
+  </div>
   <!-- TODO but this is technically a button. Is this ok? -->
   <a
     id="options-button"
@@ -164,10 +166,9 @@
   }
 
   .enabled-input {
-    margin: 2rem 0;
+    margin: 1.75rem 0;
     display: flex;
     align-items: center;
-    justify-content: center;
     font-size: 2rem;
   }
   .enabled-input > input {
