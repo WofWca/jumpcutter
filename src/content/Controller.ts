@@ -31,7 +31,8 @@ type ControllerInitialized =
     | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
     | '_lastActualPlaybackRateChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
-type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_outVolumeFilter' | '_analyzerOut'>>;
+type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIntervalId' | '_outVolumeFilter'
+  | '_analyzerOut'>>;
 
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
@@ -61,6 +62,7 @@ export default class Controller {
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
+  _logIntervalId?: number;
 
   constructor(videoElement: HTMLVideoElement, settings: Settings) {
     this.element = videoElement;
@@ -189,7 +191,7 @@ export default class Controller {
       }
     }
     if (isLogging(this)) {
-      setInterval(() => {
+      this._logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
       }, 1);
     }
@@ -342,6 +344,11 @@ export default class Controller {
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
 
+    if (isLogging(this)) {
+      clearInterval(this._logIntervalId);
+    } else {
+      assert(!this._logIntervalId);
+    }
 
     const audioWorklets = [this._volumeFilter, this._silenceDetectorNode];
     if (isLogging(this)) {

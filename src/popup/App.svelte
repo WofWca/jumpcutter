@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { ResolveType } from '@/helpers';
   import { getSettings, setSettings, Settings } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
@@ -17,7 +18,8 @@
 
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
-  (async function startGettingTelemetry() {
+  let telemetryIntervalId: number;
+  const startGettingstelemetryP = (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
     // TODO try-catch for "Receiving end does not exist", e.g. for when the page is being refreshed? Perhaps the content
@@ -30,10 +32,16 @@
       }
     });
     // TODO don't spam messages if the controller is not there.
-    setInterval(() => {
+    telemetryIntervalId = (setInterval as typeof window.setInterval)(() => {
       volumeInfoPort.postMessage('getTelemetry')
     }, telemetryUpdatePeriod * 1000);
   })();
+  // Well, actaully we don't currently require this, because this component gets destroyed only when the document gets
+  // destroyed.
+  onDestroy(async () => {
+    await startGettingstelemetryP;
+    clearInterval(telemetryIntervalId);
+  });
 
   // Make a setings or a flag or something.
   const LISTEN_TO_HOTKEYS_IN_POPUP = true;
