@@ -343,6 +343,24 @@ export default class Controller {
     this._mediaElementSource.connect(audioContext.destination);
 
 
+    const audioWorklets = [this._volumeFilter, this._silenceDetectorNode];
+    if (isLogging(this)) {
+      audioWorklets.push(this._outVolumeFilter);
+    } else {
+      assert(!this._outVolumeFilter);
+    }
+    for (const w of audioWorklets) {
+      w.port.postMessage('destroy');
+      w.port.close();
+    }
+    if (process.env.NODE_ENV !== 'production') {
+      for (const propertyVal of Object.values(this)) {
+        if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
+          console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
+        }
+      }
+    }
+
     this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
 
     if (this.isStretcherEnabled()) {

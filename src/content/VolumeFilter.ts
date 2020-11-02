@@ -1,3 +1,4 @@
+import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
 import type { Time } from '@/helpers';
 
 const SAMPLES_PER_QUANTUM = 128;
@@ -41,7 +42,7 @@ class SingleChannelRingBuffer extends Float32Array {
 }
 
 // Simple rectangular window and RMS.
-class VolumeFilter extends AudioWorkletProcessor {
+class VolumeFilter extends WorkaroundAudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
   _currWindowSquaresSum: number;
   _options: any;
@@ -79,7 +80,7 @@ class VolumeFilter extends AudioWorkletProcessor {
     const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
     const input = inputs[0];
     if (input.length === 0) {
-      return true;
+      return this.keepAlive;
     }
     const outputChannel = outputs[0][0]; // Single output, single channel.
     const numChannels = input.length;
@@ -118,7 +119,7 @@ class VolumeFilter extends AudioWorkletProcessor {
       outputChannel[sampleI] = currVolume;
     }
 
-    return true;
+    return this.keepAlive;
   }
 }
 

@@ -1,8 +1,9 @@
+import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
 import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
-class SilenceDetectorProcessor extends AudioWorkletProcessor {
+class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   _lastLoudSampleTime: Time;
   _lastTimePostedSilenceStart: boolean;
   constructor(options: any) {
@@ -45,7 +46,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
         throw new Error('The below code assumes video parts to be sounded when it is unknown');
       }
       this._lastLoudSampleTime = currentTime;
-      return true;
+      return this.keepAlive;
     }
     const numSamples = input[0].length;
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
@@ -72,7 +73,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
         }
       }
     }
-    return true;
+    return this.keepAlive;
   }
 }
 
