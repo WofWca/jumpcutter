@@ -6,7 +6,6 @@
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "32": "icons/icon32.png",
       "128": "icons/icon128.png"
     }
   },
@@ -38,7 +37,6 @@
     }
   },
   "icons": {
-    "32": "icons/icon32.png",
     "128": "icons/icon128.png"
   },
   "manifest_version": 2
