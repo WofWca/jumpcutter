@@ -5,6 +5,8 @@
 import fixSettingsIfNeeded from './fixSettingsIfNeeded'; // TODO also rename this to `ensureMigrateTo1_1_0`?
 import ensureMigrateTo1_7_0 from './ensureMigrateTo1_7_0';
 
+import initIconUpdater from './initIconUpdater';
+
 import throttle from 'lodash/throttle';
 import type { Settings, MyStorageChanges } from '@/settings';
 
@@ -50,3 +52,5 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
   }
 })
+
+initIconUpdater();
