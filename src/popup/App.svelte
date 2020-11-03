@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { ResolveType } from '@/helpers';
-  import { getSettings, setSettings, Settings } from '@/settings';
+  import { addOnChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
@@ -57,6 +57,14 @@
       },
     );
   })
+
+  addOnChangedListener(changes => {
+    // Object.assign(settings, settingsChanges2NewValues(changes));
+    settings = {
+      ...settings,
+      ...settingsChanges2NewValues(changes)
+    };
+  });
 
   function saveSettings(settings: Settings) {
     setSettings(settings);
