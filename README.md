@@ -6,6 +6,6 @@
 Plays silent parts of videos on the page at faster speed.
 Can be useful for watching lectures and other unedited videos.
 
-![Extension popup screenshot](./screenshots/preview-640x400.png)
+![Extension popup screenshot](./screenshots/popup-640x400.png)
 
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
