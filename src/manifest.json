@@ -1,12 +1,11 @@
 {
   "name": "Jump Cutter",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Skips silent parts in videos on the fly",
   "permissions": ["activeTab", "storage", "declarativeContent"],
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "32": "icons/icon32.png",
       "128": "icons/icon128.png"
     }
   },
@@ -25,8 +24,25 @@
     "content/SilenceDetectorProcessor.js",
     "content/VolumeFilter.js"
   ],
+  "options_ui": {
+    "page": "options/index.html",
+    "chrome_style": true,
+    "open_in_tab": false
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X"
+      }
+    },
+    "toggle_enabled": {
+      "description": "Toggle extension",
+      "suggested_key": {
+        "default": "Alt+Shift+X"
+      }
+    }
+  },
   "icons": {
-    "32": "icons/icon32.png",
     "128": "icons/icon128.png"
   },
   "manifest_version": 2

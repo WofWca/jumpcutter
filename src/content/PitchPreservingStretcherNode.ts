@@ -1,23 +1,30 @@
 import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
 import { getStretchSpeedChangeMultiplier } from './helpers';
+import type { Time, StretchInfo } from '@/helpers';
+import { assert } from '@/helpers';
 
 
 // TODO make it into a setting?
 const CROSS_FADE_DURATION = 0.01;
 
-/**
- * @typedef PitchSetting
- * @type {'slowdown' | 'speedup' | 'normal'}
- */
+type PitchSetting = 'slowdown' | 'speedup' | 'normal';
 
 export default class PitchPreservingStretcherNode {
   // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
   // scheduling.
+  context: AudioContext;
+  speedUpGain: GainNode;
+  slowDownGain: GainNode;
+  normalSpeedGain: GainNode;
+  speedUpPitchShift: PitchShift;
+  slowDownPitchShift: PitchShift;
+  originalPitchCompensationDelay: DelayNode;
+  delayNode: DelayNode;
+  _lastScheduledStretch?:
+    Pick<StretchInfo, 'startValue' | 'endValue' | 'startTime' | 'endTime'>
+    & { speedupOrSlowdown: 'speedup' | 'slowdown' };
 
-  /**
-   * @param {AudioContext} context
-   */
-  constructor(context, maxDelay, initialDelay=0) {
+  constructor(context: AudioContext, maxDelay: Time, initialDelay: Time = 0) {
     this.context = context;
 
     this.speedUpGain = context.createGain();
@@ -58,26 +65,16 @@ export default class PitchPreservingStretcherNode {
     this.normalSpeedGain.connect(this.originalPitchCompensationDelay);
   }
 
-  /**
-   * @param {AudioNode} sourceNode
-   */
-  connectInputFrom(sourceNode) {
+  connectInputFrom(sourceNode: AudioNode): void {
     sourceNode.connect(this.delayNode);
   }
-  /**
-   * @param {AudioNode} destinationNode
-   */
-  connectOutputTo(destinationNode) {
+  connectOutputTo(destinationNode: AudioNode): void {
     this.speedUpPitchShift.connect(destinationNode)
     this.slowDownPitchShift.connect(destinationNode)
     this.originalPitchCompensationDelay.connect(destinationNode)
   }
 
-  /**
-   * @param {PitchSetting} pitchSetting
-   * @param {PitchSetting} oldPitchSetting
-   */
-  setOutputPitchAt(pitchSetting, time, oldPitchSetting) {
+  private setOutputPitchAt(pitchSetting: PitchSetting, time: Time, oldPitchSetting: PitchSetting) {
     if (process.env.NODE_ENV !== 'production') {
       if (!['slowdown', 'speedup', 'normal'].includes(pitchSetting)) {
         // TODO replace with TypeScript?
@@ -113,7 +110,7 @@ export default class PitchPreservingStretcherNode {
     toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
   }
 
-  stretch(startValue, endValue, startTime, endTime) {
+  stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
     if (startValue === endValue) {
       return;
     }
@@ -132,7 +129,7 @@ export default class PitchPreservingStretcherNode {
     const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
     // Acutally we only need to do this when the user changes settings.
     setTimeout(() => {
-      function speedChangeMultiplierToSemitones(m) {
+      function speedChangeMultiplierToSemitones(m: number) {
         return -12 * Math.log2(m);
       }
       const node = speedupOrSlowdown === 'speedup'
@@ -151,10 +148,12 @@ export default class PitchPreservingStretcherNode {
   }
 
   /**
-   * @param {number} interruptAtTime the time at which to stop changing the delay.
-   * @param {number} interruptAtTimeValue the value of the delay at `interruptAtTime`
+   * @param interruptAtTime the time at which to stop changing the delay.
+   * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
    */
-  interruptLastScheduledStretch(interruptAtTimeValue, interruptAtTime) {
+  interruptLastScheduledStretch(interruptAtTimeValue: Time, interruptAtTime: Time): void {
+    assert(this._lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
+      + 'yet');
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method
     this.delayNode.delayTime
       .cancelAndHoldAtTime(interruptAtTime)
@@ -171,14 +170,11 @@ export default class PitchPreservingStretcherNode {
     this.setOutputPitchAt('normal', interruptAtTime, this._lastScheduledStretch.speedupOrSlowdown);
   }
 
-  /**
-   * @param {number} value
-   */
-  setDelay(value) {
-    this.delayNode.value = value;
+  setDelay(value: Time): void {
+    this.delayNode.delayTime.value = value;
   }
 
-  destroy() {
+  destroy(): void {
     const toneAudioNodes = [this.speedUpPitchShift, this.slowDownPitchShift];
     for (const node of toneAudioNodes) {
       node.dispose();
@@ -186,7 +182,7 @@ export default class PitchPreservingStretcherNode {
     
     if (process.env.NODE_ENV !== 'production') {
       Object.values(this).forEach(propertyVal => {
-        if (propertyVal instanceof ToneAudioNode && !toneAudioNodes.includes(propertyVal)) {
+        if (propertyVal instanceof ToneAudioNode && !(toneAudioNodes as ToneAudioNode[]).includes(propertyVal)) {
           console.warn('Undisposed ToneAudioNode found. Expected all to be disposed upon `destroy()` call');
         }
       })

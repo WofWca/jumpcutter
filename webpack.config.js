@@ -1,3 +1,5 @@
+/* eslint-env node */
+/* eslint-disable @typescript-eslint/no-var-requires */
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
@@ -13,20 +15,27 @@ module.exports = {
   // Taken from https://github.com/sveltejs/svelte-loader#usage
   resolve: {
     alias: {
-      svelte: path.resolve('node_modules', 'svelte')
+      svelte: path.resolve('node_modules', 'svelte'),
+      '@': path.resolve(__dirname, 'src'),
     },
-    extensions: ['.mjs', '.js', '.svelte', '.json'],
+    extensions: ['.tsx', '.ts', '.mjs', '.js', '.svelte', '.json'],
     mainFields: ['svelte', 'browser', 'module', 'main'],
   },
 
   module: {
     rules: [
       {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
         test: /\.(html|svelte)$/,
         // exclude: /node_modules/, // Not sure if we need this.
         use: {
           loader: 'svelte-loader',
           options: {
+            preprocess: require('svelte-preprocess')(),
             // TODO `emitCss: true`, `ExtractTextPlugin`?
             // https://github.com/sveltejs/svelte-loader#usage
             hotReload: true,
@@ -37,11 +46,13 @@ module.exports = {
   },
 
   entry: {
-    background: './src/background/main.js',
-    content: './src/content/main.js',
-    popup: './src/popup/main.js',
-    SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.js',
-    VolumeFilter: './src/content/VolumeFilter.js',
+    content: './src/content/main.ts',
+    SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.ts',
+    VolumeFilter: './src/content/VolumeFilter.ts',
+
+    popup: './src/popup/main.ts',
+    background: './src/background/main.ts',
+    options: './src/options/main.ts',
   },
 
   output: {
@@ -65,6 +76,7 @@ module.exports = {
         { context: 'src', from: 'manifest.json' },
         { context: 'src', from: 'icons/**' },
         { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name].[ext]' },
+        { context: 'src', from: 'options/*.(html|css)', to: 'options/[name].[ext]' },
       ],
     }),
   ],

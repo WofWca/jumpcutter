@@ -1,6 +1,6 @@
 {
   "name": "jump-cutter",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "author": {
     "name": "WofWca",
     "email": "wofwca@gmail.com"
@@ -14,21 +14,32 @@
   },
   "homepage": "https://github.com/WofWca/jumpcutter#readme",
   "scripts": {
-    "build": "NODE_ENV=production webpack --mode=production",
-    "serve": "webpack --mode=development --watch"
+    "build": "yarn lint && NODE_ENV=production webpack --mode=production",
+    "serve": "webpack --mode=development --watch",
+    "lint": "eslint ./src/"
   },
   "dependencies": {
-    "lodash.throttle": "^4.1.1",
+    "lodash": "^4.17.20",
     "smoothie": "^1.35.0",
-    "tone": "^14.7.12"
+    "tone": "^14.7.58"
   },
   "devDependencies": {
+    "@types/chrome": "^0.0.126",
+    "@types/lodash": "^4.14.164",
+    "@types/node": "^14.14.6",
+    "@typescript-eslint/eslint-plugin": "^4.6.0",
+    "@typescript-eslint/parser": "^4.6.0",
     "clean-webpack-plugin": "^3.0.0",
-    "copy-webpack-plugin": "^6.0.3",
-    "svelte": "^3.24.0",
+    "copy-webpack-plugin": "^6.2.1",
+    "eslint": "^7.12.1",
+    "svelte": "^3.29.4",
+    "svelte-check": "^1.1.6",
     "svelte-loader": "^2.13.6",
+    "svelte-preprocess": "^4.5.2",
     "terser-webpack-plugin": "^4.1.0",
+    "ts-loader": "^8.0.7",
+    "typescript": "^4.0.5",
     "webpack": "^5.0.0-beta.22",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^4.1.0"
   }
 }

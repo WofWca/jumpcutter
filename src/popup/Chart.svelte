@@ -1,35 +1,37 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
+  import type { SmoothieChart, TimeSeries } from 'smoothie';
+  import { assert, StretchInfo, Time as TimeS } from '@/helpers';
+  import type Controller from '@/content/Controller';
 
-  export let latestTelemetryRecord;
-  export let volumeThreshold;
-  export let loadedPromise;
+  type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
+  export let latestTelemetryRecord: TelemetryRecord;
+  export let volumeThreshold: number;
+  export let loadedPromise: Promise<any>;
 
-  let canvasEl;
+  let canvasEl: HTMLCanvasElement;
   const canvasWidth = 400;
+  const canvasHeight = 200;
   const millisPerPixel = 10;
   // May not be precise (and doesn't need to be currently).
   const bufferDurationMillliseconds = Math.ceil(canvasWidth * millisPerPixel);
 
-  $: lastVolume = latestTelemetryRecord && latestTelemetryRecord.inputVolume || 0;
+  $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
-  let smoothie;
-  let volumeSeries;
+  let smoothie: SmoothieChart | undefined;
+  let volumeSeries: TimeSeries;
   // Need two series because they're of different colors.
-  let soundedSpeedSeries;
-  let silenceSpeedSeries;
+  let soundedSpeedSeries: TimeSeries;
+  let silenceSpeedSeries: TimeSeries;
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
-  let volumeThresholdSeries;
+  let volumeThresholdSeries: TimeSeries;
 
-  let stretchSeries;
-  let shrinkSeries;
-
-  // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-  let currentOutputMarkSeries;
+  let stretchSeries: TimeSeries;
+  let shrinkSeries: TimeSeries;
 
   const bestYAxisRelativeVolumeThreshold = 1/6;
-  let chartMaxValue;
+  let chartMaxValue: number;
   function setBestChartMaxValue() {
     chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
   }
@@ -72,14 +74,15 @@
       },
     });
     smoothie.streamTo(canvasEl);
+    smoothie.stop();
 
     loadedPromise.then(() => {
       setBestChartMaxValue();
       // So it doesn't play the scaling animation.
-      const scaleSmoothing = smoothie.options.scaleSmoothing;
-      smoothie.options.scaleSmoothing = 1;
-      smoothie.render();
-      smoothie.options.scaleSmoothing = scaleSmoothing;
+      const scaleSmoothing = smoothie!.options.scaleSmoothing;
+      smoothie!.options.scaleSmoothing = 1;
+      smoothie!.render();
+      smoothie!.options.scaleSmoothing = scaleSmoothing;
     });
 
     volumeSeries = new TimeSeries();
@@ -88,7 +91,6 @@
     volumeThresholdSeries = new TimeSeries();
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
-    currentOutputMarkSeries = new TimeSeries();
     // Order determines z-index
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
@@ -116,41 +118,52 @@
       strokeStyle: 'rgba(100, 100, 220, 0)',
       fillStyle: 'rgba(100, 100, 220, 0.8)',
     });
-    smoothie.addTimeSeries(currentOutputMarkSeries, {
-      strokeStyle: 'rgba(0, 0, 0, 0.5)',
-    })
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
       strokeStyle: '#f44',
       fillStyle: 'transparent',
     });
+    
+    const canvasContext = canvasEl.getContext('2d')!;
+    (function drawAndScheduleAnother() {
+      // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+      // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
+      // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
+      // TODO it appears to flicker sometimes. NOt when we put `smoothie.render()` above it. Why?
+      const x = canvasWidth - sToMs(totalOutputDelay) / millisPerPixel;
+      canvasContext.beginPath();
+      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      canvasContext.moveTo(x, 0);
+      canvasContext.lineTo(x, canvasHeight);
+      canvasContext.closePath();
+      canvasContext.stroke();
+
+      smoothie.render();
+
+      requestAnimationFrame(drawAndScheduleAnother);
+    })();
   }
   onMount(initSmoothie);
 
-  function sToMs(seconds) {
+  type TimeMs = number;
+  function sToMs(seconds: TimeS): TimeMs {
     return seconds * 1000;
   }
-  function toUnixTime(audioContextTime, anyTelemetryRecord) {
+  function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
     // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
     // time everywhere?
     const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
     return audioContextCreationTimeUnix + audioContextTime;
   }
-  /**
-   * @param {Parameters<toUnixTime>} args
-   */
-  function toUnixTimeMs(...args) {
+  function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
     return sToMs(toUnixTime(...args));
   }
-  /**
-   * @param {'sounded' | 'silence'} speedName
-   */
-  function appendToSpeedSeries(timeMs, speedName) {
+  function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
     soundedSpeedSeries.append(timeMs, speedName === 'sounded' ? offTheChartsValue : 0);
     silenceSpeedSeries.append(timeMs, speedName === 'silence' ? offTheChartsValue : 0);
 
     if (process.env.NODE_ENV !== 'production') {
-      if ((latestTelemetryRecord && latestTelemetryRecord.inputVolume) > offTheChartsValue) {
+      if (latestTelemetryRecord?.inputVolume > offTheChartsValue) {
         console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
           + ' background, but now it has been exceeded by inutVolume value');
       }
@@ -165,14 +178,16 @@
   // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
   const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
 
-  function updateSpeedSeries(newTelemetryRecord) {
+  function updateSpeedSeries(newTelemetryRecord: TelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
     appendToSpeedSeries(toUnixTimeMs(r.lastActualPlaybackRateChange.time, r), speedName);
     appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
-  function updateStretchAndAdjustSpeedSeries(newTelemetryRecord) {
+  function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
+    assert(newTelemetryRecord.lastScheduledStretchInputTime,
+      'Attempted to update stretch series, but stretch is not defined');
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
     const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
     const stretchEndUnixMs = toUnixTimeMs(stretch.endTime, newTelemetryRecord);
@@ -197,8 +212,8 @@
 
   let totalOutputDelay = 0;
 
-  let lastHandledTelemetryRecord;
-  function onNewTelemetry(newTelemetryRecord) {
+  let lastHandledTelemetryRecord: TelemetryRecord | undefined;
+  function onNewTelemetry(newTelemetryRecord: TelemetryRecord) {
     if (!smoothie || !newTelemetryRecord) {
       return;
     }
@@ -208,23 +223,28 @@
       volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
     })();
 
-    function arePlaybackRateChangeObjectsEqual(a, b) {
-      return (a && a.time) === (b && b.time);
+    function arePlaybackRateChangeObjectsEqual(
+      a: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+      b: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+    ) {
+      return a?.time === b?.time;
     }
     const speedChanged = !arePlaybackRateChangeObjectsEqual(
-      lastHandledTelemetryRecord && lastHandledTelemetryRecord.lastActualPlaybackRateChange,
+      lastHandledTelemetryRecord?.lastActualPlaybackRateChange,
       newTelemetryRecord.lastActualPlaybackRateChange,
     );
     if (speedChanged) {
       updateSpeedSeries(r);
     }
 
-    function areStretchObjectsEqual(stretchA, stretchB) {
-      return (stretchA && stretchA.startTime) === (stretchB && stretchB.startTime);
+    function areStretchObjectsEqual(
+      stretchA: StretchInfo | undefined | null,
+      stretchB: StretchInfo | undefined | null,
+    ) {
+      return stretchA?.startTime === stretchB?.startTime;
     }
-    // TODO rewrite this mouthful (and the one above it) with optional chaining.
     const newStretch = r.lastScheduledStretchInputTime && !areStretchObjectsEqual(
-      lastHandledTelemetryRecord && lastHandledTelemetryRecord.lastScheduledStretchInputTime,
+      lastHandledTelemetryRecord?.lastScheduledStretchInputTime,
       r.lastScheduledStretchInputTime
     );
     if (newStretch) {
@@ -247,26 +267,12 @@
     volumeThreshold;
     updateSmoothieVolumeThreshold()
   }
-
-  (function updateCurrentOutputMarkAndScheduleAnother() {
-    if (smoothie) {
-      currentOutputMarkSeries.clear();
-      if (totalOutputDelay !== 0) {
-        const currentOutputTimeMs = Date.now() - sToMs(totalOutputDelay);
-        // Draw a vertical line.
-        const offTheChartsPastMoment = currentOutputTimeMs - 1e8;
-        currentOutputMarkSeries.append(offTheChartsPastMoment, offTheChartsValue);
-        currentOutputMarkSeries.append(currentOutputTimeMs, 0);
-      }
-    }
-    requestAnimationFrame(updateCurrentOutputMarkAndScheduleAnother);
-  })();
 </script>
 
 <canvas
   bind:this={canvasEl}
-  width=400
-  height=200
+  width={canvasWidth}
+  height={canvasHeight}
 >
   <label>
     Volume

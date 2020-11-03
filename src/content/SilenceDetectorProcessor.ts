@@ -1,9 +1,12 @@
-'use strict';
+import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
+import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
-class SilenceDetectorProcessor extends AudioWorkletProcessor {
-  constructor(options) {
+class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
+  _lastLoudSampleTime: Time;
+  _lastTimePostedSilenceStart: boolean;
+  constructor(options: any) {
     super(options);
     const initialDuration = options.processorOptions.initialDuration !== undefined
       ? options.processorOptions.initialDuration
@@ -12,7 +15,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
   }
-  static get parameterDescriptors() {
+  static get parameterDescriptors(): AudioParamDescriptor[] {
     return [
       {
         name: 'volumeThreshold',
@@ -31,11 +34,11 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
   }
 
   // Just so we don't mess up `>=` and `>` somewhere.
-  isPastDurationThreshold(durationThreshold) {
+  isPastDurationThreshold(durationThreshold: number) {
     return currentTime >= this._lastLoudSampleTime + durationThreshold;
   }
 
-  process(inputs, outputs, parameters) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
     const volumeThreshold = parameters.volumeThreshold[0];
     const input = inputs[0];
     if (input.length === 0) {
@@ -43,7 +46,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
         throw new Error('The below code assumes video parts to be sounded when it is unknown');
       }
       this._lastLoudSampleTime = currentTime;
-      return true;
+      return this.keepAlive;
     }
     const numSamples = input[0].length;
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
@@ -70,7 +73,7 @@ class SilenceDetectorProcessor extends AudioWorkletProcessor {
         }
       }
     }
-    return true;
+    return this.keepAlive;
   }
 }
 

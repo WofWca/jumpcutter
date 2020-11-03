@@ -7,20 +7,13 @@ import {
   getStretcherDelayChange,
   getStretcherSoundedDelay,
   getMomentOutputTime,
+  transformSpeed,
 } from './helpers';
-import defaultSettings from '../defaultSettings.json';
+import type { Time, StretchInfo } from '@/helpers';
+import type { Settings } from '@/settings';
+import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
+import { assert } from '@/helpers';
 
-/**
- * @typedef Settings
- * @type {typeof defaultSettings}
- */
-
-/**
- * @param {Settings} settings 
- */
-function isStretcherEnabled(settings) {
-  return settings.enableExperimentalFeatures;
-}
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
 const MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE = 8000;
@@ -31,19 +24,60 @@ const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
 
 const logging = process.env.NODE_ENV !== 'production';
 
+type ControllerInitialized =
+  Controller
+  & { initialized: true }
+  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_volumeFilter'
+    | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
+    | '_lastActualPlaybackRateChange'>>;
+type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
+type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIntervalId' | '_outVolumeFilter'
+  | '_analyzerOut'>>;
+
+// Not a method so it gets eliminated at optimization.
+const isLogging = (controller: Controller): controller is ControllerLogging => logging;
+
 export default class Controller {
-  /**
-   * @param {HTMLVideoElement} videoElement
-   * @param {Settings} settings
-   */
-  constructor(videoElement, settings) {
+  // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
+  // just too bad at TypeScript.
+  readonly element: HTMLVideoElement;
+  settings: Settings;
+  initialized = false;
+  _initPromise?: Promise<this>;
+  audioContext?: AudioContext;
+  _volumeFilter?: AudioWorkletNode;
+  _silenceDetectorNode?: AudioWorkletNode;
+  _analyzerIn?: AnalyserNode;
+  _volumeInfoBuffer?: Float32Array;
+  _lookahead?: DelayNode;
+  _stretcher?: PitchPreservingStretcherNode;
+  _mediaElementSource?: MediaElementAudioSourceNode;
+  _lastScheduledStretch: null | StretchInfo = null;
+  _lastActualPlaybackRateChange?: {
+    time: Time,
+    value: number,
+    name: 'sounded' | 'silence',
+  };
+  _outVolumeFilter?: AudioWorkletNode;
+  _analyzerOut?: AnalyserNode;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  _log?: (msg?: any) => void;
+  _logIntervalId?: number;
+
+  constructor(videoElement: HTMLVideoElement, settings: Settings) {
     this.element = videoElement;
     this.settings = settings;
-    this.initialized = false;
   }
 
-  async init() {
-    let resolveInitPromise;
+  isInitialized(): this is ControllerInitialized {
+    return this.initialized;
+  }
+  isStretcherEnabled(): this is ControllerWithStretcher {
+    return this.settings.enableExperimentalFeatures;
+  }
+
+  async init(): Promise<this> {
+    let resolveInitPromise: (result: this) => void;
     // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
     // executor?
     this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
@@ -76,14 +110,13 @@ export default class Controller {
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
-    let outVolumeFilter, analyzerOut;
-    if (logging) {
-      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+    if (isLogging(this)) {
+      this._outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
         outputChannelCount: [1],
       });
-      analyzerOut = ctx.createAnalyser();
+      this._analyzerOut = ctx.createAnalyser();
     }
-    if (isStretcherEnabled(this.settings)) {
+    if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
         /* webpackMode: 'eager' */
@@ -99,38 +132,36 @@ export default class Controller {
       this._mediaElementSource = ctx.createMediaElementSource(this.element);
       mediaElementSourcesMap.set(this.element, this._mediaElementSource)
     }
-    if (isStretcherEnabled(this.settings)) {
+    if (this.isStretcherEnabled()) {
       this._mediaElementSource.connect(this._lookahead);
     } else {
       this._mediaElementSource.connect(audioContext.destination);
     }
     this._mediaElementSource.connect(this._volumeFilter);
     this._volumeFilter.connect(this._silenceDetectorNode);
-    if (isStretcherEnabled(this.settings)) {
+    if (this.isStretcherEnabled()) {
       this._stretcher.connectInputFrom(this._lookahead);
       this._stretcher.connectOutputTo(ctx.destination);
     }
     this._volumeFilter.connect(this._analyzerIn);
-    if (logging) {
-      if (isStretcherEnabled(this.settings)) {
-        this._stretcher.connectOutputTo(outVolumeFilter);
+    if (isLogging(this)) {
+      if (this.isStretcherEnabled()) {
+        this._stretcher.connectOutputTo(this._outVolumeFilter);
       } else {
-        this._mediaElementSource.connect(outVolumeFilter);
+        this._mediaElementSource.connect(this._outVolumeFilter);
       }
-      outVolumeFilter.connect(analyzerOut);
+      this._outVolumeFilter.connect(this._analyzerOut);
     }
     this._setStateAccordingToNewSettings();
 
-    this._lastScheduledStretch = null;
-
-    let logArr, logBuffer;
-    if (logging) {
-      logArr = [];
-      logBuffer = new Float32Array(analyzerOut.fftSize);
+    if (isLogging(this)) {
+      const logArr = [];
+      const logBuffer = new Float32Array(this._analyzerOut.fftSize);
       this._log = (msg = null) => {
-        analyzerOut.getFloatTimeDomainData(logBuffer);
+
+        this._analyzerOut!.getFloatTimeDomainData(logBuffer);
         const outVol = logBuffer[logBuffer.length - 1];
-        this._analyzerIn.getFloatTimeDomainData(logBuffer);
+        this._analyzerIn!.getFloatTimeDomainData(logBuffer);
         const inVol = logBuffer[logBuffer.length - 1];
         logArr.push({
           msg,
@@ -148,37 +179,36 @@ export default class Controller {
       if (silenceStartOrEnd === 'silenceEnd') {
         this._setSpeedAndLog('sounded');
 
-        if (isStretcherEnabled(this.settings)) {
+        if (this.isStretcherEnabled()) {
           this._doOnSilenceEndStretcherStuff(eventTime);
         }
       } else {
         this._setSpeedAndLog('silence');
 
-        if (isStretcherEnabled(this.settings)) {
+        if (this.isStretcherEnabled()) {
           this._doOnSilenceStartStretcherStuff(eventTime);
         }
       }
     }
-    if (logging) {
-      setInterval(() => {
-        this._log();
+    if (isLogging(this)) {
+      this._logIntervalId = (setInterval as typeof window.setInterval)(() => {
+        this._log!();
       }, 1);
     }
 
     this.initialized = true;
-    resolveInitPromise(this);
+    resolveInitPromise!(this);
     return this;
   }
 
-  /**
-   * This only changes the state of `this._stretcher`
-   * @param {number} eventTime 
-   */
-  _doOnSilenceEndStretcherStuff(eventTime) {
+  /** This only changes the state of `this._stretcher` */
+  private _doOnSilenceEndStretcherStuff(eventTime: Time) {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
+    assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
 
-    const lastScheduledStretcherDelayReset = this._lastScheduledStretch;
+    // It is guaranteed to be non-null, because `_doOnSilenceStartStretcherStuff` is always called before this function.
+    const lastScheduledStretcherDelayReset = this._lastScheduledStretch!;
 
     const lastSilenceSpeedLastsForRealtime =
       eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
@@ -226,7 +256,7 @@ export default class Controller {
         marginBeforeStartOutputTimeStretcherDelay,
         marginBeforeStartOutputTime
       );
-      if (logging) {
+      if (isLogging(this)) {
         this._log({
           type: 'pauseReset',
           value: marginBeforeStartOutputTimeStretcherDelay,
@@ -263,15 +293,14 @@ export default class Controller {
       startTime,
       endTime,
     }
-    if (logging) {
+    if (isLogging(this)) {
       this._log({ type: 'stretch', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
-  /**
-   * @see this._doOnSilenceEndStretcherStuff
-   * @param {number} eventTime 
-   */
-  _doOnSilenceStartStretcherStuff(eventTime) {
+  /** @see this._doOnSilenceEndStretcherStuff */
+  private _doOnSilenceStartStretcherStuff(eventTime: Time) {
+    assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
+
     const realtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
@@ -299,7 +328,7 @@ export default class Controller {
       endValue: 0,
     };
 
-    if (logging) {
+    if (isLogging(this)) {
       this._log({ type: 'reset', lastScheduledStretch: this._lastScheduledStretch });
     }
   }
@@ -308,16 +337,40 @@ export default class Controller {
    * Assumes `init()` has been called (but not necessarily that its return promise has been resolved).
    * TODO make it work when it's false?
    */
-  async destroy() {
+  async destroy(): Promise<void> {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
+    assert(this.isInitialized());
 
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
 
+    if (isLogging(this)) {
+      clearInterval(this._logIntervalId);
+    } else {
+      assert(!this._logIntervalId);
+    }
+
+    const audioWorklets = [this._volumeFilter, this._silenceDetectorNode];
+    if (isLogging(this)) {
+      audioWorklets.push(this._outVolumeFilter);
+    } else {
+      assert(!this._outVolumeFilter);
+    }
+    for (const w of audioWorklets) {
+      w.port.postMessage('destroy');
+      w.port.close();
+    }
+    if (process.env.NODE_ENV !== 'production') {
+      for (const propertyVal of Object.values(this)) {
+        if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
+          console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
+        }
+      }
+    }
 
     this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
 
-    if (isStretcherEnabled(this.settings)) {
+    if (this.isStretcherEnabled()) {
       this._stretcher.destroy();
     }
     // TODO make `AudioWorkletProcessor`'s get collected.
@@ -334,27 +387,24 @@ export default class Controller {
    * Can be called either when initializing or when updating settings.
    * TODO It's more performant to only update the things that rely on settings that changed, in a reactive way, but for
    * now it's like this so its harder to forget to update something.
-   * @param {Settings | null} oldSettings - better to provide this so the current state can be reconstructed and
+   * @param oldSettings - better to provide this so the current state can be reconstructed and
    * respected (e.g. if a silent part is currently playing it wont change speed to sounded speed as it would if the
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  _setStateAccordingToNewSettings(oldSettings = null) {
+  private _setStateAccordingToNewSettings(oldSettings: Settings | null = null) {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
-      const currSpeedName = ['silence', 'sounded'].find(
-        speedName => this.element.playbackRate === oldSettings[`${speedName}Speed`]
-      );
-      if (currSpeedName) {
-        this._setSpeedAndLog(currSpeedName);
-      }
+      assert(this._lastActualPlaybackRateChange,
+        'Expected it speed to had been set at least at Controller initialization');
+      this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
 
-    this._silenceDetectorNode.parameters.get('volumeThreshold').value = this.settings.volumeThreshold;
-    this._silenceDetectorNode.parameters.get('durationThreshold').value =
+    this._silenceDetectorNode!.parameters.get('volumeThreshold')!.value = this.settings.volumeThreshold;
+    this._silenceDetectorNode!.parameters.get('durationThreshold')!.value =
       this._getSilenceDetectorNodeDurationThreshold();
-    if (isStretcherEnabled(this.settings)) {
+    if (this.isStretcherEnabled()) {
       this._lookahead.delayTime.value = getNewLookaheadDelay(
         this.settings.marginBefore,
         this.settings.soundedSpeed,
@@ -366,15 +416,9 @@ export default class Controller {
     }
   }
 
-  /**
-   * Can be called before the instance has been initialized.
-   * @param {Partial<Settings>} newChangedSettings
-   */
-  updateSettings(newChangedSettings) {
+  /** Can be called before the instance has been initialized. */
+  updateSettings(newChangedSettings: Partial<Settings>): void {
     const oldSettings = this.settings;
-    /**
-     * @type {Settings} For me intellisense sets `this.settings` to `any` if I remove this. Time to move to TypeScript.
-     */
     const newSettings = {
       ...this.settings,
       ...newChangedSettings,
@@ -391,48 +435,46 @@ export default class Controller {
     this._setStateAccordingToNewSettings(oldSettings);
   }
 
-  _getSilenceDetectorNodeDurationThreshold() {
-    const marginBeforeAddition = isStretcherEnabled(this.settings)
+  private _getSilenceDetectorNodeDurationThreshold() {
+    const marginBeforeAddition = this.isStretcherEnabled()
       ? this.settings.marginBefore
       : 0;
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
-  /**
-   * @param {'sounded' | 'silence'} speedName
-   */
-  _setSpeedAndLog(speedName) {
-    const speedVal = this.settings[`${speedName}Speed`];
-    this.element.playbackRate = speedVal;
+  private _setSpeedAndLog(speedName: 'sounded' | 'silence') {
+    let speedVal;
+    switch (speedName) {
+      case 'sounded': speedVal = this.settings.soundedSpeed; break;
+      case 'silence': speedVal = this.settings.silenceSpeed; break;
+    }
+    this.element.playbackRate = transformSpeed(speedVal);
     this._lastActualPlaybackRateChange = {
-      time: this.audioContext.currentTime,
+      time: this.audioContext!.currentTime,
       value: speedVal,
       name: speedName,
     };
   }
 
   getTelemetry() {
-    if (!this.initialized) {
-      return null;
-    }
+    assert(this.isInitialized());
+
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
 
     /**
      * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
      * it would be on the input timeline.
-     * @param {Controller['_lastScheduledStretch']} stretch
-     * @returns {Controller['_lastScheduledStretch']}
      */
-    const stretchToInputTime = (stretch) => ({
+    const stretchToInputTime = (stretch: StretchInfo): this['_lastScheduledStretch'] => ({
       ...stretch,
-      startTime: stretch.startTime - getTotalDelay(this._lookahead.delayTime.value, stretch.startValue),
-      endTime: stretch.endTime - getTotalDelay(this._lookahead.delayTime.value, stretch.endValue),
+      startTime: stretch.startTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.startValue),
+      endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
     });
 
     return {
       unixTime: Date.now() / 1000,
-      videoTime: this.element.currentTime,
+      // videoTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
@@ -440,7 +482,7 @@ export default class Controller {
         ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
         : 0,
       // TODO also log `interruptLastScheduledStretch` calls.
-      lastScheduledStretch: this._lastScheduledStretch,
+      // lastScheduledStretch: this._lastScheduledStretch,
       lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),
     };
   }
