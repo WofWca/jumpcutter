@@ -34,6 +34,12 @@
       "suggested_key": {
         "default": "Ctrl+Shift+X"
       }
+    },
+    "toggle_enabled": {
+      "description": "Toggle extension",
+      "suggested_key": {
+        "default": "Alt+Shift+X"
+      }
     }
   },
   "icons": {

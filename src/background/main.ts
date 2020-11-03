@@ -5,6 +5,7 @@
 import fixSettingsIfNeeded from './fixSettingsIfNeeded'; // TODO also rename this to `ensureMigrateTo1_1_0`?
 import ensureMigrateTo1_7_0 from './ensureMigrateTo1_7_0';
 
+import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconUpdater from './initIconUpdater';
 
 import throttle from 'lodash/throttle';
@@ -52,5 +53,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
   }
 })
+
+initBrowserHotkeysListener();
 
 initIconUpdater();
