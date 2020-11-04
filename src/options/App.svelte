@@ -128,8 +128,7 @@
           <ul>
             <li>Modifier keys (Ctrl, Shift, etc.) are supported.</li>
             <li>Several actions can be bound to a single key. This can be utilized to create "profiles".</li>
-            <li>The difference between "Toggle" and "=" (a.k.a "set") actions is that "toggle" toggles the value between the previous 
-value and the hotkey's argument, while "set" always sets it to the argument's value.</li>
+            <li>The difference between "Toggle" and "=" (a.k.a "set") actions is that "toggle" toggles the value between the previous value and the hotkey's argument, while "set" always sets it to the argument's value.</li>
             <!-- TODO do we need this here? Maybe it can be understood from inputs' labels? -->
             <li>Hotkeys are also active when the popup is open.</li>
           </ul>
