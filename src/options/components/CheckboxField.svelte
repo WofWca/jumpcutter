@@ -13,3 +13,10 @@
     > {label}
   </label>
 </div>
+
+<style>
+  input {
+    /* So emojis aren't so close to the checkbox so they don't look too confusing together */
+    margin-right: 0.4rem;
+  }
+</style>
