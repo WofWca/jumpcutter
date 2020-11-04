@@ -3,6 +3,7 @@
   import type { SmoothieChart, TimeSeries } from 'smoothie';
   import { assert, StretchInfo, Time as TimeS } from '@/helpers';
   import type Controller from '@/content/Controller';
+  import debounce from 'lodash/debounce';
 
   type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;
@@ -34,7 +35,12 @@
   function setMaxChartValueToBest() {
     chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
   }
+  const debouncedSetMaxChartValueToBest = debounce(setMaxChartValueToBest, 3000);
   setMaxChartValueToBest();
+  $: {
+    volumeThreshold;
+    debouncedSetMaxChartValueToBest();
+  }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
   async function initSmoothie() {
