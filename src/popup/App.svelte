@@ -6,6 +6,7 @@
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
   import type createKeydownListener from './hotkeys';
+  import throttle from 'lodash/throttle';
 
   let settings: Settings;
 
@@ -68,8 +69,11 @@
   function saveSettings(settings: Settings) {
     setSettings(settings);
   }
+  // Debounce, otherwise continuously adjusting "range" inputs with mouse makes it lag real bad.
+  // TODO but wot if use requestAnimationFrame instead of opinionated milliseconds?
+  const throttledSaveSettings = throttle(saveSettings, 50);
   $: onSettingsChange = settingsLoaded
-    ? saveSettings
+    ? throttledSaveSettings
     : () => {};
   $: {
     onSettingsChange(settings);
