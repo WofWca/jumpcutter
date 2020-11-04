@@ -115,7 +115,7 @@
       <section>
         <h3>Hotkeys</h3>
         <CheckboxField
-          label="Enable hotkeys"
+          label="⌨️ Enable hotkeys"
           bind:checked={settings.enableHotkeys}
         />
         <!-- TODO how about we hide the table entirely? But keep in mind that it would make it possible to save
@@ -230,28 +230,28 @@
       <section>
         <h3>Popup</h3>
         <NumberField
-          label="Chart length in seconds"
+          label="📈⏱ Chart length in seconds"
           bind:value={settings.popupChartLengthInSeconds}
           min="0"
         />
         <NumberField
-          label="Chart width (px)"
+          label="📈📏 Chart width (px)"
           bind:value={settings.popupChartWidthPx}
           min="0"
         />
         <NumberField
-          label="Chart height (px)"
+          label="📈📏 Chart height (px)"
           bind:value={settings.popupChartHeightPx}
           min="0"
         />
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
           <CheckboxField
-            label="Disable hotkeys while an input is in focus"
+            label="⌨️🚫 Disable hotkeys while an input is in focus"
             bind:checked={settings.popupDisableHotkeysWhileInputFocused}
           />
         {/if}
         <CheckboxField
-          label='Autofocus the "enabled" checkbox when popup opens'
+          label='☑️ Autofocus the "enabled" checkbox when popup opens'
           bind:checked={settings.popupAutofocusEnabledInput}
         />
       </section>
@@ -293,7 +293,7 @@
       type="button"
       style="color: red;"
       on:click={onResetToDefaultsClick}
-    >Reset to defaults</button>
+    >🔄 Reset to defaults</button>
     <!-- TODO: -->
     <!-- <button
       type="button"
@@ -310,6 +310,6 @@
     <a
       target="new"
       href="https://github.com/WofWca/jumpcutter"
-    >About</a>
+    >ℹ️ About</a>
   </div>
 </div>
