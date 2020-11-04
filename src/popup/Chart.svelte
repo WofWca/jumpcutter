@@ -60,16 +60,20 @@
       },
       minValue: 0,
       yRangeFunction() {
-        const maxYAxisRelativeVolumeThreshold = 0.95;
-        const minYAxisRelativeVolumeThreshold = 0.05;
-        const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
-        if (
-          yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
-          || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
-        ) {
-          setBestChartMaxValue();
+        if (volumeThreshold > 0) {
+          const maxYAxisRelativeVolumeThreshold = 0.95;
+          const minYAxisRelativeVolumeThreshold = 0.05;
+          const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
+          if (
+            yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
+            || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
+          ) {
+            setBestChartMaxValue();
+          }
+          return { min: 0, max: chartMaxValue };
+        } else {
+          return { min: 0, max: volumeSeries.maxValue * 1.05 };
         }
-        return { min: 0, max: chartMaxValue };
       },
     });
     smoothie.streamTo(canvasEl);
