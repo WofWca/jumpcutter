@@ -126,19 +126,18 @@
     
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
+      smoothie.render();
+
       // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
       // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
       // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-      // TODO it appears to flicker sometimes. NOt when we put `smoothie.render()` above it. Why?
       const x = canvasWidth - sToMs(totalOutputDelay) / millisPerPixel;
       canvasContext.beginPath();
-      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
       canvasContext.moveTo(x, 0);
       canvasContext.lineTo(x, canvasHeight);
       canvasContext.closePath();
       canvasContext.stroke();
-
-      smoothie.render();
 
       requestAnimationFrame(drawAndScheduleAnother);
     })();
