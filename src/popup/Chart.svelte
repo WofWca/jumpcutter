@@ -31,10 +31,10 @@
 
   const bestYAxisRelativeVolumeThreshold = 1/6;
   let chartMaxValue: number;
-  function setBestChartMaxValue() {
+  function setMaxChartValueToBest() {
     chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
   }
-  setBestChartMaxValue();
+  setMaxChartValueToBest();
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
   async function initSmoothie() {
@@ -68,7 +68,7 @@
             yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
             || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
           ) {
-            setBestChartMaxValue();
+            setMaxChartValueToBest();
           }
           return { min: 0, max: chartMaxValue };
         } else {
@@ -80,7 +80,7 @@
     smoothie.stop();
 
     loadedPromise.then(() => {
-      setBestChartMaxValue();
+      setMaxChartValueToBest();
       // So it doesn't play the scaling animation.
       const scaleSmoothing = smoothie!.options.scaleSmoothing;
       smoothie!.options.scaleSmoothing = 1;
