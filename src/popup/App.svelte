@@ -99,10 +99,14 @@
     href="javascript;"
     on:click={() => chrome.runtime.openOptionsPage()}
   >⚙️</a>
+  <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
   <Chart
     {latestTelemetryRecord}
     volumeThreshold={settings.volumeThreshold}
     loadedPromise={settingsPromise}
+    widthPx={settings.popupChartWidthPx}
+    heightPx={settings.popupChartHeightPx}
+    lengthSeconds={settings.popupChartLengthInSeconds}
   />
   <RangeSlider
     label="Volume threshold"

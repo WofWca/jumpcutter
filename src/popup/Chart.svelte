@@ -8,13 +8,12 @@
   export let latestTelemetryRecord: TelemetryRecord;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
+  export let widthPx: number;
+  export let heightPx: number;
+  export let lengthSeconds: number;
 
   let canvasEl: HTMLCanvasElement;
-  const canvasWidth = 400;
-  const canvasHeight = 200;
-  const millisPerPixel = 10;
-  // May not be precise (and doesn't need to be currently).
-  const bufferDurationMillliseconds = Math.ceil(canvasWidth * millisPerPixel);
+  $: millisPerPixel = lengthSeconds * 1000 / widthPx;
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
@@ -46,7 +45,7 @@
     );
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
-      millisPerPixel,
+      millisPerPixel, // TODO make it reactive?
       interpolation: 'step',
       // responsive: true, ?
       grid: {
@@ -131,11 +130,11 @@
       // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
       // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
       // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-      const x = canvasWidth - sToMs(totalOutputDelay) / millisPerPixel;
+      const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
       canvasContext.beginPath();
       canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
       canvasContext.moveTo(x, 0);
-      canvasContext.lineTo(x, canvasHeight);
+      canvasContext.lineTo(x, heightPx);
       canvasContext.closePath();
       canvasContext.stroke();
 
@@ -259,7 +258,7 @@
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     // Not sure if using larger values makes it consume more memory.
-    volumeThresholdSeries.append(Date.now() - bufferDurationMillliseconds, volumeThreshold);
+    volumeThresholdSeries.append(Date.now() - Math.round(lengthSeconds * 1000), volumeThreshold);
     volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
   }
   $: if (smoothie) {
@@ -270,8 +269,8 @@
 
 <canvas
   bind:this={canvasEl}
-  width={canvasWidth}
-  height={canvasHeight}
+  width={widthPx}
+  height={heightPx}
 >
   <label>
     Volume
