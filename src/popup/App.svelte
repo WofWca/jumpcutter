@@ -113,8 +113,7 @@
     min="0"
     max={maxVolume}
     step="0.0005"
-    value={settings.volumeThreshold}
-    on:input={({ detail }) => settings.volumeThreshold = detail}
+    bind:value={settings.volumeThreshold}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -128,8 +127,7 @@
     min="0"
     max="15"
     step="0.1"
-    value={settings.soundedSpeed}
-    on:input={({ detail }) => settings.soundedSpeed = detail}
+    bind:value={settings.soundedSpeed}
   />
   <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
   https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
@@ -139,16 +137,14 @@
     min="0"
     max="15"
     step="0.1"
-    value={settings.silenceSpeed}
-    on:input={({ detail }) => settings.silenceSpeed = detail}
+    bind:value={settings.silenceSpeed}
   />
   <RangeSlider
     label="Margin after"
     min="0"
     max="0.5"
     step="0.005"
-    value={settings.marginAfter}
-    on:input={({ detail }) => settings.marginAfter = detail}
+    bind:value={settings.marginAfter}
   />
 
 
@@ -166,8 +162,7 @@
     min="0"
     max="0.5"
     step="0.005"
-    value={settings.marginBefore}
-    on:input={({ detail }) => settings.marginBefore = detail}
+    bind:value={settings.marginBefore}
   />
   {/if}
 {/await}
