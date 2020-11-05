@@ -5,12 +5,6 @@
   // export let max;
   // export let min;
   // export let step;
-
-  $: if (typeof value !== 'number') {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`Expected \`value\` prop to be a number, got ${value}`);
-    }
-  }
 </script>
 
 <label>
