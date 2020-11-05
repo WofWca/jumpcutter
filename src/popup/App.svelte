@@ -59,7 +59,6 @@
   })
 
   addOnChangedListener(changes => {
-    // Object.assign(settings, settingsChanges2NewValues(changes));
     settings = {
       ...settings,
       ...settingsChanges2NewValues(changes)
