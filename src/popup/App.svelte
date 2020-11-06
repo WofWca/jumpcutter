@@ -6,6 +6,7 @@
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
   import type createKeydownListener from './hotkeys';
+  import throttle from 'lodash/throttle';
 
   let settings: Settings;
 
@@ -18,7 +19,7 @@
 
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
-  let telemetryIntervalId: number;
+  let telemetryTimeoutId: number;
   const startGettingstelemetryP = (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
@@ -32,15 +33,16 @@
       }
     });
     // TODO don't spam messages if the controller is not there.
-    telemetryIntervalId = (setInterval as typeof window.setInterval)(() => {
-      volumeInfoPort.postMessage('getTelemetry')
-    }, telemetryUpdatePeriod * 1000);
+    telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
+      volumeInfoPort.postMessage('getTelemetry');
+      return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
+    })();
   })();
   // Well, actaully we don't currently require this, because this component gets destroyed only when the document gets
   // destroyed.
   onDestroy(async () => {
     await startGettingstelemetryP;
-    clearInterval(telemetryIntervalId);
+    clearTimeout(telemetryTimeoutId);
   });
 
   // Make a setings or a flag or something.
@@ -68,8 +70,11 @@
   function saveSettings(settings: Settings) {
     setSettings(settings);
   }
+  // Debounce, otherwise continuously adjusting "range" inputs with mouse makes it lag real bad.
+  // TODO but wot if use requestAnimationFrame instead of opinionated milliseconds?
+  const throttledSaveSettings = throttle(saveSettings, 50);
   $: onSettingsChange = settingsLoaded
-    ? saveSettings
+    ? throttledSaveSettings
     : () => {};
   $: {
     onSettingsChange(settings);
