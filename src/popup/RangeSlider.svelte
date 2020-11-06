@@ -1,20 +1,10 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-
   export let value: number;
   export let label: string;
   export let fractionalDigits: number = 3;
   // export let max;
   // export let min;
   // export let step;
-
-  const dispatch = createEventDispatcher();
-
-  $: if (typeof value !== 'number') {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`Expected \`value\` prop to be a number, got ${value}`);
-    }
-  }
 </script>
 
 <label>
@@ -22,8 +12,8 @@
   <div class="range-and-value">
     <input
       type="range"
-      {...$$props}
-      on:input={e => dispatch('input', parseFloat(e.target.value))}
+      {...$$restProps}
+      bind:value
     >
     <span
       aria-hidden="true"

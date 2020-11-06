@@ -3,18 +3,18 @@
   import type { SmoothieChart, TimeSeries } from 'smoothie';
   import { assert, StretchInfo, Time as TimeS } from '@/helpers';
   import type Controller from '@/content/Controller';
+  import debounce from 'lodash/debounce';
 
   type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
+  export let widthPx: number;
+  export let heightPx: number;
+  export let lengthSeconds: number;
 
   let canvasEl: HTMLCanvasElement;
-  const canvasWidth = 400;
-  const canvasHeight = 200;
-  const millisPerPixel = 10;
-  // May not be precise (and doesn't need to be currently).
-  const bufferDurationMillliseconds = Math.ceil(canvasWidth * millisPerPixel);
+  $: millisPerPixel = lengthSeconds * 1000 / widthPx;
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
@@ -32,10 +32,15 @@
 
   const bestYAxisRelativeVolumeThreshold = 1/6;
   let chartMaxValue: number;
-  function setBestChartMaxValue() {
+  function setMaxChartValueToBest() {
     chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
   }
-  setBestChartMaxValue();
+  const debouncedSetMaxChartValueToBest = debounce(setMaxChartValueToBest, 3000);
+  setMaxChartValueToBest();
+  $: {
+    volumeThreshold;
+    debouncedSetMaxChartValueToBest();
+  }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
   async function initSmoothie() {
@@ -46,7 +51,7 @@
     );
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
-      millisPerPixel,
+      millisPerPixel, // TODO make it reactive?
       interpolation: 'step',
       // responsive: true, ?
       grid: {
@@ -61,23 +66,27 @@
       },
       minValue: 0,
       yRangeFunction() {
-        const maxYAxisRelativeVolumeThreshold = 0.95;
-        const minYAxisRelativeVolumeThreshold = 0.05;
-        const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
-        if (
-          yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
-          || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
-        ) {
-          setBestChartMaxValue();
+        if (volumeThreshold > 0) {
+          const maxYAxisRelativeVolumeThreshold = 0.95;
+          const minYAxisRelativeVolumeThreshold = 0.05;
+          const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
+          if (
+            yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
+            || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
+          ) {
+            setMaxChartValueToBest();
+          }
+          return { min: 0, max: chartMaxValue };
+        } else {
+          return { min: 0, max: volumeSeries.maxValue * 1.05 };
         }
-        return { min: 0, max: chartMaxValue };
       },
     });
     smoothie.streamTo(canvasEl);
     smoothie.stop();
 
     loadedPromise.then(() => {
-      setBestChartMaxValue();
+      setMaxChartValueToBest();
       // So it doesn't play the scaling animation.
       const scaleSmoothing = smoothie!.options.scaleSmoothing;
       smoothie!.options.scaleSmoothing = 1;
@@ -126,19 +135,18 @@
     
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
+      smoothie.render();
+
       // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
       // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
       // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-      // TODO it appears to flicker sometimes. NOt when we put `smoothie.render()` above it. Why?
-      const x = canvasWidth - sToMs(totalOutputDelay) / millisPerPixel;
+      const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
       canvasContext.beginPath();
-      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
       canvasContext.moveTo(x, 0);
-      canvasContext.lineTo(x, canvasHeight);
+      canvasContext.lineTo(x, heightPx);
       canvasContext.closePath();
       canvasContext.stroke();
-
-      smoothie.render();
 
       requestAnimationFrame(drawAndScheduleAnother);
     })();
@@ -260,7 +268,7 @@
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     // Not sure if using larger values makes it consume more memory.
-    volumeThresholdSeries.append(Date.now() - bufferDurationMillliseconds, volumeThreshold);
+    volumeThresholdSeries.append(Date.now() - Math.round(lengthSeconds * 1000), volumeThreshold);
     volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
   }
   $: if (smoothie) {
@@ -271,8 +279,8 @@
 
 <canvas
   bind:this={canvasEl}
-  width={canvasWidth}
-  height={canvasHeight}
+  width={widthPx}
+  height={heightPx}
 >
   <label>
     Volume

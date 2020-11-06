@@ -1,6 +1,8 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import CustomValueInput from './CustomValueInput.svelte';
+  import CustomValueInput from './components/CustomValueInput.svelte';
+  import CheckboxField from './components/CheckboxField.svelte';
+  import NumberField from './components/NumberField.svelte';
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import {
@@ -112,12 +114,10 @@
     >
       <section>
         <h3>Hotkeys</h3>
-        <label>
-          <input
-            type="checkbox"
-            bind:checked={settings.enableHotkeys}
-          > Enable hotkeys
-        </label>
+        <CheckboxField
+          label="⌨️ Enable hotkeys"
+          bind:checked={settings.enableHotkeys}
+        />
         <!-- TODO how about we hide the table entirely? But keep in mind that it would make it possible to save
         invalid settings as the table inputs would stop being validated. Consider replacing it with
         `<fieldset disabled={...}`. and rewriting saving logic so that `saveSettings` is called on form submit
@@ -128,8 +128,7 @@
           <ul>
             <li>Modifier keys (Ctrl, Shift, etc.) are supported.</li>
             <li>Several actions can be bound to a single key. This can be utilized to create "profiles".</li>
-            <li>The difference between "Toggle" and "=" (a.k.a "set") actions is that "toggle" toggles the value between the previous 
-value and the hotkey's argument, while "set" always sets it to the argument's value.</li>
+            <li>The difference between "Toggle" and "=" (a.k.a "set") actions is that "toggle" toggles the value between the previous value and the hotkey's argument, while "set" always sets it to the argument's value.</li>
             <!-- TODO do we need this here? Maybe it can be understood from inputs' labels? -->
             <li>Hotkeys are also active when the popup is open.</li>
           </ul>
@@ -228,27 +227,33 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
           >➕</button>
         </div>
       </section>
-      <section class="advanced-section">
-        <h3>Advanced</h3>
+      <section>
+        <h3>Popup</h3>
+        <NumberField
+          label="📈⏱ Chart length in seconds"
+          bind:value={settings.popupChartLengthInSeconds}
+          min="0"
+        />
+        <NumberField
+          label="📈📏 Chart width (px)"
+          bind:value={settings.popupChartWidthPx}
+          min="0"
+        />
+        <NumberField
+          label="📈📏 Chart height (px)"
+          bind:value={settings.popupChartHeightPx}
+          min="0"
+        />
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
-          <!-- Wrapper div so they're displayed on top of each other. -->
-          <div>
-            <label>
-              <input
-                type="checkbox"
-                bind:checked={settings.popupDisableHotkeysWhileInputFocused}
-              > Popup: disable hotkeys while an input is in focus
-            </label>
-          </div>
+          <CheckboxField
+            label="⌨️🚫 Disable hotkeys while an input is in focus"
+            bind:checked={settings.popupDisableHotkeysWhileInputFocused}
+          />
         {/if}
-        <div>
-          <label>
-            <input
-              type="checkbox"
-              bind:checked={settings.popupAutofocusEnabledInput}
-            > Popup: autofocus the "enabled" checkbox when popup opens
-          </label>
-        </div>
+        <CheckboxField
+          label='☑️ Autofocus the "enabled" checkbox when popup opens'
+          bind:checked={settings.popupAutofocusEnabledInput}
+        />
       </section>
 
 
@@ -288,7 +293,7 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
       type="button"
       style="color: red;"
       on:click={onResetToDefaultsClick}
-    >Reset to defaults</button>
+    >🔄 Reset to defaults</button>
     <!-- TODO: -->
     <!-- <button
       type="button"
@@ -305,12 +310,6 @@ value and the hotkey's argument, while "set" always sets it to the argument's va
     <a
       target="new"
       href="https://github.com/WofWca/jumpcutter"
-    >About</a>
+    >ℹ️ About</a>
   </div>
 </div>
-
-<style>
-  .advanced-section > div {
-    margin: 0.25rem 0;
-  }
-</style>

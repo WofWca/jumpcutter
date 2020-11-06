@@ -25,6 +25,9 @@ export interface Settings {
   // practically impossible to use hotkeys in the popup as removing focus is done with "Esc", which also closes the
   // popup. These options are considered "Advanced" so I think we can remove then without worrying too much.
   popupAutofocusEnabledInput: boolean,
+  popupChartWidthPx: number,
+  popupChartHeightPx: number,
+  popupChartLengthInSeconds: number,
 }
 export type CorrespondingPreviousValueSetting<T extends TogglableSettings> =
   T extends   'volumeThreshold' ? 'previousVolumeThreshold'
@@ -171,6 +174,9 @@ export const defaultSettings: Readonly<Settings> = {
 
   popupDisableHotkeysWhileInputFocused: false,
   popupAutofocusEnabledInput: false,
+  popupChartWidthPx: 400,
+  popupChartHeightPx: 150,
+  popupChartLengthInSeconds: 4,
 };
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes

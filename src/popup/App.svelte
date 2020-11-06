@@ -6,6 +6,7 @@
   import Chart from './Chart.svelte';
   import type Controller from '@/content/Controller';
   import type createKeydownListener from './hotkeys';
+  import throttle from 'lodash/throttle';
 
   let settings: Settings;
 
@@ -18,7 +19,7 @@
 
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
-  let telemetryIntervalId: number;
+  let telemetryTimeoutId: number;
   const startGettingstelemetryP = (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
@@ -32,15 +33,16 @@
       }
     });
     // TODO don't spam messages if the controller is not there.
-    telemetryIntervalId = (setInterval as typeof window.setInterval)(() => {
-      volumeInfoPort.postMessage('getTelemetry')
-    }, telemetryUpdatePeriod * 1000);
+    telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
+      volumeInfoPort.postMessage('getTelemetry');
+      return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
+    })();
   })();
   // Well, actaully we don't currently require this, because this component gets destroyed only when the document gets
   // destroyed.
   onDestroy(async () => {
     await startGettingstelemetryP;
-    clearInterval(telemetryIntervalId);
+    clearTimeout(telemetryTimeoutId);
   });
 
   // Make a setings or a flag or something.
@@ -59,7 +61,6 @@
   })
 
   addOnChangedListener(changes => {
-    // Object.assign(settings, settingsChanges2NewValues(changes));
     settings = {
       ...settings,
       ...settingsChanges2NewValues(changes)
@@ -69,8 +70,11 @@
   function saveSettings(settings: Settings) {
     setSettings(settings);
   }
+  // Debounce, otherwise continuously adjusting "range" inputs with mouse makes it lag real bad.
+  // TODO but wot if use requestAnimationFrame instead of opinionated milliseconds?
+  const throttledSaveSettings = throttle(saveSettings, 50);
   $: onSettingsChange = settingsLoaded
-    ? saveSettings
+    ? throttledSaveSettings
     : () => {};
   $: {
     onSettingsChange(settings);
@@ -99,18 +103,21 @@
     href="javascript;"
     on:click={() => chrome.runtime.openOptionsPage()}
   >⚙️</a>
+  <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
   <Chart
     {latestTelemetryRecord}
     volumeThreshold={settings.volumeThreshold}
     loadedPromise={settingsPromise}
+    widthPx={settings.popupChartWidthPx}
+    heightPx={settings.popupChartHeightPx}
+    lengthSeconds={settings.popupChartLengthInSeconds}
   />
   <RangeSlider
     label="Volume threshold"
     min="0"
     max={maxVolume}
     step="0.0005"
-    value={settings.volumeThreshold}
-    on:input={({ detail }) => settings.volumeThreshold = detail}
+    bind:value={settings.volumeThreshold}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -124,8 +131,7 @@
     min="0"
     max="15"
     step="0.1"
-    value={settings.soundedSpeed}
-    on:input={({ detail }) => settings.soundedSpeed = detail}
+    bind:value={settings.soundedSpeed}
   />
   <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
   https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
@@ -135,16 +141,14 @@
     min="0"
     max="15"
     step="0.1"
-    value={settings.silenceSpeed}
-    on:input={({ detail }) => settings.silenceSpeed = detail}
+    bind:value={settings.silenceSpeed}
   />
   <RangeSlider
     label="Margin after"
     min="0"
     max="0.5"
     step="0.005"
-    value={settings.marginAfter}
-    on:input={({ detail }) => settings.marginAfter = detail}
+    bind:value={settings.marginAfter}
   />
 
 
@@ -162,8 +166,7 @@
     min="0"
     max="0.5"
     step="0.005"
-    value={settings.marginBefore}
-    on:input={({ detail }) => settings.marginBefore = detail}
+    bind:value={settings.marginBefore}
   />
   {/if}
 {/await}
