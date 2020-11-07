@@ -435,6 +435,11 @@
   resolved "https://registry.yarnpkg.com/@webpack-cli/serve/-/serve-1.0.1.tgz#28abe7dcb18224ccd4b4e2d37f70e5be66c3d6a9"
   integrity sha512-WGMaTMTK6NOe29Hw1WBEok9vGLfKg5C6jWzNOS/6HH1YadR+RL+TRWRcSyc81Dzulljhk/Ree9mrDM4Np9GGOQ==
 
+"@wofwca/smoothie@^1.36.0-rc.0":
+  version "1.36.0-rc.0"
+  resolved "https://registry.yarnpkg.com/@wofwca/smoothie/-/smoothie-1.36.0-rc.0.tgz#368d230eda61bde97e9ef8500781e2c45bf88304"
+  integrity sha512-61InVM0/y4FGbnRKSyMafVhMwJQV1uxQFJSpf3imWkrvNbgHpDbiVKMWQ2GAfv4eYK9dMLittbb/s9dVvJuGlw==
+
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"

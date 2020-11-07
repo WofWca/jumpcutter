@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { SmoothieChart, TimeSeries } from 'smoothie';
+  import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
   import { assert, StretchInfo, Time as TimeS } from '@/helpers';
   import type Controller from '@/content/Controller';
   import debounce from 'lodash/debounce';
@@ -47,7 +47,7 @@
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
       /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
-      'smoothie'
+      '@wofwca/smoothie' // TODO replace it with just 'smoothie' when it starts being released.
     );
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
@@ -123,6 +123,7 @@
     })
     smoothie.addTimeSeries(volumeSeries, {
       // RGB taken from Audacity.
+      interpolation: 'linear',
       lineWidth: 1,
       strokeStyle: 'rgba(100, 100, 220, 0)',
       fillStyle: 'rgba(100, 100, 220, 0.8)',
