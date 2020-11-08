@@ -6,8 +6,7 @@ import { defaultSettings, Settings } from '@/settings';
 
 export default async function (): Promise<void> {
   const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as Settings;
-  const toFix: ['volumeThreshold', 'silenceSpeed', 'soundedSpeed'] =
-    ['volumeThreshold', 'silenceSpeed', 'soundedSpeed'];
+  const toFix = ['volumeThreshold', 'silenceSpeed', 'soundedSpeed'] as const;
   for (const key of toFix) {
     const val = settings[key];
     if (typeof val !== 'number') {
@@ -16,6 +15,6 @@ export default async function (): Promise<void> {
         ? parsed
         : defaultSettings[key];
     }
-    chrome.storage.sync.set(settings);
   }
+  chrome.storage.sync.set(settings);
 }
