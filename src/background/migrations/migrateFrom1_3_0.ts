@@ -15,6 +15,6 @@ export default async function (): Promise<void> {
         ? parsed
         : defaultSettings[key];
     }
-    chrome.storage.sync.set(settings);
   }
+  chrome.storage.sync.set(settings);
 }
