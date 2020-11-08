@@ -2,8 +2,7 @@
 // https://developer.chrome.com/extensions/background_pages#unloading
 // 1. migrations
 // 2. settings saving.
-import fixSettingsIfNeeded from './fixSettingsIfNeeded'; // TODO also rename this to `ensureMigrateTo1_1_0`?
-import ensureMigrateTo1_7_0 from './ensureMigrateTo1_7_0';
+import runRequiredMigrations from './migrations/runRequiredMigrations';
 
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconUpdater from './initIconUpdater';
@@ -14,9 +13,7 @@ import type { Settings, MyStorageChanges } from '@/settings';
 // Run migrations.
 chrome.runtime.onInstalled.addListener(async details => {
   if (details.reason !== 'update') return;
-  // Migrations have to be performed in sequence.
-  await fixSettingsIfNeeded();
-  await ensureMigrateTo1_7_0();
+  await runRequiredMigrations(details.previousVersion!);
 })
 
 // The following code block synchronizes local storage with sync storage.
