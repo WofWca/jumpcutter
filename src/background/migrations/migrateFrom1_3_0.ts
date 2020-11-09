@@ -2,18 +2,25 @@
 // Once everyone has installed this version or a later one, this file can be removed, along with other changes coming
 // with this commit (so you could `git revert` it).
 
-import { defaultSettings, Settings } from '@/settings';
+import { defaultSettings } from '@/settings';
 
 export default async function (): Promise<void> {
-  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as Settings;
+  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as any;
   const toFix = ['volumeThreshold', 'silenceSpeed', 'soundedSpeed'] as const;
+  function getOldDefault(key: typeof toFix[number]): number {
+    // TODO this is ugly.
+    if (key === 'silenceSpeed') {
+      return 4;
+    }
+    return defaultSettings[key];
+  }
   for (const key of toFix) {
     const val = settings[key];
     if (typeof val !== 'number') {
       const parsed = parseFloat(val);
       settings[key] = (Number.isFinite(parsed) && parsed > 0 && parsed < 15)
         ? parsed
-        : defaultSettings[key];
+        : getOldDefault(key);
     }
   }
   chrome.storage.sync.set(settings);

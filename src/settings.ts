@@ -3,8 +3,11 @@ import { HotkeyBinding, HotkeyAction } from './hotkeys';
 export interface Settings {
   volumeThreshold: number,
   previousVolumeThreshold: number,
-  silenceSpeed: number,
-  previousSilenceSpeed: number,
+
+  silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed' | 'absolute',
+  silenceSpeedRaw: number,
+  previousSilenceSpeedRaw: number,
+
   soundedSpeed: number,
   previousSoundedSpeed: number,
   enabled: boolean,
@@ -29,19 +32,26 @@ export interface Settings {
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
 }
+
+export function getAbsoluteSilenceSpeed(settings: Settings): number {
+  return settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
+    ? settings.silenceSpeedRaw * settings.soundedSpeed
+    : settings.silenceSpeedRaw;
+}
+
 export type CorrespondingPreviousValueSetting<T extends TogglableSettings> =
   T extends   'volumeThreshold' ? 'previousVolumeThreshold'
-  : T extends 'silenceSpeed'    ? 'previousSilenceSpeed'
+  : T extends 'silenceSpeedRaw' ? 'previousSilenceSpeedRaw'
   : T extends 'soundedSpeed'    ? 'previousSoundedSpeed'
   : T extends 'marginBefore'    ? 'previousMarginBefore'
   : T extends 'marginAfter'     ? 'previousMarginAfter'
   : never;
-export const togglableSettings = ['volumeThreshold', 'silenceSpeed', 'soundedSpeed', 'marginBefore',
+export const togglableSettings = ['volumeThreshold', 'silenceSpeedRaw', 'soundedSpeed', 'marginBefore',
   'marginAfter'] as const;
 export type TogglableSettings = typeof togglableSettings[number];
 export const settingKeyToPreviousValueKey: { [P in TogglableSettings]: CorrespondingPreviousValueSetting<P> } = {
   volumeThreshold: 'previousVolumeThreshold',
-  silenceSpeed: 'previousSilenceSpeed',
+  silenceSpeedRaw: 'previousSilenceSpeedRaw',
   soundedSpeed: 'previousSoundedSpeed',
   marginBefore: 'previousMarginBefore',
   marginAfter: 'previousMarginAfter',
@@ -50,8 +60,9 @@ export const settingKeyToPreviousValueKey: { [P in TogglableSettings]: Correspon
 export const defaultSettings: Readonly<Settings> = {
   volumeThreshold:          0.010,
   previousVolumeThreshold:  0.010,
-  silenceSpeed:         4,
-  previousSilenceSpeed: 4,
+  silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
+  silenceSpeedRaw:         2.5,
+  previousSilenceSpeedRaw: 2.5,
   soundedSpeed:         1.5,
   previousSoundedSpeed: 1.5,
   enabled: true,
@@ -134,7 +145,7 @@ export const defaultSettings: Readonly<Settings> = {
     {
       keyCombination: { code: 'KeyA', modifiers: ['shiftKey'], },
       action: HotkeyAction.TOGGLE_SILENCE_SPEED,
-      actionArgument: 3,
+      actionArgument: 2.5,
     },
     {
       keyCombination: { code: 'KeyD', modifiers: ['shiftKey'], },

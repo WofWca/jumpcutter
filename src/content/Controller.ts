@@ -10,7 +10,8 @@ import {
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
-import type { Settings } from '@/settings';
+import type { Settings as ExtensionSettings } from '@/settings';
+import { getAbsoluteSilenceSpeed } from '@/settings';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
 
@@ -37,11 +38,30 @@ type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIn
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
 
+type ControllerSettings =
+  Pick<
+    ExtensionSettings,
+    'volumeThreshold'
+    | 'soundedSpeed'
+    | 'enableExperimentalFeatures'
+    | 'marginBefore'
+    | 'marginAfter'
+  > & {
+    silenceSpeed: number,
+  };
+
+export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
+  return {
+    ...extensionSettings,
+    silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),
+  };
+}
+
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
   readonly element: HTMLVideoElement;
-  settings: Settings;
+  settings: ControllerSettings;
   initialized = false;
   _initPromise?: Promise<this>;
   audioContext?: AudioContext;
@@ -64,9 +84,9 @@ export default class Controller {
   _log?: (msg?: any) => void;
   _logIntervalId?: number;
 
-  constructor(videoElement: HTMLVideoElement, settings: Settings) {
+  constructor(videoElement: HTMLVideoElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
-    this.settings = settings;
+    this.settings = controllerSettings;
   }
 
   isInitialized(): this is ControllerInitialized {
@@ -392,7 +412,7 @@ export default class Controller {
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  private _setStateAccordingToNewSettings(oldSettings: Settings | null = null) {
+  private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
@@ -417,12 +437,9 @@ export default class Controller {
   }
 
   /** Can be called before the instance has been initialized. */
-  updateSettings(newChangedSettings: Partial<Settings>): void {
+  updateSettings(newSettings: ControllerSettings): void {
+    // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
-    const newSettings = {
-      ...this.settings,
-      ...newChangedSettings,
-    };
 
     // TODO check for all unknown/unsupported settings. Don't allow passing them at all, warn?
     if (process.env.NODE_ENV !== 'production') {

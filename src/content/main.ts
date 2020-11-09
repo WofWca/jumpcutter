@@ -4,7 +4,7 @@ import {
   settingsChanges2NewValues,
 } from '@/settings';
 import { assert, assertNever } from '@/helpers';
-import type Controller from './Controller';
+import Controller, { extensionSettings2ControllerSettings } from './Controller';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 
@@ -62,7 +62,9 @@ function reactToSettingsNewValues(newValues: Partial<Settings>) {
   settings = { ...settings, ...newValues };
   if (oldSettings.enableExperimentalFeatures === settings.enableExperimentalFeatures) {
     // TODO also check for `enableHotkeys` and hotkey changes.
-    controller.updateSettings(newValues);
+    controller.updateSettings(
+      extensionSettings2ControllerSettings(settings) // TODO creating a new object on each settings change? SMH.
+    );
   } else {
     // A change requires instance re-initialization.
     destroyIfInited();
@@ -100,7 +102,7 @@ async function initIfVideoPresent() {
       /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
       './Controller'
     );
-    controller = new Controller(v, settings);
+    controller = new Controller(v, extensionSettings2ControllerSettings(settings));
     controller.init();
   })();
 

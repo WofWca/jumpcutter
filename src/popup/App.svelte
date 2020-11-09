@@ -80,6 +80,10 @@
     onSettingsChange(settings);
   }
 
+  $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
+    ? 'relative to sounded speed'
+    : 'absolute';
+
   const maxVolume = 0.15;
 </script>
 
@@ -136,12 +140,12 @@
   <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
   https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
   <RangeSlider
-    label="Silence speed"
+    label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
     min="0"
     max="15"
     step="0.1"
-    bind:value={settings.silenceSpeed}
+    bind:value={settings.silenceSpeedRaw}
   />
   <RangeSlider
     label="Margin after"
