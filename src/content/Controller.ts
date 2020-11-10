@@ -46,6 +46,7 @@ type ControllerSettings =
     | 'enableExperimentalFeatures'
     | 'marginBefore'
     | 'marginAfter'
+    | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,
   };
@@ -78,6 +79,7 @@ export default class Controller {
     value: number,
     name: 'sounded' | 'silence',
   };
+  _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
   _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -207,6 +209,25 @@ export default class Controller {
 
         if (this.isStretcherEnabled()) {
           this._doOnSilenceStartStretcherStuff(eventTime);
+        }
+
+        if (this.settings.enableDesyncCorrection) {
+          // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
+          // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
+          // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
+          // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
+          // noticeable rewind in sound, so we use a smaller value.
+          // Why on silenceStart, not on silenceEnd? Becasue when it's harder to notice a rewind when it's silent.
+          // `marginAfter` ensures there's plenty of it.
+          // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
+          // pauses, so let's give it some bigger value.
+          const DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES = 10;
+          this._didNotDoDesyncCorrectionForNSpeedSwitches++;
+          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES) {
+            this.element.currentTime -= 1e-9;
+            // TODO but it's also corrected when the user seeks the video manually.
+            this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+          }
         }
       }
     }

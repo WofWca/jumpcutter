@@ -31,6 +31,8 @@ export interface Settings {
   popupChartWidthPx: number,
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
+
+  enableDesyncCorrection: boolean,
 }
 
 export function getAbsoluteSilenceSpeed(settings: Settings): number {
@@ -188,6 +190,8 @@ export const defaultSettings: Readonly<Settings> = {
   popupChartWidthPx: 400,
   popupChartHeightPx: 150,
   popupChartLengthInSeconds: 4,
+
+  enableDesyncCorrection: true,
 };
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
