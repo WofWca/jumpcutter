@@ -28,7 +28,8 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_volumeFilter'
+  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
+    | '_resumeAudioContext' | '_volumeFilter'
     | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
     | '_lastActualPlaybackRateChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
@@ -66,6 +67,8 @@ export default class Controller {
   initialized = false;
   _initPromise?: Promise<this>;
   audioContext?: AudioContext;
+  _suspendAudioContext?: () => void;
+  _resumeAudioContext?: () => void;
   _volumeFilter?: AudioWorkletNode;
   _silenceDetectorNode?: AudioWorkletNode;
   _analyzerIn?: AnalyserNode;
@@ -106,6 +109,22 @@ export default class Controller {
 
     const ctx = audioContext;
     this.audioContext = ctx;
+
+    // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
+    // speed always becoming silenceSpeed when media element gets paused, which causes a guaranteed audio stretch on
+    // resume.
+    // TODO I don't have much of idea if this can cause issues. Something along the lines of other audio sources
+    // stopping working?
+    this._suspendAudioContext = () => audioContext.suspend();
+    this._resumeAudioContext = () => audioContext.resume();
+    if (this.element.paused) {
+      audioContext.suspend();
+    }
+    // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
+    // "illegal invocation".
+    this.element.addEventListener('pause', this._suspendAudioContext);
+    this.element.addEventListener('play', this._resumeAudioContext);
+
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
 
@@ -384,6 +403,10 @@ export default class Controller {
 
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
+
+    this.element.removeEventListener('pause', this._suspendAudioContext);
+    this.element.removeEventListener('play', this._resumeAudioContext);
+    this.audioContext.resume(); // In case the video is paused.
 
     if (isLogging(this)) {
       clearInterval(this._logIntervalId);
