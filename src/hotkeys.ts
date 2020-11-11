@@ -215,10 +215,11 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       case HotkeyAction.DECREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '-', 0, 15); break;
       case HotkeyAction.SET_SOUNDED_SPEED: actions.settingsNewValues.soundedSpeed = arg; break;
       case HotkeyAction.TOGGLE_SOUNDED_SPEED: toggleSettingValue('soundedSpeed'); break;
-      case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeed', '+', 0, 15); break;
-      case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeed', '-', 0, 15); break;
-      case HotkeyAction.SET_SILENCE_SPEED: actions.settingsNewValues.silenceSpeed = arg; break;
-      case HotkeyAction.TOGGLE_SILENCE_SPEED: toggleSettingValue('silenceSpeed'); break;
+      // TODO how about do different `clamps` for 'absolute' and 'relativeToSoundedSpeed' specification methods?
+      case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '+', 0, 15); break;
+      case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '-', 0, 15); break;
+      case HotkeyAction.SET_SILENCE_SPEED: actions.settingsNewValues.silenceSpeedRaw = arg; break;
+      case HotkeyAction.TOGGLE_SILENCE_SPEED: toggleSettingValue('silenceSpeedRaw'); break;
       case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;
       case HotkeyAction.DECREASE_MARGIN_BEFORE: updateClamped('marginBefore', '-', 0, 1); break;
       case HotkeyAction.SET_MARGIN_BEFORE: actions.settingsNewValues.marginBefore = arg; break;

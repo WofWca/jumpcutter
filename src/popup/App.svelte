@@ -80,6 +80,10 @@
     onSettingsChange(settings);
   }
 
+  $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
+    ? 'relative to sounded speed'
+    : 'absolute';
+
   const maxVolume = 0.15;
 </script>
 
@@ -136,12 +140,19 @@
   <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
   https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
   <RangeSlider
-    label="Silence speed"
+    label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
     min="0"
     max="15"
     step="0.1"
-    bind:value={settings.silenceSpeed}
+    bind:value={settings.silenceSpeedRaw}
+  />
+  <RangeSlider
+    label="Margin before (side effects: audio distortion & audio delay)"
+    min="0"
+    max="0.5"
+    step="0.005"
+    bind:value={settings.marginBefore}
   />
   <RangeSlider
     label="Margin after"
@@ -150,25 +161,6 @@
     step="0.005"
     bind:value={settings.marginAfter}
   />
-
-
-  <label class="enable-experimental-features-field">
-    <input
-      bind:checked={settings.enableExperimentalFeatures}
-      type="checkbox"
-    >
-    <span>Experimental features</span>
-  </label>
-  {#if settings.enableExperimentalFeatures}
-  <!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
-  <RangeSlider
-    label="Margin before"
-    min="0"
-    max="0.5"
-    step="0.005"
-    bind:value={settings.marginBefore}
-  />
-  {/if}
 {/await}
 
 <style>
@@ -188,11 +180,6 @@
   }
   .enabled-input > span {
     margin: 0 0.5rem;
-  }
-
-  .enable-experimental-features-field {
-    display: flex;
-    align-items: center;
   }
 
   #options-button {

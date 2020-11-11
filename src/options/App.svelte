@@ -3,6 +3,7 @@
   import CustomValueInput from './components/CustomValueInput.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
+  import InputFieldBase from './components/InputFieldBase.svelte';
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import {
@@ -104,6 +105,11 @@
       e.preventDefault(); e.returnValue = ''; return ''; // Some polyfilling right here.
     }
   });
+
+  const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
+    { v: 'relativeToSoundedSpeed', l: '✖️ Relative to sounded speed' },
+    { v: 'absolute', l: '= Absolute' },
+  ]
 </script>
 
 <div class="app">
@@ -112,6 +118,29 @@
       bind:this={formEl}
       on:submit|preventDefault={saveSettings}
     >
+      <section>
+        <h3>General</h3>
+        <InputFieldBase
+          label="🙊= Silence speed specification method"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.silenceSpeedSpecificationMethod}
+            required
+          >
+            {#each silenceSpeedSpecificationMethodOptions as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
+        <!-- TODO I'm afraid the part in brackets may make users think that disabling this will make all the bad things
+        about the extension go away. -->
+        <CheckboxField
+          label="👫 Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)"
+          bind:checked={settings.enableDesyncCorrection}
+        />
+      </section>
       <section>
         <h3>Hotkeys</h3>
         <CheckboxField

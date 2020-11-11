@@ -10,7 +10,8 @@ import {
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
-import type { Settings } from '@/settings';
+import type { Settings as ExtensionSettings } from '@/settings';
+import { getAbsoluteSilenceSpeed } from '@/settings';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
 
@@ -27,7 +28,8 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_volumeFilter'
+  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
+    | '_resumeAudioContext' | '_volumeFilter'
     | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
     | '_lastActualPlaybackRateChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
@@ -37,14 +39,39 @@ type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIn
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
 
+type ControllerSettings =
+  Pick<
+    ExtensionSettings,
+    'volumeThreshold'
+    | 'soundedSpeed'
+    | 'marginBefore'
+    | 'marginAfter'
+    | 'enableDesyncCorrection'
+  > & {
+    silenceSpeed: number,
+  };
+
+function isStretcherEnabled(settings: ControllerSettings) {
+  return settings.marginBefore > 0;
+}
+
+export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
+  return {
+    ...extensionSettings,
+    silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),
+  };
+}
+
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
   readonly element: HTMLVideoElement;
-  settings: Settings;
+  settings: ControllerSettings;
   initialized = false;
   _initPromise?: Promise<this>;
   audioContext?: AudioContext;
+  _suspendAudioContext?: () => void;
+  _resumeAudioContext?: () => void;
   _volumeFilter?: AudioWorkletNode;
   _silenceDetectorNode?: AudioWorkletNode;
   _analyzerIn?: AnalyserNode;
@@ -58,22 +85,23 @@ export default class Controller {
     value: number,
     name: 'sounded' | 'silence',
   };
+  _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
   _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
   _logIntervalId?: number;
 
-  constructor(videoElement: HTMLVideoElement, settings: Settings) {
+  constructor(videoElement: HTMLVideoElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
-    this.settings = settings;
+    this.settings = controllerSettings;
   }
 
   isInitialized(): this is ControllerInitialized {
     return this.initialized;
   }
   isStretcherEnabled(): this is ControllerWithStretcher {
-    return this.settings.enableExperimentalFeatures;
+    return isStretcherEnabled(this.settings);
   }
 
   async init(): Promise<this> {
@@ -84,6 +112,22 @@ export default class Controller {
 
     const ctx = audioContext;
     this.audioContext = ctx;
+
+    // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
+    // speed always becoming silenceSpeed when media element gets paused, which causes a guaranteed audio stretch on
+    // resume.
+    // TODO I don't have much of idea if this can cause issues. Something along the lines of other audio sources
+    // stopping working?
+    this._suspendAudioContext = () => audioContext.suspend();
+    this._resumeAudioContext = () => audioContext.resume();
+    if (this.element.paused) {
+      audioContext.suspend();
+    }
+    // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
+    // "illegal invocation".
+    this.element.addEventListener('pause', this._suspendAudioContext);
+    this.element.addEventListener('play', this._resumeAudioContext);
+
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
 
@@ -116,6 +160,8 @@ export default class Controller {
       });
       this._analyzerOut = ctx.createAnalyser();
     }
+    // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
+    // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
@@ -187,6 +233,25 @@ export default class Controller {
 
         if (this.isStretcherEnabled()) {
           this._doOnSilenceStartStretcherStuff(eventTime);
+        }
+
+        if (this.settings.enableDesyncCorrection) {
+          // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
+          // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
+          // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
+          // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
+          // noticeable rewind in sound, so we use a smaller value.
+          // Why on silenceStart, not on silenceEnd? Becasue when it's harder to notice a rewind when it's silent.
+          // `marginAfter` ensures there's plenty of it.
+          // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
+          // pauses, so let's give it some bigger value.
+          const DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES = 10;
+          this._didNotDoDesyncCorrectionForNSpeedSwitches++;
+          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES) {
+            this.element.currentTime -= 1e-9;
+            // TODO but it's also corrected when the user seeks the video manually.
+            this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+          }
         }
       }
     }
@@ -344,6 +409,10 @@ export default class Controller {
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
 
+    this.element.removeEventListener('pause', this._suspendAudioContext);
+    this.element.removeEventListener('play', this._resumeAudioContext);
+    this.audioContext.resume(); // In case the video is paused.
+
     if (isLogging(this)) {
       clearInterval(this._logIntervalId);
     } else {
@@ -370,9 +439,10 @@ export default class Controller {
 
     this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
 
-    if (this.isStretcherEnabled()) {
-      this._stretcher.destroy();
-    }
+    this._stretcher?.destroy();
+    // Otherwise the stretcher's `destroy` may be called twice. TODO looks odd. Shouldn't we delete the other properties
+    // as well then?
+    delete this._stretcher;
     // TODO make `AudioWorkletProcessor`'s get collected.
     // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process#Return_value
     // Currently they always return `true`.
@@ -392,7 +462,7 @@ export default class Controller {
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  private _setStateAccordingToNewSettings(oldSettings: Settings | null = null) {
+  private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
     if (!oldSettings) {
       this._setSpeedAndLog('sounded');
     } else {
@@ -417,21 +487,20 @@ export default class Controller {
   }
 
   /** Can be called before the instance has been initialized. */
-  updateSettings(newChangedSettings: Partial<Settings>): void {
+  updateSettings(newSettings: ControllerSettings): void {
+    // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
-    const newSettings = {
-      ...this.settings,
-      ...newChangedSettings,
-    };
+    this.settings = newSettings;
 
-    // TODO check for all unknown/unsupported settings. Don't allow passing them at all, warn?
-    if (process.env.NODE_ENV !== 'production') {
-      if (oldSettings.enableExperimentalFeatures !== oldSettings.enableExperimentalFeatures) {
-        throw new Error('Chaning this setting with this method is not supported. Re-create the instance instead');
-      }
+    if (isStretcherEnabled(newSettings) ? !isStretcherEnabled(oldSettings) : isStretcherEnabled(oldSettings)) {
+      // TODO this is not async-safe. Add `this.reinitPromise = ` or something.
+      setTimeout(async () => {
+        await this.destroy();
+        await this.init();
+      });
+      return;
     }
 
-    this.settings = newSettings;
     this._setStateAccordingToNewSettings(oldSettings);
   }
 

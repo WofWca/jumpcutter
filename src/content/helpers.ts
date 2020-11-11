@@ -5,7 +5,7 @@ export function getRealtimeMargin(margin: Time, speed: number): Time {
 }
 
 export function getNewLookaheadDelay(videoTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
-  return videoTimeMargin / Math.min(soundedSpeed, silenceSpeed)
+  return videoTimeMargin / Math.max(soundedSpeed, silenceSpeed)
 }
 export function getTotalDelay(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
   return lookaheadNodeDelay + stretcherNodeDelay;
