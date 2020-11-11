@@ -28,8 +28,8 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
-    | '_resumeAudioContext' | '_volumeFilter'
+  & Required<Pick<Controller, '_elementPausedCache' | 'initialized' | '_initPromise' | 'audioContext'
+    | '_onVideoPause' | '_onVideoPlay' | '_volumeFilter'
     | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
     | '_lastActualPlaybackRateChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
@@ -66,12 +66,13 @@ export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
   readonly element: HTMLVideoElement;
+  _elementPausedCache?: HTMLVideoElement['paused']; // Same as 'this.element.paused', but faster. TODO hacky.
   settings: ControllerSettings;
   initialized = false;
   _initPromise?: Promise<this>;
   audioContext?: AudioContext;
-  _suspendAudioContext?: () => void;
-  _resumeAudioContext?: () => void;
+  _onVideoPause?: () => void;
+  _onVideoPlay?: () => void;
   _volumeFilter?: AudioWorkletNode;
   _silenceDetectorNode?: AudioWorkletNode;
   _analyzerIn?: AnalyserNode;
@@ -118,15 +119,19 @@ export default class Controller {
     // resume.
     // TODO I don't have much of idea if this can cause issues. Something along the lines of other audio sources
     // stopping working?
-    this._suspendAudioContext = () => audioContext.suspend();
-    this._resumeAudioContext = () => audioContext.resume();
-    if (this.element.paused) {
+    this._onVideoPause = () => {
+      this._elementPausedCache = true;
       audioContext.suspend();
     }
-    // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
-    // "illegal invocation".
-    this.element.addEventListener('pause', this._suspendAudioContext);
-    this.element.addEventListener('play', this._resumeAudioContext);
+    this._onVideoPlay = () => {
+      this._elementPausedCache = false;
+      audioContext.resume();
+    }
+    if (this.element.paused) {
+      this._onVideoPause();
+    }
+    this.element.addEventListener('pause', this._onVideoPause);
+    this.element.addEventListener('play', this._onVideoPlay);
 
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
@@ -409,8 +414,8 @@ export default class Controller {
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
 
-    this.element.removeEventListener('pause', this._suspendAudioContext);
-    this.element.removeEventListener('play', this._resumeAudioContext);
+    this.element.removeEventListener('pause', this._onVideoPause);
+    this.element.removeEventListener('play', this._onVideoPlay);
     this.audioContext.resume(); // In case the video is paused.
 
     if (isLogging(this)) {
@@ -544,6 +549,7 @@ export default class Controller {
     return {
       unixTime: Date.now() / 1000,
       // videoTime: this.element.currentTime,
+      paused: this._elementPausedCache,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
