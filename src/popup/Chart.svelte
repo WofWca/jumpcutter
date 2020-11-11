@@ -19,6 +19,12 @@
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
   let smoothie: SmoothieChart | undefined;
+  let smoothieRenderRAF: ReturnType<typeof requestAnimationFrame> = -1;
+  let smoothieStart: () => void | undefined;
+  let smoothieStop = () => {
+    console.log(smoothieRenderRAF)
+    cancelAnimationFrame(smoothieRenderRAF)
+  };
   let volumeSeries: TimeSeries;
   // Need two series because they're of different colors.
   let soundedSpeedSeries: TimeSeries;
@@ -135,8 +141,8 @@
     });
     
     const canvasContext = canvasEl.getContext('2d')!;
-    (function drawAndScheduleAnother() {
-      smoothie.render();
+    const drawAndScheduleAnother = () => {
+      smoothie!.render();
 
       // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
       // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
@@ -149,8 +155,9 @@
       canvasContext.closePath();
       canvasContext.stroke();
 
-      requestAnimationFrame(drawAndScheduleAnother);
-    })();
+      smoothieRenderRAF = requestAnimationFrame(drawAndScheduleAnother)
+    };
+    smoothieStart = drawAndScheduleAnother;
   }
   onMount(initSmoothie);
 
@@ -227,6 +234,12 @@
       return;
     }
     const r = newTelemetryRecord;
+
+    if (lastHandledTelemetryRecord?.paused !== r.paused) {
+      // TODO but when it's unpaused, the chart just jumps to the right. Apparently we need to use
+      // `audioContext.currentTime` instead of `Date.now()`.
+      (r.paused ? smoothieStop : smoothieStart)();
+    }
 
     (function updateVolumeSeries() {
       volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
