@@ -44,13 +44,16 @@ type ControllerSettings =
     ExtensionSettings,
     'volumeThreshold'
     | 'soundedSpeed'
-    | 'enableExperimentalFeatures'
     | 'marginBefore'
     | 'marginAfter'
     | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,
   };
+
+function isStretcherEnabled(settings: ControllerSettings) {
+  return settings.marginBefore > 0;
+}
 
 export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
   return {
@@ -98,7 +101,7 @@ export default class Controller {
     return this.initialized;
   }
   isStretcherEnabled(): this is ControllerWithStretcher {
-    return this.settings.enableExperimentalFeatures;
+    return isStretcherEnabled(this.settings);
   }
 
   async init(): Promise<this> {
@@ -157,6 +160,8 @@ export default class Controller {
       });
       this._analyzerOut = ctx.createAnalyser();
     }
+    // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
+    // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
@@ -434,9 +439,10 @@ export default class Controller {
 
     this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
 
-    if (this.isStretcherEnabled()) {
-      this._stretcher.destroy();
-    }
+    this._stretcher?.destroy();
+    // Otherwise the stretcher's `destroy` may be called twice. TODO looks odd. Shouldn't we delete the other properties
+    // as well then?
+    delete this._stretcher;
     // TODO make `AudioWorkletProcessor`'s get collected.
     // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process#Return_value
     // Currently they always return `true`.
@@ -484,15 +490,17 @@ export default class Controller {
   updateSettings(newSettings: ControllerSettings): void {
     // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
+    this.settings = newSettings;
 
-    // TODO check for all unknown/unsupported settings. Don't allow passing them at all, warn?
-    if (process.env.NODE_ENV !== 'production') {
-      if (oldSettings.enableExperimentalFeatures !== oldSettings.enableExperimentalFeatures) {
-        throw new Error('Chaning this setting with this method is not supported. Re-create the instance instead');
-      }
+    if (isStretcherEnabled(newSettings) ? !isStretcherEnabled(oldSettings) : isStretcherEnabled(oldSettings)) {
+      // TODO this is not async-safe. Add `this.reinitPromise = ` or something.
+      setTimeout(async () => {
+        await this.destroy();
+        await this.init();
+      });
+      return;
     }
 
-    this.settings = newSettings;
     this._setStateAccordingToNewSettings(oldSettings);
   }
 

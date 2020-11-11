@@ -58,18 +58,10 @@ function reactToSettingsNewValues(newValues: Partial<Settings>) {
 
   assert(controller);
   assert(settings);
-  const oldSettings = settings;
-  settings = { ...settings, ...newValues };
-  if (oldSettings.enableExperimentalFeatures === settings.enableExperimentalFeatures) {
-    // TODO also check for `enableHotkeys` and hotkey changes.
-    controller.updateSettings(
-      extensionSettings2ControllerSettings(settings) // TODO creating a new object on each settings change? SMH.
-    );
-  } else {
-    // A change requires instance re-initialization.
-    destroyIfInited();
-    initIfVideoPresent()
-  }
+  Object.assign(settings, newValues);
+  controller.updateSettings(
+    extensionSettings2ControllerSettings(settings) // TODO creating a new object on each settings change? SMH.
+  );
 }
 function reactToSettingsChanges(changes: MyStorageChanges) {
   reactToSettingsNewValues(settingsChanges2NewValues(changes));

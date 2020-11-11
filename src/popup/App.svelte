@@ -148,31 +148,19 @@
     bind:value={settings.silenceSpeedRaw}
   />
   <RangeSlider
+    label="Margin before (side effects: audio distortion & audio delay)"
+    min="0"
+    max="0.5"
+    step="0.005"
+    bind:value={settings.marginBefore}
+  />
+  <RangeSlider
     label="Margin after"
     min="0"
     max="0.5"
     step="0.005"
     bind:value={settings.marginAfter}
   />
-
-
-  <label class="enable-experimental-features-field">
-    <input
-      bind:checked={settings.enableExperimentalFeatures}
-      type="checkbox"
-    >
-    <span>Experimental features</span>
-  </label>
-  {#if settings.enableExperimentalFeatures}
-  <!-- TODO when it's no longer an experimental feature, put it above the margin after input. -->
-  <RangeSlider
-    label="Margin before"
-    min="0"
-    max="0.5"
-    step="0.005"
-    bind:value={settings.marginBefore}
-  />
-  {/if}
 {/await}
 
 <style>
@@ -192,11 +180,6 @@
   }
   .enabled-input > span {
     margin: 0 0.5rem;
-  }
-
-  .enable-experimental-features-field {
-    display: flex;
-    align-items: center;
   }
 
   #options-button {
