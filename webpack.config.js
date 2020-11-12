@@ -1,7 +1,6 @@
 /* eslint-env node */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const CopyPlugin = require('copy-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
 
@@ -80,8 +79,4 @@ module.exports = {
       ],
     }),
   ],
-
-  optimization: {
-    minimizer: [new TerserPlugin()],
-  }
 };
