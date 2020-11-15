@@ -252,12 +252,14 @@
     step="0.005"
     bind:value={settings.marginAfter}
   />
+  {#if settings.popupAlwaysShowOpenLocalFileLink}
+    <!-- svelte-ignore a11y-missing-attribute --->
+    <a
+      {...openLocalFileLinkProps}
+      style="display: inline-block; margin-top: 1rem;"
+    >Open a local file</a>
+  {/if}
 {/await}
-<!-- svelte-ignore a11y-missing-attribute --->
-<a
-  {...openLocalFileLinkProps}
-  style="display: inline-block; margin-top: 1rem;"
->Open a local file</a>
 
 <style>
   label:not(:first-child) {

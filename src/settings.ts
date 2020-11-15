@@ -30,6 +30,7 @@ export interface Settings {
   popupChartWidthPx: number,
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
+  popupAlwaysShowOpenLocalFileLink: boolean,
 
   enableDesyncCorrection: boolean,
 }
@@ -188,6 +189,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupChartWidthPx: 400,
   popupChartHeightPx: 150,
   popupChartLengthInSeconds: 4,
+  popupAlwaysShowOpenLocalFileLink: true,
 
   enableDesyncCorrection: true,
 };
