@@ -52,6 +52,8 @@ module.exports = {
     popup: './src/popup/main.ts',
     background: './src/background/main.ts',
     options: './src/options/main.ts',
+
+    'local-file-player': './src/local-file-player/main.ts',
   },
 
   output: {
@@ -76,6 +78,7 @@ module.exports = {
         { context: 'src', from: 'icons/**' },
         { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name].[ext]' },
         { context: 'src', from: 'options/*.(html|css)', to: 'options/[name].[ext]' },
+        { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name].[ext]' },
       ],
     }),
   ],
