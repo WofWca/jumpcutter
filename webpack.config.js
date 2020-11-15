@@ -81,5 +81,6 @@ module.exports = {
         { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name].[ext]' },
       ],
     }),
+    new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)(),
   ],
 };
