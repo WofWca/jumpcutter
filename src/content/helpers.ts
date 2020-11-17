@@ -85,9 +85,11 @@ export function transformSpeed(speed: number): number {
   // On Chromium 86.0.4240.99, it appears that 1.0 is not the only "normal" speed. It's a small proximity of 1.0.
   //
   // It's not the smallest, but a value close to the smallest value for which the audio
-  // stream start going through the stretcher algorithm. Determined from a bit of experimentation.
-  // TODO DRY this, as it may change.
-  const smallestNonNormalAbove1 = 1.00105;
+  // stream start going through the stretcher algorithm. Initially after a bit of experimentation I set this value to
+  // `1.00105`, but then as I added local file support, it became apparent that for some files it's not enough.
+  // For some files it appeared to be just below 1.001135. To be on a safer side, let's set it to a slightly bigger
+  // value until we figure out what it really is. TODO.
+  const smallestNonNormalAbove1 = 1.002;
   // Actually I'm not sure if there's such a relation between the biggest and the smallest.
   const biggestNonNormalBelow1 = 1 - (smallestNonNormalAbove1 - 1);
 
