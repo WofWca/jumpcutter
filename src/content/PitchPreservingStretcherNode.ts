@@ -1,4 +1,9 @@
-import { PitchShift, connect as ToneConnect, setContext as toneSetContext, ToneAudioNode } from 'tone';
+// Importing this way because the Tone.js library has a lot of modules with side-effects and they get bundled.
+// TODO can we import `.ts` files instead of the built ones?
+import { setContext as toneSetContext } from 'tone/build/esm/core/Global';
+import { connect as ToneConnect } from 'tone/build/esm/core/context/ToneAudioNode';
+import { PitchShift } from 'tone/build/esm/effect/PitchShift';
+import { ToneAudioNode } from 'tone/build/esm/core/context/ToneAudioNode';
 import { getStretchSpeedChangeMultiplier } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import { assert } from '@/helpers';

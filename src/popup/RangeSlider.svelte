@@ -7,6 +7,9 @@
   // export let step;
 </script>
 
+<!-- Disabling the warning because it's false – apparently, it can't detect an input if it's not a direct child.
+TODO. -->
+<!-- svelte-ignore a11y-label-has-associated-control -->
 <label>
   <span>{label}</span>
   <div class="range-and-value">

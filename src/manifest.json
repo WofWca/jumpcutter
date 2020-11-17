@@ -1,6 +1,6 @@
 {
   "name": "Jump Cutter",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Skips silent parts in videos on the fly",
   "permissions": ["storage"],
   "browser_action": {
@@ -15,7 +15,7 @@
   },
   "content_scripts": [
     {
-      "matches": [ "http://*/*", "https://*/*", "file:///*" ],
+      "matches": ["http://*/*", "https://*/*"],
       "js": ["content/main.js"],
       "run_at": "document_idle"
     }

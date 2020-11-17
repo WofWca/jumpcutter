@@ -16,6 +16,71 @@
     settings = s;
     settingsLoaded = true;
   })
+  async function getTab() {
+    return new Promise<chrome.tabs.Tab>(r => {
+      // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
+      // guaranteed that there will be a tab, is it?
+      chrome.tabs.query({ active: true, currentWindow: true, }, tabs => r(tabs[0]))
+    });
+  }
+  const tabPromise = getTab();
+  const tabLoadedPromise = (async () => {
+    let tab = await tabPromise;
+    if (tab.status !== 'complete') { // TODO it says `status` is optional? When is it missing?
+      tab = await new Promise(r => {
+        let pollTimeout: ReturnType<typeof setTimeout>;
+        function finishIfComplete(tab: chrome.tabs.Tab) {
+          if (tab.status === 'complete') {
+            r(tab);
+            chrome.tabs.onUpdated.removeListener(onUpdatedListener);
+            clearTimeout(pollTimeout);
+            return true;
+          }
+        }
+        const onUpdatedListener: Parameters<typeof chrome.tabs.onUpdated.addListener>[0] = (tabId, _, updatedTab) => {
+          if (tabId !== tab.id) return;
+          finishIfComplete(updatedTab);
+        }
+        chrome.tabs.onUpdated.addListener(onUpdatedListener);
+
+        // Sometimes if you open the popup during page load, it would never resolve. I tried attaching the listener
+        // before calling `chrome.tabs.query`, but it didn't help either. This is a workaround. TODO.
+        async function queryTabStatusAndScheduleAnotherIfNotFinished() {
+          const tab = await getTab();
+          const finished = finishIfComplete(tab);
+          if (!finished) {
+            pollTimeout = setTimeout(queryTabStatusAndScheduleAnotherIfNotFinished, 2000);
+          }
+        }
+        pollTimeout = setTimeout(queryTabStatusAndScheduleAnotherIfNotFinished, 2000);
+      });
+    }
+    return tab;
+  })();
+
+  const connectedPromise = new Promise(async r => {
+    const tab = await tabPromise;
+    const onMessageListener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (message, sender) => {
+      if (sender.tab?.id !== tab.id) return;
+      // TODO check sender.url? Not only to check protocol, but also to somehow aid the user to locate the file that
+      // he's trying to open. Idk how though, we can't just `input.value = sender.url`.
+      if (message !== 'contentPortsReady') return; // TODO DRY. 
+      chrome.runtime.onMessage.removeListener(onMessageListener);
+      r();
+    };
+    chrome.runtime.onMessage.addListener(onMessageListener);
+    chrome.tabs.sendMessage(tab.id!, 'checkContentPortReady') // TODO DRY.
+  });
+
+  let considerConnectionFailed = false;
+  (async () => {
+    await tabLoadedPromise;
+    window.setTimeout(async () => {
+      considerConnectionFailed = true;
+      await connectedPromise; // May never resolve.
+      considerConnectionFailed = false;
+    }, 70);
+  })();
 
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
@@ -23,10 +88,9 @@
   const startGettingstelemetryP = (async function startGettingTelemetry() {
     // TODO how do we close it on popup close? Do we have to?
     // https://developer.chrome.com/extensions/messaging#port-lifetime
-    // TODO try-catch for "Receiving end does not exist", e.g. for when the page is being refreshed? Perhaps the content
-    // script should send a message for when it is ready to accept connections?
-    const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r)) as any;
-    const volumeInfoPort = chrome.tabs.connect(tabs[0].id!, { name: 'telemetry' });
+    await connectedPromise;
+    const tab = await tabLoadedPromise; // TODO are we sure that this guarantees that there's an onConnect listener?
+    const volumeInfoPort = chrome.tabs.connect(tab.id!, { name: 'telemetry' });
     volumeInfoPort.onMessage.addListener(msg => {
       if (msg) {
         latestTelemetryRecord = msg;
@@ -48,8 +112,10 @@
   // Make a setings or a flag or something.
   const LISTEN_TO_HOTKEYS_IN_POPUP = true;
   let keydownListener: ResolveType<ReturnType<typeof createKeydownListener>> | (() => {}) = () => {};
-  settingsPromise.then(async () => {
-    if (!LISTEN_TO_HOTKEYS_IN_POPUP || !settings.enableHotkeys) return;
+  (async () => {
+    await settingsPromise;
+    await connectedPromise;
+    if (!LISTEN_TO_HOTKEYS_IN_POPUP || !settings!.enableHotkeys) return;
     const { default: createKeydownListener } = (await import('./hotkeys'));
     keydownListener = await createKeydownListener(
       () => settings,
@@ -58,7 +124,7 @@
         settings = settings;
       },
     );
-  })
+  })();
 
   addOnChangedListener(changes => {
     settings = {
@@ -85,6 +151,11 @@
     : 'absolute';
 
   const maxVolume = 0.15;
+
+  const openLocalFileLinkProps = {
+    href: chrome.runtime.getURL('local-file-player/index.html'),
+    target: '_new',
+  };
 </script>
 
 <svelte:window
@@ -107,15 +178,35 @@
     href="javascript;"
     on:click={() => chrome.runtime.openOptionsPage()}
   >⚙️</a>
-  <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
-  <Chart
-    {latestTelemetryRecord}
-    volumeThreshold={settings.volumeThreshold}
-    loadedPromise={settingsPromise}
-    widthPx={settings.popupChartWidthPx}
-    heightPx={settings.popupChartHeightPx}
-    lengthSeconds={settings.popupChartLengthInSeconds}
-  />
+  <!-- TODO transitions? -->
+  {#await connectedPromise}
+    <div
+      class="content-script-connection-info"
+      style="min-width: {settings.popupChartWidthPx}px; min-height: {settings.popupChartHeightPx}px;"
+    >
+      {#if considerConnectionFailed}
+        <p>
+          <span>⚠️ Couldn't load the content script.<br>Trying to </span>
+          <!-- svelte-ignore a11y-missing-attribute --->
+          <a
+            {...openLocalFileLinkProps}
+          >open a local file</a>?
+        </p>
+      {:else}
+        <p>⏳ Loading...</p>
+      {/if}
+    </div>
+  {:then _}
+    <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
+    <Chart
+      {latestTelemetryRecord}
+      volumeThreshold={settings.volumeThreshold}
+      loadedPromise={settingsPromise}
+      widthPx={settings.popupChartWidthPx}
+      heightPx={settings.popupChartHeightPx}
+      lengthSeconds={settings.popupChartLengthInSeconds}
+    />
+  {/await}
   <RangeSlider
     label="Volume threshold"
     min="0"
@@ -161,6 +252,13 @@
     step="0.005"
     bind:value={settings.marginAfter}
   />
+  {#if settings.popupAlwaysShowOpenLocalFileLink}
+    <!-- svelte-ignore a11y-missing-attribute --->
+    <a
+      {...openLocalFileLinkProps}
+      style="display: inline-block; margin-top: 1rem;"
+    >Open a local file</a>
+  {/if}
 {/await}
 
 <style>
@@ -180,6 +278,13 @@
   }
   .enabled-input > span {
     margin: 0 0.5rem;
+  }
+
+  .content-script-connection-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
   }
 
   #options-button {

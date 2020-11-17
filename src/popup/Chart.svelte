@@ -295,3 +295,10 @@
     >{lastVolume.toFixed(3)}</span>
   </label>
 </canvas>
+
+<style>
+  canvas {
+    /* So it doesn't create additional margin around it. */
+    display: block;
+  }
+</style>

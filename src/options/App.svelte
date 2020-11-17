@@ -283,6 +283,10 @@
           label='☑️ Autofocus the "enabled" checkbox when popup opens'
           bind:checked={settings.popupAutofocusEnabledInput}
         />
+        <CheckboxField
+          label='🔗 Show the "Open a local file" link'
+          bind:checked={settings.popupAlwaysShowOpenLocalFileLink}
+        />
       </section>
 
 

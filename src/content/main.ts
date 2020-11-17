@@ -10,6 +10,13 @@ import type { keydownEventToActions } from '@/hotkeys';
 
 (async function () { // Just for top-level `await`
 
+// The user might have enabled access to file URL for this extension. This is so it behaves the same way when access
+// is disabled. And why do we need that? Because it doesn't work with local files:
+// https://github.com/WofWca/jumpcutter/issues/5
+if (location.protocol === 'file:') {
+  return;
+}
+
 let v: HTMLVideoElement | null = null;
 let controller: Controller | null = null;
 let handleKeydown: (e: KeyboardEvent) => void;
@@ -43,6 +50,21 @@ chrome.runtime.onConnect.addListener(port => {
     }
   }
 });
+function notifyReady() {
+  const contentScriptPortsReadyMessage = 'contentPortsReady'; // TODO DRY this?
+  chrome.runtime.sendMessage(contentScriptPortsReadyMessage);
+}
+chrome.runtime.onMessage.addListener((message) => {
+  if (process.env.NODE_ENV !== 'production') {
+    if (message !== 'checkContentPortReady') { // TODO DRY.
+      console.error('Unrecognized message', message);
+    }
+  }
+
+  notifyReady();
+});
+// So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
+notifyReady();
 
 let settings: Settings | null = await getSettings();
 
