@@ -4,7 +4,8 @@ import {
   settingsChanges2NewValues,
 } from '@/settings';
 import { assert, assertNever } from '@/helpers';
-import Controller, { extensionSettings2ControllerSettings } from './Controller';
+import type Controller from './Controller';
+import { extensionSettings2ControllerSettings } from './Controller';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 
