@@ -90,15 +90,15 @@
     // https://developer.chrome.com/extensions/messaging#port-lifetime
     await connectedPromise;
     const tab = await tabLoadedPromise; // TODO are we sure that this guarantees that there's an onConnect listener?
-    const volumeInfoPort = chrome.tabs.connect(tab.id!, { name: 'telemetry' });
-    volumeInfoPort.onMessage.addListener(msg => {
+    const telemetryPort = chrome.tabs.connect(tab.id!, { name: 'telemetry' });
+    telemetryPort.onMessage.addListener(msg => {
       if (msg) {
         latestTelemetryRecord = msg;
       }
     });
     // TODO don't spam messages if the controller is not there.
     telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
-      volumeInfoPort.postMessage('getTelemetry');
+      telemetryPort.postMessage('getTelemetry');
       return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
     })();
   })();
