@@ -6,7 +6,7 @@ import { assertNever, DeepReadonly, KeysOfType } from "./helpers";
 type ModifierPropName = keyof Pick<KeyboardEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>;
 const modifierFlagPropNames: ModifierPropName[] = ['ctrlKey', 'altKey', 'shiftKey', 'metaKey']
 // Consider replacing it with a tuple to save some storage space (to fit the `QUOTA_BYTES_PER_ITEM` quota).
-interface KeyCombination {
+export interface KeyCombination {
   code: KeyboardEvent['code'];
   modifiers?: ModifierPropName[];
 }
@@ -105,11 +105,9 @@ export type HotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
   keyCombination: KeyCombination;
   action: T;
   overrideWebsiteHotkeys?: boolean,
-  // actionArgument: HotkeyActionArguments<T>;
+  actionArgument?: HotkeyActionArguments<T>;
 } & (T extends NoArgumentAction
-  // Disabling a rule here, not sure how to write this better. TODO?
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  ? {}
+  ? { actionArgument?: never }
   : { actionArgument: HotkeyActionArguments<T> }
 );
 

@@ -124,6 +124,16 @@ export const defaultSettings: Readonly<Settings> = {
       action: HotkeyAction.DECREASE_VOLUME_THRESHOLD,
       actionArgument: 0.001,
     },
+    {
+      keyCombination: { code: 'KeyE', modifiers: ['shiftKey'], },
+      action: HotkeyAction.INCREASE_VOLUME_THRESHOLD,
+      actionArgument: 0.010,
+    },
+    {
+      keyCombination: { code: 'KeyW', modifiers: ['shiftKey'], },
+      action: HotkeyAction.DECREASE_VOLUME_THRESHOLD,
+      actionArgument: 0.010,
+    },
 
     // soundedSpeed
     {
