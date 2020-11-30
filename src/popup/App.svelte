@@ -225,7 +225,7 @@
     fractionalDigits={2}
     min="0"
     max="15"
-    step="0.1"
+    step="0.05"
     bind:value={settings.soundedSpeed}
   />
   <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
@@ -235,7 +235,7 @@
     fractionalDigits={2}
     min="0"
     max="15"
-    step="0.1"
+    step="0.05"
     bind:value={settings.silenceSpeedRaw}
   />
   <RangeSlider
