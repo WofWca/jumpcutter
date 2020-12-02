@@ -8,6 +8,16 @@ const popupSpecificHotkeys: HotkeyBinding[] = [
     action: HotkeyAction.TOGGLE_PAUSE,
   },
   {
+    keyCombination: { code: 'ArrowLeft' },
+    action: HotkeyAction.REWIND,
+    actionArgument: 10,
+  },
+  {
+    keyCombination: { code: 'ArrowRight' },
+    action: HotkeyAction.ADVANCE,
+    actionArgument: 10,
+  },
+  {
     keyCombination: { code: 'ArrowUp' },
     action: HotkeyAction.INCREASE_VOLUME,
     actionArgument: 5,
