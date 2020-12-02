@@ -194,7 +194,7 @@ export const defaultSettings: Readonly<Settings> = {
     },
   ],
 
-  popupDisableHotkeysWhileInputFocused: false,
+  popupDisableHotkeysWhileInputFocused: true,
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
   popupChartHeightPx: 150,

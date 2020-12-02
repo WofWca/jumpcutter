@@ -54,5 +54,8 @@ export default async function(): Promise<void> {
   const { hotkeys } = await getSettings();
   tryAddVolumeThresholdHotkeys(hotkeys);
 
-  await setSettings({ hotkeys });
+  await setSettings({
+    hotkeys,
+    popupDisableHotkeysWhileInputFocused: true, // Since we now have volume up/down bound to arrows in popup.
+  });
 }
