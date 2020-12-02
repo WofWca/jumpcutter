@@ -3,7 +3,7 @@ import {
   removeOnChangedListener as removeOnSettingsChangedListener,
   settingsChanges2NewValues,
 } from '@/settings';
-import { assert, assertNever } from '@/helpers';
+import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
 import { extensionSettings2ControllerSettings } from './Controller';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
@@ -98,6 +98,13 @@ function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydown
       case HotkeyAction.ADVANCE: v.currentTime += (action as HotkeyBinding<HotkeyAction.ADVANCE>).actionArgument; break;
       case HotkeyAction.TOGGLE_PAUSE: v.paused ? v.play() : v.pause(); break;
       case HotkeyAction.TOGGLE_MUTE: v.muted = !v.muted; break;
+      case HotkeyAction.INCREASE_VOLUME:
+      case HotkeyAction.DECREASE_VOLUME: {
+        const unitVector = action.action === HotkeyAction.INCREASE_VOLUME ? 1 : -1;
+        const toAdd = unitVector * (action as HotkeyBinding<HotkeyAction.INCREASE_VOLUME>).actionArgument / 100;
+        v.volume = clamp(v.volume + toAdd, 0, 1);
+        break;
+      }
       default: assertNever(action.action);
     }
   }

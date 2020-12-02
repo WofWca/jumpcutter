@@ -1,11 +1,21 @@
-import { keydownEventToActions, eventTargetIsInput, HotkeyAction } from '@/hotkeys';
+import { keydownEventToActions, eventTargetIsInput, HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import { Settings } from '@/settings';
 
 // TODO how about move this to settings?
-const popupSpecificHotkeys = [
+const popupSpecificHotkeys: HotkeyBinding[] = [
   {
     keyCombination: { code: 'Space', },
     action: HotkeyAction.TOGGLE_PAUSE,
+  },
+  {
+    keyCombination: { code: 'ArrowUp' },
+    action: HotkeyAction.INCREASE_VOLUME,
+    actionArgument: 5,
+  },
+  {
+    keyCombination: { code: 'ArrowDown' },
+    action: HotkeyAction.DECREASE_VOLUME,
+    actionArgument: 5,
   },
 ];
 
