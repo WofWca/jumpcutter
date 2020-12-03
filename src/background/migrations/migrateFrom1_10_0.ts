@@ -1,9 +1,10 @@
 import { HotkeyAction, HotkeyBinding, combinationIsEqual } from "@/hotkeys";
 import { getSettings, setSettings } from "@/settings";
 
-export default async function(): Promise<void> {
-  // Add new hotkeys if the user didn't customize them much.
-  const { hotkeys } = await getSettings();
+/**
+ * @param hotkeys - mutable
+ */
+function tryAddVolumeThresholdHotkeys(hotkeys: HotkeyBinding[]): void {
   const defaultVolumeThresholdHotkeys = [
     {
       keyCombination: { code: 'KeyE', },
@@ -45,6 +46,16 @@ export default async function(): Promise<void> {
   if (defaultVolumeThresholdHotkeysPresent && !newHotkeysAreAlreadyBound) {
     const insertAfter = hotkeys.findIndex(b => bindingIsEqual(b, defaultVolumeThresholdHotkeys[1]));
     hotkeys.splice(insertAfter + 1, 0, ...newHotkeys);
-    await setSettings({ hotkeys });
   }
+}
+
+export default async function(): Promise<void> {
+  // Add new hotkeys if the user didn't customize them much.
+  const { hotkeys } = await getSettings();
+  tryAddVolumeThresholdHotkeys(hotkeys);
+
+  await setSettings({
+    hotkeys,
+    popupDisableHotkeysWhileInputFocused: true, // Since we now have volume up/down bound to arrows in popup.
+  });
 }

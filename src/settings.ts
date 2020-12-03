@@ -31,6 +31,9 @@ export interface Settings {
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
   popupAlwaysShowOpenLocalFileLink: boolean,
+  // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys. TODO use
+  // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
+  popupSpecificHotkeys: HotkeyBinding[],
 
   enableDesyncCorrection: boolean,
 }
@@ -194,12 +197,38 @@ export const defaultSettings: Readonly<Settings> = {
     },
   ],
 
-  popupDisableHotkeysWhileInputFocused: false,
+  popupDisableHotkeysWhileInputFocused: true,
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
   popupChartHeightPx: 150,
   popupChartLengthInSeconds: 4,
   popupAlwaysShowOpenLocalFileLink: true,
+  popupSpecificHotkeys: [
+    {
+      keyCombination: { code: 'Space', },
+      action: HotkeyAction.TOGGLE_PAUSE,
+    },
+    {
+      keyCombination: { code: 'ArrowLeft' },
+      action: HotkeyAction.REWIND,
+      actionArgument: 10,
+    },
+    {
+      keyCombination: { code: 'ArrowRight' },
+      action: HotkeyAction.ADVANCE,
+      actionArgument: 10,
+    },
+    {
+      keyCombination: { code: 'ArrowUp' },
+      action: HotkeyAction.INCREASE_VOLUME,
+      actionArgument: 5,
+    },
+    {
+      keyCombination: { code: 'ArrowDown' },
+      action: HotkeyAction.DECREASE_VOLUME,
+      actionArgument: 5,
+    },
+  ],
 
   enableDesyncCorrection: true,
 };
