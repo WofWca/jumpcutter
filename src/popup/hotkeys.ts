@@ -1,33 +1,5 @@
-import { keydownEventToActions, eventTargetIsInput, HotkeyAction, HotkeyBinding } from '@/hotkeys';
+import { keydownEventToActions, eventTargetIsInput } from '@/hotkeys';
 import { Settings } from '@/settings';
-
-// TODO how about move this to settings?
-const popupSpecificHotkeys: HotkeyBinding[] = [
-  {
-    keyCombination: { code: 'Space', },
-    action: HotkeyAction.TOGGLE_PAUSE,
-  },
-  {
-    keyCombination: { code: 'ArrowLeft' },
-    action: HotkeyAction.REWIND,
-    actionArgument: 10,
-  },
-  {
-    keyCombination: { code: 'ArrowRight' },
-    action: HotkeyAction.ADVANCE,
-    actionArgument: 10,
-  },
-  {
-    keyCombination: { code: 'ArrowUp' },
-    action: HotkeyAction.INCREASE_VOLUME,
-    actionArgument: 5,
-  },
-  {
-    keyCombination: { code: 'ArrowDown' },
-    action: HotkeyAction.DECREASE_VOLUME,
-    actionArgument: 5,
-  },
-];
 
 export default async function createKeydownListener(
   getSettings: () => Settings,
@@ -42,7 +14,7 @@ export default async function createKeydownListener(
     if (eventTargetIsInput(e) && settings.popupDisableHotkeysWhileInputFocused) return;
     // TODO creating a new array on each keydown is not quite good for performance. Or does it get optimized internally?
     // Or maybe we can call `keydownEventToActions` twice for each array. Nah, easier to modify `keydownEventToActions`.
-    const actions = keydownEventToActions(e, settings, [...settings.hotkeys, ...popupSpecificHotkeys]);
+    const actions = keydownEventToActions(e, settings, [...settings.hotkeys, ...settings.popupSpecificHotkeys]);
     const { settingsNewValues, nonSettingsActions } = actions;
     onNewSettingsValues(settingsNewValues);
     // TODO but this is still not fully convenient for the user as he won't be able to use hotkeys that are not provided

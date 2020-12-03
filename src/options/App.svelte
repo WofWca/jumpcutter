@@ -1,35 +1,27 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import CustomValueInput from './components/CustomValueInput.svelte';
+  import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
-  import {
-    eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, HotkeyAction, NoArgumentAction,
-    allNoArgumentActions,
-  } from '@/hotkeys';
   import debounce from 'lodash/debounce';
 
   let unsaved = false;
   let formValid = true;
   let formEl: HTMLFormElement;
 
-  type PotentiallyInvalidHotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
-    [P in keyof HotkeyBinding<T>]?: HotkeyBinding<T>[P];
-  }
-  type PotentiallyInvalidSettingsChangedKeys = keyof Pick<Settings, 'hotkeys'>;
+  type PotentiallyInvalidSettingsChangedKeys = keyof Pick<Settings, 'hotkeys' | 'popupSpecificHotkeys'>;
   type PotentiallyInvalidSettings = Omit<Settings, PotentiallyInvalidSettingsChangedKeys> & {
     hotkeys: PotentiallyInvalidHotkeyBinding[];
+    popupSpecificHotkeys: PotentiallyInvalidHotkeyBinding[];
   }
   let settings: PotentiallyInvalidSettings;
   const settingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
   type Commands = Parameters<Parameters<typeof chrome.commands.getAll>[0]>[0];
-  let commands: Commands;
   const commandsPromise = new Promise<Commands>(r => chrome.commands.getAll(r));
-  commandsPromise.then(c => commands = c);
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -40,31 +32,6 @@
     unsaved = false;
   }
   const debouncedSaveSettings = debounce(saveSettings, 50);
-  function addNewBinding() {
-    settings.hotkeys.push({});
-    settings = settings;
-  }
-  function removeBinding(bindingInd: number) {
-    settings.hotkeys.splice(bindingInd, 1);
-    settings = settings;
-  }
-  async function onCombinationInputKeydown(bindingInd: number, event: KeyboardEvent) {
-    // In case the user just wanted to focus another input and pressed "Tab".
-    // Though if you press "Shift+Tab", "Shift" is still recorded.
-    await new Promise(r => setTimeout(r)); // Not a huge event loop expert. TODO make sure it's consistent.
-    if (document.activeElement !== event.target) {
-      return;
-    }
-
-    const combination = eventToCombination(event);
-    settings.hotkeys[bindingInd].keyCombination = combination;
-    settings = settings;
-  }
-  function isPotentiallyInvalidBindingWithArgument(
-    binding: PotentiallyInvalidHotkeyBinding,
-  ): binding is PotentiallyInvalidHotkeyBinding<Exclude<HotkeyAction, NoArgumentAction>> {
-    return !!binding.action && !(allNoArgumentActions as any).includes(binding.action);
-  }
 
   function onResetToDefaultsClick() {
     // TODO looks like `confirm()` doesn't work. Let's create our own `<dialog>`?
@@ -161,99 +128,44 @@
             <!-- TODO do we need this here? Maybe it can be understood from inputs' labels? -->
             <li>Hotkeys are also active when the popup is open.</li>
           </ul>
-          <table>
-            <thead>
-              <th>Action</th>
-              <th>Hotkey</th>
-              <th>Value</th>
-              <th>Override website hotkeys</th>
-            </thead>
-            <tbody>
-              <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
-              TODO move this comment to `manifest.json` somehow? -->
-              {#await commandsPromise then _}
-                {#each commands as command}
-                  <tr>
-                    <!-- _execute_page_action is unhandled. Though we don't use it. -->
-                    <td>{command.name === '_execute_browser_action' ? 'Open popup' : command.description}</td>
-                    <td>
-                      <input
-                        disabled
-                        readonly
-                        value={command.shortcut}
-                      />
-                    </td>
-                    <td></td> <!-- No argument -->
-                    <td></td> <!-- No "overrideWebsiteHotkeys" -->
-                    <td style="text-align: center;">
-                      <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
-                      to not work fully (no scrolling to anchor). Just 'href' doesn't work. Link is taken from
-                      https://developer.chrome.com/apps/commands#usage. -->
-                      <a
-                        href="chrome://extensions/configureCommands"
-                        on:click|preventDefault={_ => chrome.tabs.create({
-                          url: 'chrome://extensions/configureCommands',
-                          active: true,
-                        })}
-                        aria-label="Edit"
-                        style="text-decoration: none; padding: 0.125rem;"
-                      >✏️</a>
-                    </td>
-                  </tr>
-                {/each}
-              {/await}
-              {#each settings.hotkeys as binding, bindingInd}
+          <HotkeysTable
+            bind:hotkeys={settings.hotkeys}
+            displayOverrideWebsiteHotkeysColumn={true}
+          >
+            <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
+            TODO move this comment to `manifest.json` somehow? -->
+            {#await commandsPromise then commands}
+              {#each commands as command}
                 <tr>
+                  <!-- _execute_page_action is unhandled. Though we don't use it. -->
+                  <td>{command.name === '_execute_browser_action' ? 'Open popup' : command.description}</td>
                   <td>
-                    <select
-                      bind:value={binding.action}
-                      required
-                    >
-                      {#each Object.entries(hotkeyActionToString) as [id, string]}
-                        <option value={id}>{string}</option>
-                      {/each}
-                    </select>
-                  </td>
-                  <td>
-                    <CustomValueInput
-                      required
-                      value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
-                      on:keydown={e => onCombinationInputKeydown(bindingInd, e)}
-                    />
-                  </td>
-                  <td>
-                    {#if isPotentiallyInvalidBindingWithArgument(binding)}
-                    <!-- TODO in the future, the argument isn't necessarily going to be a number. -->
-                      <input
-                        bind:value={binding.actionArgument}
-                        required
-                        type="number"
-                        step="any"
-                      >
-                    {/if}
-                  </td>
-                  <td style="text-align: center;">
                     <input
-                      bind:checked={binding.overrideWebsiteHotkeys}
-                      type="checkbox"
+                      disabled
+                      readonly
+                      value={command.shortcut}
                     />
                   </td>
-                  <td>
-                    <button
-                      type="button"
-                      on:click={e => removeBinding(bindingInd)}
-                      aria-label="Remove binding"
-                    >🗑️</button>
+                  <td></td> <!-- No argument -->
+                  <td></td> <!-- No "overrideWebsiteHotkeys" -->
+                  <td style="text-align: center;">
+                    <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
+                    to not work fully (no scrolling to anchor). Just 'href' doesn't work. Link is taken from
+                    https://developer.chrome.com/apps/commands#usage. -->
+                    <a
+                      href="chrome://extensions/configureCommands"
+                      on:click|preventDefault={_ => chrome.tabs.create({
+                        url: 'chrome://extensions/configureCommands',
+                        active: true,
+                      })}
+                      aria-label="Edit"
+                      style="text-decoration: none; padding: 0.125rem;"
+                    >✏️</a>
                   </td>
                 </tr>
               {/each}
-            </tbody>
-          </table>
-          <button
-            type="button"
-            on:click={addNewBinding}
-            aria-label="Add new hotkey"
-          >➕</button>
+            {/await}
+          </HotkeysTable>
         </div>
       </section>
       <section>
@@ -286,6 +198,11 @@
         <CheckboxField
           label='🔗 Show the "Open a local file" link'
           bind:checked={settings.popupAlwaysShowOpenLocalFileLink}
+        />
+        <h4>Popup-specific hotkeys</h4>
+        <HotkeysTable
+          bind:hotkeys={settings.popupSpecificHotkeys}
+          displayOverrideWebsiteHotkeysColumn={false}
         />
       </section>
 
