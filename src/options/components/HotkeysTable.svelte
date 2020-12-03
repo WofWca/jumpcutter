@@ -12,6 +12,7 @@
   } from '@/hotkeys';
 
   export let hotkeys: PotentiallyInvalidHotkeyBinding[];
+  export let displayOverrideWebsiteHotkeysColumn: boolean;
 
   function addNewBinding() {
     hotkeys.push({});
@@ -46,7 +47,9 @@
       <th>Action</th>
       <th>Hotkey</th>
       <th>Value</th>
-      <th>Override website hotkeys</th>
+      {#if displayOverrideWebsiteHotkeysColumn}
+        <th>Override website hotkeys</th>
+      {/if}
     </thead>
     <tbody>
       <!-- It would be more logical to use a named slot, but https://github.com/sveltejs/svelte/issues/1037. -->
@@ -81,12 +84,14 @@
               >
             {/if}
           </td>
-          <td style="text-align: center;">
-            <input
-              bind:checked={binding.overrideWebsiteHotkeys}
-              type="checkbox"
-            />
-          </td>
+          {#if displayOverrideWebsiteHotkeysColumn}
+            <td style="text-align: center;">
+              <input
+                bind:checked={binding.overrideWebsiteHotkeys}
+                type="checkbox"
+              />
+            </td>
+          {/if}
           <td>
             <button
               type="button"

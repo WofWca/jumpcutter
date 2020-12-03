@@ -12,9 +12,10 @@
   let formValid = true;
   let formEl: HTMLFormElement;
 
-  type PotentiallyInvalidSettingsChangedKeys = keyof Pick<Settings, 'hotkeys'>;
+  type PotentiallyInvalidSettingsChangedKeys = keyof Pick<Settings, 'hotkeys' | 'popupSpecificHotkeys'>;
   type PotentiallyInvalidSettings = Omit<Settings, PotentiallyInvalidSettingsChangedKeys> & {
     hotkeys: PotentiallyInvalidHotkeyBinding[];
+    popupSpecificHotkeys: PotentiallyInvalidHotkeyBinding[];
   }
   let settings: PotentiallyInvalidSettings;
   const settingsPromise = getSettings();
@@ -129,6 +130,7 @@
           </ul>
           <HotkeysTable
             bind:hotkeys={settings.hotkeys}
+            displayOverrideWebsiteHotkeysColumn={true}
           >
             <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
             TODO move this comment to `manifest.json` somehow? -->
@@ -196,6 +198,11 @@
         <CheckboxField
           label='🔗 Show the "Open a local file" link'
           bind:checked={settings.popupAlwaysShowOpenLocalFileLink}
+        />
+        <h4>Popup-specific hotkeys</h4>
+        <HotkeysTable
+          bind:hotkeys={settings.popupSpecificHotkeys}
+          displayOverrideWebsiteHotkeysColumn={false}
         />
       </section>
 
