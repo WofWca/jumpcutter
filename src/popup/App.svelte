@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { ResolveType } from '@/helpers';
   import { addOnChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
@@ -111,13 +110,15 @@
 
   // Make a setings or a flag or something.
   const LISTEN_TO_HOTKEYS_IN_POPUP = true;
-  let keydownListener: ResolveType<ReturnType<typeof createKeydownListener>> | (() => {}) = () => {};
+  let keydownListener: ReturnType<typeof createKeydownListener> | (() => {}) = () => {};
   (async () => {
     await settingsPromise;
+    const tab = await tabPromise;
     await connectedPromise;
     if (!LISTEN_TO_HOTKEYS_IN_POPUP || !settings!.enableHotkeys) return;
     const { default: createKeydownListener } = (await import('./hotkeys'));
-    keydownListener = await createKeydownListener(
+    keydownListener = createKeydownListener(
+      tab.id!,
       () => settings,
       newValues => {
         Object.assign(settings, newValues);
