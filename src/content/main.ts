@@ -213,7 +213,16 @@ async function init() {
       break;
     }
   }
-  // TODO attach to some element if none are playing?
+  if (!activeMediaElement) {
+    // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
+    for (const el of allMediaElements) {
+      if (el.currentTime > 0) {
+        esnureAttachToElement(el);
+        break;
+      }
+    }
+  }
+  // TODO attach to some element if none are found at this point?
   for (const el of allMediaElements) {
     el.addEventListener('play', onMediaPlayEvent);
   }
