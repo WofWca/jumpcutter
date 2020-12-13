@@ -66,6 +66,7 @@
   onDestroy(() => disconnect?.());
   $: connected = !!disconnect;
   let considerConnectionFailed = false;
+  let gotAtLeastOneContentStatusResponse = false;
   let keydownListener: ReturnType<typeof createKeydownListener> | (() => {}) = () => {};
   (async () => {
     const tab = await tabPromise;
@@ -75,11 +76,14 @@
       if (
         sender.tab?.id !== tab.id
         || message.type !== 'contentStatus' // TODO DRY message types.
-        || !message.elementLastActivatedAt
       ) return;
+      gotAtLeastOneContentStatusResponse = true;
       // TODO check sender.url? Not only to check protocol, but also to somehow aid the user to locate the file that
       // he's trying to open. Idk how though, we can't just `input.value = sender.url`.
-      if (!elementLastActivatedAt || message.elementLastActivatedAt > elementLastActivatedAt) {
+      if (
+        message.elementLastActivatedAt // Nullish if no element is active, see `content/main.ts`.
+        && (!elementLastActivatedAt || message.elementLastActivatedAt > elementLastActivatedAt)
+      ) {
         disconnect?.();
 
         const frameId = sender.frameId!;
@@ -195,16 +199,44 @@
       class="content-script-connection-info"
       style="min-width: {settings.popupChartWidthPx}px; min-height: {settings.popupChartHeightPx}px;"
     >
-      {#if considerConnectionFailed}
-        <p>
-          <span>⚠️ Couldn't load the content script.<br>Trying to </span>
-          <!-- svelte-ignore a11y-missing-attribute --->
-          <a
-            {...openLocalFileLinkProps}
-          >open a local file</a>?
-        </p>
-      {:else}
-        <p>⏳ Loading...</p>
+      <!-- TODO should we add an {:else} block for the case when it's disabled and put something like a
+      "enable the extension" button? Redundant tho. -->
+      {#if settings.enabled}
+        {#if considerConnectionFailed}
+          {#if gotAtLeastOneContentStatusResponse}
+            <p>
+              <span>⚠️ Could not find a suitable media element on the page.</span>
+              <!-- TODO at some point (hopefully) the extension is going to become smart enough to handle element search
+              properly and not outright suggest to "try tuning it off and on again". We'll remove this button then.
+              TODO also as it's here to stay at least for a while, need to tidy up `content/main.ts` so there are no
+              memory leaks or worse things caused by rapid `enabled` toggles, because it's precisely what this button
+              does. -->
+              <br>
+              <button
+                on:click={async () => {
+                  settings.enabled = false;
+                  // TODO it should be better to wait for `storage.set`'s callback instead of just `setTimeout`.
+                  // TODO. No idea why, but sometimes the `enabled` setting becomes "false" after pressing this button.
+                  // TODO also this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
+                  // ideal.
+                  setTimeout(() => {
+                    settings.enabled = true;
+                  }, 20);
+                }}
+              >Retry</button>
+            </p>
+          {:else}
+            <p>
+              <span>⚠️ Couldn't load the content script.<br>Trying to </span>
+              <!-- svelte-ignore a11y-missing-attribute --->
+              <a
+                {...openLocalFileLinkProps}
+              >open a local file</a>?
+            </p>
+          {/if}
+        {:else}
+          <p>⏳ Loading...</p>
+        {/if}
       {/if}
     </div>
   {:else}
