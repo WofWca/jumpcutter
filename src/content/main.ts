@@ -18,7 +18,11 @@ if (location.protocol === 'file:') {
   return;
 }
 
-let v: HTMLVideoElement | null = null;
+// TODO this is getting ugly. Variables are all over the place. Feels like we need a class like Controller, or even put
+// all this into that Controller class.
+let allMediaElements: HTMLCollectionOf<HTMLMediaElement> | null = null;
+let activeMediaElement: HTMLMediaElement | null = null;
+let elementLastActivatedAt: number | undefined;
 let controller: Controller | null = null;
 let handleKeydown: (e: KeyboardEvent) => void;
 
@@ -38,7 +42,7 @@ chrome.runtime.onConnect.addListener(port => {
     }
     case 'nonSettingsActions': {
       port.onMessage.addListener(msg => {
-        if (v) {
+        if (activeMediaElement) {
           executeNonSettingsActions(msg);
         }
       });
@@ -51,21 +55,23 @@ chrome.runtime.onConnect.addListener(port => {
     }
   }
 });
-function notifyReady() {
-  const contentScriptPortsReadyMessage = 'contentPortsReady'; // TODO DRY this?
-  chrome.runtime.sendMessage(contentScriptPortsReadyMessage);
+function broadcastStatus() {
+  chrome.runtime.sendMessage({
+    type: 'contentStatus', // TODO DRY this?
+    elementLastActivatedAt,
+  });
 }
 chrome.runtime.onMessage.addListener((message) => {
   if (process.env.NODE_ENV !== 'production') {
-    if (message !== 'checkContentPortReady') { // TODO DRY.
+    if (message !== 'checkContentStatus') { // TODO DRY.
       console.error('Unrecognized message', message);
     }
   }
 
-  notifyReady();
+  broadcastStatus();
 });
 // So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
-notifyReady();
+broadcastStatus();
 
 let settings: Settings | null = await getSettings();
 
@@ -91,18 +97,19 @@ function reactToSettingsChanges(changes: MyStorageChanges) {
 }
 
 function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydownEventToActions>['nonSettingsActions']) {
-  assert(v);
+  const el = activeMediaElement;
+  assert(el);
   for (const action of nonSettingsActions) {
     switch (action.action) {
-      case HotkeyAction.REWIND: v.currentTime -= (action as HotkeyBinding<HotkeyAction.REWIND>).actionArgument; break;
-      case HotkeyAction.ADVANCE: v.currentTime += (action as HotkeyBinding<HotkeyAction.ADVANCE>).actionArgument; break;
-      case HotkeyAction.TOGGLE_PAUSE: v.paused ? v.play() : v.pause(); break;
-      case HotkeyAction.TOGGLE_MUTE: v.muted = !v.muted; break;
+      case HotkeyAction.REWIND: el.currentTime -= (action as HotkeyBinding<HotkeyAction.REWIND>).actionArgument; break;
+      case HotkeyAction.ADVANCE: el.currentTime += (action as HotkeyBinding<HotkeyAction.ADVANCE>).actionArgument; break;
+      case HotkeyAction.TOGGLE_PAUSE: el.paused ? el.play() : el.pause(); break;
+      case HotkeyAction.TOGGLE_MUTE: el.muted = !el.muted; break;
       case HotkeyAction.INCREASE_VOLUME:
       case HotkeyAction.DECREASE_VOLUME: {
         const unitVector = action.action === HotkeyAction.INCREASE_VOLUME ? 1 : -1;
         const toAdd = unitVector * (action as HotkeyBinding<HotkeyAction.INCREASE_VOLUME>).actionArgument / 100;
-        v.volume = clamp(v.volume + toAdd, 0, 1);
+        el.volume = clamp(el.volume + toAdd, 0, 1);
         break;
       }
       default: assertNever(action.action);
@@ -110,13 +117,20 @@ function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydown
   }
 }
 
-async function initIfVideoPresent() {
-  v = document.querySelector('video');
-  if (!v) {
-    // TODO search again when document updates? Or just after some time?
-    console.log('Jump cutter: no video found. Exiting');
+async function esnureAttachToElement(el: HTMLMediaElement) {
+  // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
+  // media elements on the page.
+  elementLastActivatedAt = Date.now();
+
+  if (activeMediaElement === el) {
     return;
   }
+  if (activeMediaElement) {
+    await destroy();
+  }
+  activeMediaElement = el;
+  broadcastStatus();
+
   settings = await getSettings();
 
   const controllerP = (async () => {
@@ -124,7 +138,7 @@ async function initIfVideoPresent() {
       /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
       './Controller'
     );
-    controller = new Controller(v, extensionSettings2ControllerSettings(settings));
+    controller = new Controller(el, extensionSettings2ControllerSettings(settings));
     controller.init();
   })();
 
@@ -190,18 +204,54 @@ async function initIfVideoPresent() {
   addOnSettingsChangedListener(reactToSettingsChanges);
 }
 
-function destroyIfInited() {
+function onMediaPlayEvent(e: Event) {
+  esnureAttachToElement(e.target as HTMLMediaElement);
+}
+
+async function init() {
+  allMediaElements = document.getElementsByTagName('video');
+  for (const el of allMediaElements) {
+    if (!el.paused) {
+      esnureAttachToElement(el);
+      break;
+    }
+  }
+  if (!activeMediaElement) {
+    // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
+    for (const el of allMediaElements) {
+      if (el.currentTime > 0) {
+        esnureAttachToElement(el);
+        break;
+      }
+    }
+  }
+  // TODO attach to some element if none are found at this point?
+  for (const el of allMediaElements) {
+    el.addEventListener('play', onMediaPlayEvent);
+  }
+}
+
+async function destroy() {
+  assert(allMediaElements);
+  for (const el of allMediaElements) {
+    el.removeEventListener('play', onMediaPlayEvent);
+  }
+
+  activeMediaElement = null;
+  elementLastActivatedAt = undefined;
+  allMediaElements = null;
+
   removeOnSettingsChangedListener(reactToSettingsChanges);
   document.removeEventListener('keydown', handleKeydown, true);
 
-  controller?.destroy();
+  await controller?.destroy();
   controller = null;
 
   settings = null;
 }
 
 if (settings.enabled) {
-  initIfVideoPresent();
+  init();
 }
 // Watch the `enabled` setting. Other settings changes are handled by `reactToSettingsChanges`.
 addOnSettingsChangedListener(function (changes) {
@@ -209,9 +259,9 @@ addOnSettingsChangedListener(function (changes) {
   // initialized/deinitialized in accordance to the setting a few lines above.
   if (changes.enabled != undefined) {
     if (changes.enabled.newValue === false) {
-      destroyIfInited();
+      destroy();
     } else {
-      initIfVideoPresent();
+      init();
     }
   }
 });

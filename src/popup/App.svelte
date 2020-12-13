@@ -57,76 +57,90 @@
     return tab;
   })();
 
-  const connectedPromise = new Promise(async r => {
-    const tab = await tabPromise;
-    const onMessageListener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (message, sender) => {
-      if (sender.tab?.id !== tab.id) return;
-      // TODO check sender.url? Not only to check protocol, but also to somehow aid the user to locate the file that
-      // he's trying to open. Idk how though, we can't just `input.value = sender.url`.
-      if (message !== 'contentPortsReady') return; // TODO DRY. 
-      chrome.runtime.onMessage.removeListener(onMessageListener);
-      r();
-    };
-    chrome.runtime.onMessage.addListener(onMessageListener);
-    chrome.tabs.sendMessage(tab.id!, 'checkContentPortReady') // TODO DRY.
-  });
-
-  let considerConnectionFailed = false;
-  (async () => {
-    await tabLoadedPromise;
-    window.setTimeout(async () => {
-      considerConnectionFailed = true;
-      await connectedPromise; // May never resolve.
-      considerConnectionFailed = false;
-    }, 70);
-  })();
-
   let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
   const telemetryUpdatePeriod = 0.02;
   let telemetryTimeoutId: number;
-  const startGettingstelemetryP = (async function startGettingTelemetry() {
-    // TODO how do we close it on popup close? Do we have to?
-    // https://developer.chrome.com/extensions/messaging#port-lifetime
-    await connectedPromise;
-    const tab = await tabLoadedPromise; // TODO are we sure that this guarantees that there's an onConnect listener?
-    const telemetryPort = chrome.tabs.connect(tab.id!, { name: 'telemetry' });
-    telemetryPort.onMessage.addListener(msg => {
-      if (msg) {
-        latestTelemetryRecord = msg;
-      }
-    });
-    // TODO don't spam messages if the controller is not there.
-    telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
-      telemetryPort.postMessage('getTelemetry');
-      return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
-    })();
-  })();
+  let disconnect: undefined | (() => void);
   // Well, actaully we don't currently require this, because this component gets destroyed only when the document gets
   // destroyed.
-  onDestroy(async () => {
-    await startGettingstelemetryP;
-    clearTimeout(telemetryTimeoutId);
-  });
-
-  // Make a setings or a flag or something.
-  const LISTEN_TO_HOTKEYS_IN_POPUP = true;
+  onDestroy(() => disconnect?.());
+  $: connected = !!disconnect;
+  let considerConnectionFailed = false;
+  let gotAtLeastOneContentStatusResponse = false;
   let keydownListener: ReturnType<typeof createKeydownListener> | (() => {}) = () => {};
   (async () => {
-    await settingsPromise;
     const tab = await tabPromise;
-    await connectedPromise;
-    if (!LISTEN_TO_HOTKEYS_IN_POPUP || !settings!.enableHotkeys) return;
-    const { default: createKeydownListener } = (await import('./hotkeys'));
-    keydownListener = createKeydownListener(
-      tab.id!,
-      () => settings,
-      newValues => {
-        Object.assign(settings, newValues);
-        settings = settings;
-      },
-    );
+    let elementLastActivatedAt: number | undefined;
+
+    const onMessageListener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (message, sender) => {
+      if (
+        sender.tab?.id !== tab.id
+        || message.type !== 'contentStatus' // TODO DRY message types.
+      ) return;
+      gotAtLeastOneContentStatusResponse = true;
+      // TODO check sender.url? Not only to check protocol, but also to somehow aid the user to locate the file that
+      // he's trying to open. Idk how though, we can't just `input.value = sender.url`.
+      if (
+        message.elementLastActivatedAt // Nullish if no element is active, see `content/main.ts`.
+        && (!elementLastActivatedAt || message.elementLastActivatedAt > elementLastActivatedAt)
+      ) {
+        disconnect?.();
+
+        const frameId = sender.frameId!;
+        elementLastActivatedAt = message.elementLastActivatedAt;
+
+        // TODO how do we close it on popup close? Do we have to?
+        // https://developer.chrome.com/extensions/messaging#port-lifetime
+        const telemetryPort = chrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
+        telemetryPort.onMessage.addListener(msg => {
+          if (msg) {
+            latestTelemetryRecord = msg;
+          }
+        });
+        telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
+          telemetryPort.postMessage('getTelemetry');
+          return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
+        })();
+
+        (async () => {
+          // Make a setings or a flag or something.
+          const LISTEN_TO_HOTKEYS_IN_POPUP = true;
+          if (LISTEN_TO_HOTKEYS_IN_POPUP && settings!.enableHotkeys) {
+            await settingsPromise;
+            const { default: createKeydownListener } = (await import('./hotkeys'));
+            keydownListener = createKeydownListener(
+              tab.id!,
+              frameId,
+              () => settings,
+              newValues => {
+                Object.assign(settings, newValues);
+                settings = settings;
+              },
+            );
+          }
+        })();
+
+        disconnect = () => {
+          clearTimeout(telemetryTimeoutId);
+          telemetryPort.disconnect();
+          disconnect = undefined;
+        }
+        considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
+      }
+    };
+    chrome.runtime.onMessage.addListener(onMessageListener);
+    chrome.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
   })();
 
+  (async () => {
+    await tabLoadedPromise;
+    window.setTimeout(() => {
+      const connected = !!disconnect;
+      if (!connected) {
+        considerConnectionFailed = true;
+      }
+    }, 70);
+  })();
   addOnChangedListener(changes => {
     settings = {
       ...settings,
@@ -180,24 +194,52 @@
     on:click={() => chrome.runtime.openOptionsPage()}
   >⚙️</a>
   <!-- TODO transitions? -->
-  {#await connectedPromise}
+  {#if !connected}
     <div
       class="content-script-connection-info"
       style="min-width: {settings.popupChartWidthPx}px; min-height: {settings.popupChartHeightPx}px;"
     >
-      {#if considerConnectionFailed}
-        <p>
-          <span>⚠️ Couldn't load the content script.<br>Trying to </span>
-          <!-- svelte-ignore a11y-missing-attribute --->
-          <a
-            {...openLocalFileLinkProps}
-          >open a local file</a>?
-        </p>
-      {:else}
-        <p>⏳ Loading...</p>
+      <!-- TODO should we add an {:else} block for the case when it's disabled and put something like a
+      "enable the extension" button? Redundant tho. -->
+      {#if settings.enabled}
+        {#if considerConnectionFailed}
+          {#if gotAtLeastOneContentStatusResponse}
+            <p>
+              <span>⚠️ Could not find a suitable media element on the page.</span>
+              <!-- TODO at some point (hopefully) the extension is going to become smart enough to handle element search
+              properly and not outright suggest to "try tuning it off and on again". We'll remove this button then.
+              TODO also as it's here to stay at least for a while, need to tidy up `content/main.ts` so there are no
+              memory leaks or worse things caused by rapid `enabled` toggles, because it's precisely what this button
+              does. -->
+              <br>
+              <button
+                on:click={async () => {
+                  settings.enabled = false;
+                  // TODO it should be better to wait for `storage.set`'s callback instead of just `setTimeout`.
+                  // TODO. No idea why, but sometimes the `enabled` setting becomes "false" after pressing this button.
+                  // TODO also this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
+                  // ideal.
+                  setTimeout(() => {
+                    settings.enabled = true;
+                  }, 20);
+                }}
+              >Retry</button>
+            </p>
+          {:else}
+            <p>
+              <span>⚠️ Couldn't load the content script.<br>Trying to </span>
+              <!-- svelte-ignore a11y-missing-attribute --->
+              <a
+                {...openLocalFileLinkProps}
+              >open a local file</a>?
+            </p>
+          {/if}
+        {:else}
+          <p>⏳ Loading...</p>
+        {/if}
       {/if}
     </div>
-  {:then _}
+  {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
     <Chart
       {latestTelemetryRecord}
@@ -207,7 +249,7 @@
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
     />
-  {/await}
+  {/if}
   <RangeSlider
     label="Volume threshold"
     min="0"
