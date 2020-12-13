@@ -118,6 +118,10 @@ function executeNonSettingsActions(nonSettingsActions: ReturnType<typeof keydown
 }
 
 async function esnureAttachToElement(el: HTMLMediaElement) {
+  // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
+  // media elements on the page.
+  elementLastActivatedAt = Date.now();
+
   if (activeMediaElement === el) {
     return;
   }
@@ -125,7 +129,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
     await destroy();
   }
   activeMediaElement = el;
-  elementLastActivatedAt = Date.now();
   broadcastStatus();
 
   settings = await getSettings();
