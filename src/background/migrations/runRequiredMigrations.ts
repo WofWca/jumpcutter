@@ -1,6 +1,7 @@
 import migrateFrom1_3_0 from "./migrateFrom1_3_0";
 import migrateFrom1_6_0 from "./migrateFrom1_6_0";
 import migrateFrom1_8_0 from "./migrateFrom1_8_0";
+import migrateFrom1_10_0 from "./migrateFrom1_10_0";
 
 function compareVersions(a: string, b: string) {
   if (process.env.NODE_ENV !== 'production') {
@@ -28,6 +29,7 @@ const sortedMigrationsFrom = [
   { ver: '1.3.0', fn: migrateFrom1_3_0, },
   { ver: '1.6.0', fn: migrateFrom1_6_0, },
   { ver: '1.8.0', fn: migrateFrom1_8_0, },
+  { ver: '1.10.0', fn: migrateFrom1_10_0, },
 ];
 
 export default async function runRequiredMigrations(

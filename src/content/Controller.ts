@@ -65,7 +65,7 @@ export function extensionSettings2ControllerSettings(extensionSettings: Extensio
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
-  readonly element: HTMLVideoElement;
+  readonly element: HTMLMediaElement;
   settings: ControllerSettings;
   initialized = false;
   _initPromise?: Promise<this>;
@@ -92,7 +92,7 @@ export default class Controller {
   _log?: (msg?: any) => void;
   _logIntervalId?: number;
 
-  constructor(videoElement: HTMLVideoElement, controllerSettings: ControllerSettings) {
+  constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
     this.settings = controllerSettings;
   }

@@ -4,5 +4,5 @@ import { defaultSettings, Settings } from "@/settings";
 
 export default async function (): Promise<void> {
   const settings = await new Promise<Settings>(r => chrome.storage.sync.get(defaultSettings, r as any));
-  await new Promise(r => chrome.storage.local.set(settings, r));
+  await new Promise<void>(r => chrome.storage.local.set(settings, r));
 }

@@ -1,12 +1,12 @@
 import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings } from "./settings";
-import { assertNever, DeepReadonly, KeysOfType } from "./helpers";
+import { clamp, assertNever, DeepReadonly, KeysOfType } from "./helpers";
 
 // I've got a feeling that this code will become obsolete sooner than it should. TODO maybe use a library?
 
 type ModifierPropName = keyof Pick<KeyboardEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>;
 const modifierFlagPropNames: ModifierPropName[] = ['ctrlKey', 'altKey', 'shiftKey', 'metaKey']
 // Consider replacing it with a tuple to save some storage space (to fit the `QUOTA_BYTES_PER_ITEM` quota).
-interface KeyCombination {
+export interface KeyCombination {
   code: KeyboardEvent['code'];
   modifiers?: ModifierPropName[];
 }
@@ -50,6 +50,8 @@ export const enum HotkeyAction {
   REWIND = 'rewind',
   TOGGLE_PAUSE = 'pause_toggle',
   TOGGLE_MUTE = 'mute_toggle',
+  INCREASE_VOLUME = 'volume+',
+  DECREASE_VOLUME = 'volume-',
 }
 
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
@@ -87,6 +89,8 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.REWIND]: '⬅️ Rewind (s)',
   [HotkeyAction.TOGGLE_PAUSE]: '⏯️ Pause/unpause',
   [HotkeyAction.TOGGLE_MUTE]: '🔇 Mute/unmute',
+  [HotkeyAction.INCREASE_VOLUME]: '🔊 Increase volume (%)',
+  [HotkeyAction.DECREASE_VOLUME]: '🔉 Decrease volume (%)',
 };
 
 export type NonSettingsAction =
@@ -94,6 +98,8 @@ export type NonSettingsAction =
   | HotkeyAction.ADVANCE
   | HotkeyAction.TOGGLE_PAUSE
   | HotkeyAction.TOGGLE_MUTE
+  | HotkeyAction.INCREASE_VOLUME
+  | HotkeyAction.DECREASE_VOLUME
 ;
 
 export const allNoArgumentActions = [HotkeyAction.TOGGLE_PAUSE, HotkeyAction.TOGGLE_MUTE] as const;
@@ -105,11 +111,9 @@ export type HotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
   keyCombination: KeyCombination;
   action: T;
   overrideWebsiteHotkeys?: boolean,
-  // actionArgument: HotkeyActionArguments<T>;
+  actionArgument?: HotkeyActionArguments<T>;
 } & (T extends NoArgumentAction
-  // Disabling a rule here, not sure how to write this better. TODO?
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  ? {}
+  ? { actionArgument?: never }
   : { actionArgument: HotkeyActionArguments<T> }
 );
 
@@ -159,9 +163,6 @@ export function eventTargetIsInput(event: KeyboardEvent): boolean {
     'tagName' in t && ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName)
     || 'isContentEditable' in t && t.isContentEditable
   );
-}
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 /**
  * @param bindings - custom keybindings array. Defaults to {@link currentSettings.hotkeys}
@@ -232,6 +233,8 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       case HotkeyAction.REWIND:
       case HotkeyAction.TOGGLE_PAUSE:
       case HotkeyAction.TOGGLE_MUTE:
+      case HotkeyAction.INCREASE_VOLUME:
+      case HotkeyAction.DECREASE_VOLUME:
       {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const assertNonSettingsAction: NonSettingsAction = binding.action; // TODO is there a not haсky way to do this?
