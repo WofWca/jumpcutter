@@ -110,7 +110,9 @@ export default class Controller {
     // executor?
     this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
 
+    const element = this.element;
     const ctx = audioContext;
+
     this.audioContext = ctx;
 
     // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
@@ -120,13 +122,13 @@ export default class Controller {
     // stopping working?
     this._suspendAudioContext = () => audioContext.suspend();
     this._resumeAudioContext = () => audioContext.resume();
-    if (this.element.paused) {
+    if (element.paused) {
       audioContext.suspend();
     }
     // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
     // "illegal invocation".
-    this.element.addEventListener('pause', this._suspendAudioContext);
-    this.element.addEventListener('play', this._resumeAudioContext);
+    element.addEventListener('pause', this._suspendAudioContext);
+    element.addEventListener('play', this._resumeAudioContext);
 
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
@@ -170,13 +172,13 @@ export default class Controller {
       );
       this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
     }
-    const srcFromMap = mediaElementSourcesMap.get(this.element);
+    const srcFromMap = mediaElementSourcesMap.get(element);
     if (srcFromMap) {
       this._mediaElementSource = srcFromMap;
       this._mediaElementSource.disconnect();
     } else {
-      this._mediaElementSource = ctx.createMediaElementSource(this.element);
-      mediaElementSourcesMap.set(this.element, this._mediaElementSource)
+      this._mediaElementSource = ctx.createMediaElementSource(element);
+      mediaElementSourcesMap.set(element, this._mediaElementSource)
     }
     if (this.isStretcherEnabled()) {
       this._mediaElementSource.connect(this._lookahead);
@@ -213,7 +215,7 @@ export default class Controller {
           msg,
           t: ctx.currentTime,
           // delay: stretcherInitialDelay, // TODO fix this. It's not `initialDelay` it should be `stretcher.delay`
-          speed: this.element.playbackRate,
+          speed: element.playbackRate,
           inVol,
           outVol,
         });
@@ -248,7 +250,7 @@ export default class Controller {
           const DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES = 10;
           this._didNotDoDesyncCorrectionForNSpeedSwitches++;
           if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES) {
-            this.element.currentTime -= 1e-9;
+            element.currentTime -= 1e-9;
             // TODO but it's also corrected when the user seeks the video manually.
             this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
           }
