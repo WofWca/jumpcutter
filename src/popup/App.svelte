@@ -193,6 +193,29 @@
     href="javascript;"
     on:click={() => chrome.runtime.openOptionsPage()}
   >⚙️</a>
+  <p
+    style="margin: 0.5rem 0;"
+  >
+    <!-- `min-width` because the emojis have different widths, so it remains constant. -->
+    <span
+      style="display: inline-block; min-width: 2.5ch;"
+    >{(() => {
+      if (!latestTelemetryRecord) return '🔉';
+      const vol = latestTelemetryRecord.elementVolume;
+      if (vol < 0.001) return '🔇';
+      if (vol < 1/3) return '🔈';
+      if (vol < 2/3) return '🔉';
+      return '🔊';
+    })()}</span>
+    <span>Volume</span>
+    <!-- TODO how about we replace it with a range input. -->
+    <meter
+      min="0"
+      max="1"
+      value={latestTelemetryRecord?.elementVolume ?? 0}
+      style="width: 6rem;"
+    ></meter>
+  </p>
   <!-- TODO transitions? -->
   {#if !connected}
     <div

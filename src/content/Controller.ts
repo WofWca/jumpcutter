@@ -31,7 +31,7 @@ type ControllerInitialized =
   & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
     | '_resumeAudioContext' | '_volumeFilter'
     | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
-    | '_lastActualPlaybackRateChange'>>;
+    | '_lastActualPlaybackRateChange' | '_elementVolumeCache' | '_onElementVolumeChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIntervalId' | '_outVolumeFilter'
   | '_analyzerOut'>>;
@@ -85,6 +85,8 @@ export default class Controller {
     value: number,
     name: 'sounded' | 'silence',
   };
+  _elementVolumeCache?: number; // Same as element.volume, but faster.
+  _onElementVolumeChange?: () => void;
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
   _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
@@ -112,6 +114,10 @@ export default class Controller {
 
     const element = this.element;
     const ctx = audioContext;
+
+    this._elementVolumeCache = element.volume;
+    this._onElementVolumeChange = () => this._elementVolumeCache = element.volume;
+    element.addEventListener('volumechange', this._onElementVolumeChange);
 
     this.audioContext = ctx;
 
@@ -408,6 +414,8 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assert(this.isInitialized());
 
+    this.element.removeEventListener('volumechange', this._onElementVolumeChange);
+
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
 
@@ -549,6 +557,7 @@ export default class Controller {
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      elementVolume: this._elementVolumeCache,
       totalOutputDelay: this._lookahead && this._stretcher
         ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
         : 0,
