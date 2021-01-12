@@ -1,18 +1,44 @@
-import { addOnChangedListener, getSettings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
+import { addOnChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
 
 function setBadge(text: string, color: string) {
   chrome.browserAction.setBadgeBackgroundColor({ color });
   chrome.browserAction.setBadgeText({ text });
 }
-function setBadgeToDefault() {
-  chrome.browserAction.setBadgeText({ text: '' });
+type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold' | 'marginBefore'
+  | 'marginAfter'>;
+function settingToBadgeParams<T extends SupportedSettings>(
+  settingName: T,
+  value: Settings[T]
+): Parameters<typeof setBadge>
+{
+  switch (settingName) {
+    // TODO DRY colors? Though here they're darker anyway, to account for the white text.
+    // TODO Also DRY `toFixed` precision, to match the popup?
+    case 'soundedSpeed': return [value.toFixed(2), '#0d0'];
+    case 'silenceSpeedRaw': return [value.toFixed(2), '#d00'];
+    // I guess it's better when it's blue and not red, so it's not confused with `silenceSpeed`.
+    case 'volumeThreshold': return [value.toFixed(4), '#00d'];
+    // TODO any better ideas for background colors for these two?
+    case 'marginBefore': return [value.toFixed(3), '#333'];
+    case 'marginAfter': return [value.toFixed(3), '#333'];
+    // default: assertNever(settingName); Does not work because of the generic type. TODO
+    default: throw new Error();
+  }
+}
+function setBadgeToDefault(settings: Settings) {
+  if (settings.badgeWhatSettingToDisplayByDefault === 'none') {
+    chrome.browserAction.setBadgeText({ text: '' });
+  } else {
+    const settingName = settings.badgeWhatSettingToDisplayByDefault;
+    setBadge(...settingToBadgeParams(settingName, settings[settingName]));
+  }
 }
 let setBadgeToDefaultTimeout = -1;
-function temporarelySetBadge(...badgeParams: Parameters<typeof setBadge>) {
-  setBadge(...badgeParams);
+function temporarelySetBadge(text: string, color: string, settings: Settings) {
+  setBadge(text, color);
   clearTimeout(setBadgeToDefaultTimeout);
   // TODO customizable timeout duration
-  setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(setBadgeToDefault, 1500);
+  setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(setBadgeToDefault, 1500, settings);
 }
 
 export default async function initIconUpdater(): Promise<void> {
@@ -42,21 +68,20 @@ export default async function initIconUpdater(): Promise<void> {
 
     if (changes) {
       // TODO also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
-      // TODO DRY colors? Though here they're darker anyway, to account for the white text.
-      // TODO Also DRY `toFixed` precision, to match the popup?
-      if (changes.soundedSpeed) {
-        temporarelySetBadge(changes.soundedSpeed.newValue!.toFixed(2), '#0d0');
-      } else if (changes.silenceSpeedRaw) {
-        temporarelySetBadge(changes.silenceSpeedRaw.newValue!.toFixed(2), '#d00');
-      } else if (changes.volumeThreshold) {
-        // I guess it's better when it's blue and not red, so it's not confused with `silenceSpeed`.
-        temporarelySetBadge(changes.volumeThreshold.newValue!.toFixed(4), '#00d');
-      } else if (changes.marginBefore) {
-        // TODO any better ideas for background colors for these two?
-        temporarelySetBadge(changes.marginBefore.newValue!.toFixed(3), '#333');
-      } else if (changes.marginAfter) {
-        temporarelySetBadge(changes.marginAfter.newValue!.toFixed(3), '#333');
+      const orderedSetingsNames =
+        ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
+      for (const settingName of orderedSetingsNames) {
+        const currSettingChange = changes[settingName];
+        if (currSettingChange) {
+          temporarelySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), settings);
+          break;
+        }
       }
+      if (changes.badgeWhatSettingToDisplayByDefault) {
+        setBadgeToDefault(settings);
+      }
+    } else {
+      setBadgeToDefault(settings); // In case e.g. `settings.badgeWhatSettingToDisplayByDefault !== 'none'`
     }
   }
   handleSettingsChanges(null);
