@@ -26,7 +26,7 @@ function settingToBadgeParams<T extends SupportedSettings>(
   }
 }
 function setBadgeToDefault(settings: Settings) {
-  if (settings.badgeWhatSettingToDisplayByDefault === 'none') {
+  if (settings.badgeWhatSettingToDisplayByDefault === 'none' || !settings.enabled) {
     chrome.browserAction.setBadgeText({ text: '' });
   } else {
     const settingName = settings.badgeWhatSettingToDisplayByDefault;
@@ -77,7 +77,8 @@ export default async function initIconUpdater(): Promise<void> {
           break;
         }
       }
-      if (changes.badgeWhatSettingToDisplayByDefault) {
+      // TODO it would be cooler if we wrote the badge's dependencies more declaratively.
+      if (changes.badgeWhatSettingToDisplayByDefault || changes.enabled) {
         setBadgeToDefault(settings);
       }
     } else {
