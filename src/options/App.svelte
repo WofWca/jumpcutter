@@ -77,6 +77,12 @@
     { v: 'relativeToSoundedSpeed', l: '✖️ Relative to sounded speed' },
     { v: 'absolute', l: '= Absolute' },
   ]
+  const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
+    { v: 'none', l: '❌ None', },
+    { v: 'soundedSpeed', l: '🗣️▶️ Sounded speed', },
+    { v: 'silenceSpeedRaw', l: '🙊⏩ Silence speed', },
+    { v: 'volumeThreshold', l: '🔉🎚️ Volume threshold', },
+  ]
 </script>
 
 <div class="app">
@@ -205,7 +211,23 @@
           displayOverrideWebsiteHotkeysColumn={false}
         />
       </section>
-
+      <section>
+        <h3>Icon badge</h3>
+        <InputFieldBase
+          label="What setting value to display by default"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.badgeWhatSettingToDisplayByDefault}
+            required
+          >
+            {#each badgeWhatSettingToDisplayByDefaultOptions as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
+      </section>
 
       <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
       pretty tall. TODO this can be removed when the button is gone). -->

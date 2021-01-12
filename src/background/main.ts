@@ -5,7 +5,7 @@
 import runRequiredMigrations from './migrations/runRequiredMigrations';
 
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
-import initIconUpdater from './initIconUpdater';
+import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 
 import throttle from 'lodash/throttle';
 import type { Settings, MyStorageChanges } from '@/settings';
@@ -53,4 +53,4 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 initBrowserHotkeysListener();
 
-initIconUpdater();
+initIconAndBadgeUpdater();

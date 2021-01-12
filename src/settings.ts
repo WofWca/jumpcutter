@@ -35,6 +35,9 @@ export interface Settings {
   // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
   popupSpecificHotkeys: HotkeyBinding[],
 
+  // TODO should we add other options for this setting?
+  badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
+
   enableDesyncCorrection: boolean,
 }
 
@@ -205,6 +208,8 @@ export const defaultSettings: Readonly<Settings> = {
       actionArgument: 5,
     },
   ],
+
+  badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
 
   enableDesyncCorrection: true,
 };
