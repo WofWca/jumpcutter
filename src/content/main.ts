@@ -20,7 +20,6 @@ if (location.protocol === 'file:') {
 
 // TODO this is getting ugly. Variables are all over the place. Feels like we need a class like Controller, or even put
 // all this into that Controller class.
-let allMediaElements: HTMLCollectionOf<HTMLMediaElement> | null = null;
 let activeMediaElement: HTMLMediaElement | null = null;
 let elementLastActivatedAt: number | undefined;
 let controller: Controller | null = null;
@@ -208,14 +207,25 @@ function onMediaPlayEvent(e: Event) {
   esnureAttachToElement(e.target as HTMLMediaElement);
 }
 
+let onDestroyCallbacks: Array<() => void> = [];
 async function init() {
-  allMediaElements = document.getElementsByTagName('video');
+  const allMediaElements = document.getElementsByTagName('video');
   for (const el of allMediaElements) {
     if (!el.paused) {
       esnureAttachToElement(el);
       break;
     }
   }
+  onDestroyCallbacks.push(async () => {
+    // Undo what's done in `esnureAttachToElement`.
+    activeMediaElement = null;
+    elementLastActivatedAt = undefined;
+    removeOnSettingsChangedListener(reactToSettingsChanges);
+    document.removeEventListener('keydown', handleKeydown, true);
+    await controller?.destroy();
+    controller = null;
+    settings = null;
+  });
   if (!activeMediaElement) {
     // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
     for (const el of allMediaElements) {
@@ -228,26 +238,15 @@ async function init() {
   // TODO attach to some element if none are found at this point?
   for (const el of allMediaElements) {
     el.addEventListener('play', onMediaPlayEvent);
+    onDestroyCallbacks.push(() => el.removeEventListener('play', onMediaPlayEvent));
   }
 }
 
 async function destroy() {
-  assert(allMediaElements);
-  for (const el of allMediaElements) {
-    el.removeEventListener('play', onMediaPlayEvent);
+  for (const cb of onDestroyCallbacks) {
+    await cb();
   }
-
-  activeMediaElement = null;
-  elementLastActivatedAt = undefined;
-  allMediaElements = null;
-
-  removeOnSettingsChangedListener(reactToSettingsChanges);
-  document.removeEventListener('keydown', handleKeydown, true);
-
-  await controller?.destroy();
-  controller = null;
-
-  settings = null;
+  onDestroyCallbacks = [];
 }
 
 if (settings.enabled) {
