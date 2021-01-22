@@ -35,6 +35,9 @@ export interface Settings {
   // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
   popupSpecificHotkeys: HotkeyBinding[],
 
+  // TODO should we add other options for this setting?
+  badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
+
   enableDesyncCorrection: boolean,
 }
 
@@ -171,30 +174,6 @@ export const defaultSettings: Readonly<Settings> = {
       action: HotkeyAction.DECREASE_SILENCE_SPEED,
       actionArgument: 0.25,
     },
-
-    //marginBefore
-    {
-      keyCombination: { code: 'KeyB', },
-      action: HotkeyAction.INCREASE_MARGIN_BEFORE,
-      actionArgument: 0.020,
-    },
-    {
-      keyCombination: { code: 'KeyV', },
-      action: HotkeyAction.DECREASE_MARGIN_BEFORE,
-      actionArgument: 0.020,
-    },
-
-    //marginAfter
-    {
-      keyCombination: { code: 'KeyB', modifiers: ['shiftKey'], },
-      action: HotkeyAction.INCREASE_MARGIN_AFTER,
-      actionArgument: 0.020,
-    },
-    {
-      keyCombination: { code: 'KeyV', modifiers: ['shiftKey'], },
-      action: HotkeyAction.DECREASE_MARGIN_AFTER,
-      actionArgument: 0.020,
-    },
   ],
 
   popupDisableHotkeysWhileInputFocused: true,
@@ -229,6 +208,8 @@ export const defaultSettings: Readonly<Settings> = {
       actionArgument: 5,
     },
   ],
+
+  badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
 
   enableDesyncCorrection: true,
 };

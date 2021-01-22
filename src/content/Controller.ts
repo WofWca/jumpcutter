@@ -31,7 +31,7 @@ type ControllerInitialized =
   & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
     | '_resumeAudioContext' | '_volumeFilter'
     | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
-    | '_lastActualPlaybackRateChange'>>;
+    | '_lastActualPlaybackRateChange' | '_elementVolumeCache' | '_onElementVolumeChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIntervalId' | '_outVolumeFilter'
   | '_analyzerOut'>>;
@@ -85,6 +85,8 @@ export default class Controller {
     value: number,
     name: 'sounded' | 'silence',
   };
+  _elementVolumeCache?: number; // Same as element.volume, but faster.
+  _onElementVolumeChange?: () => void;
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
   _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
@@ -110,7 +112,13 @@ export default class Controller {
     // executor?
     this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
 
+    const element = this.element;
     const ctx = audioContext;
+
+    this._elementVolumeCache = element.volume;
+    this._onElementVolumeChange = () => this._elementVolumeCache = element.volume;
+    element.addEventListener('volumechange', this._onElementVolumeChange);
+
     this.audioContext = ctx;
 
     // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
@@ -120,13 +128,13 @@ export default class Controller {
     // stopping working?
     this._suspendAudioContext = () => audioContext.suspend();
     this._resumeAudioContext = () => audioContext.resume();
-    if (this.element.paused) {
+    if (element.paused) {
       audioContext.suspend();
     }
     // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
     // "illegal invocation".
-    this.element.addEventListener('pause', this._suspendAudioContext);
-    this.element.addEventListener('play', this._resumeAudioContext);
+    element.addEventListener('pause', this._suspendAudioContext);
+    element.addEventListener('play', this._resumeAudioContext);
 
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
@@ -170,13 +178,13 @@ export default class Controller {
       );
       this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
     }
-    const srcFromMap = mediaElementSourcesMap.get(this.element);
+    const srcFromMap = mediaElementSourcesMap.get(element);
     if (srcFromMap) {
       this._mediaElementSource = srcFromMap;
       this._mediaElementSource.disconnect();
     } else {
-      this._mediaElementSource = ctx.createMediaElementSource(this.element);
-      mediaElementSourcesMap.set(this.element, this._mediaElementSource)
+      this._mediaElementSource = ctx.createMediaElementSource(element);
+      mediaElementSourcesMap.set(element, this._mediaElementSource)
     }
     if (this.isStretcherEnabled()) {
       this._mediaElementSource.connect(this._lookahead);
@@ -213,7 +221,7 @@ export default class Controller {
           msg,
           t: ctx.currentTime,
           // delay: stretcherInitialDelay, // TODO fix this. It's not `initialDelay` it should be `stretcher.delay`
-          speed: this.element.playbackRate,
+          speed: element.playbackRate,
           inVol,
           outVol,
         });
@@ -248,7 +256,7 @@ export default class Controller {
           const DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES = 10;
           this._didNotDoDesyncCorrectionForNSpeedSwitches++;
           if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES) {
-            this.element.currentTime -= 1e-9;
+            element.currentTime -= 1e-9;
             // TODO but it's also corrected when the user seeks the video manually.
             this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
           }
@@ -406,6 +414,8 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assert(this.isInitialized());
 
+    this.element.removeEventListener('volumechange', this._onElementVolumeChange);
+
     this._mediaElementSource.disconnect();
     this._mediaElementSource.connect(audioContext.destination);
 
@@ -547,6 +557,7 @@ export default class Controller {
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      elementVolume: this._elementVolumeCache,
       totalOutputDelay: this._lookahead && this._stretcher
         ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
         : 0,
