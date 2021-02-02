@@ -5,9 +5,14 @@ import {
 } from '@/settings';
 import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
+import type TimeSavedTracker from './TimeSavedTracker';
 import { extensionSettings2ControllerSettings } from './Controller';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
+
+export type TelemetryMessage =
+  ReturnType<Controller['getTelemetry']>
+  & ReturnType<TimeSavedTracker['getTimeSavedData']>;
 
 (async function () { // Just for top-level `await`
 
@@ -23,6 +28,7 @@ if (location.protocol === 'file:') {
 let activeMediaElement: HTMLMediaElement | null = null;
 let elementLastActivatedAt: number | undefined;
 let controller: Controller | null = null;
+let timeSavedTracker: TimeSavedTracker | undefined;
 let handleKeydown: (e: KeyboardEvent) => void;
 
 // TODO can we not do this when `enabled` is false?
@@ -35,7 +41,13 @@ chrome.runtime.onConnect.addListener(port => {
             throw new Error('Unsupported message type')
           }
         }
-        port.postMessage(controller?.initialized && controller.getTelemetry() || null);
+        if (controller?.initialized && timeSavedTracker) {
+          const telemetryMessage: TelemetryMessage = {
+            ...controller.getTelemetry(),
+            ...timeSavedTracker.getTimeSavedData(),
+          };
+          port.postMessage(telemetryMessage);
+        }
       });
       break;
     }
@@ -138,7 +150,7 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
       './Controller'
     );
     controller = new Controller(el, extensionSettings2ControllerSettings(settings));
-    controller.init();
+    await controller.init();
   })();
 
   let hotkeyListenerP;
@@ -197,9 +209,22 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
     })();
   }
 
+  // TODO an option to disable it.
+  const timeSavedTrackerPromise = (async () => {
+    const { default: TimeSavedTracker } = await import(/* webpackMode: 'eager' */ './TimeSavedTracker');
+    await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
+    timeSavedTracker = new TimeSavedTracker(
+      el,
+      settings.soundedSpeed,
+      addOnSettingsChangedListener,
+      removeOnSettingsChangedListener,
+    );
+  })();
+
   // TODO start listening before the components have been fully initialized so setting changes can't be missed.
   await controllerP;
   hotkeyListenerP && await hotkeyListenerP;
+  await timeSavedTrackerPromise;
   addOnSettingsChangedListener(reactToSettingsChanges);
 }
 
@@ -223,6 +248,7 @@ async function init() {
     removeOnSettingsChangedListener(reactToSettingsChanges);
     document.removeEventListener('keydown', handleKeydown, true);
     await controller?.destroy();
+    timeSavedTracker?.destroy();
     controller = null;
     settings = null;
   });

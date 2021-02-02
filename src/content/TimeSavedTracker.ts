@@ -1,0 +1,197 @@
+import { MyStorageChanges } from "@/settings";
+import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive } from './helpers';
+
+/**
+ * Not a typical stopwatch, but close.
+ * TODO kind of looks to bloated for our purpose? Just put some development-only warnings on unintended usages instead
+ * of handling every case (e.g. getTimeAndReset when it's paused)?
+ */
+class Stopwatch {
+  private _countSinceMs: number;
+  private _pausedAtMs: number | null; // `null` when it's not paused.
+  constructor() {
+    const nowMs = Date.now();
+    this._countSinceMs = nowMs;
+    this._pausedAtMs = nowMs;
+  }
+
+  private _getTime(nowMs: number) {
+    return ((this._pausedAtMs ?? nowMs) - this._countSinceMs) / 1000;
+  }
+  getTime(): number {
+    return this._getTime(Date.now());
+  }
+  getTimeAndReset(): number {
+    const nowMs = Date.now();
+    const timePassed = this._getTime(nowMs);
+    this._countSinceMs = nowMs;
+    if (this._pausedAtMs) {
+      this._pausedAtMs = nowMs;
+    }
+    return timePassed;
+  }
+  pause(): void {
+    if (this._pausedAtMs) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Stopwatch is already paused');
+      }
+
+      return;
+    }
+    this._pausedAtMs = Date.now();
+  }
+  resume(): void {
+    if (!this._pausedAtMs) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Stopwatch is already unpaused');
+      }
+
+      return;
+    }
+    const nowMs = Date.now();
+    this._countSinceMs += nowMs - this._pausedAtMs;
+    this._pausedAtMs = null;
+  }
+}
+
+/**
+ * Automatically pauses when the element's playback is paused (kind of, see the functions it relies on), resumes when
+ * it's not.
+ */
+class MediaElementPlaybackStopwatch {
+  private readonly _stopwatch = new Stopwatch();
+  public readonly destroy: () => void;
+  constructor (el: HTMLMediaElement) {
+    if (isPlaybackActive(el)) {
+      this._stopwatch.resume();
+    }
+    // TODO how about also take desync correction (`settings.enableDesyncCorrection`) into account
+    // (as it takes time to perform a seek)? How to detect it? When we've got a `currentTime` difference of less
+    // than some amount of seconds.
+    const removePlaybackStopListener = addPlaybackStopListener(el, () => this._stopwatch.pause());
+    const removePlaybackResumeListener = addPlaybackResumeListener(el, () => this._stopwatch.resume());
+
+    this.destroy = () => {
+      removePlaybackStopListener();
+      removePlaybackResumeListener();
+    }
+  }
+  getTimeAndReset = () => this._stopwatch.getTimeAndReset();
+  getTime = () => this._stopwatch.getTime();
+}
+
+function getSnippetTimeSavedInfo(
+  snippetRealtimeDuration: number,
+  speedDuring: number,
+  soundedSpeedDuring: number
+): [
+  timeSavedComparedToSoundedSpeed: number,
+  timeSavedComparedToIntrinsicSpeed: number,
+  wouldHaveLastedIfSpeedWasSounded: number,
+  wouldHaveLastedIfSpeedWasIntrinsic: number,
+]
+{
+  // TODO some of these variables are aslo calculated in `Controller._doOnSilence(End|Start)StretcherStuff`. DRY?
+  const speedDuringComparedToSounded = speedDuring / soundedSpeedDuring;
+  // TODO due to the fact that we have `transformSpeed` in `Controller.ts`, it says that time saved = 0.2% when
+  // `volumeThreshold === 0 && soundedSpeed === 1`.
+  const speedDuringComparedToIntrinsic = speedDuring;
+  const wouldHaveLastedIfSpeedWasSounded = speedDuringComparedToSounded * snippetRealtimeDuration;
+  const wouldHaveLastedIfSpeedWasIntrinsic = speedDuringComparedToIntrinsic * snippetRealtimeDuration;
+  // `wouldHaveLastedIfSpeedWasSounded - snippetRealtimeDuration` in a float-error-friendly form.
+  const timeSavedComparedToSoundedSpeed = snippetRealtimeDuration * (speedDuringComparedToSounded - 1);
+  // `wouldHaveLastedIfSpeedWasIntrinsic - snippetRealtimeDuration` in a float-error-friendly form.
+  const timeSavedComparedToIntrinsicSpeed = snippetRealtimeDuration * (speedDuringComparedToIntrinsic - 1);
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (timeSavedComparedToSoundedSpeed < 0) {
+      console.warn("timeSavedComparedToSoundedSpeed < 0: ", timeSavedComparedToSoundedSpeed);
+    }
+  }
+
+  return [
+    timeSavedComparedToSoundedSpeed,
+    timeSavedComparedToIntrinsicSpeed,
+    wouldHaveLastedIfSpeedWasSounded,
+    wouldHaveLastedIfSpeedWasIntrinsic,
+  ];
+}
+
+export default class TimeSavedTracker {
+  private _currentElementSpeed: number;
+  // These are true for the moment when the speed was last changed, they're not updated continuously.
+  // See the `getTimeSavedData` method. TODO reflect this in their names?
+  private _timeSavedComparedToSoundedSpeed = 0;
+  private _timeSavedComparedToIntrinsicSpeed = 0;
+  private _wouldHaveLastedIfSpeedWasSounded = 0;
+  private _wouldHaveLastedIfSpeedWasIntrinsic = 0;
+  private _playbackStopwatch: MediaElementPlaybackStopwatch;
+  private _onDestroyCallbacks: Array<() => void> = [];
+  constructor (
+    private readonly element: HTMLMediaElement,
+    private currentSoundedSpeed: number,
+    addOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
+    removeOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
+  ) {
+    this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
+    addOnSettingsChangedListener(this._onSettingsChange);
+    element.addEventListener('ratechange', this._onElementSpeedChange);
+    this._onDestroyCallbacks.push(() => {
+      this._playbackStopwatch.destroy();
+      removeOnSettingsChangedListener(this._onSettingsChange);
+      element.removeEventListener('ratechange', this._onElementSpeedChange);
+    });
+    this._currentElementSpeed = element.playbackRate;
+  }
+  private _appendSnippetData(speedDuring: number, soundedSpeedDuring: number) {
+    const snippetRealtimeDuration = this._playbackStopwatch.getTimeAndReset();
+    const [
+      timeSavedComparedToSoundedSpeed,
+      timeSavedComparedToIntrinsicSpeed,
+      wouldHaveLastedIfSpeedWasSounded,
+      wouldHaveLastedIfSpeedWasIntrinsic,
+    ] = getSnippetTimeSavedInfo(snippetRealtimeDuration, speedDuring, soundedSpeedDuring);
+    this._timeSavedComparedToSoundedSpeed += timeSavedComparedToSoundedSpeed;
+    this._timeSavedComparedToIntrinsicSpeed += timeSavedComparedToIntrinsicSpeed;
+    this._wouldHaveLastedIfSpeedWasSounded += wouldHaveLastedIfSpeedWasSounded;
+    this._wouldHaveLastedIfSpeedWasIntrinsic += wouldHaveLastedIfSpeedWasIntrinsic;
+  }
+  private _onElementSpeedChange = () => {
+    const prevSpeed = this._currentElementSpeed;
+    this._appendSnippetData(prevSpeed, this.currentSoundedSpeed);
+    this._currentElementSpeed = this.element.playbackRate;
+  }
+  private _onSettingsChange = (changes: MyStorageChanges) => {
+    const soundedSpeedChange = changes.soundedSpeed;
+    if (soundedSpeedChange) {
+      this._onSoundedSpeedChange(soundedSpeedChange.newValue!);
+    }
+  }
+  private _onSoundedSpeedChange(newSoundedSpeed: number) {
+    const prevSoundedSpeed = this.currentSoundedSpeed;
+    // TODO if the element is currently at sounded speed, `_onElementSpeedChange` will also get called at the same
+    // moment, which is not very efficient.
+    this._appendSnippetData(this._currentElementSpeed, prevSoundedSpeed);
+    this.currentSoundedSpeed = newSoundedSpeed;
+  }
+  public getTimeSavedData() {
+    const currentSnippetDuration = this._playbackStopwatch.getTime();
+    const [
+      timeSavedComparedToSoundedSpeed,
+      timeSavedComparedToIntrinsicSpeed,
+      wouldHaveLastedIfSpeedWasSounded,
+      wouldHaveLastedIfSpeedWasIntrinsic,
+    ] = getSnippetTimeSavedInfo(currentSnippetDuration, this._currentElementSpeed, this.currentSoundedSpeed);
+    return {
+      timeSavedComparedToSoundedSpeed: this._timeSavedComparedToSoundedSpeed       + timeSavedComparedToSoundedSpeed,
+      timeSavedComparedToIntrinsicSpeed: this._timeSavedComparedToIntrinsicSpeed   + timeSavedComparedToIntrinsicSpeed,
+      wouldHaveLastedIfSpeedWasSounded: this._wouldHaveLastedIfSpeedWasSounded     + wouldHaveLastedIfSpeedWasSounded,
+      wouldHaveLastedIfSpeedWasIntrinsic: this._wouldHaveLastedIfSpeedWasIntrinsic + wouldHaveLastedIfSpeedWasIntrinsic,
+    };
+  }
+  public destroy(): void {
+    for (const cb of this._onDestroyCallbacks) {
+      cb();
+    }
+  }
+}
