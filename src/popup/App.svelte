@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { addOnChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
+  import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
-  import type Controller from '@/content/Controller';
+  import type { TelemetryMessage } from '@/content/main';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
+  import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
 
   let settings: Settings;
 
@@ -57,7 +59,7 @@
     return tab;
   })();
 
-  let latestTelemetryRecord: ReturnType<Controller['getTelemetry']>;
+  let latestTelemetryRecord: TelemetryMessage;
   const telemetryUpdatePeriod = 0.02;
   let telemetryTimeoutId: number;
   let disconnect: undefined | (() => void);
@@ -171,6 +173,21 @@
     href: chrome.runtime.getURL('local-file-player/index.html'),
     target: '_new',
   };
+
+  $: r = latestTelemetryRecord;
+  // TODO I'd prefer to use something like [`with`](https://github.com/sveltejs/svelte/pull/4601)
+  $: timeSavedComparedToSoundedSpeedPercent =
+    (!r ? 0 : 100 * r.timeSavedComparedToSoundedSpeed / (r.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
+  $: timeSavedComparedToSoundedSpeedAbs =
+    fromS(Math.round(r?.timeSavedComparedToSoundedSpeed ?? 0), 'mm:ss');
+  $: wouldHaveLastedIfSpeedWasSounded =
+    fromS(Math.round(r?.wouldHaveLastedIfSpeedWasSounded ?? 0), 'mm:ss');
+  $: timeSavedComparedToIntrinsicSpeedPercent =
+    (!r ? 0 : 100 * r.timeSavedComparedToIntrinsicSpeed / (r.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
+  $: timeSavedComparedToIntrinsicSpeedAbs =
+    fromS(Math.round(r?.timeSavedComparedToIntrinsicSpeed ?? 0), 'mm:ss');
+  $: wouldHaveLastedIfSpeedWasIntrinsic =
+    fromS(Math.round(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0), 'mm:ss');
 </script>
 
 <svelte:window
@@ -193,29 +210,66 @@
     href="javascript;"
     on:click={() => chrome.runtime.openOptionsPage()}
   >⚙️</a>
-  <p
-    style="margin: 0.5rem 0;"
-  >
-    <!-- `min-width` because the emojis have different widths, so it remains constant. -->
+  <div class="others__wrapper">
+    <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
     <span
-      style="display: inline-block; min-width: 2.5ch;"
-    >{(() => {
-      if (!latestTelemetryRecord) return '🔉';
-      const vol = latestTelemetryRecord.elementVolume;
-      if (vol < 0.001) return '🔇';
-      if (vol < 1/3) return '🔈';
-      if (vol < 2/3) return '🔉';
-      return '🔊';
-    })()}</span>
-    <span>Volume</span>
-    <!-- TODO how about we replace it with a range input. -->
-    <meter
-      min="0"
-      max="1"
-      value={latestTelemetryRecord?.elementVolume ?? 0}
-      style="width: 6rem;"
-    ></meter>
-  </p>
+      class="others__item"
+      use:tippyActionAsyncPreload={{
+        content: 'Volume',
+        theme: 'my-tippy',
+      }}
+    >
+      <!-- `min-width` because the emojis have different widths, so it remains constant. -->
+      <span
+        style="display: inline-block; min-width: 2.5ch;"
+      >{(() => {
+        if (!latestTelemetryRecord) return '🔉';
+        const vol = latestTelemetryRecord.elementVolume;
+        if (vol < 0.001) return '🔇';
+        if (vol < 1/3) return '🔈';
+        if (vol < 2/3) return '🔉';
+        return '🔊';
+      })()}</span>
+      <!-- TODO how about we replace it with a range input. -->
+      <meter
+        min="0"
+        max="1"
+        value={latestTelemetryRecord?.elementVolume ?? 0}
+        style="width: 6rem;"
+      ></meter>
+    </span>
+    <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
+    <button
+      type="button"
+      class="others__item"
+      style="border: none; padding: 0; background: unset; font: inherit;"
+      use:tippyActionAsyncPreload={{
+        content: `Time saved info.
+Numbers' meanings (in order):
+
+${timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %
+
+${timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute
+
+${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts
+
+${timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %
+
+${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute
+
+${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`,
+        theme: 'my-tippy time-saved',
+        hideOnClick: false,
+      }}
+    >
+      <span>⏱</span>
+      <span>{timeSavedComparedToSoundedSpeedPercent}</span>
+      <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
+      <span>/</span>
+      <span>{timeSavedComparedToIntrinsicSpeedPercent}</span>
+      <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+    </button>
+  </div>
   <!-- TODO transitions? -->
   {#if !connected}
     <div
@@ -344,6 +398,26 @@
   }
   .enabled-input > span {
     margin: 0 0.5rem;
+  }
+
+  .others__wrapper {
+    display: flex;
+    justify-content: space-between;
+    /* In case chart size is smol. */
+    flex-wrap: wrap;
+    margin: 0.25rem -0.25rem;
+  }
+  .others__item {
+    margin: 0.25rem;
+    white-space: nowrap;
+  }
+
+  /* Global because otherwise it's not applied. I think it's fine as we have to specify the theme explicitly anyway. */
+  :global(.tippy-box[data-theme~='my-tippy']) {
+    font-size: inherit;
+  }
+  :global(.tippy-box[data-theme~='time-saved']) {
+    white-space: pre-line;
   }
 
   .content-script-connection-info {
