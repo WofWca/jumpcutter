@@ -2,34 +2,53 @@ import { MyStorageChanges } from "@/settings";
 import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive } from './helpers';
 
 /**
- * Not a typical stopwatch, but close.
+ * TODO this is very similar to how AudioContext's time works. Merge them?
  * TODO kind of looks to bloated for our purpose? Just put some development-only warnings on unintended usages instead
- * of handling every case (e.g. getTimeAndReset when it's paused)?
+ * of handling every case (e.g. `lap` when it's paused)?
  */
 class Stopwatch {
-  private _countSinceMs: number;
+  private _totalCountSinceMs: number;
+  private _lapCountSinceMs: number;
   private _pausedAtMs: number | null; // `null` when it's not paused.
   constructor() {
     const nowMs = Date.now();
-    this._countSinceMs = nowMs;
+    this._totalCountSinceMs = nowMs;
+    this._lapCountSinceMs = nowMs;
     this._pausedAtMs = nowMs;
   }
-
-  private _getTime(nowMs: number) {
-    return ((this._pausedAtMs ?? nowMs) - this._countSinceMs) / 1000;
+  /**
+   * @param time - must not be earlier than the last pause/unpause.
+   */
+  getTotalTimeAt(time: number) {
+    return ((this._pausedAtMs ?? time) - this._totalCountSinceMs) / 1000;
   }
-  getTime(): number {
-    return this._getTime(Date.now());
+  getTotalTime(): number {
+    return this.getTotalTimeAt(Date.now());
   }
-  getTimeAndReset(): number {
+  private _getLapTimeAt(nowMs: number) {
+    return ((this._pausedAtMs ?? nowMs) - this._lapCountSinceMs) / 1000;
+  }
+  getLapTime(): number {
+    return this._getLapTimeAt(Date.now());
+  }
+  lap(): number {
     const nowMs = Date.now();
-    const timePassed = this._getTime(nowMs);
-    this._countSinceMs = nowMs;
+    const timePassed = this._getLapTimeAt(nowMs);
+    this._lapCountSinceMs = nowMs;
     if (this._pausedAtMs) {
       this._pausedAtMs = nowMs;
     }
     return timePassed;
   }
+  // getTimeAndReset(): number {
+  //   const nowMs = Date.now();
+  //   const timePassed = this._getTime(nowMs);
+  //   this._countSinceMs = nowMs;
+  //   if (this._pausedAtMs) {
+  //     this._pausedAtMs = nowMs;
+  //   }
+  //   return timePassed;
+  // }
   pause(): void {
     if (this._pausedAtMs) {
       if (process.env.NODE_ENV !== 'production') {
@@ -49,7 +68,9 @@ class Stopwatch {
       return;
     }
     const nowMs = Date.now();
-    this._countSinceMs += nowMs - this._pausedAtMs;
+    const toAdd = nowMs - this._pausedAtMs
+    this._totalCountSinceMs += toAdd;
+    this._lapCountSinceMs += toAdd;
     this._pausedAtMs = null;
   }
 }
@@ -76,8 +97,14 @@ class MediaElementPlaybackStopwatch {
       removePlaybackResumeListener();
     }
   }
-  getTimeAndReset = () => this._stopwatch.getTimeAndReset();
-  getTime = () => this._stopwatch.getTime();
+  // getTotalTimeAt = (time: number) => this._stopwatch.getTotalTimeAt(time);
+  // getTotalTime = () => this._stopwatch.getTotalTime();
+  // getLapTime = () => this._stopwatch.getLapTime();
+  // lap = () => this._stopwatch.lap();
+  getTotalTimeAt = this._stopwatch.getTotalTimeAt.bind(this._stopwatch);
+  getTotalTime = this._stopwatch.getTotalTime.bind(this._stopwatch);
+  getLapTime = this._stopwatch.getLapTime.bind(this._stopwatch);
+  lap = this._stopwatch.lap.bind(this._stopwatch);
 }
 
 function getSnippetTimeSavedInfo(
@@ -126,6 +153,12 @@ export default class TimeSavedTracker {
   private _wouldHaveLastedIfSpeedWasSounded = 0;
   private _wouldHaveLastedIfSpeedWasIntrinsic = 0;
   private _playbackStopwatch: MediaElementPlaybackStopwatch;
+  private _playbackSnippets: Array<{ // TODO use tuples to save memory?
+    start: number, // According to stopwatch time.
+    end: number,
+    speedDuring: number,
+    soundedSpeedDuring: number,
+  }> = [];
   private _onDestroyCallbacks: Array<() => void> = [];
   constructor (
     private readonly element: HTMLMediaElement,
@@ -144,7 +177,7 @@ export default class TimeSavedTracker {
     this._currentElementSpeed = element.playbackRate;
   }
   private _appendSnippetData(speedDuring: number, soundedSpeedDuring: number) {
-    const snippetRealtimeDuration = this._playbackStopwatch.getTimeAndReset();
+    const snippetRealtimeDuration = this._playbackStopwatch.lap();
     const [
       timeSavedComparedToSoundedSpeed,
       timeSavedComparedToIntrinsicSpeed,
@@ -175,7 +208,7 @@ export default class TimeSavedTracker {
     this.currentSoundedSpeed = newSoundedSpeed;
   }
   public getTimeSavedData() {
-    const currentSnippetDuration = this._playbackStopwatch.getTime();
+    const currentSnippetDuration = this._playbackStopwatch.getLapTime();
     const [
       timeSavedComparedToSoundedSpeed,
       timeSavedComparedToIntrinsicSpeed,
