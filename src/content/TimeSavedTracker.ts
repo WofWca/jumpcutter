@@ -133,6 +133,7 @@ export default class TimeSavedTracker {
 
   // non-null assertion because it doesn't check if they're assigned inside functions called withing the constructor.
   // TODO?
+  private _averagingMethod!: Settings['timeSavedAveragingMethod'];
   private _latestDataPeriod!: number;
   private _latestDataWeight!: number;
   private _decayRateConstant!: number;
@@ -171,22 +172,31 @@ export default class TimeSavedTracker {
       currSnippetWouldHaveLastedIfSpeedWasIntrinsic,
     ] = getSnippetTimeSavedInfo(currSnippetDuration, speedDuringLastSnippet, soundedSpeedDuringLastSnippet);
 
-    const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayRateConstant);
-    // TODO show the math behind this formula. And the ones above maybe.
-    const currentSnippetIntegralDecayMultiplier = this._decayRateConstant * (1 - decayMultiplier)
-
-    const decay = (accumulatedValue: number, currentSnippetValue: number) =>
-      accumulatedValue * decayMultiplier
-      // What's that `|| 1`? It's because when `currSnippetDuration === 0`, `currentSnippetValue` is also 0, and the
-      // whole also needs to be 0.
-      + currentSnippetIntegralDecayMultiplier * currentSnippetValue / (currSnippetDuration || 1);
-
-    return [
-      decay(this._timeSavedComparedToSoundedSpeed, currSnippetTimeSavedComparedToSoundedSpeed),
-      decay(this._timeSavedComparedToIntrinsicSpeed, currSnippetTimeSavedComparedToIntrinsicSpeed),
-      decay(this._wouldHaveLastedIfSpeedWasSounded, currSnippetWouldHaveLastedIfSpeedWasSounded),
-      decay(this._wouldHaveLastedIfSpeedWasIntrinsic, currSnippetWouldHaveLastedIfSpeedWasIntrinsic),
-    ];
+    if (this._averagingMethod === 'exponential') { // TODO perf: perform this check only when it changes.
+      const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayRateConstant);
+      // TODO show the math behind this formula. And the ones above maybe.
+      const currentSnippetIntegralDecayMultiplier = this._decayRateConstant * (1 - decayMultiplier)
+  
+      const decay = (accumulatedValue: number, currentSnippetValue: number) =>
+        accumulatedValue * decayMultiplier
+        // What's that `|| 1`? It's because when `currSnippetDuration === 0`, `currentSnippetValue` is also 0, and the
+        // whole also needs to be 0.
+        + currentSnippetIntegralDecayMultiplier * currentSnippetValue / (currSnippetDuration || 1);
+  
+      return [
+        decay(this._timeSavedComparedToSoundedSpeed, currSnippetTimeSavedComparedToSoundedSpeed),
+        decay(this._timeSavedComparedToIntrinsicSpeed, currSnippetTimeSavedComparedToIntrinsicSpeed),
+        decay(this._wouldHaveLastedIfSpeedWasSounded, currSnippetWouldHaveLastedIfSpeedWasSounded),
+        decay(this._wouldHaveLastedIfSpeedWasIntrinsic, currSnippetWouldHaveLastedIfSpeedWasIntrinsic),
+      ];
+    } else {
+      return [
+        this._timeSavedComparedToSoundedSpeed + currSnippetTimeSavedComparedToSoundedSpeed,
+        this._timeSavedComparedToIntrinsicSpeed + currSnippetTimeSavedComparedToIntrinsicSpeed,
+        this._wouldHaveLastedIfSpeedWasSounded + currSnippetWouldHaveLastedIfSpeedWasSounded,
+        this._wouldHaveLastedIfSpeedWasIntrinsic + currSnippetWouldHaveLastedIfSpeedWasIntrinsic,
+      ];
+    }
   }
   private _appendLastSnippetData(speedDuring: number, soundedSpeedDuring: number) {
     const snippetRealtimeDuration = this._playbackStopwatch.getTimeAndReset();
@@ -208,10 +218,12 @@ export default class TimeSavedTracker {
   }
   private _setStateAccordingToNewSettings(
     {
+      timeSavedAveragingMethod,
       timeSavedAveragingWindowLength,
       timeSavedExponentialAveragingLatestDataWeight,
     }: Partial<Settings>
   ) {
+    this._averagingMethod = timeSavedAveragingMethod ?? this._averagingMethod;
     if (timeSavedAveragingWindowLength !== undefined || timeSavedExponentialAveragingLatestDataWeight !== undefined) {
       this._latestDataPeriod = timeSavedAveragingWindowLength ?? this._latestDataPeriod;
       this._latestDataWeight = timeSavedExponentialAveragingLatestDataWeight ?? this._latestDataWeight;

@@ -83,6 +83,10 @@
     { v: 'silenceSpeedRaw', l: '🙊⏩ Silence speed', },
     { v: 'volumeThreshold', l: '🔉🎚️ Volume threshold', },
   ]
+  const timeSavedAveragingMethodOptions: Array<{ v: Settings['timeSavedAveragingMethod'], l : string }> = [
+    { v: 'all-time', l: '♾️ All-time average (no decay)' },
+    { v: 'exponential', l: '📉 Only take into account the latest data (exponential decay)', },
+  ];
 </script>
 
 <div class="app">
@@ -213,20 +217,35 @@
       </section>
       <section>
         <h3>Time saved stats</h3>
-        <NumberField
-          label="⏱✂️ Only take into account the last N seconds of playback"
-          bind:value={settings.timeSavedAveragingWindowLength}
-          min="1e-3"
-        />
-        <!-- TODO this is a pretty advanced setting. Hide it? -->
-        <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
-        <!-- TODO represent it in percents. -->
-        <NumberField
-          label="⏱✂️⚖️ Latest playback period averaging weight"
-          bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
-          min="0"
-          max="1"
-        />
+        <InputFieldBase
+          label="⏱🧮 Averaging method"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.timeSavedAveragingMethod}
+          >
+            {#each timeSavedAveragingMethodOptions as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
+        {#if settings.timeSavedAveragingMethod === 'exponential'}
+          <NumberField
+            label="⏱✂️ Only take into account the last N seconds of playback"
+            bind:value={settings.timeSavedAveragingWindowLength}
+            min="1e-3"
+          />
+          <!-- TODO this is a pretty advanced setting. Hide it? -->
+          <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
+          <!-- TODO represent it in percents. -->
+          <NumberField
+            label="⏱✂️⚖️ Latest playback period averaging weight"
+            bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
+            min="0"
+            max="1"
+          />
+        {/if}
       </section>
       <section>
         <h3>Icon badge</h3>
