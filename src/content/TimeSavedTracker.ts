@@ -80,16 +80,18 @@ class MediaElementPlaybackStopwatch {
   getTime = () => this._stopwatch.getTime();
 }
 
-function getSnippetTimeSavedInfo(
-  snippetRealtimeDuration: number,
-  speedDuring: number,
-  soundedSpeedDuring: number
-): [
+type TimeSavedData = [
   timeSavedComparedToSoundedSpeed: number,
   timeSavedComparedToIntrinsicSpeed: number,
   wouldHaveLastedIfSpeedWasSounded: number,
   wouldHaveLastedIfSpeedWasIntrinsic: number,
-]
+];
+
+function getSnippetTimeSavedInfo(
+  snippetRealtimeDuration: number,
+  speedDuring: number,
+  soundedSpeedDuring: number
+): TimeSavedData
 {
   // TODO some of these variables are aslo calculated in `Controller._doOnSilence(End|Start)StretcherStuff`. DRY?
   const speedDuringComparedToSounded = speedDuring / soundedSpeedDuring;
@@ -159,12 +161,7 @@ export default class TimeSavedTracker {
     variablesUpdatedAgo: number,
     speedDuringLastSnippet: number,
     soundedSpeedDuringLastSnippet: number
-  ): [
-    timeSavedComparedToSoundedSpeed: number,
-    timeSavedComparedToIntrinsicSpeed: number,
-    wouldHaveLastedIfSpeedWasSounded: number,
-    wouldHaveLastedIfSpeedWasIntrinsic: number,
-  ]
+  ): TimeSavedData
   {
     const currSnippetDuration = variablesUpdatedAgo;
     const [
