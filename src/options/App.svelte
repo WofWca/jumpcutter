@@ -242,8 +242,8 @@
           <NumberField
             label="⏱✂️⚖️ Latest playback period averaging weight"
             bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
-            min="0"
-            max="1"
+            min="1e-9"
+            max={1 - 1e-9}
           />
         {/if}
       </section>
