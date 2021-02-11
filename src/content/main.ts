@@ -215,7 +215,7 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
     await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
     timeSavedTracker = new TimeSavedTracker(
       el,
-      settings.soundedSpeed,
+      settings,
       addOnSettingsChangedListener,
       removeOnSettingsChangedListener,
     );

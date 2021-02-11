@@ -1,4 +1,4 @@
-import { MyStorageChanges } from "@/settings";
+import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
 import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive } from './helpers';
 
 /**
@@ -119,6 +119,7 @@ function getSnippetTimeSavedInfo(
 
 export default class TimeSavedTracker {
   private _currentElementSpeed: number;
+  private _lastHandledSoundedSpeed: number;
   // These are true for the moment when the speed was last changed, they're not updated continuously.
   // See the `getTimeSavedData` method. TODO reflect this in their names?
   private _timeSavedComparedToSoundedSpeed = 0;
@@ -127,12 +128,20 @@ export default class TimeSavedTracker {
   private _wouldHaveLastedIfSpeedWasIntrinsic = 0;
   private _playbackStopwatch: MediaElementPlaybackStopwatch;
   private _onDestroyCallbacks: Array<() => void> = [];
+
+  // non-null assertion because it doesn't check if they're assigned inside functions called withing the constructor.
+  // TODO?
+  private _latestDataPeriod!: number;
+  private _latestDataWeight!: number;
+  private _decayRateConstant!: number;
   constructor (
     private readonly element: HTMLMediaElement,
-    private currentSoundedSpeed: number,
+    settings: Settings,
     addOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
     removeOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
   ) {
+    this._lastHandledSoundedSpeed = settings.soundedSpeed;
+    this._setStateAccordingToNewSettings(settings);
     this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
     addOnSettingsChangedListener(this._onSettingsChange);
     element.addEventListener('ratechange', this._onElementSpeedChange);
@@ -165,14 +174,9 @@ export default class TimeSavedTracker {
       currSnippetWouldHaveLastedIfSpeedWasIntrinsic,
     ] = getSnippetTimeSavedInfo(currSnippetDuration, speedDuringLastSnippet, soundedSpeedDuringLastSnippet);
 
-    const latestDataWantedWeight = 0.95; // TODO make this an option.
-    const latestDataWantedWeightOverPeriod = 300; // TODO make this an option.
-    const latestDataWeightIsGreaterBy = latestDataWantedWeight / (1 - latestDataWantedWeight);
-    // How long in seconds it will take `decayMultiplier` to change by e.
-    const decayRateConstant = latestDataWantedWeightOverPeriod / Math.log(latestDataWeightIsGreaterBy + 1);
-    const decayMultiplier = Math.E**(- variablesUpdatedAgo / decayRateConstant);
+    const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayRateConstant);
     // TODO show the math behind this formula. And the ones above maybe.
-    const currentSnippetIntegralDecayMultiplier = decayRateConstant * (1 - decayMultiplier)
+    const currentSnippetIntegralDecayMultiplier = this._decayRateConstant * (1 - decayMultiplier)
 
     const decay = (accumulatedValue: number, currentSnippetValue: number) =>
       accumulatedValue * decayMultiplier
@@ -202,21 +206,38 @@ export default class TimeSavedTracker {
   }
   private _onElementSpeedChange = () => {
     const prevSpeed = this._currentElementSpeed;
-    this._appendLastSnippetData(prevSpeed, this.currentSoundedSpeed);
+    this._appendLastSnippetData(prevSpeed, this._lastHandledSoundedSpeed);
     this._currentElementSpeed = this.element.playbackRate;
+  }
+  private _setStateAccordingToNewSettings(
+    {
+      timeSavedAveragingWindowLength,
+      timeSavedExponentialAveragingLatestDataWeight,
+    }: Partial<Settings>
+  ) {
+    if (timeSavedAveragingWindowLength !== undefined || timeSavedExponentialAveragingLatestDataWeight !== undefined) {
+      this._latestDataPeriod = timeSavedAveragingWindowLength ?? this._latestDataPeriod;
+      this._latestDataWeight = timeSavedExponentialAveragingLatestDataWeight ?? this._latestDataWeight;
+      const latestDataWeightIsGreaterBy = this._latestDataWeight / (1 - this._latestDataWeight);
+      // How long in seconds it will take `decayMultiplier` to change by e.
+      this._decayRateConstant = this._latestDataPeriod / Math.log(latestDataWeightIsGreaterBy + 1);
+    }
   }
   private _onSettingsChange = (changes: MyStorageChanges) => {
     const soundedSpeedChange = changes.soundedSpeed;
     if (soundedSpeedChange) {
       this._onSoundedSpeedChange(soundedSpeedChange.newValue!);
     }
+
+    const newValues = settingsChanges2NewValues(changes); // TODO perf: only assign relevant keys?
+    this._setStateAccordingToNewSettings(newValues);
   }
   private _onSoundedSpeedChange(newSoundedSpeed: number) {
-    const prevSoundedSpeed = this.currentSoundedSpeed;
+    const prevSoundedSpeed = this._lastHandledSoundedSpeed;
     // TODO if the element is currently at sounded speed, `_onElementSpeedChange` will also get called at the same
     // moment, which is not very efficient.
     this._appendLastSnippetData(this._currentElementSpeed, prevSoundedSpeed);
-    this.currentSoundedSpeed = newSoundedSpeed;
+    this._lastHandledSoundedSpeed = newSoundedSpeed;
   }
   public getTimeSavedData() {
     const currentSnippetDuration = this._playbackStopwatch.getTime();
@@ -225,7 +246,7 @@ export default class TimeSavedTracker {
       timeSavedComparedToIntrinsicSpeed,
       wouldHaveLastedIfSpeedWasSounded,
       wouldHaveLastedIfSpeedWasIntrinsic,
-    ] = this._getTimeSavedData(currentSnippetDuration, this._currentElementSpeed, this.currentSoundedSpeed);
+    ] = this._getTimeSavedData(currentSnippetDuration, this._currentElementSpeed, this._lastHandledSoundedSpeed);
     return {
       timeSavedComparedToSoundedSpeed,
       timeSavedComparedToIntrinsicSpeed,

@@ -212,6 +212,23 @@
         />
       </section>
       <section>
+        <h3>Time saved stats</h3>
+        <NumberField
+          label="⏱✂️ Only take into account the last N seconds of playback"
+          bind:value={settings.timeSavedAveragingWindowLength}
+          min="1e-3"
+        />
+        <!-- TODO this is a pretty advanced setting. Hide it? -->
+        <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
+        <!-- TODO represent it in percents. -->
+        <NumberField
+          label="⏱✂️⚖️ Latest playback period averaging weight"
+          bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
+          min="0"
+          max="1"
+        />
+      </section>
+      <section>
         <h3>Icon badge</h3>
         <InputFieldBase
           label="What setting value to display by default"
