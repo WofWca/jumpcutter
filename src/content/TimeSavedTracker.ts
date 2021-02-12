@@ -140,9 +140,9 @@ export default class TimeSavedTracker {
   // non-null assertion because it doesn't check if they're assigned inside functions called withing the constructor.
   // TODO?
   private _averagingMethod!: Settings['timeSavedAveragingMethod'];
-  private _latestDataPeriod!: number;
+  private _latestDataLength!: number;
   private _latestDataWeight!: number;
-  private _decayRateConstant!: number;
+  private _decayTimeConstant!: number;
   constructor (
     private readonly element: HTMLMediaElement,
     settings: Settings,
@@ -179,21 +179,21 @@ export default class TimeSavedTracker {
     ] = getSnippetTimeSavedInfo(currSnippetDuration, speedDuringLastSnippet, soundedSpeedDuringLastSnippet);
 
     if (this._averagingMethod === 'exponential') { // TODO perf: perform this check only when it changes.
-      const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayRateConstant);
+      const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayTimeConstant);
       // TODO show the math behind this formula. And the ones above maybe.
-      const currentSnippetIntegralDecayMultiplier = this._decayRateConstant * (1 - decayMultiplier)
+      const currentSnippetIntegralDecayMultiplier = this._decayTimeConstant * (1 - decayMultiplier)
   
-      const decay = (accumulatedValue: number, currentSnippetValue: number) =>
+      const getNewDecayedTotal = (accumulatedValue: number, currentSnippetValue: number) =>
         accumulatedValue * decayMultiplier
         // What's that `|| 1`? It's because when `currSnippetDuration === 0`, `currentSnippetValue` is also 0, and the
         // whole also needs to be 0.
         + currentSnippetIntegralDecayMultiplier * currentSnippetValue / (currSnippetDuration || 1);
   
       return [
-        decay(this._timeSavedComparedToSoundedSpeed, currSnippetTimeSavedComparedToSoundedSpeed),
-        decay(this._timeSavedComparedToIntrinsicSpeed, currSnippetTimeSavedComparedToIntrinsicSpeed),
-        decay(this._wouldHaveLastedIfSpeedWasSounded, currSnippetWouldHaveLastedIfSpeedWasSounded),
-        decay(this._wouldHaveLastedIfSpeedWasIntrinsic, currSnippetWouldHaveLastedIfSpeedWasIntrinsic),
+        getNewDecayedTotal(this._timeSavedComparedToSoundedSpeed, currSnippetTimeSavedComparedToSoundedSpeed),
+        getNewDecayedTotal(this._timeSavedComparedToIntrinsicSpeed, currSnippetTimeSavedComparedToIntrinsicSpeed),
+        getNewDecayedTotal(this._wouldHaveLastedIfSpeedWasSounded, currSnippetWouldHaveLastedIfSpeedWasSounded),
+        getNewDecayedTotal(this._wouldHaveLastedIfSpeedWasIntrinsic, currSnippetWouldHaveLastedIfSpeedWasIntrinsic),
       ];
     } else {
       return [
@@ -231,10 +231,10 @@ export default class TimeSavedTracker {
   ) {
     this._averagingMethod = timeSavedAveragingMethod ?? this._averagingMethod;
     if (timeSavedAveragingWindowLength !== undefined || timeSavedExponentialAveragingLatestDataWeight !== undefined) {
-      this._latestDataPeriod = timeSavedAveragingWindowLength ?? this._latestDataPeriod;
+      this._latestDataLength = timeSavedAveragingWindowLength ?? this._latestDataLength;
       this._latestDataWeight = timeSavedExponentialAveragingLatestDataWeight ?? this._latestDataWeight;
       // How long in seconds it will take `decayMultiplier` to change by e.
-      this._decayRateConstant = getDecayTimeConstant(this._latestDataWeight, this._latestDataPeriod);
+      this._decayTimeConstant = getDecayTimeConstant(this._latestDataWeight, this._latestDataLength);
     }
   }
   private _onSettingsChange = (changes: MyStorageChanges) => {
