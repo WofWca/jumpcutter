@@ -7,6 +7,7 @@
   import { cloneDeepJson, assert } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
+  import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
 
   let unsaved = false;
   let formValid = true;
@@ -245,6 +246,14 @@
             min="1e-9"
             max={1 - 1e-9}
           />
+          <!-- TODO hh:mm:ss? -->
+          <!-- TODO explain math? -->
+          <output>Resulting data weight half-life: {
+            (getTimeSavedDataWeightDecayTimeConstant(
+              settings.timeSavedExponentialAveragingLatestDataWeight,
+              settings.timeSavedAveragingWindowLength
+            ) * Math.LN2).toPrecision(5)
+          } seconds</output>
         {/if}
       </section>
       <section>

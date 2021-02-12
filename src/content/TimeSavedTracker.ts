@@ -119,6 +119,12 @@ function getSnippetTimeSavedInfo(
   ];
 }
 
+/** Base e */
+export function getDecayTimeConstant(latestDataIntegralWeight: number, latestDataPeriod: number): number {
+  const latestDataWeightIsGreaterBy = latestDataIntegralWeight / (1 - latestDataIntegralWeight);
+  return latestDataPeriod / Math.log(latestDataWeightIsGreaterBy + 1);
+}
+
 export default class TimeSavedTracker {
   private _currentElementSpeed: number;
   private _lastHandledSoundedSpeed: number;
@@ -227,9 +233,8 @@ export default class TimeSavedTracker {
     if (timeSavedAveragingWindowLength !== undefined || timeSavedExponentialAveragingLatestDataWeight !== undefined) {
       this._latestDataPeriod = timeSavedAveragingWindowLength ?? this._latestDataPeriod;
       this._latestDataWeight = timeSavedExponentialAveragingLatestDataWeight ?? this._latestDataWeight;
-      const latestDataWeightIsGreaterBy = this._latestDataWeight / (1 - this._latestDataWeight);
       // How long in seconds it will take `decayMultiplier` to change by e.
-      this._decayRateConstant = this._latestDataPeriod / Math.log(latestDataWeightIsGreaterBy + 1);
+      this._decayRateConstant = getDecayTimeConstant(this._latestDataWeight, this._latestDataPeriod);
     }
   }
   private _onSettingsChange = (changes: MyStorageChanges) => {
