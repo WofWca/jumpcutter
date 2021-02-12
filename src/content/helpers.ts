@@ -4,8 +4,8 @@ export function getRealtimeMargin(margin: Time, speed: number): Time {
   return margin / speed;
 }
 
-export function getNewLookaheadDelay(videoTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
-  return videoTimeMargin / Math.max(soundedSpeed, silenceSpeed)
+export function getNewLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
+  return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed)
 }
 export function getTotalDelay(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
   return lookaheadNodeDelay + stretcherNodeDelay;
@@ -26,11 +26,11 @@ export function getStretcherDelayChange(
 }
 // TODO Is it always constant though? What about these short silence snippets, where we don't have to fully reset the margin?
 export function getStretcherSoundedDelay(
-  videoTimeMarginBefore: Time,
+  intrinsicTimeMarginBefore: Time,
   soundedSpeed: number,
   silenceSpeed: number
 ): Time {
-  const realTimeMarginBefore = videoTimeMarginBefore / silenceSpeed;
+  const realTimeMarginBefore = intrinsicTimeMarginBefore / silenceSpeed;
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
 }
