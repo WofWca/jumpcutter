@@ -1,5 +1,5 @@
 import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
-import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive } from './helpers';
+import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, transformSpeed } from './helpers';
 
 /**
  * Not a typical stopwatch, but close.
@@ -94,10 +94,14 @@ function getSnippetTimeSavedInfo(
 ): TimeSavedData
 {
   // TODO some of these variables are aslo calculated in `Controller._doOnSilence(End|Start)StretcherStuff`. DRY?
-  const speedDuringComparedToSounded = speedDuring / soundedSpeedDuring;
-  // TODO due to the fact that we have `transformSpeed` in `Controller.ts`, it says that time saved = 0.2% when
-  // `volumeThreshold === 0 && soundedSpeed === 1`.
-  const speedDuringComparedToIntrinsic = speedDuring;
+
+  // If we just use `speedDuring`, it would report time saved to be 0.2% when `soundedSpeed === 1` and
+  // `volumeThreshold === 0`. Yes, this causes it to be not so accurate, but it's better than confusing the user.
+  const untransformedSpeedDuring = speedDuring === transformSpeed(1)
+    ? 1
+    : speedDuring;
+  const speedDuringComparedToSounded = untransformedSpeedDuring / soundedSpeedDuring;
+  const speedDuringComparedToIntrinsic = untransformedSpeedDuring;
   const wouldHaveLastedIfSpeedWasSounded = speedDuringComparedToSounded * snippetRealtimeDuration;
   const wouldHaveLastedIfSpeedWasIntrinsic = speedDuringComparedToIntrinsic * snippetRealtimeDuration;
   // `wouldHaveLastedIfSpeedWasSounded - snippetRealtimeDuration` in a float-error-friendly form.
