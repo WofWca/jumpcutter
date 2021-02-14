@@ -174,20 +174,24 @@
     target: '_new',
   };
 
+  function mmSs(s: number): string {
+    return fromS(Math.round(s), 'mm:ss');
+  }
+
   $: r = latestTelemetryRecord;
   // TODO I'd prefer to use something like [`with`](https://github.com/sveltejs/svelte/pull/4601)
   $: timeSavedComparedToSoundedSpeedPercent =
     (!r ? 0 : 100 * r.timeSavedComparedToSoundedSpeed / (r.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToSoundedSpeedAbs =
-    fromS(Math.round(r?.timeSavedComparedToSoundedSpeed ?? 0), 'mm:ss');
+    mmSs(r?.timeSavedComparedToSoundedSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasSounded =
-    fromS(Math.round(r?.wouldHaveLastedIfSpeedWasSounded ?? 0), 'mm:ss');
+    mmSs(r?.wouldHaveLastedIfSpeedWasSounded ?? 0);
   $: timeSavedComparedToIntrinsicSpeedPercent =
     (!r ? 0 : 100 * r.timeSavedComparedToIntrinsicSpeed / (r.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToIntrinsicSpeedAbs =
-    fromS(Math.round(r?.timeSavedComparedToIntrinsicSpeed ?? 0), 'mm:ss');
+    mmSs(r?.timeSavedComparedToIntrinsicSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasIntrinsic =
-    fromS(Math.round(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0), 'mm:ss');
+    mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 </script>
 
 <svelte:window
