@@ -190,12 +190,12 @@ export const defaultSettings: Readonly<Settings> = {
     {
       keyCombination: { code: 'ArrowLeft' },
       action: HotkeyAction.REWIND,
-      actionArgument: 10,
+      actionArgument: 5,
     },
     {
       keyCombination: { code: 'ArrowRight' },
       action: HotkeyAction.ADVANCE,
-      actionArgument: 10,
+      actionArgument: 5,
     },
     {
       keyCombination: { code: 'ArrowUp' },
