@@ -104,20 +104,20 @@
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
-      strokeStyle: 'none',
+      strokeStyle: soundedSpeedColor,
       fillStyle: soundedSpeedColor,
     });
     smoothie.addTimeSeries(silenceSpeedSeries, {
-      strokeStyle: 'none',
+      strokeStyle: silenceSpeedColor,
       fillStyle: silenceSpeedColor,
     });
     smoothie.addTimeSeries(stretchSeries, {
-      strokeStyle: 'none',
+      strokeStyle: soundedSpeedColor,
       // fillStyle: 'rgba(0, 255, 0, 0.4)',
       fillStyle: soundedSpeedColor,
     })
     smoothie.addTimeSeries(shrinkSeries, {
-      strokeStyle: 'none',
+      strokeStyle: silenceSpeedColor,
       // fillStyle: 'rgba(255, 0, 0, 0.4)',
       fillStyle: silenceSpeedColor,
     })
