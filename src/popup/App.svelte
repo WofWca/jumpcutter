@@ -249,29 +249,42 @@
       style="border: none; padding: 0; background: unset; font: inherit;"
       use:tippyActionAsyncPreload={{
         content: `Time saved info.
+${settings.timeSavedAveragingMethod === 'exponential'
+? `Over the last ${mmSs(settings.timeSavedAveragingWindowLength)}.`
+: ''
+}
 Numbers' meanings (in order):
 
 ${timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %
-
+${settings.timeSavedAveragingMethod === 'exponential'
+? '' :
+`
 ${timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute
 
-${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts
-
+${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts`
+}
 ${timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %
-
+${settings.timeSavedAveragingMethod === 'exponential'
+? '' :
+`
 ${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute
 
-${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`,
+${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`
+}`,
         theme: 'my-tippy time-saved',
         hideOnClick: false,
       }}
     >
       <span>⏱</span>
       <span>{timeSavedComparedToSoundedSpeedPercent}</span>
-      <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
+      {#if settings.timeSavedAveragingMethod !== 'exponential'}
+        <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
+      {/if}
       <span>/</span>
       <span>{timeSavedComparedToIntrinsicSpeedPercent}</span>
-      <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+      {#if settings.timeSavedAveragingMethod !== 'exponential'}
+        <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+      {/if}
     </button>
   </div>
   <!-- TODO transitions? -->
