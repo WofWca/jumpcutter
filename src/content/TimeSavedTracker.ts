@@ -1,5 +1,5 @@
-import { MyStorageChanges } from "@/settings";
-import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive } from './helpers';
+import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
+import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, transformSpeed } from './helpers';
 
 /**
  * Not a typical stopwatch, but close.
@@ -80,22 +80,28 @@ class MediaElementPlaybackStopwatch {
   getTime = () => this._stopwatch.getTime();
 }
 
-function getSnippetTimeSavedInfo(
-  snippetRealtimeDuration: number,
-  speedDuring: number,
-  soundedSpeedDuring: number
-): [
+type TimeSavedData = [
   timeSavedComparedToSoundedSpeed: number,
   timeSavedComparedToIntrinsicSpeed: number,
   wouldHaveLastedIfSpeedWasSounded: number,
   wouldHaveLastedIfSpeedWasIntrinsic: number,
-]
+];
+
+function getSnippetTimeSavedInfo(
+  snippetRealtimeDuration: number,
+  speedDuring: number,
+  soundedSpeedDuring: number
+): TimeSavedData
 {
   // TODO some of these variables are aslo calculated in `Controller._doOnSilence(End|Start)StretcherStuff`. DRY?
-  const speedDuringComparedToSounded = speedDuring / soundedSpeedDuring;
-  // TODO due to the fact that we have `transformSpeed` in `Controller.ts`, it says that time saved = 0.2% when
-  // `volumeThreshold === 0 && soundedSpeed === 1`.
-  const speedDuringComparedToIntrinsic = speedDuring;
+
+  // If we just use `speedDuring`, it would report time saved to be 0.2% when `soundedSpeed === 1` and
+  // `volumeThreshold === 0`. Yes, this causes it to be not so accurate, but it's better than confusing the user.
+  const untransformedSpeedDuring = speedDuring === transformSpeed(1)
+    ? 1
+    : speedDuring;
+  const speedDuringComparedToSounded = untransformedSpeedDuring / soundedSpeedDuring;
+  const speedDuringComparedToIntrinsic = untransformedSpeedDuring;
   const wouldHaveLastedIfSpeedWasSounded = speedDuringComparedToSounded * snippetRealtimeDuration;
   const wouldHaveLastedIfSpeedWasIntrinsic = speedDuringComparedToIntrinsic * snippetRealtimeDuration;
   // `wouldHaveLastedIfSpeedWasSounded - snippetRealtimeDuration` in a float-error-friendly form.
@@ -117,8 +123,15 @@ function getSnippetTimeSavedInfo(
   ];
 }
 
+/** Base e */
+export function getDecayTimeConstant(latestDataIntegralWeight: number, latestDataPeriod: number): number {
+  const latestDataWeightIsGreaterBy = latestDataIntegralWeight / (1 - latestDataIntegralWeight);
+  return latestDataPeriod / Math.log(latestDataWeightIsGreaterBy + 1);
+}
+
 export default class TimeSavedTracker {
   private _currentElementSpeed: number;
+  private _lastHandledSoundedSpeed: number;
   // These are true for the moment when the speed was last changed, they're not updated continuously.
   // See the `getTimeSavedData` method. TODO reflect this in their names?
   private _timeSavedComparedToSoundedSpeed = 0;
@@ -127,12 +140,21 @@ export default class TimeSavedTracker {
   private _wouldHaveLastedIfSpeedWasIntrinsic = 0;
   private _playbackStopwatch: MediaElementPlaybackStopwatch;
   private _onDestroyCallbacks: Array<() => void> = [];
+
+  // non-null assertion because it doesn't check if they're assigned inside functions called withing the constructor.
+  // TODO?
+  private _averagingMethod!: Settings['timeSavedAveragingMethod'];
+  private _latestDataLength!: number;
+  private _latestDataWeight!: number;
+  private _decayTimeConstant!: number;
   constructor (
     private readonly element: HTMLMediaElement,
-    private currentSoundedSpeed: number,
+    settings: Settings,
     addOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
     removeOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
   ) {
+    this._lastHandledSoundedSpeed = settings.soundedSpeed;
+    this._setStateAccordingToNewSettings(settings);
     this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
     addOnSettingsChangedListener(this._onSettingsChange);
     element.addEventListener('ratechange', this._onElementSpeedChange);
@@ -143,36 +165,97 @@ export default class TimeSavedTracker {
     });
     this._currentElementSpeed = element.playbackRate;
   }
-  private _appendSnippetData(speedDuring: number, soundedSpeedDuring: number) {
+  /**
+   * @param variablesUpdatedAgo see the comment above `_timeSavedComparedToSoundedSpeed`
+   */
+  private _getTimeSavedData(
+    variablesUpdatedAgo: number,
+    speedDuringLastSnippet: number,
+    soundedSpeedDuringLastSnippet: number
+  ): TimeSavedData
+  {
+    const currSnippetDuration = variablesUpdatedAgo;
+    const [
+      currSnippetTimeSavedComparedToSoundedSpeed,
+      currSnippetTimeSavedComparedToIntrinsicSpeed,
+      currSnippetWouldHaveLastedIfSpeedWasSounded,
+      currSnippetWouldHaveLastedIfSpeedWasIntrinsic,
+    ] = getSnippetTimeSavedInfo(currSnippetDuration, speedDuringLastSnippet, soundedSpeedDuringLastSnippet);
+
+    if (this._averagingMethod === 'exponential') { // TODO perf: perform this check only when it changes.
+      const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayTimeConstant);
+      // TODO show the math behind this formula. And the ones above maybe.
+      const currentSnippetIntegralDecayMultiplier = this._decayTimeConstant * (1 - decayMultiplier)
+  
+      const getNewDecayedTotal = (accumulatedValue: number, currentSnippetValue: number) =>
+        accumulatedValue * decayMultiplier
+        // What's that `|| 1`? It's because when `currSnippetDuration === 0`, `currentSnippetValue` is also 0, and the
+        // whole also needs to be 0.
+        + currentSnippetIntegralDecayMultiplier * currentSnippetValue / (currSnippetDuration || 1);
+  
+      return [
+        getNewDecayedTotal(this._timeSavedComparedToSoundedSpeed, currSnippetTimeSavedComparedToSoundedSpeed),
+        getNewDecayedTotal(this._timeSavedComparedToIntrinsicSpeed, currSnippetTimeSavedComparedToIntrinsicSpeed),
+        getNewDecayedTotal(this._wouldHaveLastedIfSpeedWasSounded, currSnippetWouldHaveLastedIfSpeedWasSounded),
+        getNewDecayedTotal(this._wouldHaveLastedIfSpeedWasIntrinsic, currSnippetWouldHaveLastedIfSpeedWasIntrinsic),
+      ];
+    } else {
+      return [
+        this._timeSavedComparedToSoundedSpeed + currSnippetTimeSavedComparedToSoundedSpeed,
+        this._timeSavedComparedToIntrinsicSpeed + currSnippetTimeSavedComparedToIntrinsicSpeed,
+        this._wouldHaveLastedIfSpeedWasSounded + currSnippetWouldHaveLastedIfSpeedWasSounded,
+        this._wouldHaveLastedIfSpeedWasIntrinsic + currSnippetWouldHaveLastedIfSpeedWasIntrinsic,
+      ];
+    }
+  }
+  private _appendLastSnippetData(speedDuring: number, soundedSpeedDuring: number) {
     const snippetRealtimeDuration = this._playbackStopwatch.getTimeAndReset();
     const [
       timeSavedComparedToSoundedSpeed,
       timeSavedComparedToIntrinsicSpeed,
       wouldHaveLastedIfSpeedWasSounded,
       wouldHaveLastedIfSpeedWasIntrinsic,
-    ] = getSnippetTimeSavedInfo(snippetRealtimeDuration, speedDuring, soundedSpeedDuring);
-    this._timeSavedComparedToSoundedSpeed += timeSavedComparedToSoundedSpeed;
-    this._timeSavedComparedToIntrinsicSpeed += timeSavedComparedToIntrinsicSpeed;
-    this._wouldHaveLastedIfSpeedWasSounded += wouldHaveLastedIfSpeedWasSounded;
-    this._wouldHaveLastedIfSpeedWasIntrinsic += wouldHaveLastedIfSpeedWasIntrinsic;
+    ] = this._getTimeSavedData(snippetRealtimeDuration, speedDuring, soundedSpeedDuring);
+    this._timeSavedComparedToSoundedSpeed = timeSavedComparedToSoundedSpeed;
+    this._timeSavedComparedToIntrinsicSpeed = timeSavedComparedToIntrinsicSpeed;
+    this._wouldHaveLastedIfSpeedWasSounded = wouldHaveLastedIfSpeedWasSounded;
+    this._wouldHaveLastedIfSpeedWasIntrinsic = wouldHaveLastedIfSpeedWasIntrinsic;
   }
   private _onElementSpeedChange = () => {
     const prevSpeed = this._currentElementSpeed;
-    this._appendSnippetData(prevSpeed, this.currentSoundedSpeed);
+    this._appendLastSnippetData(prevSpeed, this._lastHandledSoundedSpeed);
     this._currentElementSpeed = this.element.playbackRate;
+  }
+  private _setStateAccordingToNewSettings(
+    {
+      timeSavedAveragingMethod,
+      timeSavedAveragingWindowLength,
+      timeSavedExponentialAveragingLatestDataWeight,
+    }: Partial<Settings>
+  ) {
+    this._averagingMethod = timeSavedAveragingMethod ?? this._averagingMethod;
+    if (timeSavedAveragingWindowLength !== undefined || timeSavedExponentialAveragingLatestDataWeight !== undefined) {
+      this._latestDataLength = timeSavedAveragingWindowLength ?? this._latestDataLength;
+      this._latestDataWeight = timeSavedExponentialAveragingLatestDataWeight ?? this._latestDataWeight;
+      // How long in seconds it will take `decayMultiplier` to change by e.
+      this._decayTimeConstant = getDecayTimeConstant(this._latestDataWeight, this._latestDataLength);
+    }
   }
   private _onSettingsChange = (changes: MyStorageChanges) => {
     const soundedSpeedChange = changes.soundedSpeed;
     if (soundedSpeedChange) {
       this._onSoundedSpeedChange(soundedSpeedChange.newValue!);
     }
+
+    const newValues = settingsChanges2NewValues(changes); // TODO perf: only assign relevant keys?
+    this._setStateAccordingToNewSettings(newValues);
   }
   private _onSoundedSpeedChange(newSoundedSpeed: number) {
-    const prevSoundedSpeed = this.currentSoundedSpeed;
+    const prevSoundedSpeed = this._lastHandledSoundedSpeed;
     // TODO if the element is currently at sounded speed, `_onElementSpeedChange` will also get called at the same
     // moment, which is not very efficient.
-    this._appendSnippetData(this._currentElementSpeed, prevSoundedSpeed);
-    this.currentSoundedSpeed = newSoundedSpeed;
+    this._appendLastSnippetData(this._currentElementSpeed, prevSoundedSpeed);
+    this._lastHandledSoundedSpeed = newSoundedSpeed;
   }
   public getTimeSavedData() {
     const currentSnippetDuration = this._playbackStopwatch.getTime();
@@ -181,12 +264,12 @@ export default class TimeSavedTracker {
       timeSavedComparedToIntrinsicSpeed,
       wouldHaveLastedIfSpeedWasSounded,
       wouldHaveLastedIfSpeedWasIntrinsic,
-    ] = getSnippetTimeSavedInfo(currentSnippetDuration, this._currentElementSpeed, this.currentSoundedSpeed);
+    ] = this._getTimeSavedData(currentSnippetDuration, this._currentElementSpeed, this._lastHandledSoundedSpeed);
     return {
-      timeSavedComparedToSoundedSpeed: this._timeSavedComparedToSoundedSpeed       + timeSavedComparedToSoundedSpeed,
-      timeSavedComparedToIntrinsicSpeed: this._timeSavedComparedToIntrinsicSpeed   + timeSavedComparedToIntrinsicSpeed,
-      wouldHaveLastedIfSpeedWasSounded: this._wouldHaveLastedIfSpeedWasSounded     + wouldHaveLastedIfSpeedWasSounded,
-      wouldHaveLastedIfSpeedWasIntrinsic: this._wouldHaveLastedIfSpeedWasIntrinsic + wouldHaveLastedIfSpeedWasIntrinsic,
+      timeSavedComparedToSoundedSpeed,
+      timeSavedComparedToIntrinsicSpeed,
+      wouldHaveLastedIfSpeedWasSounded,
+      wouldHaveLastedIfSpeedWasIntrinsic,
     };
   }
   public destroy(): void {

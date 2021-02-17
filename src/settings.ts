@@ -35,6 +35,14 @@ export interface Settings {
   // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
   popupSpecificHotkeys: HotkeyBinding[],
 
+  timeSavedAveragingMethod: 'all-time' | 'exponential',
+  // This may not be the most accurate name for an exponential averaging window. TODO?
+  timeSavedAveragingWindowLength: number,
+  // When the averaging window is an exponential window, how much weight does the interval of length
+  // `timeSavedAveragingWindowLength` has to possess (compared to the resulting average value) (so data older than
+  // `timeSavedAveragingWindowLength` has weight of as little as `1 - <this value>`).
+  timeSavedExponentialAveragingLatestDataWeight: number,
+
   // TODO should we add other options for this setting?
   badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
 
@@ -208,6 +216,10 @@ export const defaultSettings: Readonly<Settings> = {
       actionArgument: 5,
     },
   ],
+
+  timeSavedAveragingMethod: 'exponential',
+  timeSavedAveragingWindowLength: 600,
+  timeSavedExponentialAveragingLatestDataWeight: 0.95,
 
   badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
 

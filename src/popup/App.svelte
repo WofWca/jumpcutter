@@ -174,20 +174,24 @@
     target: '_new',
   };
 
+  function mmSs(s: number): string {
+    return fromS(Math.round(s), 'mm:ss');
+  }
+
   $: r = latestTelemetryRecord;
   // TODO I'd prefer to use something like [`with`](https://github.com/sveltejs/svelte/pull/4601)
   $: timeSavedComparedToSoundedSpeedPercent =
     (!r ? 0 : 100 * r.timeSavedComparedToSoundedSpeed / (r.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToSoundedSpeedAbs =
-    fromS(Math.round(r?.timeSavedComparedToSoundedSpeed ?? 0), 'mm:ss');
+    mmSs(r?.timeSavedComparedToSoundedSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasSounded =
-    fromS(Math.round(r?.wouldHaveLastedIfSpeedWasSounded ?? 0), 'mm:ss');
+    mmSs(r?.wouldHaveLastedIfSpeedWasSounded ?? 0);
   $: timeSavedComparedToIntrinsicSpeedPercent =
     (!r ? 0 : 100 * r.timeSavedComparedToIntrinsicSpeed / (r.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToIntrinsicSpeedAbs =
-    fromS(Math.round(r?.timeSavedComparedToIntrinsicSpeed ?? 0), 'mm:ss');
+    mmSs(r?.timeSavedComparedToIntrinsicSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasIntrinsic =
-    fromS(Math.round(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0), 'mm:ss');
+    mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 </script>
 
 <svelte:window
@@ -245,29 +249,42 @@
       style="border: none; padding: 0; background: unset; font: inherit;"
       use:tippyActionAsyncPreload={{
         content: `Time saved info.
+${settings.timeSavedAveragingMethod === 'exponential'
+? `Over the last ${mmSs(settings.timeSavedAveragingWindowLength)}.`
+: ''
+}
 Numbers' meanings (in order):
 
 ${timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %
-
+${settings.timeSavedAveragingMethod === 'exponential'
+? '' :
+`
 ${timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute
 
-${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts
-
+${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts`
+}
 ${timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %
-
+${settings.timeSavedAveragingMethod === 'exponential'
+? '' :
+`
 ${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute
 
-${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`,
+${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`
+}`,
         theme: 'my-tippy time-saved',
         hideOnClick: false,
       }}
     >
       <span>⏱</span>
       <span>{timeSavedComparedToSoundedSpeedPercent}</span>
-      <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
+      {#if settings.timeSavedAveragingMethod !== 'exponential'}
+        <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
+      {/if}
       <span>/</span>
       <span>{timeSavedComparedToIntrinsicSpeedPercent}</span>
-      <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+      {#if settings.timeSavedAveragingMethod !== 'exponential'}
+        <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+      {/if}
     </button>
   </div>
   <!-- TODO transitions? -->
