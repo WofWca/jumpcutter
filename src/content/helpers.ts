@@ -4,8 +4,8 @@ export function getRealtimeMargin(margin: Time, speed: number): Time {
   return margin / speed;
 }
 
-export function getNewLookaheadDelay(videoTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
-  return videoTimeMargin / Math.max(soundedSpeed, silenceSpeed)
+export function getNewLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
+  return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed)
 }
 export function getTotalDelay(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
   return lookaheadNodeDelay + stretcherNodeDelay;
@@ -26,11 +26,11 @@ export function getStretcherDelayChange(
 }
 // TODO Is it always constant though? What about these short silence snippets, where we don't have to fully reset the margin?
 export function getStretcherSoundedDelay(
-  videoTimeMarginBefore: Time,
+  intrinsicTimeMarginBefore: Time,
   soundedSpeed: number,
   silenceSpeed: number
 ): Time {
-  const realTimeMarginBefore = videoTimeMarginBefore / silenceSpeed;
+  const realTimeMarginBefore = intrinsicTimeMarginBefore / silenceSpeed;
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
 }
@@ -99,4 +99,41 @@ export function transformSpeed(speed: number): number {
       : smallestNonNormalAbove1;
   }
   return speed;
+}
+
+// The following code is not very reliable (but reliable enough, perhaps). E.g. playback can stop for reasons other than
+// 'pause' or 'waiting' events: https://html.spec.whatwg.org/multipage/media.html#event-media-waiting.
+// But tbh I have no idea what 'paused for in-band content' means. Why isn't there a dedicated getter/event for this?
+// Am I just missing something? TODO.
+
+/** @return a function that removes the listener */
+export function addPlaybackStopListener(el: HTMLMediaElement, listener: () => void): () => void {
+  const eventNames = [
+    'pause',
+    'waiting', // Example - seek to a part that has not yet been loaded.
+    'emptied', // Example - on YouTube, open any video, enter something in the search bar and press enter.
+  ] as const;
+  for (const eventName of eventNames) {
+    el.addEventListener(eventName, listener);
+  }
+  return () => {
+    for (const eventName of eventNames) {
+      el.removeEventListener(eventName, listener);
+    }
+  }
+}
+/** @return a function that removes the listener */
+export function addPlaybackResumeListener(el: HTMLMediaElement, listener: () => void): () => void {
+  // See the spec: https://html.spec.whatwg.org/multipage/media.html#event-media-playing. Compared to the 'waiting',
+  // this one is also fired when '...paused is newly false...', so we don't need the 'play' event.
+  el.addEventListener('playing', listener);
+
+  return () => {
+    el.removeEventListener('playing', listener);
+  }
+}
+const HAVE_FUTURE_DATA = 3;
+export function isPlaybackActive(el: HTMLMediaElement): boolean {
+  // I wrote this looking at https://html.spec.whatwg.org/multipage/media.html#event-media-playing
+  return el.readyState >= HAVE_FUTURE_DATA && !el.paused;
 }

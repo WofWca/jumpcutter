@@ -5,9 +5,14 @@ import {
 } from '@/settings';
 import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
+import type TimeSavedTracker from './TimeSavedTracker';
 import { extensionSettings2ControllerSettings } from './Controller';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
+
+export type TelemetryMessage =
+  ReturnType<Controller['getTelemetry']>
+  & ReturnType<TimeSavedTracker['getTimeSavedData']>;
 
 (async function () { // Just for top-level `await`
 
@@ -20,10 +25,10 @@ if (location.protocol === 'file:') {
 
 // TODO this is getting ugly. Variables are all over the place. Feels like we need a class like Controller, or even put
 // all this into that Controller class.
-let allMediaElements: HTMLCollectionOf<HTMLMediaElement> | null = null;
 let activeMediaElement: HTMLMediaElement | null = null;
 let elementLastActivatedAt: number | undefined;
 let controller: Controller | null = null;
+let timeSavedTracker: TimeSavedTracker | undefined;
 let handleKeydown: (e: KeyboardEvent) => void;
 
 // TODO can we not do this when `enabled` is false?
@@ -36,7 +41,13 @@ chrome.runtime.onConnect.addListener(port => {
             throw new Error('Unsupported message type')
           }
         }
-        port.postMessage(controller?.initialized && controller.getTelemetry() || null);
+        if (controller?.initialized && timeSavedTracker) {
+          const telemetryMessage: TelemetryMessage = {
+            ...controller.getTelemetry(),
+            ...timeSavedTracker.getTimeSavedData(),
+          };
+          port.postMessage(telemetryMessage);
+        }
       });
       break;
     }
@@ -139,7 +150,7 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
       './Controller'
     );
     controller = new Controller(el, extensionSettings2ControllerSettings(settings));
-    controller.init();
+    await controller.init();
   })();
 
   let hotkeyListenerP;
@@ -198,9 +209,22 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
     })();
   }
 
+  // TODO an option to disable it.
+  const timeSavedTrackerPromise = (async () => {
+    const { default: TimeSavedTracker } = await import(/* webpackMode: 'eager' */ './TimeSavedTracker');
+    await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
+    timeSavedTracker = new TimeSavedTracker(
+      el,
+      settings,
+      addOnSettingsChangedListener,
+      removeOnSettingsChangedListener,
+    );
+  })();
+
   // TODO start listening before the components have been fully initialized so setting changes can't be missed.
   await controllerP;
   hotkeyListenerP && await hotkeyListenerP;
+  await timeSavedTrackerPromise;
   addOnSettingsChangedListener(reactToSettingsChanges);
 }
 
@@ -208,14 +232,26 @@ function onMediaPlayEvent(e: Event) {
   esnureAttachToElement(e.target as HTMLMediaElement);
 }
 
+let onDestroyCallbacks: Array<() => void> = [];
 async function init() {
-  allMediaElements = document.getElementsByTagName('video');
+  const allMediaElements = document.getElementsByTagName('video');
   for (const el of allMediaElements) {
     if (!el.paused) {
       esnureAttachToElement(el);
       break;
     }
   }
+  onDestroyCallbacks.push(async () => {
+    // Undo what's done in `esnureAttachToElement`.
+    activeMediaElement = null;
+    elementLastActivatedAt = undefined;
+    removeOnSettingsChangedListener(reactToSettingsChanges);
+    document.removeEventListener('keydown', handleKeydown, true);
+    await controller?.destroy();
+    timeSavedTracker?.destroy();
+    controller = null;
+    settings = null;
+  });
   if (!activeMediaElement) {
     // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
     for (const el of allMediaElements) {
@@ -228,26 +264,15 @@ async function init() {
   // TODO attach to some element if none are found at this point?
   for (const el of allMediaElements) {
     el.addEventListener('play', onMediaPlayEvent);
+    onDestroyCallbacks.push(() => el.removeEventListener('play', onMediaPlayEvent));
   }
 }
 
 async function destroy() {
-  assert(allMediaElements);
-  for (const el of allMediaElements) {
-    el.removeEventListener('play', onMediaPlayEvent);
+  for (const cb of onDestroyCallbacks) {
+    await cb();
   }
-
-  activeMediaElement = null;
-  elementLastActivatedAt = undefined;
-  allMediaElements = null;
-
-  removeOnSettingsChangedListener(reactToSettingsChanges);
-  document.removeEventListener('keydown', handleKeydown, true);
-
-  await controller?.destroy();
-  controller = null;
-
-  settings = null;
+  onDestroyCallbacks = [];
 }
 
 if (settings.enabled) {

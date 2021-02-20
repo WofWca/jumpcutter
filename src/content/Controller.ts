@@ -18,10 +18,10 @@ import { assert } from '@/helpers';
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
 const MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE = 8000;
-const MAX_MARGIN_BEFORE_VIDEO_TIME = 0.5;
+const MAX_MARGIN_BEFORE_INTRINSIC_TIME = 0.5;
 // Not just MIN_SOUNDED_SPEED, because in theory sounded speed could be greater than silence speed.
 const MIN_SPEED = 0.25;
-const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_VIDEO_TIME / MIN_SPEED;
+const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_INTRINSIC_TIME / MIN_SPEED;
 
 const logging = process.env.NODE_ENV !== 'production';
 
@@ -285,18 +285,18 @@ export default class Controller {
 
     const lastSilenceSpeedLastsForRealtime =
       eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
-    const lastSilenceSpeedLastsForVideoTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
+    const lastSilenceSpeedLastsForIntrinsicTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
 
-    const marginBeforePartAtSilenceSpeedVideoTimeDuration = Math.min(
-      lastSilenceSpeedLastsForVideoTime,
+    const marginBeforePartAtSilenceSpeedIntrinsicTimeDuration = Math.min(
+      lastSilenceSpeedLastsForIntrinsicTime,
       this.settings.marginBefore
     );
-    const marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration =
-      this.settings.marginBefore - marginBeforePartAtSilenceSpeedVideoTimeDuration;
+    const marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration =
+      this.settings.marginBefore - marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
     const marginBeforePartAtSilenceSpeedRealTimeDuration =
-      marginBeforePartAtSilenceSpeedVideoTimeDuration / this.settings.silenceSpeed;
+      marginBeforePartAtSilenceSpeedIntrinsicTimeDuration / this.settings.silenceSpeed;
     const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
-      marginBeforePartAlreadyAtSoundedSpeedVideoTimeDuration / this.settings.soundedSpeed;
+      marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration / this.settings.soundedSpeed;
     // The time at which the moment from which the speed of the video needs to be slow has been on the input.
     const marginBeforeStartInputTime =
       eventTime
@@ -553,7 +553,7 @@ export default class Controller {
 
     return {
       unixTime: Date.now() / 1000,
-      // videoTime: this.element.currentTime,
+      // IntrinsicTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
