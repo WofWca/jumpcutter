@@ -28,13 +28,10 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
-    | '_resumeAudioContext' | '_volumeFilter'
-    | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
-    | '_lastActualPlaybackRateChange' | '_elementVolumeCache' | '_onElementVolumeChange'>>;
+  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_silenceDetectorNode'
+    | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange' | '_elementVolumeCache'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
-type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIntervalId' | '_outVolumeFilter'
-  | '_analyzerOut'>>;
+type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analyzerOut'>>;
 
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
@@ -69,16 +66,13 @@ export default class Controller {
   settings: ControllerSettings;
   initialized = false;
   _initPromise?: Promise<this>;
+  _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
-  _suspendAudioContext?: () => void;
-  _resumeAudioContext?: () => void;
-  _volumeFilter?: AudioWorkletNode;
   _silenceDetectorNode?: AudioWorkletNode;
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
   _stretcher?: PitchPreservingStretcherNode;
-  _mediaElementSource?: MediaElementAudioSourceNode;
   _lastScheduledStretch: null | StretchInfo = null;
   _lastActualPlaybackRateChange?: {
     time: Time,
@@ -86,13 +80,10 @@ export default class Controller {
     name: 'sounded' | 'silence',
   };
   _elementVolumeCache?: number; // Same as element.volume, but faster.
-  _onElementVolumeChange?: () => void;
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
-  _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
-  _logIntervalId?: number;
 
   constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
@@ -115,9 +106,15 @@ export default class Controller {
     const element = this.element;
     const ctx = audioContext;
 
+    const elementPlaybackRateBeforeInitialization = element.playbackRate;
+    this._onDestroyCallbacks.push(() => {
+      element.playbackRate = elementPlaybackRateBeforeInitialization;
+    });
+
     this._elementVolumeCache = element.volume;
-    this._onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', this._onElementVolumeChange);
+    const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
+    element.addEventListener('volumechange', onElementVolumeChange);
+    this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     this.audioContext = ctx;
 
@@ -126,15 +123,18 @@ export default class Controller {
     // resume.
     // TODO I don't have much of idea if this can cause issues. Something along the lines of other audio sources
     // stopping working?
-    this._suspendAudioContext = () => audioContext.suspend();
-    this._resumeAudioContext = () => audioContext.resume();
+    const suspendAudioContext = () => audioContext.suspend();
+    const resumeAudioContext = () => audioContext.resume();
     if (element.paused) {
       audioContext.suspend();
     }
-    // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
-    // "illegal invocation".
-    element.addEventListener('pause', this._suspendAudioContext);
-    element.addEventListener('play', this._resumeAudioContext);
+    element.addEventListener('pause', suspendAudioContext);
+    element.addEventListener('play', resumeAudioContext);
+    this._onDestroyCallbacks.push(() => {
+      element.removeEventListener('pause', suspendAudioContext);
+      element.removeEventListener('play', resumeAudioContext);
+      audioContext.resume(); // In case the video is paused.
+    });
 
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
     await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
@@ -142,7 +142,22 @@ export default class Controller {
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
-    this._volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+    const audioWorklets: AudioWorkletNode[] = []; // To be filled.
+    this._onDestroyCallbacks.push(() => {
+      for (const w of audioWorklets) {
+        w.port.postMessage('destroy');
+        w.port.close();
+      }
+      if (process.env.NODE_ENV !== 'production') {
+        for (const propertyVal of Object.values(this)) {
+          if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
+            console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
+          }
+        }
+      }
+    });
+
+    const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
       outputChannelCount: [1],
       processorOptions: {
         maxSmoothingWindowLength: 0.03,
@@ -151,6 +166,7 @@ export default class Controller {
         smoothingWindowLength: 0.03, // TODO make a setting out of it.
       },
     });
+    audioWorklets.push(volumeFilter);
     this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
       parameterData: {
         durationThreshold: this._getSilenceDetectorNodeDurationThreshold(),
@@ -158,14 +174,21 @@ export default class Controller {
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
     });
+    audioWorklets.push(this._silenceDetectorNode);
+    // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
+    // AudioWorkletNode destruction a few lines above, but let's future-prove it.
+    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.close())
     this._analyzerIn = ctx.createAnalyser();
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
+    // let outVolumeFilter: this extends ControllerLogging ? AudioWorkletNode : undefined;
+    let outVolumeFilter: AudioWorkletNode | undefined;
     if (isLogging(this)) {
-      this._outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
         outputChannelCount: [1],
       });
+      audioWorklets.push(outVolumeFilter);
       this._analyzerOut = ctx.createAnalyser();
     }
     // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
@@ -177,34 +200,40 @@ export default class Controller {
         './PitchPreservingStretcherNode'
       );
       this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
+      this._onDestroyCallbacks.push(() => this._stretcher!.destroy());
     }
     const srcFromMap = mediaElementSourcesMap.get(element);
+    let mediaElementSource: MediaElementAudioSourceNode;
     if (srcFromMap) {
-      this._mediaElementSource = srcFromMap;
-      this._mediaElementSource.disconnect();
+      mediaElementSource = srcFromMap;
+      mediaElementSource.disconnect();
     } else {
-      this._mediaElementSource = ctx.createMediaElementSource(element);
-      mediaElementSourcesMap.set(element, this._mediaElementSource)
+      mediaElementSource = ctx.createMediaElementSource(element);
+      mediaElementSourcesMap.set(element, mediaElementSource)
     }
     if (this.isStretcherEnabled()) {
-      this._mediaElementSource.connect(this._lookahead);
+      mediaElementSource.connect(this._lookahead);
     } else {
-      this._mediaElementSource.connect(audioContext.destination);
+      mediaElementSource.connect(audioContext.destination);
     }
-    this._mediaElementSource.connect(this._volumeFilter);
-    this._volumeFilter.connect(this._silenceDetectorNode);
+    mediaElementSource.connect(volumeFilter);
+    this._onDestroyCallbacks.push(() => {
+      mediaElementSource.disconnect();
+      mediaElementSource.connect(audioContext.destination);
+    });
+    volumeFilter.connect(this._silenceDetectorNode);
     if (this.isStretcherEnabled()) {
       this._stretcher.connectInputFrom(this._lookahead);
       this._stretcher.connectOutputTo(ctx.destination);
     }
-    this._volumeFilter.connect(this._analyzerIn);
+    volumeFilter.connect(this._analyzerIn);
     if (isLogging(this)) {
       if (this.isStretcherEnabled()) {
-        this._stretcher.connectOutputTo(this._outVolumeFilter);
+        this._stretcher.connectOutputTo(outVolumeFilter!);
       } else {
-        this._mediaElementSource.connect(this._outVolumeFilter);
+        mediaElementSource.connect(outVolumeFilter!);
       }
-      this._outVolumeFilter.connect(this._analyzerOut);
+      outVolumeFilter!.connect(this._analyzerOut);
     }
     this._setStateAccordingToNewSettings();
 
@@ -264,9 +293,10 @@ export default class Controller {
       }
     }
     if (isLogging(this)) {
-      this._logIntervalId = (setInterval as typeof window.setInterval)(() => {
+      const logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
       }, 1);
+      this._onDestroyCallbacks.push(() => clearInterval(logIntervalId));
     }
 
     this.initialized = true;
@@ -414,48 +444,11 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assert(this.isInitialized());
 
-    this.element.removeEventListener('volumechange', this._onElementVolumeChange);
-
-    this._mediaElementSource.disconnect();
-    this._mediaElementSource.connect(audioContext.destination);
-
-    this.element.removeEventListener('pause', this._suspendAudioContext);
-    this.element.removeEventListener('play', this._resumeAudioContext);
-    this.audioContext.resume(); // In case the video is paused.
-
-    if (isLogging(this)) {
-      clearInterval(this._logIntervalId);
-    } else {
-      assert(!this._logIntervalId);
+    for (const cb of this._onDestroyCallbacks) {
+      cb();
     }
-
-    const audioWorklets = [this._volumeFilter, this._silenceDetectorNode];
-    if (isLogging(this)) {
-      audioWorklets.push(this._outVolumeFilter);
-    } else {
-      assert(!this._outVolumeFilter);
-    }
-    for (const w of audioWorklets) {
-      w.port.postMessage('destroy');
-      w.port.close();
-    }
-    if (process.env.NODE_ENV !== 'production') {
-      for (const propertyVal of Object.values(this)) {
-        if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
-          console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
-        }
-      }
-    }
-
-    this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
-
-    this._stretcher?.destroy();
-    // Otherwise the stretcher's `destroy` may be called twice. TODO looks odd. Shouldn't we delete the other properties
-    // as well then?
-    delete this._stretcher;
 
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
-    this.element.playbackRate = 1; // TODO how about store the initial speed
   }
 
   /**
