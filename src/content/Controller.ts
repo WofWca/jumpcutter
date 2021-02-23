@@ -453,11 +453,6 @@ export default class Controller {
     // Otherwise the stretcher's `destroy` may be called twice. TODO looks odd. Shouldn't we delete the other properties
     // as well then?
     delete this._stretcher;
-    // TODO make `AudioWorkletProcessor`'s get collected.
-    // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process#Return_value
-    // Currently they always return `true`.
-
-    // TODO close `AudioWorkletProcessor`'s message ports?
 
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
     this.element.playbackRate = 1; // TODO how about store the initial speed
