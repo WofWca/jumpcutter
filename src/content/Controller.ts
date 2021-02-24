@@ -4,9 +4,6 @@ import {
   getRealtimeMargin,
   getNewLookaheadDelay,
   getTotalDelay,
-  getStretcherDelayChange,
-  getStretcherSoundedDelay,
-  getMomentOutputTime,
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
@@ -73,7 +70,6 @@ export default class Controller {
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
   _stretcher?: PitchPreservingStretcherNode;
-  _lastScheduledStretch: null | StretchInfo = null;
   _lastActualPlaybackRateChange?: {
     time: Time,
     value: number,
@@ -199,7 +195,13 @@ export default class Controller {
         /* webpackMode: 'eager' */
         './PitchPreservingStretcherNode'
       );
-      this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
+      this._stretcher = new PitchPreservingStretcherNode(
+        ctx,
+        maxMaginStretcherDelay,
+        0, // Doesn't matter, we'll update it in `_setStateAccordingToNewSettings`.
+        () => this.settings,
+        () => this._lookahead!.delayTime.value,
+      );
       this._onDestroyCallbacks.push(() => this._stretcher!.destroy());
     }
     const srcFromMap = mediaElementSourcesMap.get(element);
@@ -261,16 +263,10 @@ export default class Controller {
       const { time: eventTime, type: silenceStartOrEnd } = msg.data;
       if (silenceStartOrEnd === 'silenceEnd') {
         this._setSpeedAndLog('sounded');
-
-        if (this.isStretcherEnabled()) {
-          this._doOnSilenceEndStretcherStuff(eventTime);
-        }
+        this._stretcher?.onSilenceEnd(eventTime);
       } else {
         this._setSpeedAndLog('silence');
-
-        if (this.isStretcherEnabled()) {
-          this._doOnSilenceStartStretcherStuff(eventTime);
-        }
+        this._stretcher?.onSilenceStart(eventTime);
 
         if (this.settings.enableDesyncCorrection) {
           // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
@@ -302,138 +298,6 @@ export default class Controller {
     this.initialized = true;
     resolveInitPromise!(this);
     return this;
-  }
-
-  /** This only changes the state of `this._stretcher` */
-  private _doOnSilenceEndStretcherStuff(eventTime: Time) {
-    // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
-    // Or just use if-else?
-    assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
-
-    // It is guaranteed to be non-null, because `_doOnSilenceStartStretcherStuff` is always called before this function.
-    const lastScheduledStretcherDelayReset = this._lastScheduledStretch!;
-
-    const lastSilenceSpeedLastsForRealtime =
-      eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
-    const lastSilenceSpeedLastsForIntrinsicTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
-
-    const marginBeforePartAtSilenceSpeedIntrinsicTimeDuration = Math.min(
-      lastSilenceSpeedLastsForIntrinsicTime,
-      this.settings.marginBefore
-    );
-    const marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration =
-      this.settings.marginBefore - marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
-    const marginBeforePartAtSilenceSpeedRealTimeDuration =
-      marginBeforePartAtSilenceSpeedIntrinsicTimeDuration / this.settings.silenceSpeed;
-    const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
-      marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration / this.settings.soundedSpeed;
-    // The time at which the moment from which the speed of the video needs to be slow has been on the input.
-    const marginBeforeStartInputTime =
-      eventTime
-      - marginBeforePartAtSilenceSpeedRealTimeDuration
-      - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
-    // Same, but when it's going to be on the output.
-    const marginBeforeStartOutputTime = getMomentOutputTime(
-      marginBeforeStartInputTime,
-      this._lookahead.delayTime.value,
-      lastScheduledStretcherDelayReset
-    );
-    const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
-    const marginBeforeStartOutputTimeStretcherDelay =
-      marginBeforeStartOutputTimeTotalDelay - this._lookahead.delayTime.value;
-
-    // As you remember, silence on the input must last for some time before we speed up the video.
-    // We then speed up these sections by reducing the stretcher delay.
-    // And sometimes we may stumble upon a silence period long enough to make us speed up the video, but short
-    // enough for us to not be done with speeding up that last part, so the margin before and that last part
-    // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
-    // snippet, because the first one is already at required (sounded) speed, due to that delay before we speed up
-    // the video after some silence.
-    // This is also the reason why `getMomentOutputTime` function is so long.
-    // Let's find this breakpoint.
-
-    if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
-      // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
-      this._stretcher.interruptLastScheduledStretch(
-        // A.k.a. `lastScheduledStretcherDelayReset.startTime`
-        marginBeforeStartOutputTimeStretcherDelay,
-        marginBeforeStartOutputTime
-      );
-      if (isLogging(this)) {
-        this._log({
-          type: 'pauseReset',
-          value: marginBeforeStartOutputTimeStretcherDelay,
-          time: marginBeforeStartOutputTime,
-        });
-      }
-    }
-
-    const marginBeforePartAtSilenceSpeedStartOutputTime =
-      marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
-    // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
-    //   marginBeforePartAtSilenceSpeedRealTimeDuration,
-    //   this.settings.silenceSpeed,
-    //   this.settings.soundedSpeed
-    // );
-    const stretcherDelayIncrease = getStretcherDelayChange(
-      marginBeforePartAtSilenceSpeedRealTimeDuration,
-      this.settings.silenceSpeed,
-      this.settings.soundedSpeed
-    );
-    // I think currently it should always be equal to the max delay.
-    const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-
-    const startValue = marginBeforeStartOutputTimeStretcherDelay;
-    const endValue = finalStretcherDelay;
-    const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
-    // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-    const endTime = eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay);
-    this._stretcher.stretch(startValue, endValue, startTime, endTime);
-    this._lastScheduledStretch = {
-      newSpeedStartInputTime: eventTime,
-      startValue,
-      endValue,
-      startTime,
-      endTime,
-    }
-    if (isLogging(this)) {
-      this._log({ type: 'stretch', lastScheduledStretch: this._lastScheduledStretch });
-    }
-  }
-  /** @see this._doOnSilenceEndStretcherStuff */
-  private _doOnSilenceStartStretcherStuff(eventTime: Time) {
-    assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
-
-    const realtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
-    // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
-    const stretcherDelayStartValue =
-      getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - realtimeMarginBefore;
-
-    const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
-
-    const originalRealtimeSpeed = 1;
-    const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
-    const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
-    const startTime = eventTime + startIn;
-    const endTime = startTime + snippetNewDuration;
-    this._stretcher.stretch(
-      stretcherDelayStartValue,
-      0,
-      startTime,
-      endTime
-    );
-    this._lastScheduledStretch = {
-      newSpeedStartInputTime: eventTime,
-      startTime,
-      startValue: stretcherDelayStartValue,
-      endTime,
-      endValue: 0,
-    };
-
-    if (isLogging(this)) {
-      this._log({ type: 'reset', lastScheduledStretch: this._lastScheduledStretch });
-    }
   }
 
   /**
@@ -478,9 +342,7 @@ export default class Controller {
         this.settings.soundedSpeed,
         this.settings.silenceSpeed
       );
-      this._stretcher.setDelay(
-        getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
-      );
+      this._stretcher.onSettingsUpdate();
     }
   }
 
@@ -533,7 +395,7 @@ export default class Controller {
      * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
      * it would be on the input timeline.
      */
-    const stretchToInputTime = (stretch: StretchInfo): this['_lastScheduledStretch'] => ({
+    const stretchToInputTime = (stretch: StretchInfo): StretchInfo => ({
       ...stretch,
       startTime: stretch.startTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.startValue),
       endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
@@ -550,8 +412,9 @@ export default class Controller {
         ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
         : 0,
       // TODO also log `interruptLastScheduledStretch` calls.
-      // lastScheduledStretch: this._lastScheduledStretch,
-      lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),
+      // lastScheduledStretch: this._stretcher.lastScheduledStretch,
+      lastScheduledStretchInputTime:
+        this._stretcher?.lastScheduledStretch && stretchToInputTime(this._stretcher.lastScheduledStretch),
     };
   }
 }

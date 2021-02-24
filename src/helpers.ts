@@ -23,7 +23,6 @@ export function assertNever(arg: never): never {
 }
 export type Time = number;
 export type StretchInfo = {
-  newSpeedStartInputTime: Time,
   startTime: Time,
   startValue: number,
   endTime: Time,
