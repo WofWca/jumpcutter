@@ -78,7 +78,7 @@
           }
           return { min: 0, max: chartMaxValue };
         } else {
-          return { min: 0, max: volumeSeries.maxValue * 1.05 };
+          return { min: 0, max: volumeSeries.maxValue };
         }
       },
     });
