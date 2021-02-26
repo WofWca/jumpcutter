@@ -107,6 +107,12 @@ export default class Controller {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
     });
 
+    (element as any).preservesPitch = false;
+    const elementPreservesPitchBeforeInitialization = (element as any).preservesPitch;
+    this._onDestroyCallbacks.push(() => {
+      (element as any).preservesPitch = elementPreservesPitchBeforeInitialization;
+    });
+
     this._elementVolumeCache = element.volume;
     const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
     element.addEventListener('volumechange', onElementVolumeChange);
@@ -156,10 +162,10 @@ export default class Controller {
     const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
       outputChannelCount: [1],
       processorOptions: {
-        maxSmoothingWindowLength: 0.03,
+        maxSmoothingWindowLength: 0.3,
       },
       parameterData: {
-        smoothingWindowLength: 0.03, // TODO make a setting out of it.
+        smoothingWindowLength: 0.3, // TODO make a setting out of it.
       },
     });
     audioWorklets.push(volumeFilter);
@@ -409,12 +415,13 @@ export default class Controller {
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
       totalOutputDelay: this._lookahead && this._stretcher
-        ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
+        ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.stretcherNode.delayTime.value)
         : 0,
       // TODO also log `interruptLastScheduledStretch` calls.
       // lastScheduledStretch: this._stretcher.lastScheduledStretch,
       lastScheduledStretchInputTime:
         this._stretcher?.lastScheduledStretch && stretchToInputTime(this._stretcher.lastScheduledStretch),
+      pitch: this._stretcher?.pitchCorrector.pitch, // TODO remove
     };
   }
 }

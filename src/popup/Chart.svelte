@@ -30,6 +30,8 @@
   let stretchSeries: TimeSeries;
   let shrinkSeries: TimeSeries;
 
+  let pitchSeries: TimeSeries;
+
   const bestYAxisRelativeVolumeThreshold = 1/6;
   let chartMaxValue: number;
   function setMaxChartValueToBest() {
@@ -100,6 +102,7 @@
     volumeThresholdSeries = new TimeSeries();
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
+    pitchSeries = new TimeSeries();
     // Order determines z-index
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
@@ -131,6 +134,11 @@
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
       strokeStyle: '#f44',
+      fillStyle: 'transparent',
+    });
+    smoothie.addTimeSeries(pitchSeries, {
+      lineWidth: 1,
+      strokeStyle: '#808',
       fillStyle: 'transparent',
     });
     
@@ -231,6 +239,10 @@
     (function updateVolumeSeries() {
       volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
     })();
+
+    const pitchChartVal = -1 * (r.pitch ?? 0) / 500;
+    // pitchSeries.append(sToMs(r.unixTime), pitchChartVal);
+    pitchSeries.append(sToMs(r.unixTime - r.totalOutputDelay), pitchChartVal);
 
     function arePlaybackRateChangeObjectsEqual(
       a: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
