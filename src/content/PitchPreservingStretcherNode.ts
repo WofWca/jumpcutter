@@ -271,6 +271,9 @@ export default class PitchPreservingStretcherNode {
     this.setOutputPitchAt('normal', endTime, speedupOrSlowdown);
     
     const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
+    // So it is changed a bit earlier to make sure that tail time has passed and the pitch value is what we want it to
+    // be.
+    const earlierBy = 0.05;
     // Acutally we only need to do this when the user changes settings.
     setTimeout(() => {
       function speedChangeMultiplierToSemitones(m: number) {
@@ -280,7 +283,7 @@ export default class PitchPreservingStretcherNode {
         ? this.speedUpPitchShift
         : this.slowDownPitchShift;
       node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
-    }, startTime - this.context.currentTime);
+    }, (startTime - this.context.currentTime - earlierBy) * 1000);
 
     this.lastScheduledStretch = {
       startValue,
