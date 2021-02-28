@@ -16,6 +16,6 @@ export default async function (): Promise<void> {
     // Since the new version, this is practically equivalent.
     newValues.marginBefore = 0;
   }
-  storage.remove(['silenceSpeed', 'enableExperimentalFeatures']);
-  storage.set(newValues);
+  await new Promise<void>(r => storage.remove(['silenceSpeed', 'enableExperimentalFeatures'], r));
+  await new Promise<void>(r => storage.set(newValues, r));
 }
