@@ -237,7 +237,7 @@ export type MyStorageChanges = {
 const storage = chrome.storage.local;
 
 export async function getSettings(): Promise<Settings> {
-  return new Promise(r => storage.get(defaultSettings, r as any))
+  return new Promise(r => storage.get(defaultSettings, r as () => Settings))
 }
 export async function setSettings(items: Partial<Settings>): Promise<void> {
   return new Promise(r => storage.set(items, r));
