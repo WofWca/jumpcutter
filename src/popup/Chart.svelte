@@ -282,6 +282,7 @@
   bind:this={canvasEl}
   width={widthPx}
   height={heightPx}
+  on:click
 >
   <label>
     Volume

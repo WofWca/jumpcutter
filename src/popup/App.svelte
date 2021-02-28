@@ -5,6 +5,7 @@
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type { TelemetryMessage } from '@/content/main';
+  import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
@@ -59,6 +60,10 @@
     return tab;
   })();
 
+  let nonSettingsActionsPort: Omit<ReturnType<typeof chrome.tabs.connect>, 'postMessage'> & {
+    postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
+  };
+
   let latestTelemetryRecord: TelemetryMessage;
   const telemetryUpdatePeriod = 0.02;
   let telemetryTimeoutId: number;
@@ -104,6 +109,8 @@
           return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
+        nonSettingsActionsPort = chrome.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
+
         (async () => {
           // Make a setings or a flag or something.
           const LISTEN_TO_HOTKEYS_IN_POPUP = true;
@@ -111,8 +118,7 @@
             await settingsPromise;
             const { default: createKeydownListener } = (await import('./hotkeys'));
             keydownListener = createKeydownListener(
-              tab.id!,
-              frameId,
+              nonSettingsActionsPort,
               () => settings,
               newValues => {
                 Object.assign(settings, newValues);
@@ -125,6 +131,7 @@
         disconnect = () => {
           clearTimeout(telemetryTimeoutId);
           telemetryPort.disconnect();
+          nonSettingsActionsPort.disconnect();
           disconnect = undefined;
         }
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
@@ -166,6 +173,14 @@
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
     ? 'relative to sounded speed'
     : 'absolute';
+
+  function onChartClick() {
+    nonSettingsActionsPort?.postMessage([{
+      // TODO replace with `action: HotkeyAction.TOGGLE_PAUSE`. Now it says that `HotkeyAction` is undefined.
+      action: 'pause_toggle' as HotkeyAction.TOGGLE_PAUSE,
+      keyCombination: { code: 'stub', }, // TODO this is dumb.
+    }]);
+  }
 
   const maxVolume = 0.15;
 
@@ -342,6 +357,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       widthPx={settings.popupChartWidthPx}
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
+      on:click={onChartClick}
     />
   {/if}
   <RangeSlider
