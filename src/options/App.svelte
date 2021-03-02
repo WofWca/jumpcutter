@@ -1,4 +1,5 @@
 <script lang="ts">
+  import browser from 'webextension-polyfill';
   import { tick } from 'svelte';
   import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
@@ -21,8 +22,7 @@
   let settings: PotentiallyInvalidSettings;
   const settingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
-  type Commands = Parameters<Parameters<typeof chrome.commands.getAll>[0]>[0];
-  const commandsPromise = new Promise<Commands>(r => chrome.commands.getAll(r));
+  const commandsPromise = browser.commands.getAll();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();

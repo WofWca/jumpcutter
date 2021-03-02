@@ -1,3 +1,4 @@
+import type browser from 'webextension-polyfill';
 import migrateFrom1_3_0 from "./migrateFrom1_3_0";
 import migrateFrom1_6_0 from "./migrateFrom1_6_0";
 import migrateFrom1_8_0 from "./migrateFrom1_8_0";
@@ -33,7 +34,7 @@ const sortedMigrationsFrom = [
 ];
 
 export default async function runRequiredMigrations(
-  previousVersion: Exclude<chrome.runtime.InstalledDetails['previousVersion'], undefined>
+  previousVersion: Exclude<browser.runtime._OnInstalledDetails['previousVersion'], undefined>
 ): Promise<void>
 {
   const firstRequiredMigrationI = sortedMigrationsFrom

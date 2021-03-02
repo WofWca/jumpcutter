@@ -1,7 +1,8 @@
+import browser from 'webextension-polyfill';
 import { setSettings, getSettings } from '@/settings';
 
 export default function initBrowserHotkeysListener(): void {
-  chrome.commands.onCommand.addListener(async (command) => {
+  browser.commands.onCommand.addListener(async (command) => {
     switch (command) {
       case 'toggle_enabled': {
         // How about sharing the settings cache object with between all background scripts?

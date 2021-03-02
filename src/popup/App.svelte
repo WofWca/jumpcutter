@@ -1,4 +1,5 @@
 <script lang="ts">
+  import browser from 'webextension-polyfill';
   import { onDestroy } from 'svelte';
   import { addOnChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
@@ -19,11 +20,10 @@
     settingsLoaded = true;
   })
   async function getTab() {
-    return new Promise<chrome.tabs.Tab>(r => {
-      // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
-      // guaranteed that there will be a tab, is it?
-      chrome.tabs.query({ active: true, currentWindow: true, }, tabs => r(tabs[0]))
-    });
+    // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
+    // guaranteed that there will be a tab, is it?
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true, });
+    return tabs[0];
   }
   const tabPromise = getTab();
   const tabLoadedPromise = (async () => {
@@ -31,22 +31,22 @@
     if (tab.status !== 'complete') { // TODO it says `status` is optional? When is it missing?
       tab = await new Promise(r => {
         let pollTimeout: ReturnType<typeof setTimeout>;
-        function finishIfComplete(tab: chrome.tabs.Tab) {
+        function finishIfComplete(tab: browser.tabs.Tab) {
           if (tab.status === 'complete') {
             r(tab);
-            chrome.tabs.onUpdated.removeListener(onUpdatedListener);
+            browser.tabs.onUpdated.removeListener(onUpdatedListener);
             clearTimeout(pollTimeout);
             return true;
           }
         }
-        const onUpdatedListener: Parameters<typeof chrome.tabs.onUpdated.addListener>[0] = (tabId, _, updatedTab) => {
+        const onUpdatedListener: Parameters<typeof browser.tabs.onUpdated.addListener>[0] = (tabId, _, updatedTab) => {
           if (tabId !== tab.id) return;
           finishIfComplete(updatedTab);
         }
-        chrome.tabs.onUpdated.addListener(onUpdatedListener);
+        browser.tabs.onUpdated.addListener(onUpdatedListener);
 
         // Sometimes if you open the popup during page load, it would never resolve. I tried attaching the listener
-        // before calling `chrome.tabs.query`, but it didn't help either. This is a workaround. TODO.
+        // before calling `browser.tabs.query`, but it didn't help either. This is a workaround. TODO.
         async function queryTabStatusAndScheduleAnotherIfNotFinished() {
           const tab = await getTab();
           const finished = finishIfComplete(tab);
@@ -60,7 +60,7 @@
     return tab;
   })();
 
-  let nonSettingsActionsPort: Omit<ReturnType<typeof chrome.tabs.connect>, 'postMessage'> & {
+  let nonSettingsActionsPort: Omit<ReturnType<typeof browser.tabs.connect>, 'postMessage'> & {
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
   };
 
@@ -79,7 +79,7 @@
     const tab = await tabPromise;
     let elementLastActivatedAt: number | undefined;
 
-    const onMessageListener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (message, sender) => {
+    const onMessageListener: Parameters<typeof browser.runtime.onMessage.addListener>[0] = (message, sender) => {
       if (
         sender.tab?.id !== tab.id
         || message.type !== 'contentStatus' // TODO DRY message types.
@@ -98,18 +98,20 @@
 
         // TODO how do we close it on popup close? Do we have to?
         // https://developer.chrome.com/extensions/messaging#port-lifetime
-        const telemetryPort = chrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
+        const telemetryPort = browser.tabs.connect(tab.id!, { name: 'telemetry', frameId });
         telemetryPort.onMessage.addListener(msg => {
           if (msg) {
-            latestTelemetryRecord = msg;
+            latestTelemetryRecord = msg as TelemetryMessage;
           }
         });
         telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
-          telemetryPort.postMessage('getTelemetry');
+          // TODO remove `as any` (will need to fix type definitions, "@types/firefox-webext-browser").
+          // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#type
+          telemetryPort.postMessage('getTelemetry' as any);
           return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
-        nonSettingsActionsPort = chrome.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
+        nonSettingsActionsPort = browser.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
 
         (async () => {
           // Make a setings or a flag or something.
@@ -118,7 +120,7 @@
             await settingsPromise;
             const { default: createKeydownListener } = (await import('./hotkeys'));
             keydownListener = createKeydownListener(
-              nonSettingsActionsPort,
+              nonSettingsActionsPort as any, // TODO remove as any
               () => settings,
               newValues => {
                 Object.assign(settings, newValues);
@@ -137,8 +139,8 @@
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
       }
     };
-    chrome.runtime.onMessage.addListener(onMessageListener);
-    chrome.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
+    browser.runtime.onMessage.addListener(onMessageListener);
+    browser.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
   })();
 
   (async () => {
@@ -185,7 +187,7 @@
   const maxVolume = 0.15;
 
   const openLocalFileLinkProps = {
-    href: chrome.runtime.getURL('local-file-player/index.html'),
+    href: browser.runtime.getURL('local-file-player/index.html'),
     target: '_new',
   };
 
@@ -227,7 +229,7 @@
   <a
     id="options-button"
     href="javascript;"
-    on:click={() => chrome.runtime.openOptionsPage()}
+    on:click={() => browser.runtime.openOptionsPage()}
   >⚙️</a>
   <div class="others__wrapper">
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->

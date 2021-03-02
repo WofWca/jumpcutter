@@ -23,10 +23,12 @@
     "lodash": "^4.17.20",
     "smoothie": "^1.35.0",
     "tippy.js": "^6.2.7",
-    "tone": "^14.7.77"
+    "tone": "^14.7.77",
+    "webextension-polyfill": "^0.7.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.132",
+    "@types/firefox-webext-browser": "^82.0.0",
     "@types/hh-mm-ss": "^1.2.0",
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.31",

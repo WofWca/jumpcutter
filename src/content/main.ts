@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import {
   Settings, getSettings, setSettings, addOnChangedListener as addOnSettingsChangedListener, MyStorageChanges,
   removeOnChangedListener as removeOnSettingsChangedListener,
@@ -32,12 +33,12 @@ let timeSavedTracker: TimeSavedTracker | undefined;
 let handleKeydown: (e: KeyboardEvent) => void;
 
 // TODO can we not do this when `enabled` is false?
-chrome.runtime.onConnect.addListener(port => {
+browser.runtime.onConnect.addListener(port => {
   switch (port.name) {
     case 'telemetry': {
       port.onMessage.addListener(msg => {
         if (process.env.NODE_ENV !== 'production') {
-          if (msg !== 'getTelemetry') {
+          if (msg as unknown !== 'getTelemetry') {
             throw new Error('Unsupported message type')
           }
         }
@@ -54,7 +55,7 @@ chrome.runtime.onConnect.addListener(port => {
     case 'nonSettingsActions': {
       port.onMessage.addListener(msg => {
         if (activeMediaElement) {
-          executeNonSettingsActions(msg);
+          executeNonSettingsActions(msg as Parameters<typeof executeNonSettingsActions>[0]);
         }
       });
       break;
@@ -67,12 +68,12 @@ chrome.runtime.onConnect.addListener(port => {
   }
 });
 function broadcastStatus() {
-  chrome.runtime.sendMessage({
+  browser.runtime.sendMessage({
     type: 'contentStatus', // TODO DRY this?
     elementLastActivatedAt,
   });
 }
-chrome.runtime.onMessage.addListener((message) => {
+browser.runtime.onMessage.addListener((message) => {
   if (process.env.NODE_ENV !== 'production') {
     if (message !== 'checkContentStatus') { // TODO DRY.
       console.error('Unrecognized message', message);

@@ -1,8 +1,9 @@
+import type browser from 'webextension-polyfill';
 import { keydownEventToActions, eventTargetIsInput } from '@/hotkeys';
 import { Settings } from '@/settings';
 
 export default function createKeydownListener(
-  nonSettingsActionsPort: ReturnType<typeof chrome.tabs.connect>,
+  nonSettingsActionsPort: ReturnType<typeof browser.tabs.connect>,
   getSettings: () => Settings,
   onNewSettingsValues: (newValues: Partial<Settings>) => void,
 ): (e: KeyboardEvent) => void {

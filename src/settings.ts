@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { HotkeyBinding, HotkeyAction } from './hotkeys';
 
 export interface Settings {
@@ -234,19 +235,19 @@ export type MyStorageChanges = {
   }
 };
 
-const storage = chrome.storage.local;
+const storage = browser.storage.local;
 
 export async function getSettings(): Promise<Settings> {
-  return new Promise(r => storage.get(defaultSettings, r as () => Settings))
+  return storage.get(defaultSettings) as Promise<Settings>;
 }
 export async function setSettings(items: Partial<Settings>): Promise<void> {
-  return new Promise(r => storage.set(items, r));
+  return storage.set(items);
 }
 type MyOnChangedListener = (changes: MyStorageChanges) => void;
-type NativeOnChangedListener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
+type NativeOnChangedListener = Parameters<typeof browser.storage.onChanged.addListener>[0];
 const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnChangedListener>();
 /**
- * This is a wrapper around the native `chrome.storage.onChanged.addListener`. The reason we need this is so listeners
+ * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
  * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
  */
 export function addOnChangedListener(listener: MyOnChangedListener): void {
@@ -255,7 +256,7 @@ export function addOnChangedListener(listener: MyOnChangedListener): void {
     listener(changes);
   };
   srcListenerToWrapperListener.set(listener, actualListener);
-  chrome.storage.onChanged.addListener(actualListener);
+  browser.storage.onChanged.addListener(actualListener);
 }
 export function removeOnChangedListener(listener: MyOnChangedListener): void {
   const actualListener = srcListenerToWrapperListener.get(listener);
@@ -265,7 +266,7 @@ export function removeOnChangedListener(listener: MyOnChangedListener): void {
     }
     return;
   }
-  chrome.storage.onChanged.removeListener(actualListener);
+  browser.storage.onChanged.removeListener(actualListener);
 }
 
 export function settingsChanges2NewValues(changes: MyStorageChanges): Partial<Settings> {
