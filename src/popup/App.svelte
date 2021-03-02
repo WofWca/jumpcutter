@@ -292,7 +292,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
         hideOnClick: false,
       }}
     >
-      <span>⏱</span>
+      <span>⏱️</span>
       <span>{timeSavedComparedToSoundedSpeedPercent}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>

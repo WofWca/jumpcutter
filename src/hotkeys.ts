@@ -75,15 +75,15 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.TOGGLE_SILENCE_SPEED]: '🙊⏩ Silence speed toggle 🔄',
 
   // 📏? Couldn't find anything better.
-  [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔼',
-  [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔽',
-  [HotkeyAction.SET_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) =',
-  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) toggle 🔄',
+  [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) 🔼',
+  [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) 🔽',
+  [HotkeyAction.SET_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) =',
+  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) toggle 🔄',
 
-  [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔼',
-  [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔽',
-  [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after (s) =',
-  [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱➡️ Margin after (s) toggle 🔄',
+  [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱️➡️ Margin after (s) 🔼',
+  [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱️➡️ Margin after (s) 🔽',
+  [HotkeyAction.SET_MARGIN_AFTER]: '⏱️➡️ Margin after (s) =',
+  [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱️➡️ Margin after (s) toggle 🔄',
 
   [HotkeyAction.ADVANCE]: '➡️ Advance (s)',
   [HotkeyAction.REWIND]: '⬅️ Rewind (s)',

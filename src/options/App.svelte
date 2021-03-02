@@ -182,7 +182,7 @@
       <section>
         <h3>Popup</h3>
         <NumberField
-          label="📈⏱ Chart length in seconds"
+          label="📈⏱️ Chart length in seconds"
           bind:value={settings.popupChartLengthInSeconds}
           min="0"
         />
@@ -219,7 +219,7 @@
       <section>
         <h3>Time saved stats</h3>
         <InputFieldBase
-          label="⏱🧮 Averaging method"
+          label="⏱️🧮 Averaging method"
           let:id
         >
           <select
@@ -233,7 +233,7 @@
         </InputFieldBase>
         {#if settings.timeSavedAveragingMethod === 'exponential'}
           <NumberField
-            label="⏱✂️ Only take into account the last N seconds of playback"
+            label="⏱️✂️ Only take into account the last N seconds of playback"
             bind:value={settings.timeSavedAveragingWindowLength}
             min="1e-3"
           />
@@ -241,7 +241,7 @@
           <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
           <!-- TODO represent it in percents. -->
           <NumberField
-            label="⏱✂️⚖️ Latest playback period averaging weight"
+            label="⏱️✂️⚖️ Latest playback period averaging weight"
             bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
             min="1e-9"
             max={1 - 1e-9}
