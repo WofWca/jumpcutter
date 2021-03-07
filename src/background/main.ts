@@ -12,6 +12,8 @@ import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 import throttle from 'lodash/throttle';
 import type { Settings, MyStorageChanges } from '@/settings';
 
+import { filterOutUnchangedValues } from '@/helpers';
+
 // Run migrations.
 browser.runtime.onInstalled.addListener(async details => {
   if (details.reason !== 'update') return;
@@ -41,6 +43,11 @@ const MAX_WRITE_OPERATIONS_PER_HOUR = chrome?.storage.sync.MAX_WRITE_OPERATIONS_
 const throttleWait = 1000 * 60 * 60 / MAX_WRITE_OPERATIONS_PER_HOUR;
 const throttledUpdateStorage = throttle(updateStorage, throttleWait);
 browser.storage.onChanged.addListener((changes, areaName) => {
+  changes = filterOutUnchangedValues(changes);
+  if (Object.keys(changes).length === 0) {
+    return;
+  }
+
   switch (areaName) {
     case 'local': {
       throttledUpdateStorage(browser.storage.sync, changes);

@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill';
+import { filterOutUnchangedValues } from './helpers';
 import { HotkeyBinding, HotkeyAction } from './hotkeys';
 
 export interface Settings {
@@ -253,6 +254,12 @@ const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnCh
 export function addOnChangedListener(listener: MyOnChangedListener): void {
   const actualListener: NativeOnChangedListener = (changes, areaName) => {
     if (areaName !== 'local') return;
+
+    changes = filterOutUnchangedValues(changes);
+    if (Object.keys(changes).length === 0) {
+      return;
+    }
+
     listener(changes);
   };
   srcListenerToWrapperListener.set(listener, actualListener);
