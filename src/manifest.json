@@ -34,7 +34,7 @@
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {
-        "default": "Ctrl+Shift+X"
+        "default": "Ctrl+Shift+Space"
       }
     },
     "toggle_enabled": {
