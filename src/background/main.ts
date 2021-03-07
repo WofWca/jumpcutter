@@ -36,7 +36,8 @@ function updateStorage(storage: typeof browser.storage['sync' | 'local'], change
 }
 // Why `MAX_WRITE_OPERATIONS_PER_HOUR`, not `MAX_WRITE_OPERATIONS_PER_MINUTE`? Because it has smaller throughput,
 // therefore, if this one is not exceeded, the other one isn't exceeded either.
-const MAX_WRITE_OPERATIONS_PER_HOUR = chrome ? chrome.storage.sync.MAX_WRITE_OPERATIONS_PER_HOUR : 2000;
+// There may not be `chrome` and there may not be `.MAX_WRITE_OPERATIONS_PER_HOUR`.
+const MAX_WRITE_OPERATIONS_PER_HOUR = chrome?.storage.sync.MAX_WRITE_OPERATIONS_PER_HOUR ?? 2000;
 const throttleWait = 1000 * 60 * 60 / MAX_WRITE_OPERATIONS_PER_HOUR;
 const throttledUpdateStorage = throttle(updateStorage, throttleWait);
 browser.storage.onChanged.addListener((changes, areaName) => {
