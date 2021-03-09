@@ -1,13 +1,14 @@
 <script lang="ts">
   import browser from 'webextension-polyfill';
   import { onDestroy } from 'svelte';
-  import { addOnChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
+  import { addOnChangedListener, getSettings, MyStorageChanges, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type { TelemetryMessage } from '@/content/main';
   import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
+  import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
 
@@ -152,11 +153,24 @@
       }
     }, 70);
   })();
+
+  // This is to react to settings changes outside the popup. Currently I don't really see how settings can change from
+  // outside the popup while it is open, but let's play it safe.
+  // Why debounce – because `addOnChangedListener` also reacts to settings changes from inside this script itself and
+  // sometimes when settings change rapidly, `onChanged` callback may lag behind so
+  // the `settings` object's state begins jumping between the old and new state.
+  // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
+  let pendingChanges: Partial<Settings> = {};
+  const debouncedApplyPendingChanges = debounce(
+    () => {
+      settings = { ...settings, ...pendingChanges }
+      pendingChanges = {};
+    },
+    500,
+  )
   addOnChangedListener(changes => {
-    settings = {
-      ...settings,
-      ...settingsChanges2NewValues(changes)
-    };
+    pendingChanges = Object.assign(pendingChanges, settingsChanges2NewValues(changes));
+    debouncedApplyPendingChanges();
   });
 
   function saveSettings(settings: Settings) {
