@@ -47,5 +47,10 @@
   "icons": {
     "128": "icons/icon128.png"
   },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "jump-cutter@example.com"
+    }
+  },
   "manifest_version": 2
 }
