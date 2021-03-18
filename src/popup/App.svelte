@@ -242,8 +242,8 @@
   <!-- TODO but this is technically a button. Is this ok? -->
   <a
     id="options-button"
-    href="javascript;"
-    on:click={() => browser.runtime.openOptionsPage()}
+    href="javascript:void(0)"
+    on:click|preventDefault={() => browser.runtime.openOptionsPage()}
   >⚙️</a>
   <div class="others__wrapper">
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
