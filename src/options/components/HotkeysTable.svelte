@@ -81,6 +81,7 @@
                 required
                 type="number"
                 step="any"
+                style="width: 14ch"
               >
             {/if}
           </td>
