@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import { setSettings, getSettings } from '@/settings';
 
 export default function initBrowserHotkeysListener(): void {

@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import { filterOutUnchangedValues } from './helpers';
 import { HotkeyBinding, HotkeyAction } from './hotkeys';
 

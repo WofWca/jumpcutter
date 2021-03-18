@@ -2,7 +2,7 @@
 // https://developer.chrome.com/extensions/background_pages#unloading
 // 1. migrations
 // 2. settings saving.
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 
 import runRequiredMigrations from './migrations/runRequiredMigrations';
 

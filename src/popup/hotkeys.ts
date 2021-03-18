@@ -1,4 +1,4 @@
-import type browser from 'webextension-polyfill';
+import type browser from '@/webextensions-api';
 import { keydownEventToActions, eventTargetIsInput } from '@/hotkeys';
 import { Settings } from '@/settings';
 

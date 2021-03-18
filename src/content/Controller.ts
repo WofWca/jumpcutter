@@ -1,5 +1,5 @@
 'use strict';
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,

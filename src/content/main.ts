@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import {
   Settings, getSettings, setSettings, addOnChangedListener as addOnSettingsChangedListener, MyStorageChanges,
   removeOnChangedListener as removeOnSettingsChangedListener,

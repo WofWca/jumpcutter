@@ -2,7 +2,7 @@
 // Once everyone has installed this version or a later one, this file can be removed, along with other changes coming
 // with this commit (so you could `git revert` it).
 
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import { defaultSettings } from '@/settings';
 
 export default async function (): Promise<void> {

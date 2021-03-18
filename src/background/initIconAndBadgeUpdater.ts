@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import { addOnChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
 
 function setBadge(text: string, color: string) {

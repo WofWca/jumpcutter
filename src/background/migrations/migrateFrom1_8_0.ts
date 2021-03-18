@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from '@/webextensions-api';
 import { Settings } from "@/settings";
 
 export default async function (): Promise<void> {

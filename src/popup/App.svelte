@@ -1,5 +1,5 @@
 <script lang="ts">
-  import browser from 'webextension-polyfill';
+  import browser from '@/webextensions-api';
   import { onDestroy } from 'svelte';
   import { addOnChangedListener, getSettings, MyStorageChanges, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import browser from 'webextension-polyfill';
+  import browser from '@/webextensions-api';
   import { tick } from 'svelte';
   import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
