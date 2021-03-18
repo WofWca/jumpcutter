@@ -26,12 +26,19 @@ function compareVersions(a: string, b: string) {
   return 0;
 }
 
-const sortedMigrationsFrom = [
-  { ver: '1.3.0', fn: migrateFrom1_3_0, },
-  { ver: '1.6.0', fn: migrateFrom1_6_0, },
-  { ver: '1.8.0', fn: migrateFrom1_8_0, },
-  { ver: '1.10.0', fn: migrateFrom1_10_0, },
-];
+const sortedMigrationsFrom: Array<{ ver: `${number}.${number}.${number}`, fn: () => void }> = [];
+// Pre-Firefox extensions store migrations. These versions have never been published to that store, so we never need
+// to migrate from them.
+if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
+  sortedMigrationsFrom.push(
+    { ver: '1.3.0', fn: migrateFrom1_3_0, },
+    { ver: '1.6.0', fn: migrateFrom1_6_0, },
+    { ver: '1.8.0', fn: migrateFrom1_8_0, },
+    { ver: '1.10.0', fn: migrateFrom1_10_0, },
+  );
+}
+// Post-Firefox extensions store migrations
+// sortedMigrationsFrom.push();
 
 export default async function runRequiredMigrations(
   previousVersion: Exclude<browser.runtime._OnInstalledDetails['previousVersion'], undefined>
