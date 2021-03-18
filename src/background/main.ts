@@ -2,8 +2,6 @@
 // https://developer.chrome.com/extensions/background_pages#unloading
 // 1. migrations
 // 2. settings saving.
-import runRequiredMigrations from './migrations/runRequiredMigrations';
-
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 
@@ -13,6 +11,7 @@ import type { Settings, MyStorageChanges } from '@/settings';
 // Run migrations.
 chrome.runtime.onInstalled.addListener(async details => {
   if (details.reason !== 'update') return;
+  const { default: runRequiredMigrations } = await import('./migrations/runRequiredMigrations');
   await runRequiredMigrations(details.previousVersion!);
 })
 
