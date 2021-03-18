@@ -4,8 +4,6 @@
 // 2. settings saving.
 import browser from '@/webextensions-api';
 
-import runRequiredMigrations from './migrations/runRequiredMigrations';
-
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 
@@ -17,6 +15,7 @@ import { filterOutUnchangedValues } from '@/helpers';
 // Run migrations.
 browser.runtime.onInstalled.addListener(async details => {
   if (details.reason !== 'update') return;
+  const { default: runRequiredMigrations } = await import('./migrations/runRequiredMigrations');
   await runRequiredMigrations(details.previousVersion!);
 })
 
