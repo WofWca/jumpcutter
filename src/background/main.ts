@@ -4,6 +4,8 @@
 // 2. settings saving.
 import browser from '@/webextensions-api';
 
+import manifest from '@/manifest.json';
+
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 
@@ -13,11 +15,19 @@ import type { Settings, MyStorageChanges } from '@/settings';
 import { filterOutUnchangedValues } from '@/helpers';
 
 // Run migrations.
-browser.runtime.onInstalled.addListener(async details => {
-  if (details.reason !== 'update') return;
-  const { default: runRequiredMigrations } = await import('./migrations/runRequiredMigrations');
-  await runRequiredMigrations(details.previousVersion!);
-})
+if (process.env.NODE_ENV !== 'production') {
+  if (manifest.version !== '1.14.0') {
+    console.error("Don't forget remove the following check, if you added any migrations (revert this commit), "
+      + "or update the version string above otherwise");
+  }
+}
+if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
+  browser.runtime.onInstalled.addListener(async details => {
+    if (details.reason !== 'update') return;
+    const { default: runRequiredMigrations } = await import('./migrations/runRequiredMigrations');
+    await runRequiredMigrations(details.previousVersion!);
+  })
+}
 
 // The following code block synchronizes local storage with sync storage.
 // We'd be glad to only use `browser.storage.sync` directly, but in Chromium it is not capable of providing real-time
