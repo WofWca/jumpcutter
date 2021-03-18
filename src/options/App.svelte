@@ -106,7 +106,10 @@
   }
 </script>
 
-<div class="app">
+<div
+  class="app"
+  style={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 'margin: 1rem;' : ''}
+>
   {#await settingsPromise then _}
     <form
       bind:this={formEl}
