@@ -402,6 +402,8 @@ export default class Controller {
       endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
     });
 
+    const stretcherDelay = this._stretcher?.delayNode.delayTime.value;
+
     return {
       unixTime: Date.now() / 1000,
       // IntrinsicTime: this.element.currentTime,
@@ -409,9 +411,10 @@ export default class Controller {
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
-      totalOutputDelay: this._lookahead && this._stretcher
-        ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
+      totalOutputDelay: this._lookahead && stretcherDelay !== undefined
+        ? getTotalDelay(this._lookahead.delayTime.value, stretcherDelay)
         : 0,
+      stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.
       // lastScheduledStretch: this._stretcher.lastScheduledStretch,
       lastScheduledStretchInputTime:
