@@ -41,7 +41,6 @@ export type DeepReadonly<T> =
  * `browser.storage.onChanged` listeners in Firefox may be called with `newValue` equal to `oldValue` if you call
  * `storage.set()` with the same value. It's supposed to be used on all `browser.storage.onChanged.addListener`
  * callbacks.
- * TODO Calling this funciton is redundant in Chromium as it does nothing there. Eliminate it at build.
  * TODO can we consider it a bug? If not, rethink the whole commit, we may improve
  * performance, at least by using something other than `_.isEqual` as it covers a lot of edge cases (like regex types,
  * which we don't use).
@@ -50,6 +49,12 @@ export type DeepReadonly<T> =
 export function filterOutUnchangedValues(
   changes: Record<string, browser.storage.StorageChange>
 ): Record<string, browser.storage.StorageChange> {
+  if (process.env.NODE_ENV !== 'production') {
+    if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
+      console.warn('It is redundant to use this function in Chromium');
+    }
+  }
+
   const clone: typeof changes = {};
   for (const [_k, v] of Object.entries(changes)) {
     const k = _k as keyof typeof clone;

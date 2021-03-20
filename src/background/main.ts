@@ -52,7 +52,9 @@ const MAX_WRITE_OPERATIONS_PER_HOUR = chrome?.storage.sync.MAX_WRITE_OPERATIONS_
 const throttleWait = 1000 * 60 * 60 / MAX_WRITE_OPERATIONS_PER_HOUR;
 const throttledUpdateStorage = throttle(updateStorage, throttleWait);
 browser.storage.onChanged.addListener((changes, areaName) => {
-  changes = filterOutUnchangedValues(changes);
+  if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
+    changes = filterOutUnchangedValues(changes);
+  }
   if (Object.keys(changes).length === 0) {
     return;
   }

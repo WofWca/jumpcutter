@@ -255,7 +255,9 @@ export function addOnChangedListener(listener: MyOnChangedListener): void {
   const actualListener: NativeOnChangedListener = (changes, areaName) => {
     if (areaName !== 'local') return;
 
-    changes = filterOutUnchangedValues(changes);
+    if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
+      changes = filterOutUnchangedValues(changes);
+    }
     if (Object.keys(changes).length === 0) {
       return;
     }
