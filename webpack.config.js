@@ -3,8 +3,10 @@
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
+const WebExtensionTarget = require('webpack-target-webextension');
 
 module.exports = {
+  target: 'web',
   devtool: process.env.NODE_ENV === 'production'
     ? undefined
     // The default one ('eval') doesn't work because "'unsafe-eval' is not an allowed source of script in the following
@@ -58,6 +60,11 @@ module.exports = {
     options: './src/options/main.ts',
 
     'local-file-player': './src/local-file-player/main.ts',
+
+
+
+    // 'dynamic-import-test': './src/dynamic-import-test/main.ts',
+    'dynamic-import-test': './src/dynamic-import-test/main.js',
   },
 
   output: {
@@ -75,6 +82,7 @@ module.exports = {
   },
 
   plugins: [
+    new WebExtensionTarget(),
     new CleanWebpackPlugin(),
     new CopyPlugin({
       patterns: [
@@ -83,8 +91,15 @@ module.exports = {
         { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
         { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
         { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
+
+        { context: 'src', from: 'dynamic-import-test/*.(html|css)', to: 'dynamic-import-test/[name][ext]' },
       ],
     }),
     new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)(),
   ],
+
+  optimization: {
+    minimize: false,
+    splitChunks: { automaticNameDelimiter: '-' },
+  }
 };

@@ -146,7 +146,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
 
   const controllerP = (async () => {
     const { default: Controller } = await import(
-      /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
       './Controller'
     );
     controller = new Controller(el, extensionSettings2ControllerSettings(settings));
@@ -157,7 +156,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
   if (settings.enableHotkeys) {
     hotkeyListenerP = (async () => {
       const { keydownEventToActions, eventTargetIsInput } = await import(
-        /* webpackMode: 'eager' */
         /* webpackExports: ['keydownEventToActions', 'eventTargetIsInput'] */
         '@/hotkeys'
       );

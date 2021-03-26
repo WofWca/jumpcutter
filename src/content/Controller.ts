@@ -9,7 +9,7 @@ import {
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { getAbsoluteSilenceSpeed } from '@/settings';
-import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
+import type { PitchPreservingStretcherNode } from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
 
 
@@ -46,7 +46,8 @@ type ControllerSettings =
   };
 
 function isStretcherEnabled(settings: ControllerSettings) {
-  return settings.marginBefore > 0;
+  return false;
+  // return settings.marginBefore > 0;
 }
 
 export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
@@ -191,9 +192,13 @@ export default class Controller {
     // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-      const { default: PitchPreservingStretcherNode } = await import(
-        /* webpackMode: 'eager' */
+      // console.log(await import(
+      //   '@/content/PitchPreservingStretcherNode'
+      // ));
+      const { PitchPreservingStretcherNode } = await import(
         './PitchPreservingStretcherNode'
+        // './PitchPreservingStretcherNode'
+        // 'chrome-extension://bmoeommkjbhpbabmgmhgbjlbgjbkhahi/PitchPreservingStretcherNode.js'
       );
       this._stretcher = new PitchPreservingStretcherNode(
         ctx,
