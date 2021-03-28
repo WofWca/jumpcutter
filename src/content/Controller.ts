@@ -193,7 +193,6 @@ export default class Controller {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
         /* webpackExports: ['default'] */
-        /* webpackMode: 'eager' */
         './PitchPreservingStretcherNode'
       );
       this._stretcher = new PitchPreservingStretcherNode(
