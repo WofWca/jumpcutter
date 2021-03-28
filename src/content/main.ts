@@ -6,7 +6,7 @@ import {
 import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
 import type TimeSavedTracker from './TimeSavedTracker';
-import { extensionSettings2ControllerSettings } from './Controller';
+import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 
