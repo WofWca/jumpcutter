@@ -147,6 +147,7 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
   const controllerP = (async () => {
     const { default: Controller } = await import(
       /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
+      /* webpackExports: ['default'] */
       './Controller'
     );
     controller = new Controller(el, extensionSettings2ControllerSettings(settings));
@@ -211,7 +212,11 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
 
   // TODO an option to disable it.
   const timeSavedTrackerPromise = (async () => {
-    const { default: TimeSavedTracker } = await import(/* webpackMode: 'eager' */ './TimeSavedTracker');
+    const { default: TimeSavedTracker } = await import(
+      /* webpackMode: 'eager' */
+      /* webpackExports: ['default'] */
+      './TimeSavedTracker'
+    );
     await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
     timeSavedTracker = new TimeSavedTracker(
       el,
