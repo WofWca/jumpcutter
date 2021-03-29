@@ -379,7 +379,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     label="Sounded speed"
     list="sounded-speed-datalist"
     fractionalDigits={2}
-    min="0"
+    min="0.05"
     max="15"
     step="0.05"
     bind:value={settings.soundedSpeed}
@@ -389,7 +389,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
-    min="0"
+    min="0.05"
     max="15"
     step="0.05"
     bind:value={settings.silenceSpeedRaw}
