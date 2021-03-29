@@ -9,7 +9,6 @@ import {
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { getAbsoluteSilenceSpeed } from '@/settings';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
 
@@ -34,7 +33,7 @@ type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analy
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
 
-type ControllerSettings =
+export type ControllerSettings =
   Pick<
     ExtensionSettings,
     'volumeThreshold'
@@ -48,13 +47,6 @@ type ControllerSettings =
 
 function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
-}
-
-export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
-  return {
-    ...extensionSettings,
-    silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),
-  };
 }
 
 export default class Controller {
@@ -193,7 +185,7 @@ export default class Controller {
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
-        /* webpackMode: 'eager' */
+        /* webpackExports: ['default'] */
         './PitchPreservingStretcherNode'
       );
       this._stretcher = new PitchPreservingStretcherNode(
@@ -279,9 +271,9 @@ export default class Controller {
           // `marginAfter` ensures there's plenty of it.
           // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
           // pauses, so let's give it some bigger value.
-          const DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES = 10;
+          const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
           this._didNotDoDesyncCorrectionForNSpeedSwitches++;
-          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES) {
+          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
             element.currentTime -= 1e-9;
             // TODO but it's also corrected when the user seeks the video manually.
             this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;

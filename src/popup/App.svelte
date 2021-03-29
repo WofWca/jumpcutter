@@ -119,7 +119,10 @@
           const LISTEN_TO_HOTKEYS_IN_POPUP = true;
           await settingsPromise;
           if (LISTEN_TO_HOTKEYS_IN_POPUP && settings!.enableHotkeys) {
-            const { default: createKeydownListener } = (await import('./hotkeys'));
+            const { default: createKeydownListener } = await import(
+              /* webpackExports: ['default'] */
+              './hotkeys'
+            );
             keydownListener = createKeydownListener(
               nonSettingsActionsPort as any, // TODO remove as any
               () => settings,

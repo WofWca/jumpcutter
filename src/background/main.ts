@@ -24,7 +24,10 @@ if (process.env.NODE_ENV !== 'production') {
 if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
   browser.runtime.onInstalled.addListener(async details => {
     if (details.reason !== 'update') return;
-    const { default: runRequiredMigrations } = await import('./migrations/runRequiredMigrations');
+    const { default: runRequiredMigrations } = await import(
+      /* webpackExports: ['default'] */
+      './migrations/runRequiredMigrations'
+    );
     await runRequiredMigrations(details.previousVersion!);
   })
 }

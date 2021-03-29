@@ -23,7 +23,8 @@
   ],
   "web_accessible_resources": [
     "content/SilenceDetectorProcessor.js",
-    "content/VolumeFilter.js"
+    "content/VolumeFilter.js",
+    "chunks/*.js"
   ],
   "options_ui": {
     "page": "options/index.html",
