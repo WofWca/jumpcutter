@@ -97,4 +97,12 @@ module.exports = {
     }),
     new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)(),
   ],
+
+  optimization: {
+    splitChunks: {
+      // Optimize for the fact that chunks are loaded from disk, not from network.
+      // No research behind the number, just intuition.
+      minSize: 100,
+    },
+  }
 };
