@@ -3,6 +3,7 @@
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
+const NativeDynamicImportPlugin = require('./src/native-dynamic-import-webpack-plugin/main.js');
 
 module.exports = {
   devtool: process.env.NODE_ENV === 'production'
@@ -69,13 +70,22 @@ module.exports = {
       }
       return `${chunkName}/main.js`;
     },
-    // Added this so 'popup/popup.html' can load chunks (which are located in 'dist/'). May want to instead move
-    // 'popup.html' to 'dist/popup.html'.
+    // Paths are transformed with `browser.runtime.getURL()` in `NativeDynamicImportPlugin`.
     publicPath: '/',
+    // So we don't have to add too much to `web_accessible_resources` (`*.js`) (however I'm not sure if that would
+    // be bad).
+    chunkFilename: 'chunks/[id].js',
   },
 
   plugins: [
     new CleanWebpackPlugin(),
+    // This is so dynamic import works in content scripts (but it affects all scripts).
+    // TODO in the future, it should be possible to just specify `output.environment.dynamicImport = true`
+    // (which will act as `output.chunkLoading = 'import'`), but Webpack isn't able to do that yet:
+    // https://github.com/webpack/webpack/blob/15110ea6de0b53c93d697716d17037c41a3c0cd2/lib/javascript/EnableChunkLoadingPlugin.js#L99-L101
+    // Also, browsers don't support that well themselves yet.
+    new NativeDynamicImportPlugin(),
+
     new CopyPlugin({
       patterns: [
         { context: 'src', from: 'manifest.json' },

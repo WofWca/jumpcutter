@@ -8,7 +8,6 @@ import {
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { getAbsoluteSilenceSpeed } from '@/settings';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
 
@@ -33,7 +32,7 @@ type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analy
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
 
-type ControllerSettings =
+export type ControllerSettings =
   Pick<
     ExtensionSettings,
     'volumeThreshold'
@@ -47,13 +46,6 @@ type ControllerSettings =
 
 function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
-}
-
-export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
-  return {
-    ...extensionSettings,
-    silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),
-  };
 }
 
 export default class Controller {
@@ -193,7 +185,6 @@ export default class Controller {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
         /* webpackExports: ['default'] */
-        /* webpackMode: 'eager' */
         './PitchPreservingStretcherNode'
       );
       this._stretcher = new PitchPreservingStretcherNode(

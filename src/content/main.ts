@@ -6,7 +6,7 @@ import {
 import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
 import type TimeSavedTracker from './TimeSavedTracker';
-import { extensionSettings2ControllerSettings } from './Controller';
+import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 
@@ -146,7 +146,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
 
   const controllerP = (async () => {
     const { default: Controller } = await import(
-      /* webpackMode: 'eager' */ // Why 'eager'? Because I can't get the default one to work.
       /* webpackExports: ['default'] */
       './Controller'
     );
@@ -158,7 +157,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
   if (settings.enableHotkeys) {
     hotkeyListenerP = (async () => {
       const { keydownEventToActions, eventTargetIsInput } = await import(
-        /* webpackMode: 'eager' */
         /* webpackExports: ['keydownEventToActions', 'eventTargetIsInput'] */
         '@/hotkeys'
       );
@@ -213,7 +211,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
   // TODO an option to disable it.
   const timeSavedTrackerPromise = (async () => {
     const { default: TimeSavedTracker } = await import(
-      /* webpackMode: 'eager' */
       /* webpackExports: ['default'] */
       './TimeSavedTracker'
     );
