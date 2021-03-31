@@ -27,6 +27,7 @@ export default class PitchPreservingStretcherNode {
   speedUpGain: GainNode;
   slowDownGain: GainNode;
   normalSpeedGain: GainNode;
+  toneContext: ReturnType<typeof toneGetContext>
   speedUpPitchShift: PitchShift;
   slowDownPitchShift: PitchShift;
   originalPitchCompensationDelay: DelayNode;
@@ -55,6 +56,7 @@ export default class PitchPreservingStretcherNode {
 
     const oldToneContext = toneGetContext();
     toneSetContext(context);
+    this.toneContext = toneGetContext();
     oldToneContext.dispose();
     this.speedUpPitchShift = new PitchShift();
     this.slowDownPitchShift = new PitchShift();
@@ -344,5 +346,7 @@ export default class PitchPreservingStretcherNode {
         }
       })
     }
+
+    this.toneContext.dispose();
   }
 }
