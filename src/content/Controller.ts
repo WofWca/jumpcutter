@@ -280,6 +280,11 @@ export default class Controller {
         }
       }
     }
+    // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
+    // (like 200 kB per toggle).
+    // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
+    // thing retaining a reference to the listener. TODO
+    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.onmessage = null);
     if (isLogging(this)) {
       const logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
