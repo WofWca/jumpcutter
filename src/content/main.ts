@@ -165,7 +165,6 @@ async function esnureAttachToElement(el: HTMLMediaElement) {
       handleKeydown = (e: KeyboardEvent) => {
         if (eventTargetIsInput(e)) return;
         assert(settings);
-        // TODO show what changed on the popup text.
         const actions = keydownEventToActions(e, settings);
         const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
 
