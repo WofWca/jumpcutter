@@ -1,4 +1,6 @@
-import { addOnChangedListener as addOnSettingsChangedListener, enabledSettingDefaultValue, getSettings } from '@/settings';
+import {
+  addOnChangedListener as addOnSettingsChangedListener, enabledSettingDefaultValue, getSettingsAdvanced
+} from '@/settings';
 
 (async function () { // Just for top-level `await`
 
@@ -10,7 +12,7 @@ async function importAndInit() {
   init();
 }
 
-const { enabled: enabledOnInitialization } = await getSettings({ enabled: enabledSettingDefaultValue });
+const { enabled: enabledOnInitialization } = await getSettingsAdvanced({ enabled: enabledSettingDefaultValue });
 if (enabledOnInitialization) {
   importAndInit();
 }
