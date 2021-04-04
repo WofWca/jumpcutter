@@ -4,7 +4,7 @@
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
-  import type { TelemetryMessage } from '@/content/main';
+  import type { TelemetryMessage } from '@/content/AllMediaElementsController';
   import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
