@@ -1,3 +1,4 @@
+import type browser from '@/webextensions-api';
 import isEqual from 'lodash/isEqual';
 
 export function clamp(value: number, min: number, max: number): number {

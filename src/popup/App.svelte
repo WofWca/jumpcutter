@@ -5,7 +5,7 @@
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
-  import type { TelemetryMessage } from '@/content/main';
+  import type { TelemetryMessage } from '@/content/AllMediaElementsController';
   import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import debounce from 'lodash/debounce';
@@ -395,7 +395,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     label="Sounded speed"
     list="sounded-speed-datalist"
     fractionalDigits={2}
-    min="0"
+    min="0.05"
     max="15"
     step="0.05"
     bind:value={settings.soundedSpeed}
@@ -405,7 +405,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
-    min="0"
+    min="0.05"
     max="15"
     step="0.05"
     bind:value={settings.silenceSpeedRaw}

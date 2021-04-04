@@ -21,6 +21,11 @@
     "serve:chromium": "yarn run _abstract-serve --env browser=chromium",
     "lint": "eslint ./src/"
   },
+  "sideEffects": [
+    "./src/{content,popup,background,options,local-file-player}/main.ts",
+    "./src/content/SilenceDetectorProcessor.ts",
+    "./src/content/VolumeFilter.ts"
+  ],
   "dependencies": {
     "@wofwca/smoothie": "^1.36.0-rc.0",
     "hh-mm-ss": "^1.2.0",

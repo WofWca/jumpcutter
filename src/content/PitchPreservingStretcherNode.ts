@@ -1,6 +1,6 @@
 // Importing this way because the Tone.js library has a lot of modules with side-effects and they get bundled.
 // TODO can we import `.ts` files instead of the built ones?
-import { setContext as toneSetContext } from 'tone/build/esm/core/Global';
+import { setContext as toneSetContext, getContext as toneGetContext } from 'tone/build/esm/core/Global';
 import { connect as ToneConnect } from 'tone/build/esm/core/context/ToneAudioNode';
 import { PitchShift } from 'tone/build/esm/effect/PitchShift';
 import { ToneAudioNode } from 'tone/build/esm/core/context/ToneAudioNode';
@@ -27,6 +27,7 @@ export default class PitchPreservingStretcherNode {
   speedUpGain: GainNode;
   slowDownGain: GainNode;
   normalSpeedGain: GainNode;
+  toneContext: ReturnType<typeof toneGetContext>
   speedUpPitchShift: PitchShift;
   slowDownPitchShift: PitchShift;
   originalPitchCompensationDelay: DelayNode;
@@ -53,7 +54,10 @@ export default class PitchPreservingStretcherNode {
     this.slowDownGain.gain.value = 0
     this.normalSpeedGain.gain.value = 1;
 
+    const oldToneContext = toneGetContext();
     toneSetContext(context);
+    this.toneContext = toneGetContext();
+    oldToneContext.dispose();
     this.speedUpPitchShift = new PitchShift();
     this.slowDownPitchShift = new PitchShift();
 
@@ -342,5 +346,7 @@ export default class PitchPreservingStretcherNode {
         }
       })
     }
+
+    this.toneContext.dispose();
   }
 }
