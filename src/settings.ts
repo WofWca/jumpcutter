@@ -73,6 +73,8 @@ export const settingKeyToPreviousValueKey: { [P in TogglableSettings]: Correspon
   marginAfter: 'previousMarginAfter',
 }
 
+export const enabledSettingDefaultValue = true;
+
 export const defaultSettings: Readonly<Settings> = {
   volumeThreshold:          0.010,
   previousVolumeThreshold:  0.010,
@@ -81,7 +83,7 @@ export const defaultSettings: Readonly<Settings> = {
   previousSilenceSpeedRaw: 2.5,
   soundedSpeed:         1.5,
   previousSoundedSpeed: 1.5,
-  enabled: true,
+  enabled: enabledSettingDefaultValue,
   marginBefore:         0.100,
   previousMarginBefore: 0.100,
   marginAfter:          0.100,
@@ -236,8 +238,8 @@ export type MyStorageChanges = {
 
 const storage = chrome.storage.local;
 
-export async function getSettings(): Promise<Settings> {
-  return new Promise(r => storage.get(defaultSettings, r as () => Settings))
+export async function getSettings(defaults: Partial<Settings> = defaultSettings): Promise<Settings> {
+  return new Promise(r => storage.get(defaults, r as () => Settings))
 }
 export async function setSettings(items: Partial<Settings>): Promise<void> {
   return new Promise(r => storage.set(items, r));
