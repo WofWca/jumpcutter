@@ -133,10 +133,9 @@ export function addPlaybackResumeListener(el: HTMLMediaElement, listener: () => 
     el.removeEventListener('playing', listener);
   }
 }
-const HAVE_FUTURE_DATA = 3;
 export function isPlaybackActive(el: HTMLMediaElement): boolean {
   // I wrote this looking at https://html.spec.whatwg.org/multipage/media.html#event-media-playing
-  return el.readyState >= HAVE_FUTURE_DATA && !el.paused;
+  return el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA && !el.paused;
 }
 
 export function cloneFunction<T extends () => unknown>(thisArg: unknown, f: T): T {
