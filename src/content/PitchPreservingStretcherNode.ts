@@ -307,7 +307,7 @@ export default class PitchPreservingStretcherNode {
       + 'yet');
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method
     this.delayNode.delayTime
-      .cancelAndHoldAtTime(interruptAtTime)
+      .cancelScheduledValues(interruptAtTime)
       .linearRampToValueAtTime(interruptAtTimeValue, interruptAtTime);
 
     const allGainNodes = [
@@ -316,7 +316,7 @@ export default class PitchPreservingStretcherNode {
       this.normalSpeedGain,
     ];
     for (const node of allGainNodes) {
-      node.gain.cancelAndHoldAtTime(interruptAtTime);
+      node.gain.cancelScheduledValues(interruptAtTime);
     }
     this.setOutputPitchAt('normal', interruptAtTime, this.lastScheduledStretch.speedupOrSlowdown);
   }

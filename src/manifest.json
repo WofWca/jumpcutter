@@ -29,12 +29,13 @@
   "options_ui": {
     "page": "options/index.html",
     "chrome_style": true,
+    "browser_style": true,
     "open_in_tab": false
   },
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {
-        "default": "Ctrl+Shift+X"
+        "default": "Ctrl+Shift+Space"
       }
     },
     "toggle_enabled": {
@@ -46,6 +47,11 @@
   },
   "icons": {
     "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "jump-cutter@example.com"
+    }
   },
   "manifest_version": 2
 }

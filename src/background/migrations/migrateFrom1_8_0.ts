@@ -1,9 +1,10 @@
+import browser from '@/webextensions-api';
 import { Settings } from "@/settings";
 
 export default async function (): Promise<void> {
-  const storage = chrome.storage.local;
+  const storage = browser.storage.local;
   const { silenceSpeed, soundedSpeed, enableExperimentalFeatures } =
-    await new Promise(r => storage.get(['silenceSpeed', 'soundedSpeed', 'enableExperimentalFeatures'], r as any));
+    await storage.get(['silenceSpeed', 'soundedSpeed', 'enableExperimentalFeatures']);
   let multiplier = silenceSpeed / soundedSpeed;
   if (!(0 < multiplier && multiplier <= 10)) { // Check if it's reasonable (and if it's a nubmer at all, just in case).
     multiplier = 2;
@@ -16,6 +17,6 @@ export default async function (): Promise<void> {
     // Since the new version, this is practically equivalent.
     newValues.marginBefore = 0;
   }
-  await new Promise<void>(r => storage.remove(['silenceSpeed', 'enableExperimentalFeatures'], r));
-  await new Promise<void>(r => storage.set(newValues, r));
+  await storage.remove(['silenceSpeed', 'enableExperimentalFeatures']);
+  await storage.set(newValues);
 }

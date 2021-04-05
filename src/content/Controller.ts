@@ -1,4 +1,5 @@
 'use strict';
+import browser from '@/webextensions-api';
 import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
@@ -124,8 +125,8 @@ export default class Controller {
       audioContext.resume(); // In case the video is paused.
     });
 
-    await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
-    await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
+    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js'));
+    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js'));
 
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);

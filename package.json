@@ -13,8 +13,12 @@
   },
   "homepage": "https://github.com/WofWca/jumpcutter#readme",
   "scripts": {
-    "build": "yarn lint && NODE_ENV=production webpack --mode=production",
-    "serve": "webpack --mode=development --watch",
+    "_abstract-build": "yarn lint && NODE_ENV=production webpack --mode=production",
+    "build:gecko":    "yarn run _abstract-build --env browser=gecko",
+    "build:chromium": "yarn run _abstract-build --env browser=chromium",
+    "_abstract-serve": "webpack --mode=development --watch",
+    "serve:gecko":    "yarn run _abstract-serve --env browser=gecko",
+    "serve:chromium": "yarn run _abstract-serve --env browser=chromium",
     "lint": "eslint ./src/"
   },
   "sideEffects": [
@@ -28,10 +32,12 @@
     "lodash": "^4.17.21",
     "smoothie": "^1.35.0",
     "tippy.js": "^6.3.1",
-    "tone": "^14.7.77"
+    "tone": "^14.7.77",
+    "webextension-polyfill": "^0.7.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.133",
+    "@types/firefox-webext-browser": "^82.0.0",
     "@types/hh-mm-ss": "^1.2.0",
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.36",

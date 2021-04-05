@@ -1,10 +1,11 @@
 <script lang="ts">
+  import browser from '@/webextensions-api';
   import { tick } from 'svelte';
   import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
-  import { cloneDeepJson, assert } from '@/helpers';
+  import { cloneDeepJson, assert, assertNever } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
@@ -21,8 +22,7 @@
   let settings: PotentiallyInvalidSettings;
   const settingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
-  type Commands = Parameters<Parameters<typeof chrome.commands.getAll>[0]>[0];
-  const commandsPromise = new Promise<Commands>(r => chrome.commands.getAll(r));
+  const commandsPromise = browser.commands.getAll();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -88,9 +88,28 @@
     { v: 'all-time', l: '♾️ All-time average (no decay)' },
     { v: 'exponential', l: '📉 Only take into account the latest data (exponential decay)', },
   ];
+
+  // TODO add `rel` attribute to the link element?
+  let editNativeShortcutsLinkUrl: string;
+  switch (BUILD_DEFINITIONS.BROWSER) {
+    case 'chromium':
+      // From https://developer.chrome.com/apps/commands#usage
+      editNativeShortcutsLinkUrl = 'chrome://extensions/configureCommands';
+      break;
+    case 'gecko':
+      // Yes, it's a knowledge base page, because Firefox doesn't have a dedicated link for the "manage shortcuts" page.
+      // TODO change it when it does.
+      // Also it there is this method: `browser.commands.update`, but I think native the dedicated page is better.
+      editNativeShortcutsLinkUrl = 'https://support.mozilla.org/kb/manage-extension-shortcuts-firefox';
+      break;
+    default: assertNever(BUILD_DEFINITIONS.BROWSER);
+  }
 </script>
 
-<div class="app">
+<div
+  class="app"
+  style={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 'margin: 1rem;' : ''}
+>
   {#await settingsPromise then _}
     <form
       bind:this={formEl}
@@ -161,12 +180,11 @@
                   <td></td> <!-- No "overrideWebsiteHotkeys" -->
                   <td style="text-align: center;">
                     <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
-                    to not work fully (no scrolling to anchor). Just 'href' doesn't work. Link is taken from
-                    https://developer.chrome.com/apps/commands#usage. -->
+                    to not work fully (no scrolling to anchor). Just 'href' doesn't work. -->
                     <a
-                      href="chrome://extensions/configureCommands"
-                      on:click|preventDefault={_ => chrome.tabs.create({
-                        url: 'chrome://extensions/configureCommands',
+                      href={editNativeShortcutsLinkUrl}
+                      on:click|preventDefault={_ => browser.tabs.create({
+                        url: editNativeShortcutsLinkUrl,
                         active: true,
                       })}
                       aria-label="Edit"
@@ -182,7 +200,7 @@
       <section>
         <h3>Popup</h3>
         <NumberField
-          label="📈⏱ Chart length in seconds"
+          label="📈⏱️ Chart length in seconds"
           bind:value={settings.popupChartLengthInSeconds}
           min="0"
         />
@@ -219,7 +237,7 @@
       <section>
         <h3>Time saved stats</h3>
         <InputFieldBase
-          label="⏱🧮 Averaging method"
+          label="⏱️🧮 Averaging method"
           let:id
         >
           <select
@@ -233,7 +251,7 @@
         </InputFieldBase>
         {#if settings.timeSavedAveragingMethod === 'exponential'}
           <NumberField
-            label="⏱✂️ Only take into account the last N seconds of playback"
+            label="⏱️✂️ Only take into account the last N seconds of playback"
             bind:value={settings.timeSavedAveragingWindowLength}
             min="1e-3"
           />
@@ -241,7 +259,7 @@
           <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
           <!-- TODO represent it in percents. -->
           <NumberField
-            label="⏱✂️⚖️ Latest playback period averaging weight"
+            label="⏱️✂️⚖️ Latest playback period averaging weight"
             bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
             min="1e-9"
             max={1 - 1e-9}

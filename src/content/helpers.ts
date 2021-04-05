@@ -76,8 +76,8 @@ export function getMomentOutputTime(
 }
 
 /**
- * Chromium uses different audio data pipelines for normal (1.0) and non-normal speeds, and
- * switching between them causes an audio glitch:
+ * Browsers (at least at the time of writing, at least Gecko and Chromium) use different audio data pipelines for normal
+ * (1.0) and non-normal speeds, and switching between them causes an audio glitch:
  * https://github.com/chromium/chromium/blob/8af9895458f5ac16b2059ca8a336da6367188409/media/renderers/audio_renderer_impl.h#L16-L17
  * This is to make it impossible for the user to set speed to no normal.
  * TODO give users an option (on the options page) to skip this transformation.

@@ -1,3 +1,4 @@
+import browser from '@/webextensions-api';
 import {
   Settings, getSettings, setSettings, addOnChangedListener as addOnSettingsChangedListener, MyStorageChanges,
   removeOnChangedListener as removeOnSettingsChangedListener,
@@ -108,7 +109,7 @@ export default class AllMediaElementsController {
   }
   private ensureAddOnSettingsChangedListener = this.oncePerInstance(this._addOnSettingsChangedListener);
 
-  private onConnect = (port: chrome.runtime.Port) => {
+  private onConnect = (port: browser.runtime.Port) => {
     let listener: (msg: unknown) => void;
     switch (port.name) {
       case 'telemetry': {
@@ -147,8 +148,8 @@ export default class AllMediaElementsController {
     this._onDestroyCallbacks.push(() => port.onMessage.removeListener(listener));
   }
   private _addOnConnectListener() {
-    chrome.runtime.onConnect.addListener(this.onConnect);
-    this._onDestroyCallbacks.push(() => chrome.runtime.onConnect.removeListener(this.onConnect));
+    browser.runtime.onConnect.addListener(this.onConnect);
+    this._onDestroyCallbacks.push(() => browser.runtime.onConnect.removeListener(this.onConnect));
   }
   private ensureAddOnConnectListener = this.oncePerInstance(this._addOnConnectListener);
 

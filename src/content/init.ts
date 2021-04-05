@@ -1,3 +1,4 @@
+import browser from '@/webextensions-api';
 import {
   addOnChangedListener as addOnSettingsChangedListener,
   MyStorageChanges,
@@ -37,12 +38,12 @@ export default async function init(): Promise<void> {
     }
     broadcastStatus2(allMediaElementsController);
   }
-  chrome.runtime.onMessage.addListener(onMessage);
+  browser.runtime.onMessage.addListener(onMessage);
   // So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
   broadcastStatus2(allMediaElementsController);
   const onSettingsChanged = (changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
-      chrome.runtime.onMessage.removeListener(onMessage);
+      browser.runtime.onMessage.removeListener(onMessage);
       removeOnSettingsChangedListener(onSettingsChanged);
     }
   }

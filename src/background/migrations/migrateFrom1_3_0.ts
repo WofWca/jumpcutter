@@ -2,10 +2,11 @@
 // Once everyone has installed this version or a later one, this file can be removed, along with other changes coming
 // with this commit (so you could `git revert` it).
 
+import browser from '@/webextensions-api';
 import { defaultSettings } from '@/settings';
 
 export default async function (): Promise<void> {
-  const settings = await new Promise(r => chrome.storage.sync.get(defaultSettings, r as any)) as any;
+  const settings = await browser.storage.sync.get(defaultSettings);
   const toFix = ['volumeThreshold', 'silenceSpeed', 'soundedSpeed'] as const;
   function getOldDefault(key: typeof toFix[number]): number {
     // TODO this is ugly.
@@ -23,5 +24,5 @@ export default async function (): Promise<void> {
         : getOldDefault(key);
     }
   }
-  await new Promise<void>(r => chrome.storage.sync.set(settings, r));
+  await browser.storage.sync.set(settings);
 }
