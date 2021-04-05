@@ -16,7 +16,6 @@ const { enabled: enabledOnInitialization } = await getSettingsAdvanced({ enabled
 if (enabledOnInitialization) {
   importAndInit();
 }
-// Watch the `enabled` setting. Other settings changes are handled by `reactToSettingsChanges`.
 // Not using `addOnSettingsChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
 // TODO use it when (if?) it's gone.
 browser.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
