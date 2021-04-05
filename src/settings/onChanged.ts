@@ -1,5 +1,6 @@
 import browser from '@/webextensions-api';
 import { filterOutUnchangedValues } from '@/helpers';
+import { mainStorageAreaName } from './mainStorageAreaName';
 import type { MyStorageChanges } from './';
 
 type MyOnChangedListener = (changes: MyStorageChanges) => void;
@@ -11,7 +12,7 @@ const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnCh
  */
 export function addOnChangedListener(listener: MyOnChangedListener): void {
   const actualListener: NativeOnChangedListener = (changes, areaName) => {
-    if (areaName !== 'local') return;
+    if (areaName !== mainStorageAreaName) return;
 
     if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
       changes = filterOutUnchangedValues(changes);
