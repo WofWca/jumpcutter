@@ -16,9 +16,9 @@ export function addOnChangedListener(listener: MyOnChangedListener): void {
 
     if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
       changes = filterOutUnchangedValues(changes);
-    }
-    if (Object.keys(changes).length === 0) {
-      return;
+      if (Object.keys(changes).length === 0) {
+        return;
+      }
     }
 
     listener(changes);
