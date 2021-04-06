@@ -12,6 +12,7 @@ import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
 import { oncePerInstance } from './helpers';
+import debounce from 'lodash/debounce';
 
 export type TelemetryMessage =
   ReturnType<Controller['getTelemetry']>
@@ -43,6 +44,8 @@ let allMediaElementsControllerActive = false;
 
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
+  unhandledNewElements = new Set<HTMLMediaElement>();
+  handledElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
   controller: Controller | undefined;
   timeSavedTracker: TimeSavedTracker | undefined;
@@ -279,13 +282,30 @@ export default class AllMediaElementsController {
   private onMediaPlayEvent = (e: Event) => {
     this.esnureAttachToElement(e.target as HTMLMediaElement);
   }
-  public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
-    if (!this.activeMediaElement) {
-      for (const el of newElements) {
-        if (!el.paused) {
-          this.esnureAttachToElement(el);
-          break;
-        }
+  private handleNewElements() {
+    const newElements = this.unhandledNewElements;
+    this.unhandledNewElements = new Set();
+
+    for (const el of newElements) {
+      if (this.handledElements.has(el)) {
+        continue;
+      }
+      this.handledElements.add(el);
+
+      el.addEventListener('play', this.onMediaPlayEvent);
+      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.onMediaPlayEvent));
+    }
+
+    // Attach to the first new element that is not paused, even if we're already attached to another.
+    // The thoguht process is like this - if such an element has been inserted, it is most likely due to the user
+    // wanting to switch his attention to it (e.g. pressing the "play" button on a custom media player, or scrolling
+    // a page with an infinite scroll with autoplaying videos).
+    // It may be that the designer of the website is an asshole and inserts new media elements whenever he feels like
+    // it, or I missed some other common cases. TODO think about it.
+    for (const el of newElements) {
+      if (!el.paused) {
+        this.esnureAttachToElement(el);
+        break;
       }
     }
     // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
@@ -299,10 +319,13 @@ export default class AllMediaElementsController {
     }
     // Otherwise it seems that the only benefit of attaching to some other element is that it can be started with a
     // pause/unpause hotkey.
-
-    for (const el of newElements) {
-      el.addEventListener('play', this.onMediaPlayEvent);
-      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.onMediaPlayEvent));
-    }
+  }
+  private debouncedHandleNewElements = debounce(this.handleNewElements, 0, { maxWait: 3000 });
+  /**
+   * Calling with the same element multiple times is fine, calling multiple times on the same tick is fine.
+   */
+  public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
+    newElements.forEach(el => this.unhandledNewElements.add(el));
+    this.debouncedHandleNewElements();
   }
 }
