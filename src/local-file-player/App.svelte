@@ -19,9 +19,7 @@
     // For better performance. https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#Memory_management
     objectURL && URL.revokeObjectURL(objectURL);
     objectURL = URL.createObjectURL(file);
-    const savedSpeed = videoEl.playbackRate;
     videoEl.src = objectURL;
-    videoEl.playbackRate = savedSpeed; // Because apparently it's reset after `src` is changed.
     videoEl.play();
     await tick(); // Because initially it's `display: none;`.
     videoEl.focus();

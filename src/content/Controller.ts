@@ -95,9 +95,13 @@ export default class Controller {
     const element = this.element;
     const ctx = audioContext;
 
-    const elementPlaybackRateBeforeInitialization = element.playbackRate;
+    const {
+      playbackRate: elementPlaybackRateBeforeInitialization,
+      defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
+    } = element;
     this._onDestroyCallbacks.push(() => {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
+      element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
 
     this._elementVolumeCache = element.volume;
@@ -372,10 +376,19 @@ export default class Controller {
   private _setSpeedAndLog(speedName: 'sounded' | 'silence') {
     let speedVal;
     switch (speedName) {
-      case 'sounded': speedVal = this.settings.soundedSpeed; break;
-      case 'silence': speedVal = this.settings.silenceSpeed; break;
+      case 'sounded': {
+        speedVal = transformSpeed(this.settings.soundedSpeed);
+        // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
+        // The most common case where `load` is called is when the current source is replaced with an ad (or
+        // the opposite, when the ad ends).
+        // It's also a good practice.
+        // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+        this.element.defaultPlaybackRate = speedVal;
+        break;
+      }
+      case 'silence': speedVal = transformSpeed(this.settings.silenceSpeed); break;
     }
-    this.element.playbackRate = transformSpeed(speedVal);
+    this.element.playbackRate = speedVal;
     this._lastActualPlaybackRateChange = {
       time: this.audioContext!.currentTime,
       value: speedVal,

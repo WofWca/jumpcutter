@@ -223,8 +223,13 @@ export default class TimeSavedTracker {
   }
   private _onElementSpeedChange = () => {
     const prevSpeed = this._currentElementSpeed;
+    const currentElementSpeed = this.element.playbackRate;
+    // In case it is `defaultPlaybackRate` that changed, not `playbackRate`. Or some other weird case.
+    if (prevSpeed === currentElementSpeed) {
+      return;
+    }
     this._appendLastSnippetData(prevSpeed, this._lastHandledSoundedSpeed);
-    this._currentElementSpeed = this.element.playbackRate;
+    this._currentElementSpeed = currentElementSpeed;
   }
   private _setStateAccordingToNewSettings(
     {
