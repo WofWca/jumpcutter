@@ -106,10 +106,7 @@
   }
 </script>
 
-<div
-  class="app"
-  style={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 'margin: 1rem;' : ''}
->
+<main>
   {#await settingsPromise then _}
     <form
       bind:this={formEl}
@@ -297,31 +294,6 @@
         </InputFieldBase>
       </section>
 
-      <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
-      pretty tall. TODO this can be removed when the button is gone). -->
-      <p style="min-height: 2rem; opacity: 0.8; margin: 2rem 0; display: flex; align-items: center;">
-        <!-- TODO doesn't this annoy users by constantly blinking? -->
-        {#if unsaved}
-          {#if formValid}
-            <!-- TODO how about we get rid of this message at all (when the `beforeunload`) starts working so
-            users don't have to sit there and wait for this to turn to "Saved" after making changes? Or, perhaps, the
-            debounce duration isn't big enough to worry and just makes it more satisfying to see it get saved so
-            quickly? -->
-            <span>⏳ Saving...</span>
-          {:else}
-            <span>
-              <span style="color: red;">⚠️ Errors found </span>
-              <button
-                type="button"
-                on:click={_ => formEl.reportValidity()}
-                aria-label="Show errors"
-              >Show</button>
-            </span>
-          {/if}
-        {:else}
-          <span style="color: green;">✔️ Saved</span>
-        {/if}
-      </p>
       <!-- As we're auto-saving changes, this could be omited, but this is so users can trigger form validation on
       "Enter" press. And maybe some other cool native things. -->
       <input
@@ -329,27 +301,77 @@
         style="display: none;"
       />
     </form>
-    <button
-      type="button"
-      style="color: red;"
-      on:click={onResetToDefaultsClick}
-    >🔄 Reset to defaults</button>
-    <!-- TODO: -->
-    <!-- <button
-      type="button"
-      style="color: red;"
-    >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
-    <!-- <button
-      type="button"
-    >Export settings...</button>
-    <button
-      type="button"
-    >Import settings...</button> -->
   {/await}
-  <div style="margin-top: 1rem;">
+  <div style="margin: 1rem 0;">
     <a
       target="new"
       href="https://github.com/WofWca/jumpcutter"
     >ℹ️ About</a>
   </div>
+</main>
+<!-- I've seen this design (bottom status bar) in some desktop applications (e.g. KeePassXC, if you go to settings).
+However, in Gecko the whole page is stretched, so the scroll is outside of the document, so it's the same as with
+`position: static;` TODO? -->
+<div class="status-bar">
+  <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
+  pretty tall. TODO this can be removed when the button is gone). -->
+  <p style="min-height: 2rem; opacity: 0.8; display: flex; margin: 0; align-items: center;">
+    <!-- TODO doesn't this annoy users by constantly blinking? -->
+    {#if unsaved}
+      {#if formValid}
+        <!-- TODO how about we get rid of this message at all (when the `beforeunload`) starts working so
+        users don't have to sit there and wait for this to turn to "Saved" after making changes? Or, perhaps, the
+        debounce duration isn't big enough to worry and just makes it more satisfying to see it get saved so
+        quickly? -->
+        <span>⏳ Saving...</span>
+      {:else}
+        <span>
+          <span style="color: red;">⚠️ Errors found </span>
+          <button
+            type="button"
+            on:click={_ => formEl.reportValidity()}
+            aria-label="Show errors"
+          >Show</button>
+        </span>
+      {/if}
+    {:else}
+      <span style="color: green;">✔️ Saved</span>
+    {/if}
+  </p>
+  <button
+    type="button"
+    style="color: red;"
+    on:click={onResetToDefaultsClick}
+  >🔄 Reset to defaults</button>
+  <!-- TODO: -->
+  <!-- <button
+    type="button"
+    style="color: red;"
+  >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
+  <!-- <button
+    type="button"
+  >Export settings...</button>
+  <button
+    type="button"
+  >Import settings...</button> -->
 </div>
+
+<style>
+:global(body) {
+  margin: 0;
+  --main-margin: 1rem;
+}
+main {
+  margin: var(--main-margin);
+}
+.status-bar {
+  position: sticky;
+  bottom: 0;
+  padding: 0.125rem var(--main-margin);
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid gray;
+}
+</style>
