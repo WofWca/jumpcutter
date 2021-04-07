@@ -202,16 +202,19 @@
         <NumberField
           label="📈⏱️ Chart length in seconds"
           bind:value={settings.popupChartLengthInSeconds}
+          required
           min="0"
         />
         <NumberField
           label="📈📏 Chart width (px)"
           bind:value={settings.popupChartWidthPx}
+          required
           min="0"
         />
         <NumberField
           label="📈📏 Chart height (px)"
           bind:value={settings.popupChartHeightPx}
+          required
           min="0"
         />
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
@@ -253,6 +256,7 @@
           <NumberField
             label="⏱️✂️ Only take into account the last N seconds of playback"
             bind:value={settings.timeSavedAveragingWindowLength}
+            required
             min="1e-3"
           />
           <!-- TODO this is a pretty advanced setting. Hide it? -->
@@ -261,6 +265,7 @@
           <NumberField
             label="⏱️✂️⚖️ Latest playback period averaging weight"
             bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
+            required
             min="1e-9"
             max={1 - 1e-9}
           />
