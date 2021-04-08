@@ -1,6 +1,6 @@
-import { getSettingsAdvanced } from './';
-import { defaultSettings } from './';
+import type { Settings } from './';
+import { storage } from './_storage';
 
-export function getSettings(): ReturnType<typeof getSettingsAdvanced> {
-  return getSettingsAdvanced(defaultSettings);
+export async function getSettings(...args: Parameters<typeof storage.get>): Promise<Settings> {
+  return storage.get(...args) as Promise<Settings>;
 }

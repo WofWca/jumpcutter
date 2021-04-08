@@ -61,7 +61,6 @@ export type MyStorageChanges = {
 
 export * from './enabledSettingDefaultValue';
 export * from './defaultSettings';
-export * from './getSettingsAdvanced';
 export * from './getSettings';
 export * from './setSettings';
 export * from './getAbsoluteSilenceSpeed';

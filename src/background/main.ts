@@ -10,7 +10,8 @@ import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 
 import throttle from 'lodash/throttle';
-import { Settings, MyStorageChanges, getSettingsAdvanced } from '@/settings';
+import { Settings, MyStorageChanges, getSettings } from '@/settings';
+import { storage } from '@/settings/_storage';
 
 import { filterOutUnchangedValues } from '@/helpers';
 
@@ -20,6 +21,21 @@ if (process.env.NODE_ENV !== 'production') {
       + "or update the version string above otherwise");
   }
 }
+// This is so we don't have to retrieve settings like this `storage.local.get(defaultSettings)` every time and can
+// instead `storage.local.get()`. This at least reduces chunk size, and may be better for performance.
+async function setNewSettingsKeysToDefaults() {
+  const existingSettingsP = storage.get();
+  const { defaultSettings } = await import(
+    /* webpackExports: ['defaultSettings'] */
+    '@/settings'
+  );
+  const newSettings = {
+    ...defaultSettings,
+    ...(await existingSettingsP),
+  };
+  await storage.set(newSettings);
+}
+
 const currentVersion = chrome.runtime.getManifest().version;
 let postInstallDonePromiseResolve: () => void;
 // Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
@@ -48,6 +64,7 @@ browser.runtime.onInstalled.addListener(async details => {
       await runRequiredMigrations(details.previousVersion!);
     }
   }
+  await setNewSettingsKeysToDefaults();
 
   browser.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
   postInstallDonePromiseResolve();
