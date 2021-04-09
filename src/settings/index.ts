@@ -47,6 +47,8 @@ export interface Settings {
   badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
 
   enableDesyncCorrection: boolean,
+
+  __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
 }
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
