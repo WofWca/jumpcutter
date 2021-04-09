@@ -334,12 +334,9 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
           {#if gotAtLeastOneContentStatusResponse}
             <p>
               <span>⚠️ Could not find a suitable media element on the page.</span>
-              <!-- TODO at some point (hopefully) the extension is going to become smart enough to handle element search
-              properly and not outright suggest to "try tuning it off and on again". We'll remove this button then.
-              TODO also as it's here to stay at least for a while, need to tidy up `content/main.ts` so there are no
-              memory leaks or worse things caused by rapid `enabled` toggles, because it's precisely what this button
-              does. -->
               <br>
+              <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
+              could be useful. -->
               <button
                 on:click={async () => {
                   settings.enabled = false;
