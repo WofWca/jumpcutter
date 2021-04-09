@@ -57,9 +57,9 @@ const throttledUpdateStorage = throttle(updateStorage, throttleWait);
 browser.storage.onChanged.addListener((changes, areaName) => {
   if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
     changes = filterOutUnchangedValues(changes);
-  }
-  if (Object.keys(changes).length === 0) {
-    return;
+    if (Object.keys(changes).length === 0) {
+      return;
+    }
   }
 
   switch (areaName) {
