@@ -67,3 +67,5 @@ export * from './getAbsoluteSilenceSpeed';
 export * from './settingsChanges2NewValues';
 export * from './togglableSettings';
 export * from './onChanged';
+export * from './localStorageOnlyKeys';
+export * from './filterOutLocalStorageOnlySettings';

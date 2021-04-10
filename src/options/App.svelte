@@ -6,7 +6,7 @@
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
   import { cloneDeepJson, assert, assertNever } from '@/helpers';
-  import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
+  import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
 
@@ -103,6 +103,17 @@
       editNativeShortcutsLinkUrl = 'https://support.mozilla.org/kb/manage-extension-shortcuts-firefox';
       break;
     default: assertNever(BUILD_DEFINITIONS.BROWSER);
+  }
+
+  // Yes, these don't take migartions into account at all. TODO.
+  async function downloadFromSync() {
+    Object.assign(settings, await browser.storage.sync.get() as Partial<Settings>);
+    settings = settings;
+  }
+  async function uploadToSync() {
+    assert(checkValidity(settings));
+    browser.storage.sync.clear();
+    browser.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
   }
 </script>
 
@@ -294,6 +305,38 @@
         </InputFieldBase>
       </section>
 
+      <section>
+        <h3>Meta</h3>
+        <!-- TODO add confirmation dialogs or cancellation toasts and remove `style="color: red;"`? -->
+        <button
+          type="button"
+          style="color: red;"
+          on:click={downloadFromSync}
+        >📥 Download settings from sync storage</button>
+        <br/><br/>
+        <button
+          type="button"
+          disabled={!formValid}
+          on:click={uploadToSync}
+        >📤 Upload settings to sync storage</button>
+        <br/><br/>
+        <button
+          type="button"
+          style="color: red;"
+          on:click={onResetToDefaultsClick}
+        >🔄 Reset to defaults</button>
+        <!-- TODO: -->
+        <!-- <button
+          type="button"
+          style="color: red;"
+        >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
+        <!-- <button
+          type="button"
+        >Export settings...</button>
+        <button
+          type="button"
+        >Import settings...</button> -->
+
       <!-- As we're auto-saving changes, this could be omited, but this is so users can trigger form validation on
       "Enter" press. And maybe some other cool native things. -->
       <input
@@ -338,22 +381,6 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
       <span style="color: green;">✔️ Saved</span>
     {/if}
   </p>
-  <button
-    type="button"
-    style="color: red;"
-    on:click={onResetToDefaultsClick}
-  >🔄 Reset to defaults</button>
-  <!-- TODO: -->
-  <!-- <button
-    type="button"
-    style="color: red;"
-  >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
-  <!-- <button
-    type="button"
-  >Export settings...</button>
-  <button
-    type="button"
-  >Import settings...</button> -->
 </div>
 
 <style>
@@ -369,9 +396,6 @@ main {
   bottom: 0;
   padding: 0.125rem var(--main-margin);
   background-color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-top: 1px solid gray;
 }
 </style>
