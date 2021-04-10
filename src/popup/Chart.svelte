@@ -5,6 +5,9 @@
   import type Controller from '@/content/Controller';
   import debounce from 'lodash/debounce';
 
+  // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
+  const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
+
   type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;
   export let volumeThreshold: number;
@@ -26,6 +29,7 @@
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries: TimeSeries;
+  let stretcherDelaySeries: TimeSeries
 
   let stretchSeries: TimeSeries;
   let shrinkSeries: TimeSeries;
@@ -78,7 +82,7 @@
           }
           return { min: 0, max: chartMaxValue };
         } else {
-          return { min: 0, max: volumeSeries.maxValue * 1.05 };
+          return { min: 0, max: volumeSeries.maxValue };
         }
       },
     });
@@ -98,6 +102,9 @@
     soundedSpeedSeries = new TimeSeries();
     silenceSpeedSeries = new TimeSeries();
     volumeThresholdSeries = new TimeSeries();
+    if (PLOT_STRETCHER_DELAY) {
+      stretcherDelaySeries = new TimeSeries();
+    }
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
     // Order determines z-index
@@ -133,6 +140,14 @@
       strokeStyle: '#f44',
       fillStyle: 'transparent',
     });
+    if (PLOT_STRETCHER_DELAY) {
+      smoothie.addTimeSeries(stretcherDelaySeries, {
+        interpolation: 'linear',
+        lineWidth: 1,
+        strokeStyle: 'purple',
+        fillStyle: 'transparent',
+      });
+    }
     
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
@@ -220,6 +235,26 @@
   }
 
   let totalOutputDelay = 0;
+  let maxRecordedStretcherDelay = 0;
+  function updateStretcherDelaySeries(newTelemetryRecord: TelemetryRecord) {
+    if (!PLOT_STRETCHER_DELAY) {
+      return;
+    }
+
+    const r = newTelemetryRecord;
+    const { stretcherDelay } = r;
+    if (stretcherDelay === undefined) {
+      return;
+    }
+
+    if (stretcherDelay > maxRecordedStretcherDelay) {
+      maxRecordedStretcherDelay = stretcherDelay;
+    }
+    // Yes, old values' scale is not updated.
+    const scaledValue = stretcherDelay / maxRecordedStretcherDelay * chartMaxValue * 0.90;
+    const inputTime = r.unixTime - r.totalOutputDelay;
+    stretcherDelaySeries.append(sToMs(inputTime), scaledValue);
+  }
 
   let lastHandledTelemetryRecord: TelemetryRecord | undefined;
   function onNewTelemetry(newTelemetryRecord: TelemetryRecord) {
@@ -261,6 +296,9 @@
     }
 
     totalOutputDelay = r.totalOutputDelay;
+    if (PLOT_STRETCHER_DELAY) {
+      updateStretcherDelaySeries(r);
+    }
 
     lastHandledTelemetryRecord = newTelemetryRecord;
   }
@@ -282,6 +320,7 @@
   bind:this={canvasEl}
   width={widthPx}
   height={heightPx}
+  on:click
 >
   <label>
     Volume

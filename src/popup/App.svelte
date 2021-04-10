@@ -1,11 +1,14 @@
 <script lang="ts">
+  import browser from '@/webextensions-api';
   import { onDestroy } from 'svelte';
-  import { addOnChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
+  import { addOnChangedListener, getSettings, MyStorageChanges, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
-  import type { TelemetryMessage } from '@/content/main';
+  import type { TelemetryMessage } from '@/content/AllMediaElementsController';
+  import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
+  import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
 
@@ -18,11 +21,10 @@
     settingsLoaded = true;
   })
   async function getTab() {
-    return new Promise<chrome.tabs.Tab>(r => {
-      // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
-      // guaranteed that there will be a tab, is it?
-      chrome.tabs.query({ active: true, currentWindow: true, }, tabs => r(tabs[0]))
-    });
+    // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
+    // guaranteed that there will be a tab, is it?
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true, });
+    return tabs[0];
   }
   const tabPromise = getTab();
   const tabLoadedPromise = (async () => {
@@ -30,22 +32,22 @@
     if (tab.status !== 'complete') { // TODO it says `status` is optional? When is it missing?
       tab = await new Promise(r => {
         let pollTimeout: ReturnType<typeof setTimeout>;
-        function finishIfComplete(tab: chrome.tabs.Tab) {
+        function finishIfComplete(tab: browser.tabs.Tab) {
           if (tab.status === 'complete') {
             r(tab);
-            chrome.tabs.onUpdated.removeListener(onUpdatedListener);
+            browser.tabs.onUpdated.removeListener(onUpdatedListener);
             clearTimeout(pollTimeout);
             return true;
           }
         }
-        const onUpdatedListener: Parameters<typeof chrome.tabs.onUpdated.addListener>[0] = (tabId, _, updatedTab) => {
+        const onUpdatedListener: Parameters<typeof browser.tabs.onUpdated.addListener>[0] = (tabId, _, updatedTab) => {
           if (tabId !== tab.id) return;
           finishIfComplete(updatedTab);
         }
-        chrome.tabs.onUpdated.addListener(onUpdatedListener);
+        browser.tabs.onUpdated.addListener(onUpdatedListener);
 
         // Sometimes if you open the popup during page load, it would never resolve. I tried attaching the listener
-        // before calling `chrome.tabs.query`, but it didn't help either. This is a workaround. TODO.
+        // before calling `browser.tabs.query`, but it didn't help either. This is a workaround. TODO.
         async function queryTabStatusAndScheduleAnotherIfNotFinished() {
           const tab = await getTab();
           const finished = finishIfComplete(tab);
@@ -58,6 +60,10 @@
     }
     return tab;
   })();
+
+  let nonSettingsActionsPort: Omit<ReturnType<typeof browser.tabs.connect>, 'postMessage'> & {
+    postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
+  };
 
   let latestTelemetryRecord: TelemetryMessage;
   const telemetryUpdatePeriod = 0.02;
@@ -74,7 +80,7 @@
     const tab = await tabPromise;
     let elementLastActivatedAt: number | undefined;
 
-    const onMessageListener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (message, sender) => {
+    const onMessageListener: Parameters<typeof browser.runtime.onMessage.addListener>[0] = (message, sender) => {
       if (
         sender.tab?.id !== tab.id
         || message.type !== 'contentStatus' // TODO DRY message types.
@@ -93,26 +99,32 @@
 
         // TODO how do we close it on popup close? Do we have to?
         // https://developer.chrome.com/extensions/messaging#port-lifetime
-        const telemetryPort = chrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
+        const telemetryPort = browser.tabs.connect(tab.id!, { name: 'telemetry', frameId });
         telemetryPort.onMessage.addListener(msg => {
           if (msg) {
-            latestTelemetryRecord = msg;
+            latestTelemetryRecord = msg as TelemetryMessage;
           }
         });
         telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
-          telemetryPort.postMessage('getTelemetry');
+          // TODO remove `as any` (will need to fix type definitions, "@types/firefox-webext-browser").
+          // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#type
+          telemetryPort.postMessage('getTelemetry' as any);
           return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
+
+        nonSettingsActionsPort = browser.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
 
         (async () => {
           // Make a setings or a flag or something.
           const LISTEN_TO_HOTKEYS_IN_POPUP = true;
+          await settingsPromise;
           if (LISTEN_TO_HOTKEYS_IN_POPUP && settings!.enableHotkeys) {
-            await settingsPromise;
-            const { default: createKeydownListener } = (await import('./hotkeys'));
+            const { default: createKeydownListener } = await import(
+              /* webpackExports: ['default'] */
+              './hotkeys'
+            );
             keydownListener = createKeydownListener(
-              tab.id!,
-              frameId,
+              nonSettingsActionsPort as any, // TODO remove as any
               () => settings,
               newValues => {
                 Object.assign(settings, newValues);
@@ -125,13 +137,14 @@
         disconnect = () => {
           clearTimeout(telemetryTimeoutId);
           telemetryPort.disconnect();
+          nonSettingsActionsPort.disconnect();
           disconnect = undefined;
         }
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
       }
     };
-    chrome.runtime.onMessage.addListener(onMessageListener);
-    chrome.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
+    browser.runtime.onMessage.addListener(onMessageListener);
+    browser.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
   })();
 
   (async () => {
@@ -143,11 +156,24 @@
       }
     }, 70);
   })();
+
+  // This is to react to settings changes outside the popup. Currently I don't really see how settings can change from
+  // outside the popup while it is open, but let's play it safe.
+  // Why debounce – because `addOnChangedListener` also reacts to settings changes from inside this script itself and
+  // sometimes when settings change rapidly, `onChanged` callback may lag behind so
+  // the `settings` object's state begins jumping between the old and new state.
+  // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
+  let pendingChanges: Partial<Settings> = {};
+  const debouncedApplyPendingChanges = debounce(
+    () => {
+      settings = { ...settings, ...pendingChanges }
+      pendingChanges = {};
+    },
+    500,
+  )
   addOnChangedListener(changes => {
-    settings = {
-      ...settings,
-      ...settingsChanges2NewValues(changes)
-    };
+    pendingChanges = Object.assign(pendingChanges, settingsChanges2NewValues(changes));
+    debouncedApplyPendingChanges();
   });
 
   function saveSettings(settings: Settings) {
@@ -167,10 +193,18 @@
     ? 'relative to sounded speed'
     : 'absolute';
 
+  function onChartClick() {
+    nonSettingsActionsPort?.postMessage([{
+      // TODO replace with `action: HotkeyAction.TOGGLE_PAUSE`. Now it says that `HotkeyAction` is undefined.
+      action: 'pause_toggle' as HotkeyAction.TOGGLE_PAUSE,
+      keyCombination: { code: 'stub', }, // TODO this is dumb.
+    }]);
+  }
+
   const maxVolume = 0.15;
 
   const openLocalFileLinkProps = {
-    href: chrome.runtime.getURL('local-file-player/index.html'),
+    href: browser.runtime.getURL('local-file-player/index.html'),
     target: '_new',
   };
 
@@ -211,8 +245,8 @@
   <!-- TODO but this is technically a button. Is this ok? -->
   <a
     id="options-button"
-    href="javascript;"
-    on:click={() => chrome.runtime.openOptionsPage()}
+    href="javascript:void(0)"
+    on:click|preventDefault={() => browser.runtime.openOptionsPage()}
   >⚙️</a>
   <div class="others__wrapper">
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
@@ -275,7 +309,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
         hideOnClick: false,
       }}
     >
-      <span>⏱</span>
+      <span>⏱️</span>
       <span>{timeSavedComparedToSoundedSpeedPercent}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
@@ -300,12 +334,9 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
           {#if gotAtLeastOneContentStatusResponse}
             <p>
               <span>⚠️ Could not find a suitable media element on the page.</span>
-              <!-- TODO at some point (hopefully) the extension is going to become smart enough to handle element search
-              properly and not outright suggest to "try tuning it off and on again". We'll remove this button then.
-              TODO also as it's here to stay at least for a while, need to tidy up `content/main.ts` so there are no
-              memory leaks or worse things caused by rapid `enabled` toggles, because it's precisely what this button
-              does. -->
               <br>
+              <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
+              could be useful. -->
               <button
                 on:click={async () => {
                   settings.enabled = false;
@@ -342,6 +373,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       widthPx={settings.popupChartWidthPx}
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
+      on:click={onChartClick}
     />
   {/if}
   <RangeSlider
@@ -360,7 +392,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     label="Sounded speed"
     list="sounded-speed-datalist"
     fractionalDigits={2}
-    min="0"
+    min="0.05"
     max="15"
     step="0.05"
     bind:value={settings.soundedSpeed}
@@ -370,7 +402,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
-    min="0"
+    min="0.05"
     max="15"
     step="0.05"
     bind:value={settings.silenceSpeedRaw}

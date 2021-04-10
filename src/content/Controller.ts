@@ -1,17 +1,14 @@
 'use strict';
+import browser from '@/webextensions-api';
 import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
   getNewLookaheadDelay,
   getTotalDelay,
-  getStretcherDelayChange,
-  getStretcherSoundedDelay,
-  getMomentOutputTime,
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { getAbsoluteSilenceSpeed } from '@/settings';
 import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
 import { assert } from '@/helpers';
 
@@ -28,18 +25,15 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_suspendAudioContext'
-    | '_resumeAudioContext' | '_volumeFilter'
-    | '_silenceDetectorNode' | '_analyzerIn' | '_volumeInfoBuffer' | '_mediaElementSource'
-    | '_lastActualPlaybackRateChange' | '_elementVolumeCache' | '_onElementVolumeChange'>>;
+  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_silenceDetectorNode'
+    | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange' | '_elementVolumeCache'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
-type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_logIntervalId' | '_outVolumeFilter'
-  | '_analyzerOut'>>;
+type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analyzerOut'>>;
 
 // Not a method so it gets eliminated at optimization.
 const isLogging = (controller: Controller): controller is ControllerLogging => logging;
 
-type ControllerSettings =
+export type ControllerSettings =
   Pick<
     ExtensionSettings,
     'volumeThreshold'
@@ -55,13 +49,6 @@ function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
 }
 
-export function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
-  return {
-    ...extensionSettings,
-    silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),
-  };
-}
-
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
@@ -69,30 +56,23 @@ export default class Controller {
   settings: ControllerSettings;
   initialized = false;
   _initPromise?: Promise<this>;
+  _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
-  _suspendAudioContext?: () => void;
-  _resumeAudioContext?: () => void;
-  _volumeFilter?: AudioWorkletNode;
   _silenceDetectorNode?: AudioWorkletNode;
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
   _stretcher?: PitchPreservingStretcherNode;
-  _mediaElementSource?: MediaElementAudioSourceNode;
-  _lastScheduledStretch: null | StretchInfo = null;
   _lastActualPlaybackRateChange?: {
     time: Time,
     value: number,
     name: 'sounded' | 'silence',
   };
   _elementVolumeCache?: number; // Same as element.volume, but faster.
-  _onElementVolumeChange?: () => void;
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
-  _outVolumeFilter?: AudioWorkletNode;
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
-  _logIntervalId?: number;
 
   constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
@@ -115,9 +95,19 @@ export default class Controller {
     const element = this.element;
     const ctx = audioContext;
 
+    const {
+      playbackRate: elementPlaybackRateBeforeInitialization,
+      defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
+    } = element;
+    this._onDestroyCallbacks.push(() => {
+      element.playbackRate = elementPlaybackRateBeforeInitialization;
+      element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
+    });
+
     this._elementVolumeCache = element.volume;
-    this._onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', this._onElementVolumeChange);
+    const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
+    element.addEventListener('volumechange', onElementVolumeChange);
+    this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     this.audioContext = ctx;
 
@@ -126,23 +116,41 @@ export default class Controller {
     // resume.
     // TODO I don't have much of idea if this can cause issues. Something along the lines of other audio sources
     // stopping working?
-    this._suspendAudioContext = () => audioContext.suspend();
-    this._resumeAudioContext = () => audioContext.resume();
+    const suspendAudioContext = () => audioContext.suspend();
+    const resumeAudioContext = () => audioContext.resume();
     if (element.paused) {
       audioContext.suspend();
     }
-    // TODO would be cool if we could just `addEventListener('pause', audioContext.suspend)`, but it says
-    // "illegal invocation".
-    element.addEventListener('pause', this._suspendAudioContext);
-    element.addEventListener('play', this._resumeAudioContext);
+    element.addEventListener('pause', suspendAudioContext);
+    element.addEventListener('play', resumeAudioContext);
+    this._onDestroyCallbacks.push(() => {
+      element.removeEventListener('pause', suspendAudioContext);
+      element.removeEventListener('play', resumeAudioContext);
+      audioContext.resume(); // In case the video is paused.
+    });
 
-    await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/SilenceDetectorProcessor.js'));
-    await ctx.audioWorklet.addModule(chrome.runtime.getURL('content/VolumeFilter.js'));
+    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js'));
+    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js'));
 
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
 
-    this._volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+    const audioWorklets: AudioWorkletNode[] = []; // To be filled.
+    this._onDestroyCallbacks.push(() => {
+      for (const w of audioWorklets) {
+        w.port.postMessage('destroy');
+        w.port.close();
+      }
+      if (process.env.NODE_ENV !== 'production') {
+        for (const propertyVal of Object.values(this)) {
+          if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
+            console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
+          }
+        }
+      }
+    });
+
+    const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
       outputChannelCount: [1],
       processorOptions: {
         maxSmoothingWindowLength: 0.03,
@@ -151,6 +159,7 @@ export default class Controller {
         smoothingWindowLength: 0.03, // TODO make a setting out of it.
       },
     });
+    audioWorklets.push(volumeFilter);
     this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
       parameterData: {
         durationThreshold: this._getSilenceDetectorNodeDurationThreshold(),
@@ -158,14 +167,21 @@ export default class Controller {
       processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
     });
+    audioWorklets.push(this._silenceDetectorNode);
+    // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
+    // AudioWorkletNode destruction a few lines above, but let's future-prove it.
+    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.close())
     this._analyzerIn = ctx.createAnalyser();
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
+    // let outVolumeFilter: this extends ControllerLogging ? AudioWorkletNode : undefined;
+    let outVolumeFilter: AudioWorkletNode | undefined;
     if (isLogging(this)) {
-      this._outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
+      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
         outputChannelCount: [1],
       });
+      audioWorklets.push(outVolumeFilter);
       this._analyzerOut = ctx.createAnalyser();
     }
     // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
@@ -173,38 +189,50 @@ export default class Controller {
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: PitchPreservingStretcherNode } = await import(
-        /* webpackMode: 'eager' */
+        /* webpackExports: ['default'] */
         './PitchPreservingStretcherNode'
       );
-      this._stretcher = new PitchPreservingStretcherNode(ctx, maxMaginStretcherDelay);
+      this._stretcher = new PitchPreservingStretcherNode(
+        ctx,
+        maxMaginStretcherDelay,
+        0, // Doesn't matter, we'll update it in `_setStateAccordingToNewSettings`.
+        () => this.settings,
+        () => this._lookahead!.delayTime.value,
+      );
+      this._onDestroyCallbacks.push(() => this._stretcher!.destroy());
     }
     const srcFromMap = mediaElementSourcesMap.get(element);
+    let mediaElementSource: MediaElementAudioSourceNode;
     if (srcFromMap) {
-      this._mediaElementSource = srcFromMap;
-      this._mediaElementSource.disconnect();
+      mediaElementSource = srcFromMap;
+      mediaElementSource.disconnect();
     } else {
-      this._mediaElementSource = ctx.createMediaElementSource(element);
-      mediaElementSourcesMap.set(element, this._mediaElementSource)
+      mediaElementSource = ctx.createMediaElementSource(element);
+      mediaElementSourcesMap.set(element, mediaElementSource)
     }
     if (this.isStretcherEnabled()) {
-      this._mediaElementSource.connect(this._lookahead);
+      mediaElementSource.connect(this._lookahead);
     } else {
-      this._mediaElementSource.connect(audioContext.destination);
+      mediaElementSource.connect(audioContext.destination);
     }
-    this._mediaElementSource.connect(this._volumeFilter);
-    this._volumeFilter.connect(this._silenceDetectorNode);
+    mediaElementSource.connect(volumeFilter);
+    this._onDestroyCallbacks.push(() => {
+      mediaElementSource.disconnect();
+      mediaElementSource.connect(audioContext.destination);
+    });
+    volumeFilter.connect(this._silenceDetectorNode);
     if (this.isStretcherEnabled()) {
       this._stretcher.connectInputFrom(this._lookahead);
       this._stretcher.connectOutputTo(ctx.destination);
     }
-    this._volumeFilter.connect(this._analyzerIn);
+    volumeFilter.connect(this._analyzerIn);
     if (isLogging(this)) {
       if (this.isStretcherEnabled()) {
-        this._stretcher.connectOutputTo(this._outVolumeFilter);
+        this._stretcher.connectOutputTo(outVolumeFilter!);
       } else {
-        this._mediaElementSource.connect(this._outVolumeFilter);
+        mediaElementSource.connect(outVolumeFilter!);
       }
-      this._outVolumeFilter.connect(this._analyzerOut);
+      outVolumeFilter!.connect(this._analyzerOut);
     }
     this._setStateAccordingToNewSettings();
 
@@ -232,16 +260,10 @@ export default class Controller {
       const { time: eventTime, type: silenceStartOrEnd } = msg.data;
       if (silenceStartOrEnd === 'silenceEnd') {
         this._setSpeedAndLog('sounded');
-
-        if (this.isStretcherEnabled()) {
-          this._doOnSilenceEndStretcherStuff(eventTime);
-        }
+        this._stretcher?.onSilenceEnd(eventTime);
       } else {
         this._setSpeedAndLog('silence');
-
-        if (this.isStretcherEnabled()) {
-          this._doOnSilenceStartStretcherStuff(eventTime);
-        }
+        this._stretcher?.onSilenceStart(eventTime);
 
         if (this.settings.enableDesyncCorrection) {
           // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
@@ -253,9 +275,9 @@ export default class Controller {
           // `marginAfter` ensures there's plenty of it.
           // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
           // pauses, so let's give it some bigger value.
-          const DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES = 10;
+          const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
           this._didNotDoDesyncCorrectionForNSpeedSwitches++;
-          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SEPEED_SWITCHES) {
+          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
             element.currentTime -= 1e-9;
             // TODO but it's also corrected when the user seeks the video manually.
             this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
@@ -263,147 +285,21 @@ export default class Controller {
         }
       }
     }
+    // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
+    // (like 200 kB per toggle).
+    // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
+    // thing retaining a reference to the listener. TODO
+    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.onmessage = null);
     if (isLogging(this)) {
-      this._logIntervalId = (setInterval as typeof window.setInterval)(() => {
+      const logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
       }, 1);
+      this._onDestroyCallbacks.push(() => clearInterval(logIntervalId));
     }
 
     this.initialized = true;
     resolveInitPromise!(this);
     return this;
-  }
-
-  /** This only changes the state of `this._stretcher` */
-  private _doOnSilenceEndStretcherStuff(eventTime: Time) {
-    // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
-    // Or just use if-else?
-    assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
-
-    // It is guaranteed to be non-null, because `_doOnSilenceStartStretcherStuff` is always called before this function.
-    const lastScheduledStretcherDelayReset = this._lastScheduledStretch!;
-
-    const lastSilenceSpeedLastsForRealtime =
-      eventTime - lastScheduledStretcherDelayReset.newSpeedStartInputTime;
-    const lastSilenceSpeedLastsForIntrinsicTime = lastSilenceSpeedLastsForRealtime * this.settings.silenceSpeed;
-
-    const marginBeforePartAtSilenceSpeedIntrinsicTimeDuration = Math.min(
-      lastSilenceSpeedLastsForIntrinsicTime,
-      this.settings.marginBefore
-    );
-    const marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration =
-      this.settings.marginBefore - marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
-    const marginBeforePartAtSilenceSpeedRealTimeDuration =
-      marginBeforePartAtSilenceSpeedIntrinsicTimeDuration / this.settings.silenceSpeed;
-    const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
-      marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration / this.settings.soundedSpeed;
-    // The time at which the moment from which the speed of the video needs to be slow has been on the input.
-    const marginBeforeStartInputTime =
-      eventTime
-      - marginBeforePartAtSilenceSpeedRealTimeDuration
-      - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
-    // Same, but when it's going to be on the output.
-    const marginBeforeStartOutputTime = getMomentOutputTime(
-      marginBeforeStartInputTime,
-      this._lookahead.delayTime.value,
-      lastScheduledStretcherDelayReset
-    );
-    const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
-    const marginBeforeStartOutputTimeStretcherDelay =
-      marginBeforeStartOutputTimeTotalDelay - this._lookahead.delayTime.value;
-
-    // As you remember, silence on the input must last for some time before we speed up the video.
-    // We then speed up these sections by reducing the stretcher delay.
-    // And sometimes we may stumble upon a silence period long enough to make us speed up the video, but short
-    // enough for us to not be done with speeding up that last part, so the margin before and that last part
-    // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
-    // snippet, because the first one is already at required (sounded) speed, due to that delay before we speed up
-    // the video after some silence.
-    // This is also the reason why `getMomentOutputTime` function is so long.
-    // Let's find this breakpoint.
-
-    if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
-      // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
-      this._stretcher.interruptLastScheduledStretch(
-        // A.k.a. `lastScheduledStretcherDelayReset.startTime`
-        marginBeforeStartOutputTimeStretcherDelay,
-        marginBeforeStartOutputTime
-      );
-      if (isLogging(this)) {
-        this._log({
-          type: 'pauseReset',
-          value: marginBeforeStartOutputTimeStretcherDelay,
-          time: marginBeforeStartOutputTime,
-        });
-      }
-    }
-
-    const marginBeforePartAtSilenceSpeedStartOutputTime =
-      marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
-    // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
-    //   marginBeforePartAtSilenceSpeedRealTimeDuration,
-    //   this.settings.silenceSpeed,
-    //   this.settings.soundedSpeed
-    // );
-    const stretcherDelayIncrease = getStretcherDelayChange(
-      marginBeforePartAtSilenceSpeedRealTimeDuration,
-      this.settings.silenceSpeed,
-      this.settings.soundedSpeed
-    );
-    // I think currently it should always be equal to the max delay.
-    const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
-
-    const startValue = marginBeforeStartOutputTimeStretcherDelay;
-    const endValue = finalStretcherDelay;
-    const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
-    // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-    const endTime = eventTime + getTotalDelay(this._lookahead.delayTime.value, finalStretcherDelay);
-    this._stretcher.stretch(startValue, endValue, startTime, endTime);
-    this._lastScheduledStretch = {
-      newSpeedStartInputTime: eventTime,
-      startValue,
-      endValue,
-      startTime,
-      endTime,
-    }
-    if (isLogging(this)) {
-      this._log({ type: 'stretch', lastScheduledStretch: this._lastScheduledStretch });
-    }
-  }
-  /** @see this._doOnSilenceEndStretcherStuff */
-  private _doOnSilenceStartStretcherStuff(eventTime: Time) {
-    assert(this.isStretcherEnabled(), 'Attempted to use stretcher while it is disabled');
-
-    const realtimeMarginBefore = getRealtimeMargin(this.settings.marginBefore, this.settings.soundedSpeed);
-    // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
-    const stretcherDelayStartValue =
-      getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed);
-    const startIn = getTotalDelay(this._lookahead.delayTime.value, stretcherDelayStartValue) - realtimeMarginBefore;
-
-    const speedUpBy = this.settings.silenceSpeed / this.settings.soundedSpeed;
-
-    const originalRealtimeSpeed = 1;
-    const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
-    const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
-    const startTime = eventTime + startIn;
-    const endTime = startTime + snippetNewDuration;
-    this._stretcher.stretch(
-      stretcherDelayStartValue,
-      0,
-      startTime,
-      endTime
-    );
-    this._lastScheduledStretch = {
-      newSpeedStartInputTime: eventTime,
-      startTime,
-      startValue: stretcherDelayStartValue,
-      endTime,
-      endValue: 0,
-    };
-
-    if (isLogging(this)) {
-      this._log({ type: 'reset', lastScheduledStretch: this._lastScheduledStretch });
-    }
   }
 
   /**
@@ -414,53 +310,11 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assert(this.isInitialized());
 
-    this.element.removeEventListener('volumechange', this._onElementVolumeChange);
-
-    this._mediaElementSource.disconnect();
-    this._mediaElementSource.connect(audioContext.destination);
-
-    this.element.removeEventListener('pause', this._suspendAudioContext);
-    this.element.removeEventListener('play', this._resumeAudioContext);
-    this.audioContext.resume(); // In case the video is paused.
-
-    if (isLogging(this)) {
-      clearInterval(this._logIntervalId);
-    } else {
-      assert(!this._logIntervalId);
+    for (const cb of this._onDestroyCallbacks) {
+      cb();
     }
-
-    const audioWorklets = [this._volumeFilter, this._silenceDetectorNode];
-    if (isLogging(this)) {
-      audioWorklets.push(this._outVolumeFilter);
-    } else {
-      assert(!this._outVolumeFilter);
-    }
-    for (const w of audioWorklets) {
-      w.port.postMessage('destroy');
-      w.port.close();
-    }
-    if (process.env.NODE_ENV !== 'production') {
-      for (const propertyVal of Object.values(this)) {
-        if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
-          console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
-        }
-      }
-    }
-
-    this._silenceDetectorNode.port.close(); // So the message handler can no longer be triggered.
-
-    this._stretcher?.destroy();
-    // Otherwise the stretcher's `destroy` may be called twice. TODO looks odd. Shouldn't we delete the other properties
-    // as well then?
-    delete this._stretcher;
-    // TODO make `AudioWorkletProcessor`'s get collected.
-    // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process#Return_value
-    // Currently they always return `true`.
-
-    // TODO close `AudioWorkletProcessor`'s message ports?
 
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
-    this.element.playbackRate = 1; // TODO how about store the initial speed
   }
 
   /**
@@ -490,9 +344,7 @@ export default class Controller {
         this.settings.soundedSpeed,
         this.settings.silenceSpeed
       );
-      this._stretcher.setDelay(
-        getStretcherSoundedDelay(this.settings.marginBefore, this.settings.soundedSpeed, this.settings.silenceSpeed)
-      );
+      this._stretcher.onSettingsUpdate();
     }
   }
 
@@ -524,10 +376,19 @@ export default class Controller {
   private _setSpeedAndLog(speedName: 'sounded' | 'silence') {
     let speedVal;
     switch (speedName) {
-      case 'sounded': speedVal = this.settings.soundedSpeed; break;
-      case 'silence': speedVal = this.settings.silenceSpeed; break;
+      case 'sounded': {
+        speedVal = transformSpeed(this.settings.soundedSpeed);
+        // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
+        // The most common case where `load` is called is when the current source is replaced with an ad (or
+        // the opposite, when the ad ends).
+        // It's also a good practice.
+        // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+        this.element.defaultPlaybackRate = speedVal;
+        break;
+      }
+      case 'silence': speedVal = transformSpeed(this.settings.silenceSpeed); break;
     }
-    this.element.playbackRate = transformSpeed(speedVal);
+    this.element.playbackRate = speedVal;
     this._lastActualPlaybackRateChange = {
       time: this.audioContext!.currentTime,
       value: speedVal,
@@ -545,11 +406,13 @@ export default class Controller {
      * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
      * it would be on the input timeline.
      */
-    const stretchToInputTime = (stretch: StretchInfo): this['_lastScheduledStretch'] => ({
+    const stretchToInputTime = (stretch: StretchInfo): StretchInfo => ({
       ...stretch,
       startTime: stretch.startTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.startValue),
       endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
     });
+
+    const stretcherDelay = this._stretcher?.delayNode.delayTime.value;
 
     return {
       unixTime: Date.now() / 1000,
@@ -558,12 +421,14 @@ export default class Controller {
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
-      totalOutputDelay: this._lookahead && this._stretcher
-        ? getTotalDelay(this._lookahead.delayTime.value, this._stretcher.delayNode.delayTime.value)
+      totalOutputDelay: this._lookahead && stretcherDelay !== undefined
+        ? getTotalDelay(this._lookahead.delayTime.value, stretcherDelay)
         : 0,
+      stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.
-      // lastScheduledStretch: this._lastScheduledStretch,
-      lastScheduledStretchInputTime: this._lastScheduledStretch && stretchToInputTime(this._lastScheduledStretch),
+      // lastScheduledStretch: this._stretcher.lastScheduledStretch,
+      lastScheduledStretchInputTime:
+        this._stretcher?.lastScheduledStretch && stretchToInputTime(this._stretcher.lastScheduledStretch),
     };
   }
 }

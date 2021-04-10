@@ -1,10 +1,11 @@
 <script lang="ts">
+  import browser from '@/webextensions-api';
   import { tick } from 'svelte';
   import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
-  import { cloneDeepJson, assert } from '@/helpers';
+  import { cloneDeepJson, assert, assertNever } from '@/helpers';
   import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
@@ -21,8 +22,7 @@
   let settings: PotentiallyInvalidSettings;
   const settingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
-  type Commands = Parameters<Parameters<typeof chrome.commands.getAll>[0]>[0];
-  const commandsPromise = new Promise<Commands>(r => chrome.commands.getAll(r));
+  const commandsPromise = browser.commands.getAll();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -88,9 +88,25 @@
     { v: 'all-time', l: '♾️ All-time average (no decay)' },
     { v: 'exponential', l: '📉 Only take into account the latest data (exponential decay)', },
   ];
+
+  // TODO add `rel` attribute to the link element?
+  let editNativeShortcutsLinkUrl: string;
+  switch (BUILD_DEFINITIONS.BROWSER) {
+    case 'chromium':
+      // From https://developer.chrome.com/apps/commands#usage
+      editNativeShortcutsLinkUrl = 'chrome://extensions/configureCommands';
+      break;
+    case 'gecko':
+      // Yes, it's a knowledge base page, because Firefox doesn't have a dedicated link for the "manage shortcuts" page.
+      // TODO change it when it does.
+      // Also it there is this method: `browser.commands.update`, but I think native the dedicated page is better.
+      editNativeShortcutsLinkUrl = 'https://support.mozilla.org/kb/manage-extension-shortcuts-firefox';
+      break;
+    default: assertNever(BUILD_DEFINITIONS.BROWSER);
+  }
 </script>
 
-<div class="app">
+<main>
   {#await settingsPromise then _}
     <form
       bind:this={formEl}
@@ -161,12 +177,11 @@
                   <td></td> <!-- No "overrideWebsiteHotkeys" -->
                   <td style="text-align: center;">
                     <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
-                    to not work fully (no scrolling to anchor). Just 'href' doesn't work. Link is taken from
-                    https://developer.chrome.com/apps/commands#usage. -->
+                    to not work fully (no scrolling to anchor). Just 'href' doesn't work. -->
                     <a
-                      href="chrome://extensions/configureCommands"
-                      on:click|preventDefault={_ => chrome.tabs.create({
-                        url: 'chrome://extensions/configureCommands',
+                      href={editNativeShortcutsLinkUrl}
+                      on:click|preventDefault={_ => browser.tabs.create({
+                        url: editNativeShortcutsLinkUrl,
                         active: true,
                       })}
                       aria-label="Edit"
@@ -182,18 +197,21 @@
       <section>
         <h3>Popup</h3>
         <NumberField
-          label="📈⏱ Chart length in seconds"
+          label="📈⏱️ Chart length in seconds"
           bind:value={settings.popupChartLengthInSeconds}
+          required
           min="0"
         />
         <NumberField
           label="📈📏 Chart width (px)"
           bind:value={settings.popupChartWidthPx}
+          required
           min="0"
         />
         <NumberField
           label="📈📏 Chart height (px)"
           bind:value={settings.popupChartHeightPx}
+          required
           min="0"
         />
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
@@ -219,7 +237,7 @@
       <section>
         <h3>Time saved stats</h3>
         <InputFieldBase
-          label="⏱🧮 Averaging method"
+          label="⏱️🧮 Averaging method"
           let:id
         >
           <select
@@ -233,16 +251,18 @@
         </InputFieldBase>
         {#if settings.timeSavedAveragingMethod === 'exponential'}
           <NumberField
-            label="⏱✂️ Only take into account the last N seconds of playback"
+            label="⏱️✂️ Only take into account the last N seconds of playback"
             bind:value={settings.timeSavedAveragingWindowLength}
+            required
             min="1e-3"
           />
           <!-- TODO this is a pretty advanced setting. Hide it? -->
           <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
           <!-- TODO represent it in percents. -->
           <NumberField
-            label="⏱✂️⚖️ Latest playback period averaging weight"
+            label="⏱️✂️⚖️ Latest playback period averaging weight"
             bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
+            required
             min="1e-9"
             max={1 - 1e-9}
           />
@@ -274,31 +294,6 @@
         </InputFieldBase>
       </section>
 
-      <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
-      pretty tall. TODO this can be removed when the button is gone). -->
-      <p style="min-height: 2rem; opacity: 0.8; margin: 2rem 0; display: flex; align-items: center;">
-        <!-- TODO doesn't this annoy users by constantly blinking? -->
-        {#if unsaved}
-          {#if formValid}
-            <!-- TODO how about we get rid of this message at all (when the `beforeunload`) starts working so
-            users don't have to sit there and wait for this to turn to "Saved" after making changes? Or, perhaps, the
-            debounce duration isn't big enough to worry and just makes it more satisfying to see it get saved so
-            quickly? -->
-            <span>⏳ Saving...</span>
-          {:else}
-            <span>
-              <span style="color: red;">⚠️ Errors found </span>
-              <button
-                type="button"
-                on:click={_ => formEl.reportValidity()}
-                aria-label="Show errors"
-              >Show</button>
-            </span>
-          {/if}
-        {:else}
-          <span style="color: green;">✔️ Saved</span>
-        {/if}
-      </p>
       <!-- As we're auto-saving changes, this could be omited, but this is so users can trigger form validation on
       "Enter" press. And maybe some other cool native things. -->
       <input
@@ -306,27 +301,77 @@
         style="display: none;"
       />
     </form>
-    <button
-      type="button"
-      style="color: red;"
-      on:click={onResetToDefaultsClick}
-    >🔄 Reset to defaults</button>
-    <!-- TODO: -->
-    <!-- <button
-      type="button"
-      style="color: red;"
-    >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
-    <!-- <button
-      type="button"
-    >Export settings...</button>
-    <button
-      type="button"
-    >Import settings...</button> -->
   {/await}
-  <div style="margin-top: 1rem;">
+  <div style="margin: 1rem 0;">
     <a
       target="new"
       href="https://github.com/WofWca/jumpcutter"
     >ℹ️ About</a>
   </div>
+</main>
+<!-- I've seen this design (bottom status bar) in some desktop applications (e.g. KeePassXC, if you go to settings).
+However, in Gecko the whole page is stretched, so the scroll is outside of the document, so it's the same as with
+`position: static;` TODO? -->
+<div class="status-bar">
+  <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
+  pretty tall. TODO this can be removed when the button is gone). -->
+  <p style="min-height: 2rem; opacity: 0.8; display: flex; margin: 0; align-items: center;">
+    <!-- TODO doesn't this annoy users by constantly blinking? -->
+    {#if unsaved}
+      {#if formValid}
+        <!-- TODO how about we get rid of this message at all (when the `beforeunload`) starts working so
+        users don't have to sit there and wait for this to turn to "Saved" after making changes? Or, perhaps, the
+        debounce duration isn't big enough to worry and just makes it more satisfying to see it get saved so
+        quickly? -->
+        <span>⏳ Saving...</span>
+      {:else}
+        <span>
+          <span style="color: red;">⚠️ Errors found </span>
+          <button
+            type="button"
+            on:click={_ => formEl.reportValidity()}
+            aria-label="Show errors"
+          >Show</button>
+        </span>
+      {/if}
+    {:else}
+      <span style="color: green;">✔️ Saved</span>
+    {/if}
+  </p>
+  <button
+    type="button"
+    style="color: red;"
+    on:click={onResetToDefaultsClick}
+  >🔄 Reset to defaults</button>
+  <!-- TODO: -->
+  <!-- <button
+    type="button"
+    style="color: red;"
+  >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
+  <!-- <button
+    type="button"
+  >Export settings...</button>
+  <button
+    type="button"
+  >Import settings...</button> -->
 </div>
+
+<style>
+:global(body) {
+  margin: 0;
+  --main-margin: 1rem;
+}
+main {
+  margin: var(--main-margin);
+}
+.status-bar {
+  position: sticky;
+  bottom: 0;
+  padding: 0.125rem var(--main-margin);
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid gray;
+}
+</style>

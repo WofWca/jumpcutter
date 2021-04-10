@@ -1,15 +1,12 @@
+import type browser from '@/webextensions-api';
 import { keydownEventToActions, eventTargetIsInput } from '@/hotkeys';
 import { Settings } from '@/settings';
 
 export default function createKeydownListener(
-  tabId: Exclude<chrome.tabs.Tab['id'], undefined>,
-  frameId: number,
+  nonSettingsActionsPort: ReturnType<typeof browser.tabs.connect>,
   getSettings: () => Settings,
   onNewSettingsValues: (newValues: Partial<Settings>) => void,
 ): (e: KeyboardEvent) => void {
-  // TODO this also assumes that there's an onConnect listener on the other end, but it may not be loaded.
-  // TODO make sure it is closed when the listener returned by this function is discarded?
-  const nonSettingsActionsPort = chrome.tabs.connect(tabId, { name: 'nonSettingsActions', frameId });
   const undeferred = (e: KeyboardEvent): void => {
     const settings = getSettings();
     if (eventTargetIsInput(e) && settings.popupDisableHotkeysWhileInputFocused) return;

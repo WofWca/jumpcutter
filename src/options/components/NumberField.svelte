@@ -8,7 +8,7 @@
 
 <InputFieldBase {label} let:id>
   <input
-    {...$$props}
+    {...$$restProps}
     type="number"
     bind:value
     {step}

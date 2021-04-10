@@ -1,8 +1,9 @@
+import browser from '@/webextensions-api';
 import { addOnChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
 
 function setBadge(text: string, color: string) {
-  chrome.browserAction.setBadgeBackgroundColor({ color });
-  chrome.browserAction.setBadgeText({ text });
+  browser.browserAction.setBadgeBackgroundColor({ color });
+  browser.browserAction.setBadgeText({ text });
 }
 type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold' | 'marginBefore'
   | 'marginAfter'>;
@@ -27,7 +28,7 @@ function settingToBadgeParams<T extends SupportedSettings>(
 }
 function setBadgeToDefault(settings: Settings) {
   if (settings.badgeWhatSettingToDisplayByDefault === 'none' || !settings.enabled) {
-    chrome.browserAction.setBadgeText({ text: '' });
+    browser.browserAction.setBadgeText({ text: '' });
   } else {
     const settingName = settings.badgeWhatSettingToDisplayByDefault;
     setBadge(...settingToBadgeParams(settingName, settings[settingName]));
@@ -62,7 +63,7 @@ export default async function initIconUpdater(): Promise<void> {
     }
     // Apparently it doesn't perform this check internally. TODO.
     if (currentIconPath !== path) {
-      chrome.browserAction.setIcon({ path });
+      browser.browserAction.setIcon({ path });
       currentIconPath = path;
     }
 

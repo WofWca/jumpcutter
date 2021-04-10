@@ -75,15 +75,15 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.TOGGLE_SILENCE_SPEED]: '🙊⏩ Silence speed toggle 🔄',
 
   // 📏? Couldn't find anything better.
-  [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔼',
-  [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) 🔽',
-  [HotkeyAction.SET_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) =',
-  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: '⏱⬅️ Margin before (s) toggle 🔄',
+  [HotkeyAction.INCREASE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) 🔼',
+  [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) 🔽',
+  [HotkeyAction.SET_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) =',
+  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) toggle 🔄',
 
-  [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔼',
-  [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱➡️ Margin after (s) 🔽',
-  [HotkeyAction.SET_MARGIN_AFTER]: '⏱➡️ Margin after (s) =',
-  [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱➡️ Margin after (s) toggle 🔄',
+  [HotkeyAction.INCREASE_MARGIN_AFTER]: '⏱️➡️ Margin after (s) 🔼',
+  [HotkeyAction.DECREASE_MARGIN_AFTER]: '⏱️➡️ Margin after (s) 🔽',
+  [HotkeyAction.SET_MARGIN_AFTER]: '⏱️➡️ Margin after (s) =',
+  [HotkeyAction.TOGGLE_MARGIN_AFTER]: '⏱️➡️ Margin after (s) toggle 🔄',
 
   [HotkeyAction.ADVANCE]: '➡️ Advance (s)',
   [HotkeyAction.REWIND]: '⬅️ Rewind (s)',
@@ -206,19 +206,22 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       //
       // TODO also need to make sure that it all works fine even when min/max values are not a multiple of step. E.g. if
       // step is 0.5 and min value is 0.2, increasing the value one time brings it up to 0.5, not 0.7. Or should we?
-      // Maybe instead do not allow decreasing it from 0.5 to 0.2? Or why do you assume it has to be so that the value
+      // Maybe instead do not allow decreasing it from 0.5 to 0.2 (like we do now for sounded/silence speeds)?
+      // Or why do you assume it has to be so that the value
       // is a multiple of the step. Why can't it be 0.8/1.3/1.8, for example?
       case HotkeyAction.INCREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '+', 0, 1); break;
       case HotkeyAction.DECREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '-', 0, 1); break;
       case HotkeyAction.SET_VOLUME_THRESHOLD: actions.settingsNewValues.volumeThreshold = arg; break;
       case HotkeyAction.TOGGLE_VOLUME_THRESHOLD: toggleSettingValue('volumeThreshold'); break;
-      case HotkeyAction.INCREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '+', 0, 15); break;
-      case HotkeyAction.DECREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '-', 0, 15); break;
+      case HotkeyAction.INCREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '+', binding.actionArgument!, 15); break;
+      case HotkeyAction.DECREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '-', binding.actionArgument!, 15); break;
       case HotkeyAction.SET_SOUNDED_SPEED: actions.settingsNewValues.soundedSpeed = arg; break;
       case HotkeyAction.TOGGLE_SOUNDED_SPEED: toggleSettingValue('soundedSpeed'); break;
       // TODO how about do different `clamps` for 'absolute' and 'relativeToSoundedSpeed' specification methods?
-      case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '+', 0, 15); break;
-      case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '-', 0, 15); break;
+      case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '+', binding.actionArgument!, 15);
+        break;
+      case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '-', binding.actionArgument!, 15);
+        break;
       case HotkeyAction.SET_SILENCE_SPEED: actions.settingsNewValues.silenceSpeedRaw = arg; break;
       case HotkeyAction.TOGGLE_SILENCE_SPEED: toggleSettingValue('silenceSpeedRaw'); break;
       case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;

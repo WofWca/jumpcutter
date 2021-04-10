@@ -7,7 +7,11 @@ import type tippy from 'tippy.js';
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function tippyActionAsyncPreload(node: HTMLElement, props?: Parameters<typeof tippy>[1]) {
   const tippyInstancePromise = (async () => {
-    const tippyPromise = import(/* webpackPreload */ 'tippy.js');
+    const tippyPromise = import(
+      /* webpackPreload */
+      /* webpackExports: ['default'] */
+      'tippy.js'
+    );
     import(/* webpackPreload */ 'tippy.js/dist/tippy.css');
     const tippy = (await tippyPromise).default;
     return tippy(node, {

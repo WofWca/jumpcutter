@@ -1,10 +1,11 @@
 import { HotkeyAction, HotkeyBinding, combinationIsEqual } from "@/hotkeys";
-import { getSettings, setSettings } from "@/settings";
+import browser from '@/webextensions-api';
 
 /**
  * @param hotkeys - mutable
+ * @return whether the new hotkeys have been added to the `hotkeys` parameter.
  */
-function tryAddVolumeThresholdHotkeys(hotkeys: HotkeyBinding[]): void {
+function tryAddVolumeThresholdHotkeys(hotkeys: HotkeyBinding[]): boolean {
   const defaultVolumeThresholdHotkeys = [
     {
       keyCombination: { code: 'KeyE', },
@@ -46,16 +47,27 @@ function tryAddVolumeThresholdHotkeys(hotkeys: HotkeyBinding[]): void {
   if (defaultVolumeThresholdHotkeysPresent && !newHotkeysAreAlreadyBound) {
     const insertAfter = hotkeys.findIndex(b => bindingIsEqual(b, defaultVolumeThresholdHotkeys[1]));
     hotkeys.splice(insertAfter + 1, 0, ...newHotkeys);
+    return true;
+  } else {
+    return false;
   }
 }
 
 export default async function(): Promise<void> {
-  // Add new hotkeys if the user didn't customize them much.
-  const { hotkeys } = await getSettings();
-  tryAddVolumeThresholdHotkeys(hotkeys);
-
-  await setSettings({
-    hotkeys,
+  const newValues: {
+    popupDisableHotkeysWhileInputFocused: true,
+    hotkeys?: HotkeyBinding[],
+  } = {
     popupDisableHotkeysWhileInputFocused: true, // Since we now have volume up/down bound to arrows in popup.
-  });
+  };
+  // Add new hotkeys if the user didn't customize them much.
+  const { hotkeys } = await browser.storage.local.get('hotkeys') as { hotkeys?: HotkeyBinding[] };
+  if (hotkeys) {
+    const added: boolean = tryAddVolumeThresholdHotkeys(hotkeys);
+    if (added) {
+      newValues.hotkeys = hotkeys;
+    }
+  }
+
+  await browser.storage.local.set(newValues);
 }
