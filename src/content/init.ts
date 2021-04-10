@@ -1,9 +1,5 @@
 import browser from '@/webextensions-api';
-import {
-  addOnChangedListener as addOnSettingsChangedListener,
-  MyStorageChanges,
-  removeOnChangedListener as removeOnSettingsChangedListener,
-} from '@/settings';
+import { addOnSettingsChangedListener, removeOnSettingsChangedListener, MyStorageChanges } from '@/settings';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 

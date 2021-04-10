@@ -1,8 +1,7 @@
 import browser from '@/webextensions-api';
 import {
-  Settings, getSettings, setSettings, addOnChangedListener as addOnSettingsChangedListener, MyStorageChanges,
-  removeOnChangedListener as removeOnSettingsChangedListener,
-  settingsChanges2NewValues,
+  Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges,
+  removeOnSettingsChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';

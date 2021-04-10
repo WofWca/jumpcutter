@@ -1,7 +1,9 @@
 <script lang="ts">
   import browser from '@/webextensions-api';
   import { onDestroy } from 'svelte';
-  import { addOnChangedListener, getSettings, MyStorageChanges, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
+  import {
+    addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues
+  } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
@@ -159,8 +161,8 @@
 
   // This is to react to settings changes outside the popup. Currently I don't really see how settings can change from
   // outside the popup while it is open, but let's play it safe.
-  // Why debounce – because `addOnChangedListener` also reacts to settings changes from inside this script itself and
-  // sometimes when settings change rapidly, `onChanged` callback may lag behind so
+  // Why debounce – because `addOnSettingsChangedListener` also reacts to settings changes from inside this
+  // script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
   // the `settings` object's state begins jumping between the old and new state.
   // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
   let pendingChanges: Partial<Settings> = {};
@@ -171,7 +173,7 @@
     },
     500,
   )
-  addOnChangedListener(changes => {
+  addOnSettingsChangedListener(changes => {
     pendingChanges = Object.assign(pendingChanges, settingsChanges2NewValues(changes));
     debouncedApplyPendingChanges();
   });

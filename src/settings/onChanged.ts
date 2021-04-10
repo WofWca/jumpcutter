@@ -10,7 +10,7 @@ const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnCh
  * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
  * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
  */
-export function addOnChangedListener(listener: MyOnChangedListener): void {
+export function addOnSettingsChangedListener(listener: MyOnChangedListener): void {
   const actualListener: NativeOnChangedListener = (changes, areaName) => {
     if (areaName !== mainStorageAreaName) return;
 
@@ -26,7 +26,7 @@ export function addOnChangedListener(listener: MyOnChangedListener): void {
   srcListenerToWrapperListener.set(listener, actualListener);
   browser.storage.onChanged.addListener(actualListener);
 }
-export function removeOnChangedListener(listener: MyOnChangedListener): void {
+export function removeOnSettingsChangedListener(listener: MyOnChangedListener): void {
   const actualListener = srcListenerToWrapperListener.get(listener);
   if (!actualListener) {
     if (process.env.NODE_ENV !== 'production') {
