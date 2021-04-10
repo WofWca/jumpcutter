@@ -6,8 +6,8 @@ export default function initBrowserHotkeysListener(): void {
     switch (command) {
       case 'toggle_enabled': {
         // How about sharing the settings cache object with between all background scripts?
-        const settings = await getSettings();
-        await setSettings({ enabled: !settings.enabled });
+        const { enabled } = await getSettings('enabled');
+        await setSettings({ enabled: !enabled });
         break;
       }
       default: {
