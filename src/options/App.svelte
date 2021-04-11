@@ -126,6 +126,24 @@
       <section>
         <h3>General</h3>
         <InputFieldBase
+          label="Apply to"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.applyTo}
+            required
+          >
+            {#each [
+              { v: 'videoOnly', l: '🎥 Video elements only' },
+              { v: 'audioOnly', l: '🔉 Audio elements only' },
+              { v: 'both', l: '🎥&🔉 Both video & audio elements' },
+            ] as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
+        <InputFieldBase
           label="🙊= Silence speed specification method"
           let:id
         >
