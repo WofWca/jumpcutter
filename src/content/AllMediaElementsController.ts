@@ -322,6 +322,7 @@ export default class AllMediaElementsController {
   private debouncedHandleNewElements = debounce(this.handleNewElements, 0, { maxWait: 3000 });
   /**
    * Calling with the same element multiple times is fine, calling multiple times on the same tick is fine.
+   * Order in which elements are passed in fact matters, but in practice not very much.
    */
   public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
     newElements.forEach(el => this.unhandledNewElements.add(el));
