@@ -378,7 +378,7 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
         </span>
       {/if}
     {:else}
-      <span style="color: green;">✔️ Saved</span>
+      <span class="saved-text">✔️ Saved</span>
     {/if}
   </p>
 </div>
@@ -397,5 +397,18 @@ main {
   padding: 0.125rem var(--main-margin);
   background-color: white;
   border-top: 1px solid gray;
+}
+.saved-text {
+  color: green;
+}
+@media (prefers-color-scheme: dark) {
+  .status-bar {
+    /* IDK, `background-color: inherit` doesn't make it dark with the dark theme with default colors. */
+    background: #111;
+    color: #ddd;
+  }
+  .saved-text {
+    color: lightgreen;
+  }
 }
 </style>

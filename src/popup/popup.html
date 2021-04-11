@@ -4,6 +4,13 @@
   <script defer src="main.js"></script>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="popup.css"/>
+  <!-- Who would have thogught that writing a dark theme is that easy.
+  Currently this doesn't do much in Gecko, so either you try not to use `@media (prefers-color-scheme: dark)` or
+  you manually define dark styles for the whole page (for which there may be a library that is suitable for
+  default-styled pages). Or you wait until https://bugzilla.mozilla.org/show_bug.cgi?id=1525107
+  is resolved.
+  The same applies to the other pages of this extension. -->
+  <meta name="color-scheme" content="dark light">
 </head>
 
 <body>

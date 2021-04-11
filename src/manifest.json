@@ -28,8 +28,6 @@
   ],
   "options_ui": {
     "page": "options/index.html",
-    "chrome_style": true,
-    "browser_style": true,
     "open_in_tab": false
   },
   "commands": {
