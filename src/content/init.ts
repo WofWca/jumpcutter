@@ -1,5 +1,7 @@
 import browser from '@/webextensions-api';
-import { addOnSettingsChangedListener, removeOnSettingsChangedListener, MyStorageChanges } from '@/settings';
+import {
+  addOnSettingsChangedListener, removeOnSettingsChangedListener, MyStorageChanges, getSettings
+} from '@/settings';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 
@@ -14,7 +16,10 @@ const myRequestIdleCallback = nativeRequestIdleCallback
   ? (cb: () => void) => nativeRequestIdleCallback(cb, { timeout: 5000 })
   : (cb: () => void) => setTimeout(() => setTimeout(cb));
 
-export default function init(): void {
+export default async function init(): Promise<void> {
+  // TODO would be better to pass them as a parameter from `main.ts`.
+  const settingsP = getSettings('applyTo');
+
   let allMediaElementsController: AllMediaElementsController | undefined;
   async function ensureInitAllMediaElementsController() {
     if (allMediaElementsController) return;
@@ -53,12 +58,22 @@ export default function init(): void {
   }
   addOnSettingsChangedListener(onSettingsChanged);
 
-  const targetTagName = 'video';
-  const allMediaElements = document.getElementsByTagName(targetTagName);
-  if (allMediaElements.length) {
-    ensureInitAllMediaElementsController().then(() => {
-      allMediaElementsController!.onNewMediaElements(...allMediaElements);
-    });
+  const { applyTo } = await settingsP;
+  const tagNames: Array<'video' | 'audio'> = [];
+  if (applyTo !== 'audioOnly') {
+    tagNames.push('video');
+  }
+  if (applyTo !== 'videoOnly') {
+    tagNames.push('audio');
+  }
+
+  for (const tagName of tagNames) {
+    const allMediaElementsWThisTag = document.getElementsByTagName(tagName);
+    if (allMediaElementsWThisTag.length) {
+      ensureInitAllMediaElementsController().then(() => {
+        allMediaElementsController!.onNewMediaElements(...allMediaElementsWThisTag);
+      });
+    }
   }
   // Peeked at https://github.com/igrigorik/videospeed/blob/a25373f1d831fe06430c2e9e87dc1bd1aabd25b1/inject.js#L631
   function handleMutations(mutations: MutationRecord[]) {
@@ -73,7 +88,7 @@ export default function init(): void {
         }
         // The fact that we have an array of `addedNodes` in an array of mutations may mean (idk actually) that
         // we can have tuplicate nodes in the array, which currently is fine (see `onNewMediaElements`).
-        if (node.nodeName === targetTagName) {
+        if ((tagNames as string[]).includes(node.nodeName)) {
           newElements.push(node as HTMLMediaElement);
         } else {
           // TODO here https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName
@@ -81,9 +96,11 @@ export default function init(): void {
           // Does it mean that it would be better to somehow use the `allMediaElements` variable from a few lines above?
           // But here https://dom.spec.whatwg.org/#introduction-to-dom-ranges it says that upgdating live ranges can be
           // costly.
-          const childMediaElements = (node as HTMLElement).getElementsByTagName(targetTagName);
-          if (childMediaElements.length) {
-            newElements.push(...childMediaElements);
+          for (const tagName of tagNames) {
+            const childMediaElements = (node as HTMLElement).getElementsByTagName(tagName);
+            if (childMediaElements.length) {
+              newElements.push(...childMediaElements);
+            }
           }
         }
       }

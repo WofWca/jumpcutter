@@ -16,6 +16,8 @@ export interface Settings {
   marginAfter: number,
   previousMarginAfter: number,
 
+  applyTo: 'videoOnly' | 'audioOnly' | 'both',
+
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
 

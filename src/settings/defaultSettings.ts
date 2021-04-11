@@ -16,6 +16,8 @@ export const defaultSettings: Readonly<Settings> = {
   marginAfter:          0.100,
   previousMarginAfter:  0.100,
 
+  applyTo: 'videoOnly',
+
   enableHotkeys: true,
   // TODO some code here is pretty WET, like duplicate hotkeys. DRY?
   hotkeys: [
