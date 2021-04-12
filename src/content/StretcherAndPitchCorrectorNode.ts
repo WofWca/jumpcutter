@@ -24,16 +24,16 @@ type PitchSetting = 'slowdown' | 'speedup' | 'normal';
 export default class StretcherAndPitchCorrectorNode {
   // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
   // scheduling.
-  speedUpGain: GainNode;
-  slowDownGain: GainNode;
-  normalSpeedGain: GainNode;
-  toneContext: ReturnType<typeof toneGetContext>
-  speedUpPitchShift: PitchShift;
-  slowDownPitchShift: PitchShift;
-  originalPitchCompensationDelay: DelayNode;
-  delayNode: DelayNode;
+  private speedUpGain: GainNode;
+  private slowDownGain: GainNode;
+  private normalSpeedGain: GainNode;
+  private toneContext: ReturnType<typeof toneGetContext>
+  private speedUpPitchShift: PitchShift;
+  private slowDownPitchShift: PitchShift;
+  private originalPitchCompensationDelay: DelayNode;
+  private delayNode: DelayNode;
   lastScheduledStretch?: StretchInfo & { speedupOrSlowdown: 'speedup' | 'slowdown' };
-  lastElementSpeedChangeAtInputTime?: Time;
+  private lastElementSpeedChangeAtInputTime?: Time;
 
   constructor(
     private context: AudioContext,
@@ -86,6 +86,17 @@ export default class StretcherAndPitchCorrectorNode {
     ToneConnect(this.speedUpGain, this.speedUpPitchShift);
     ToneConnect(this.slowDownGain, this.slowDownPitchShift);
     this.normalSpeedGain.connect(this.originalPitchCompensationDelay);
+  }
+
+  /** Constant after initialization */
+  get pitchCorrectorDelay(): number {
+    return this.originalPitchCompensationDelay.delayTime.value;
+  }
+  get stretcherDelay(): number {
+    return this.delayNode.delayTime.value;
+  }
+  get totalDelay(): number {
+    return this.stretcherDelay + this.pitchCorrectorDelay;
   }
 
   connectInputFrom(sourceNode: AudioNode): void {
@@ -260,7 +271,7 @@ export default class StretcherAndPitchCorrectorNode {
     toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
   }
 
-  stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
+  private stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
     if (startValue === endValue) {
       return;
     }

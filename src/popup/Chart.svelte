@@ -252,7 +252,7 @@
     }
     // Yes, old values' scale is not updated.
     const scaledValue = stretcherDelay / maxRecordedStretcherDelay * chartMaxValue * 0.90;
-    const inputTime = r.unixTime - r.totalOutputDelay;
+    const inputTime = r.unixTime - r.delayFromInputToStretcherOutput;
     stretcherDelaySeries.append(sToMs(inputTime), scaledValue);
   }
 

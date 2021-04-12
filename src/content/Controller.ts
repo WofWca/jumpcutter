@@ -4,6 +4,7 @@ import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
   getNewLookaheadDelay,
+  getTotalOutputDelay,
   getDelayFromInputToStretcherOutput,
   transformSpeed,
 } from './helpers';
@@ -422,7 +423,12 @@ export default class Controller {
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
-      totalOutputDelay: getDelayFromInputToStretcherOutput(lookaheadDelay, stretcherDelay),
+      totalOutputDelay: getTotalOutputDelay(
+        lookaheadDelay,
+        stretcherDelay,
+        this._stretcherAndPitch?.pitchCorrectorDelay ?? 0,
+      ),
+      delayFromInputToStretcherOutput: getDelayFromInputToStretcherOutput(lookaheadDelay, stretcherDelay),
       stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.
       // lastScheduledStretch: this._stretcherAndPitch.lastScheduledStretch,

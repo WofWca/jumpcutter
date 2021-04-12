@@ -11,6 +11,9 @@ export function getNewLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: nu
 export function getDelayFromInputToStretcherOutput(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
   return lookaheadNodeDelay + stretcherNodeDelay;
 }
+export function getTotalOutputDelay(lookaheadNodeDelay: Time, stretcherDelay: Time, pitchCorrectorDelay: Time): Time {
+  return lookaheadNodeDelay + stretcherDelay + pitchCorrectorDelay;
+}
 export function getNewSnippetDuration(originalRealtimeDuration: Time, originalSpeed: number, newSpeed: number): Time {
   const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
   return videoSpeedSnippetDuration / newSpeed;
