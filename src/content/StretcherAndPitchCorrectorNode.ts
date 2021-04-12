@@ -21,7 +21,7 @@ const CROSS_FADE_DURATION = 0.01;
 
 type PitchSetting = 'slowdown' | 'speedup' | 'normal';
 
-export default class PitchPreservingStretcherNode {
+export default class StretcherAndPitchCorrectorNode {
   // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
   // scheduling.
   speedUpGain: GainNode;

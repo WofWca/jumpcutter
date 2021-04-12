@@ -9,7 +9,7 @@ import {
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
-import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
+import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assert } from '@/helpers';
 
 
@@ -62,7 +62,7 @@ export default class Controller {
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
-  _stretcher?: PitchPreservingStretcherNode;
+  _stretcher?: StretcherAndPitchCorrectorNode;
   _lastActualPlaybackRateChange?: {
     time: Time,
     value: number,
@@ -188,11 +188,11 @@ export default class Controller {
     // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-      const { default: PitchPreservingStretcherNode } = await import(
+      const { default: StretcherAndPitchCorrectorNode } = await import(
         /* webpackExports: ['default'] */
-        './PitchPreservingStretcherNode'
+        './StretcherAndPitchCorrectorNode'
       );
-      this._stretcher = new PitchPreservingStretcherNode(
+      this._stretcher = new StretcherAndPitchCorrectorNode(
         ctx,
         maxMaginStretcherDelay,
         0, // Doesn't matter, we'll update it in `_setStateAccordingToNewSettings`.
