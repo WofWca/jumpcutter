@@ -4,12 +4,12 @@ import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
   getNewLookaheadDelay,
-  getTotalDelay,
+  getDelayFromInputToStretcherOutput,
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
-import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
+import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assert } from '@/helpers';
 
 
@@ -27,7 +27,7 @@ type ControllerInitialized =
   & { initialized: true }
   & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_silenceDetectorNode'
     | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange' | '_elementVolumeCache'>>;
-type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
+type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcherAndPitch'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analyzerOut'>>;
 
 // Not a method so it gets eliminated at optimization.
@@ -62,7 +62,7 @@ export default class Controller {
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
-  _stretcher?: PitchPreservingStretcherNode;
+  _stretcherAndPitch?: StretcherAndPitchCorrectorNode;
   _lastActualPlaybackRateChange?: {
     time: Time,
     value: number,
@@ -188,18 +188,18 @@ export default class Controller {
     // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-      const { default: PitchPreservingStretcherNode } = await import(
+      const { default: StretcherAndPitchCorrectorNode } = await import(
         /* webpackExports: ['default'] */
-        './PitchPreservingStretcherNode'
+        './StretcherAndPitchCorrectorNode'
       );
-      this._stretcher = new PitchPreservingStretcherNode(
+      this._stretcherAndPitch = new StretcherAndPitchCorrectorNode(
         ctx,
         maxMaginStretcherDelay,
         0, // Doesn't matter, we'll update it in `_setStateAccordingToNewSettings`.
         () => this.settings,
         () => this._lookahead!.delayTime.value,
       );
-      this._onDestroyCallbacks.push(() => this._stretcher!.destroy());
+      this._onDestroyCallbacks.push(() => this._stretcherAndPitch!.destroy());
     }
     const srcFromMap = mediaElementSourcesMap.get(element);
     let mediaElementSource: MediaElementAudioSourceNode;
@@ -222,13 +222,13 @@ export default class Controller {
     });
     volumeFilter.connect(this._silenceDetectorNode);
     if (this.isStretcherEnabled()) {
-      this._stretcher.connectInputFrom(this._lookahead);
-      this._stretcher.connectOutputTo(ctx.destination);
+      this._stretcherAndPitch.connectInputFrom(this._lookahead);
+      this._stretcherAndPitch.connectOutputTo(ctx.destination);
     }
     volumeFilter.connect(this._analyzerIn);
     if (isLogging(this)) {
       if (this.isStretcherEnabled()) {
-        this._stretcher.connectOutputTo(outVolumeFilter!);
+        this._stretcherAndPitch.connectOutputTo(outVolumeFilter!);
       } else {
         mediaElementSource.connect(outVolumeFilter!);
       }
@@ -260,10 +260,10 @@ export default class Controller {
       const { time: eventTime, type: silenceStartOrEnd } = msg.data;
       if (silenceStartOrEnd === 'silenceEnd') {
         this._setSpeedAndLog('sounded');
-        this._stretcher?.onSilenceEnd(eventTime);
+        this._stretcherAndPitch?.onSilenceEnd(eventTime);
       } else {
         this._setSpeedAndLog('silence');
-        this._stretcher?.onSilenceStart(eventTime);
+        this._stretcherAndPitch?.onSilenceStart(eventTime);
 
         if (this.settings.enableDesyncCorrection) {
           // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
@@ -344,7 +344,7 @@ export default class Controller {
         this.settings.soundedSpeed,
         this.settings.silenceSpeed
       );
-      this._stretcher.onSettingsUpdate();
+      this._stretcherAndPitch.onSettingsUpdate();
     }
   }
 
@@ -408,11 +408,15 @@ export default class Controller {
      */
     const stretchToInputTime = (stretch: StretchInfo): StretchInfo => ({
       ...stretch,
-      startTime: stretch.startTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.startValue),
-      endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
+      startTime:
+        stretch.startTime
+        - getDelayFromInputToStretcherOutput(this._lookahead!.delayTime.value, stretch.startValue),
+      endTime:
+        stretch.endTime
+        - getDelayFromInputToStretcherOutput(this._lookahead!.delayTime.value, stretch.endValue),
     });
 
-    const stretcherDelay = this._stretcher?.delayNode.delayTime.value;
+    const stretcherDelay = this._stretcherAndPitch?.delayNode.delayTime.value;
 
     return {
       unixTime: Date.now() / 1000,
@@ -422,13 +426,14 @@ export default class Controller {
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
       totalOutputDelay: this._lookahead && stretcherDelay !== undefined
-        ? getTotalDelay(this._lookahead.delayTime.value, stretcherDelay)
+        ? getDelayFromInputToStretcherOutput(this._lookahead.delayTime.value, stretcherDelay)
         : 0,
       stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.
-      // lastScheduledStretch: this._stretcher.lastScheduledStretch,
+      // lastScheduledStretch: this._stretcherAndPitch.lastScheduledStretch,
       lastScheduledStretchInputTime:
-        this._stretcher?.lastScheduledStretch && stretchToInputTime(this._stretcher.lastScheduledStretch),
+        this._stretcherAndPitch?.lastScheduledStretch
+        && stretchToInputTime(this._stretcherAndPitch.lastScheduledStretch),
     };
   }
 }
