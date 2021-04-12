@@ -4,7 +4,7 @@ import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
   getNewLookaheadDelay,
-  getTotalDelay,
+  getDelayFromInputToStretcherOutput,
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
@@ -408,8 +408,12 @@ export default class Controller {
      */
     const stretchToInputTime = (stretch: StretchInfo): StretchInfo => ({
       ...stretch,
-      startTime: stretch.startTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.startValue),
-      endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
+      startTime:
+        stretch.startTime
+        - getDelayFromInputToStretcherOutput(this._lookahead!.delayTime.value, stretch.startValue),
+      endTime:
+        stretch.endTime
+        - getDelayFromInputToStretcherOutput(this._lookahead!.delayTime.value, stretch.endValue),
     });
 
     const stretcherDelay = this._stretcher?.delayNode.delayTime.value;
@@ -422,7 +426,7 @@ export default class Controller {
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
       totalOutputDelay: this._lookahead && stretcherDelay !== undefined
-        ? getTotalDelay(this._lookahead.delayTime.value, stretcherDelay)
+        ? getDelayFromInputToStretcherOutput(this._lookahead.delayTime.value, stretcherDelay)
         : 0,
       stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.

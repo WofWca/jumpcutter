@@ -6,7 +6,7 @@ import { PitchShift } from 'tone/build/esm/effect/PitchShift';
 import { ToneAudioNode } from 'tone/build/esm/core/context/ToneAudioNode';
 import {
   getStretcherDelayForInputMoment,
-  getTotalDelay,
+  getDelayFromInputToStretcherOutput,
   getStretchSpeedChangeMultiplier,
   getStretcherDelayChange,
   getRealtimeMargin,
@@ -186,7 +186,7 @@ export default class StretcherAndPitchCorrectorNode {
     const endValue = finalStretcherDelay;
     const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
     // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-    const endTime = eventTime + getTotalDelay(lookaheadDelay, finalStretcherDelay);
+    const endTime = eventTime + getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
     this.stretch(startValue, endValue, startTime, endTime);
     // if (isLogging(this)) {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
@@ -201,7 +201,9 @@ export default class StretcherAndPitchCorrectorNode {
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
       getStretcherSoundedDelay(settings.marginBefore, settings.soundedSpeed, settings.silenceSpeed);
-    const startIn = getTotalDelay(this.getLookaheadDelay(), stretcherDelayStartValue) - realtimeMarginBefore;
+    const startIn =
+      getDelayFromInputToStretcherOutput(this.getLookaheadDelay(), stretcherDelayStartValue)
+      - realtimeMarginBefore;
 
     const speedUpBy = settings.silenceSpeed / settings.soundedSpeed;
 
