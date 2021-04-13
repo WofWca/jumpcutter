@@ -26,7 +26,7 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_silenceDetectorNode'
+  & Required<Pick<Controller, 'initialized' | 'audioContext' | '_silenceDetectorNode'
     | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange' | '_elementVolumeCache'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcherAndPitch'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analyzerOut'>>;
@@ -56,7 +56,11 @@ export default class Controller {
   readonly element: HTMLMediaElement;
   settings: ControllerSettings;
   initialized = false;
-  _initPromise?: Promise<this>;
+  _resolveInitPromise!: (result: Controller) => void;
+  // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
+  // executor?
+  _initPromise = new Promise<Controller>(resolve => this._resolveInitPromise = resolve);
+
   _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
   _silenceDetectorNode?: AudioWorkletNode;
@@ -88,11 +92,6 @@ export default class Controller {
   }
 
   async init(): Promise<this> {
-    let resolveInitPromise: (result: this) => void;
-    // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
-    // executor?
-    this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
-
     const element = this.element;
     const ctx = audioContext;
 
@@ -325,12 +324,12 @@ export default class Controller {
     }
 
     this.initialized = true;
-    resolveInitPromise!(this);
+    this._resolveInitPromise(this);
     return this;
   }
 
   /**
-   * Assumes `init()` has been called (but not necessarily that its return promise has been resolved).
+   * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved).
    * TODO make it work when it's false?
    */
   async destroy(): Promise<void> {
@@ -375,22 +374,25 @@ export default class Controller {
     }
   }
 
-  /** Can be called before the instance has been initialized. */
-  updateSettings(newSettings: ControllerSettings): void {
+  /**
+   * May return a new unitialized instance of its class, if particular settings are changed. The old one gets destroyed
+   * and must not be used. The new instance will get initialized automatically and may not start initializing
+   * immediately (waiting for the old one to get destroyed).
+   * Can be called before the instance has been initialized.
+   */
+  updateSettingsAndMaybeCreateNewInstance(newSettings: ControllerSettings): Controller {
     // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
     this.settings = newSettings;
 
     if (isStretcherEnabled(newSettings) ? !isStretcherEnabled(oldSettings) : isStretcherEnabled(oldSettings)) {
-      // TODO this is not async-safe. Add `this.reinitPromise = ` or something.
-      setTimeout(async () => {
-        await this.destroy();
-        await this.init();
-      });
-      return;
+      const newInstance = new Controller(this.element, this.settings);
+      this.destroy().then(() => newInstance.init());
+      return newInstance;
+    } else {
+      this._setStateAccordingToNewSettings(oldSettings);
+      return this;
     }
-
-    this._setStateAccordingToNewSettings(oldSettings);
   }
 
   private _getSilenceDetectorNodeDurationThreshold() {

@@ -94,7 +94,9 @@ export default class AllMediaElementsController {
     assert(this.settings);
     Object.assign(this.settings, newValues);
     assert(this.controller);
-    this.controller.updateSettings(
+    // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
+    // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
+    this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
       extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
     );
   }
