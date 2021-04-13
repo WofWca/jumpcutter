@@ -118,7 +118,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupDisableHotkeysWhileInputFocused: true,
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
-  popupChartHeightPx: 150,
+  popupChartHeightPx: 75,
   popupChartLengthInSeconds: 4,
   popupAlwaysShowOpenLocalFileLink: true,
   popupSpecificHotkeys: [
