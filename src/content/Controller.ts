@@ -402,21 +402,18 @@ export default class Controller {
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
 
+    const lookaheadDelay = this._lookahead?.delayTime.value ?? 0;
+    const stretcherDelay = this._stretcherAndPitch?.stretcherDelay ?? 0;
+
     /**
      * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
      * it would be on the input timeline.
      */
     const stretchToInputTime = (stretch: StretchInfo): StretchInfo => ({
       ...stretch,
-      startTime:
-        stretch.startTime
-        - getDelayFromInputToStretcherOutput(this._lookahead!.delayTime.value, stretch.startValue),
-      endTime:
-        stretch.endTime
-        - getDelayFromInputToStretcherOutput(this._lookahead!.delayTime.value, stretch.endValue),
+      startTime: stretch.startTime - getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.startValue),
+      endTime: stretch.endTime - getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.endValue),
     });
-
-    const stretcherDelay = this._stretcherAndPitch?.delayNode.delayTime.value;
 
     return {
       unixTime: Date.now() / 1000,
@@ -425,9 +422,7 @@ export default class Controller {
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
-      totalOutputDelay: this._lookahead && stretcherDelay !== undefined
-        ? getDelayFromInputToStretcherOutput(this._lookahead.delayTime.value, stretcherDelay)
-        : 0,
+      totalOutputDelay: getDelayFromInputToStretcherOutput(lookaheadDelay, stretcherDelay),
       stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.
       // lastScheduledStretch: this._stretcherAndPitch.lastScheduledStretch,
