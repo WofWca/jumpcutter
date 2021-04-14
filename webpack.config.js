@@ -120,7 +120,9 @@ module.exports = env => {
           { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
         ],
       }),
-      new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)(),
+      new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)({
+        analyzerMode: env.noreport ? 'disabled' : 'server',
+      }),
     ],
 
     optimization: {
