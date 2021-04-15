@@ -1,0 +1,62 @@
+<svg width="440" height="280" viewBox="0 0 110 70" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+  <style>
+    .bg-left {
+      fill: #8F8;
+    }
+    .bg-right {
+      fill: #F88;
+    }
+    .wave {
+      fill: #00F;
+      transform: translate(55px, 35px);
+    }
+    .wave-left {
+      --base-x-offset: 0px;
+    }
+    .wave-right {
+      --base-x-offset: -4px;
+    }
+    .wave rect {
+      --width: 4px;
+      width: var(--width);
+      --height: calc(var(--height-factor) * var(--width));
+      height: var(--height);
+      --x-offset: calc(var(--n) * 6px + var(--base-x-offset));
+      transform: translate(var(--x-offset), calc(var(--height) * -0.5));
+      rx: 1px;
+    }
+  </style>
+
+  <g class="bg-left">
+    <rect x="0" y="0" width="55" height="70"/>
+  </g>
+
+  <g class="bg-right">
+    <rect x="55" y="0" width="55" height="70"/>
+  </g>
+
+  <g class="wave">
+    <g class="wave-left">
+      <rect style="--n: -9; --height-factor: 5;" />
+      <rect style="--n: -8; --height-factor: 7;" />
+      <rect style="--n: -7; --height-factor: 9;" />
+      <rect style="--n: -6; --height-factor: 6;" />
+      <rect style="--n: -5; --height-factor: 7;" />
+      <rect style="--n: -4; --height-factor: 11;" />
+      <rect style="--n: -3; --height-factor: 14;" />
+      <rect style="--n: -2; --height-factor: 10;" />
+      <rect style="--n: -1; --height-factor: 6;" />
+    </g>
+    <g class="wave-right">
+      <rect style="--n: 1; --height-factor: 1;" />
+      <rect style="--n: 2; --height-factor: 1;" />
+      <rect style="--n: 3; --height-factor: 2;" />
+      <rect style="--n: 4; --height-factor: 1;" />
+      <rect style="--n: 5; --height-factor: 1;" />
+      <rect style="--n: 6; --height-factor: 2;" />
+      <rect style="--n: 7; --height-factor: 1;" />
+      <rect style="--n: 8; --height-factor: 1;" />
+      <rect style="--n: 9; --height-factor: 1;" />
+    </g>
+  </g>
+</svg>
