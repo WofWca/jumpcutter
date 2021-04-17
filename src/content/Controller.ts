@@ -111,8 +111,10 @@ export default class Controller {
 
     this.audioContext = ctx;
 
-    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js'));
-    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js'));
+    await Promise.all([
+      ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js')),
+      ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js')),
+    ]);
 
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
