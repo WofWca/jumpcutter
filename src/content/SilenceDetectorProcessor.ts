@@ -62,13 +62,13 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          this.port.postMessage({ type: 'silenceEnd', time: currentTime });
+          this.port.postMessage({ type: 'silenceEnd', /* time: currentTime */ });
           this._lastTimePostedSilenceStart = false;
         }
       } else {
         if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          this.port.postMessage({ type: 'silenceStart', time: currentTime });
+          this.port.postMessage({ type: 'silenceStart', /* time: currentTime */ });
           this._lastTimePostedSilenceStart = true;
         }
       }

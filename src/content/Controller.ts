@@ -283,13 +283,14 @@ export default class Controller {
     }
 
     this._silenceDetectorNode.port.onmessage = (msg) => {
-      const { time: eventTime, type: silenceStartOrEnd } = msg.data;
+      const { /* time: eventTime, */ type: silenceStartOrEnd } = msg.data;
+      const elementSpeedSwitchedAt = ctx.currentTime;
       if (silenceStartOrEnd === 'silenceEnd') {
         this._setSpeedAndLog('sounded');
-        this._stretcherAndPitch?.onSilenceEnd(eventTime);
+        this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
       } else {
         this._setSpeedAndLog('silence');
-        this._stretcherAndPitch?.onSilenceStart(eventTime);
+        this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
 
         if (this.settings.enableDesyncCorrection) {
           // A workaround for https://github.com/vantezzen/skip-silence/issues/28.

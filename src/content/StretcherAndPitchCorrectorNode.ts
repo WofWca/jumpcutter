@@ -108,7 +108,7 @@ export default class StretcherAndPitchCorrectorNode {
     this.originalPitchCompensationDelay.connect(destinationNode)
   }
 
-  onSilenceEnd(eventTime: Time): void {
+  onSilenceEnd(elementSpeedSwitchedAt: Time): void {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
@@ -118,13 +118,13 @@ export default class StretcherAndPitchCorrectorNode {
     const lastElementSpeedChangeAtInputTime = this.lastElementSpeedChangeAtInputTime;
     // Assuming that `element.playbackRate` assignment was done in `Controller.ts` (which it was).
     // Same in `onSilenceStart`.
-    this.lastElementSpeedChangeAtInputTime = eventTime;
+    this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt;
 
     const lookaheadDelay = this.getLookaheadDelay();
     const settings = this.getSettings();
 
     const lastSilenceSpeedLastsForRealtime =
-      eventTime - lastElementSpeedChangeAtInputTime;
+      elementSpeedSwitchedAt - lastElementSpeedChangeAtInputTime;
     const lastSilenceSpeedLastsForIntrinsicTime = lastSilenceSpeedLastsForRealtime * settings.silenceSpeed;
 
     const marginBeforePartAtSilenceSpeedIntrinsicTimeDuration = Math.min(
@@ -139,7 +139,7 @@ export default class StretcherAndPitchCorrectorNode {
       marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration / settings.soundedSpeed;
     // The time at which the moment from which the speed of the video needs to be slow has been on the input.
     const marginBeforeStartInputTime =
-      eventTime
+      elementSpeedSwitchedAt
       - marginBeforePartAtSilenceSpeedRealTimeDuration
       - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
     // Same, but when it's going to be on the output.
@@ -197,14 +197,14 @@ export default class StretcherAndPitchCorrectorNode {
     const endValue = finalStretcherDelay;
     const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
     // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-    const endTime = eventTime + getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
+    const endTime = elementSpeedSwitchedAt + getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
     this.stretch(startValue, endValue, startTime, endTime);
     // if (isLogging(this)) {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
     // }
   }
-  onSilenceStart(eventTime: Time) {
-    this.lastElementSpeedChangeAtInputTime = eventTime; // See the same assignment in `onSilenceEnd`.
+  onSilenceStart(elementSpeedSwitchedAt: Time) {
+    this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt; // See the same assignment in `onSilenceEnd`.
 
     const settings = this.getSettings();
 
@@ -221,7 +221,7 @@ export default class StretcherAndPitchCorrectorNode {
     const originalRealtimeSpeed = 1;
     const delayDecreaseSpeed = speedUpBy - originalRealtimeSpeed;
     const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
-    const startTime = eventTime + startIn;
+    const startTime = elementSpeedSwitchedAt + startIn;
     const endTime = startTime + snippetNewDuration;
     this.stretch(
       stretcherDelayStartValue,
