@@ -25,6 +25,12 @@ const enum PitchSetting {
   NORMAL,
 }
 
+const pitchSettingToItsGainNodePropName = {
+  [PitchSetting.NORMAL]: 'normalSpeedGain',
+  [PitchSetting.SPEEDUP]: 'speedUpGain',
+  [PitchSetting.SLOWDOWN]: 'slowDownGain',
+} as const;
+
 export default class StretcherAndPitchCorrectorNode {
   // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
   // scheduling.
@@ -258,13 +264,8 @@ export default class StretcherAndPitchCorrectorNode {
     const crossFadeHalfDuration = CROSS_FADE_DURATION / 2;
     const crossFadeStart = time - crossFadeHalfDuration;
     const crossFadeEnd = time + crossFadeHalfDuration;
-    const pitchSettingToItsGainNode = {
-      [PitchSetting.NORMAL]: this.normalSpeedGain,
-      [PitchSetting.SPEEDUP]: this.speedUpGain,
-      [PitchSetting.SLOWDOWN]: this.slowDownGain,
-    };
-    const fromNode = pitchSettingToItsGainNode[oldPitchSetting];
-    const toNode = pitchSettingToItsGainNode[pitchSetting];
+    const fromNode = this[pitchSettingToItsGainNodePropName[oldPitchSetting]];
+    const toNode = this[pitchSettingToItsGainNodePropName[pitchSetting]];
     fromNode.gain.setValueAtTime(1, crossFadeStart);
     toNode.gain.setValueAtTime(0, crossFadeStart);
     fromNode.gain.linearRampToValueAtTime(0, crossFadeEnd);
