@@ -11,7 +11,8 @@ import {
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
-import { assert } from '@/helpers';
+import { assert, SpeedName } from '@/helpers';
+import { SilenceDetectorEventType, SilenceDetectorMessage } from './SilenceDetectorMessage';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -71,7 +72,7 @@ export default class Controller {
   _lastActualPlaybackRateChange?: {
     time: Time,
     value: number,
-    name: 'sounded' | 'silence',
+    name: SpeedName,
   };
   _elementVolumeCache?: number; // Same as element.volume, but faster.
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
@@ -285,13 +286,13 @@ export default class Controller {
     }
 
     this._silenceDetectorNode.port.onmessage = (msg) => {
-      const { /* time: eventTime, */ type: silenceStartOrEnd } = msg.data;
+      const silenceStartOrEnd = msg.data as SilenceDetectorMessage;
       const elementSpeedSwitchedAt = ctx.currentTime;
-      if (silenceStartOrEnd === 'silenceEnd') {
-        this._setSpeedAndLog('sounded');
+      if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
+        this._setSpeedAndLog(SpeedName.SOUNDED);
         this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
       } else {
-        this._setSpeedAndLog('silence');
+        this._setSpeedAndLog(SpeedName.SILENCE);
         this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
 
         if (this.settings.enableDesyncCorrection) {
@@ -357,7 +358,7 @@ export default class Controller {
    */
   private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
     if (!oldSettings) {
-      this._setSpeedAndLog('sounded');
+      this._setSpeedAndLog(SpeedName.SOUNDED);
     } else {
       assert(this._lastActualPlaybackRateChange,
         'Expected it speed to had been set at least at Controller initialization');
@@ -405,10 +406,10 @@ export default class Controller {
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
-  private _setSpeedAndLog(speedName: 'sounded' | 'silence') {
+  private _setSpeedAndLog(speedName: SpeedName) {
     let speedVal;
     switch (speedName) {
-      case 'sounded': {
+      case SpeedName.SOUNDED: {
         speedVal = transformSpeed(this.settings.soundedSpeed);
         // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
         // The most common case where `load` is called is when the current source is replaced with an ad (or
@@ -418,7 +419,7 @@ export default class Controller {
         this.element.defaultPlaybackRate = speedVal;
         break;
       }
-      case 'silence': speedVal = transformSpeed(this.settings.silenceSpeed); break;
+      case SpeedName.SILENCE: speedVal = transformSpeed(this.settings.silenceSpeed); break;
     }
     this.element.playbackRate = speedVal;
     this._lastActualPlaybackRateChange = {
