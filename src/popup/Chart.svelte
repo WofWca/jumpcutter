@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assert, StretchInfo, Time as TimeS } from '@/helpers';
+  import { assert, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
   import type Controller from '@/content/Controller';
   import debounce from 'lodash/debounce';
 
@@ -183,8 +183,8 @@
     return sToMs(toUnixTime(...args));
   }
   function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
-    soundedSpeedSeries.append(timeMs, speedName === 'sounded' ? offTheChartsValue : 0);
-    silenceSpeedSeries.append(timeMs, speedName === 'silence' ? offTheChartsValue : 0);
+    soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
+    silenceSpeedSeries.append(timeMs, speedName === SpeedName_SILENCE ? offTheChartsValue : 0);
 
     if (process.env.NODE_ENV !== 'production') {
       if (latestTelemetryRecord?.inputVolume > offTheChartsValue) {
