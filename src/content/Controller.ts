@@ -12,6 +12,7 @@ import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assert } from '@/helpers';
+import { SilenceDetectorEventType, SilenceDetectorMessage } from './SilenceDetectorMessage';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -285,9 +286,9 @@ export default class Controller {
     }
 
     this._silenceDetectorNode.port.onmessage = (msg) => {
-      const { /* time: eventTime, */ type: silenceStartOrEnd } = msg.data;
+      const silenceStartOrEnd = msg.data as SilenceDetectorMessage;
       const elementSpeedSwitchedAt = ctx.currentTime;
-      if (silenceStartOrEnd === 'silenceEnd') {
+      if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
         this._setSpeedAndLog('sounded');
         this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
       } else {
