@@ -1,5 +1,5 @@
 import browser from '@/webextensions-api';
-import { enabledSettingDefaultValue, getSettingsAdvanced, MyStorageChanges } from '@/settings';
+import { enabledSettingDefaultValue, getSettings, MyStorageChanges } from '@/settings';
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 
 (async function () { // Just for top-level `await`
@@ -12,7 +12,7 @@ async function importAndInit() {
   init();
 }
 
-const { enabled: enabledOnInitialization } = await getSettingsAdvanced({ enabled: enabledSettingDefaultValue });
+const { enabled: enabledOnInitialization } = await getSettings({ enabled: enabledSettingDefaultValue });
 if (enabledOnInitialization) {
   importAndInit();
 }

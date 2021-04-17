@@ -16,6 +16,8 @@ export const defaultSettings: Readonly<Settings> = {
   marginAfter:          0.100,
   previousMarginAfter:  0.100,
 
+  applyTo: 'videoOnly',
+
   enableHotkeys: true,
   // TODO some code here is pretty WET, like duplicate hotkeys. DRY?
   hotkeys: [
@@ -116,7 +118,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupDisableHotkeysWhileInputFocused: true,
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
-  popupChartHeightPx: 150,
+  popupChartHeightPx: 75,
   popupChartLengthInSeconds: 4,
   popupAlwaysShowOpenLocalFileLink: true,
   popupSpecificHotkeys: [

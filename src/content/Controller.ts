@@ -4,13 +4,15 @@ import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
   getNewLookaheadDelay,
-  getTotalDelay,
+  getTotalOutputDelay,
+  getDelayFromInputToStretcherOutput,
   transformSpeed,
 } from './helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
-import type PitchPreservingStretcherNode from './PitchPreservingStretcherNode';
-import { assert } from '@/helpers';
+import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
+import { assert, SpeedName } from '@/helpers';
+import { SilenceDetectorEventType, SilenceDetectorMessage } from './SilenceDetectorMessage';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -25,9 +27,9 @@ const logging = process.env.NODE_ENV !== 'production';
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_initPromise' | 'audioContext' | '_silenceDetectorNode'
+  & Required<Pick<Controller, 'initialized' | 'audioContext' | '_silenceDetectorNode'
     | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange' | '_elementVolumeCache'>>;
-type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcher'>>;
+type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcherAndPitch'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analyzerOut'>>;
 
 // Not a method so it gets eliminated at optimization.
@@ -55,18 +57,22 @@ export default class Controller {
   readonly element: HTMLMediaElement;
   settings: ControllerSettings;
   initialized = false;
-  _initPromise?: Promise<this>;
+  _resolveInitPromise!: (result: Controller) => void;
+  // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
+  // executor?
+  _initPromise = new Promise<Controller>(resolve => this._resolveInitPromise = resolve);
+
   _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
   _silenceDetectorNode?: AudioWorkletNode;
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
-  _stretcher?: PitchPreservingStretcherNode;
+  _stretcherAndPitch?: StretcherAndPitchCorrectorNode;
   _lastActualPlaybackRateChange?: {
     time: Time,
     value: number,
-    name: 'sounded' | 'silence',
+    name: SpeedName,
   };
   _elementVolumeCache?: number; // Same as element.volume, but faster.
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
@@ -87,11 +93,6 @@ export default class Controller {
   }
 
   async init(): Promise<this> {
-    let resolveInitPromise: (result: this) => void;
-    // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
-    // executor?
-    this._initPromise = new Promise(resolve => resolveInitPromise = resolve);
-
     const element = this.element;
     const ctx = audioContext;
 
@@ -111,26 +112,10 @@ export default class Controller {
 
     this.audioContext = ctx;
 
-    // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
-    // speed always becoming silenceSpeed when media element gets paused, which causes a guaranteed audio stretch on
-    // resume.
-    // TODO I don't have much of idea if this can cause issues. Something along the lines of other audio sources
-    // stopping working?
-    const suspendAudioContext = () => audioContext.suspend();
-    const resumeAudioContext = () => audioContext.resume();
-    if (element.paused) {
-      audioContext.suspend();
-    }
-    element.addEventListener('pause', suspendAudioContext);
-    element.addEventListener('play', resumeAudioContext);
-    this._onDestroyCallbacks.push(() => {
-      element.removeEventListener('pause', suspendAudioContext);
-      element.removeEventListener('play', resumeAudioContext);
-      audioContext.resume(); // In case the video is paused.
-    });
-
-    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js'));
-    await ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js'));
+    await Promise.all([
+      ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js')),
+      ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js')),
+    ]);
 
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
     const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
@@ -188,19 +173,63 @@ export default class Controller {
     // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-      const { default: PitchPreservingStretcherNode } = await import(
+      const { default: StretcherAndPitchCorrectorNode } = await import(
         /* webpackExports: ['default'] */
-        './PitchPreservingStretcherNode'
+        './StretcherAndPitchCorrectorNode'
       );
-      this._stretcher = new PitchPreservingStretcherNode(
+      this._stretcherAndPitch = new StretcherAndPitchCorrectorNode(
         ctx,
         maxMaginStretcherDelay,
         0, // Doesn't matter, we'll update it in `_setStateAccordingToNewSettings`.
         () => this.settings,
         () => this._lookahead!.delayTime.value,
       );
-      this._onDestroyCallbacks.push(() => this._stretcher!.destroy());
+      this._onDestroyCallbacks.push(() => this._stretcherAndPitch!.destroy());
     }
+
+    // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
+    // speed always becoming silenceSpeed when media element gets paused, which causes a guaranteed audio stretch on
+    // resume.
+    // TODO This causes a bug - start playing two media elements (on the same <iframe>), then pause one - both will get
+    // silenced. Nobody really does that, but still.
+    const suspendAudioContext = () => audioContext.suspend();
+    let suspendAudioContextTimeoutId: number | undefined;
+    const scheduleSuspendAudioContext = () => {
+      clearTimeout(suspendAudioContextTimeoutId); // Just in case, e.g. `scheduleSuspendAudioContext` is called twice.
+
+      // Isn't this too much calculation? Maybe doing `(settings.marginBefore + settings.marginAfter) * 10` would be
+      // enough?
+      const totalTailTime = getTotalOutputDelay(
+        this._lookahead?.delayTime.value ?? 0,
+        this._stretcherAndPitch?.stretcherDelay ?? 0,
+        this._stretcherAndPitch?.pitchCorrectorDelay ?? 0,
+      );
+      // Maybe I'm calculating `totalTailTime` wrong, but it appears it's not enough – try settings `marginBefore` to
+      // a high value (e.g. 0.5s) and pause the element on a sounded part, then unpause it -
+      // as soon as you unpause you'll hear sound, then silence for 0.5s, then sound again (i.e. the
+      // first piece of sound is not supposed to be there, it was supposed to be done playing in that tail-time
+      // before `audioContext.suspend()`).
+      const safetyMargin = 0.02;
+      suspendAudioContextTimeoutId = (setTimeout as typeof window.setTimeout)(
+        suspendAudioContext,
+        (totalTailTime + safetyMargin) * 1000
+      );
+    };
+    const resumeAudioContext = () => {
+      clearTimeout(suspendAudioContextTimeoutId);
+      audioContext.resume();
+    };
+    if (element.paused) {
+      suspendAudioContext();
+    }
+    element.addEventListener('pause', scheduleSuspendAudioContext);
+    element.addEventListener('play', resumeAudioContext);
+    this._onDestroyCallbacks.push(() => {
+      element.removeEventListener('pause', scheduleSuspendAudioContext);
+      element.removeEventListener('play', resumeAudioContext);
+      resumeAudioContext(); // In case the video is paused.
+    });
+
     const srcFromMap = mediaElementSourcesMap.get(element);
     let mediaElementSource: MediaElementAudioSourceNode;
     if (srcFromMap) {
@@ -222,13 +251,13 @@ export default class Controller {
     });
     volumeFilter.connect(this._silenceDetectorNode);
     if (this.isStretcherEnabled()) {
-      this._stretcher.connectInputFrom(this._lookahead);
-      this._stretcher.connectOutputTo(ctx.destination);
+      this._stretcherAndPitch.connectInputFrom(this._lookahead);
+      this._stretcherAndPitch.connectOutputTo(ctx.destination);
     }
     volumeFilter.connect(this._analyzerIn);
     if (isLogging(this)) {
       if (this.isStretcherEnabled()) {
-        this._stretcher.connectOutputTo(outVolumeFilter!);
+        this._stretcherAndPitch.connectOutputTo(outVolumeFilter!);
       } else {
         mediaElementSource.connect(outVolumeFilter!);
       }
@@ -257,13 +286,14 @@ export default class Controller {
     }
 
     this._silenceDetectorNode.port.onmessage = (msg) => {
-      const { time: eventTime, type: silenceStartOrEnd } = msg.data;
-      if (silenceStartOrEnd === 'silenceEnd') {
-        this._setSpeedAndLog('sounded');
-        this._stretcher?.onSilenceEnd(eventTime);
+      const silenceStartOrEnd = msg.data as SilenceDetectorMessage;
+      const elementSpeedSwitchedAt = ctx.currentTime;
+      if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
+        this._setSpeedAndLog(SpeedName.SOUNDED);
+        this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
       } else {
-        this._setSpeedAndLog('silence');
-        this._stretcher?.onSilenceStart(eventTime);
+        this._setSpeedAndLog(SpeedName.SILENCE);
+        this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
 
         if (this.settings.enableDesyncCorrection) {
           // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
@@ -298,12 +328,12 @@ export default class Controller {
     }
 
     this.initialized = true;
-    resolveInitPromise!(this);
+    this._resolveInitPromise(this);
     return this;
   }
 
   /**
-   * Assumes `init()` has been called (but not necessarily that its return promise has been resolved).
+   * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved).
    * TODO make it work when it's false?
    */
   async destroy(): Promise<void> {
@@ -328,7 +358,7 @@ export default class Controller {
    */
   private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
     if (!oldSettings) {
-      this._setSpeedAndLog('sounded');
+      this._setSpeedAndLog(SpeedName.SOUNDED);
     } else {
       assert(this._lastActualPlaybackRateChange,
         'Expected it speed to had been set at least at Controller initialization');
@@ -344,26 +374,29 @@ export default class Controller {
         this.settings.soundedSpeed,
         this.settings.silenceSpeed
       );
-      this._stretcher.onSettingsUpdate();
+      this._stretcherAndPitch.onSettingsUpdate();
     }
   }
 
-  /** Can be called before the instance has been initialized. */
-  updateSettings(newSettings: ControllerSettings): void {
+  /**
+   * May return a new unitialized instance of its class, if particular settings are changed. The old one gets destroyed
+   * and must not be used. The new instance will get initialized automatically and may not start initializing
+   * immediately (waiting for the old one to get destroyed).
+   * Can be called before the instance has been initialized.
+   */
+  updateSettingsAndMaybeCreateNewInstance(newSettings: ControllerSettings): Controller {
     // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
     this.settings = newSettings;
 
     if (isStretcherEnabled(newSettings) ? !isStretcherEnabled(oldSettings) : isStretcherEnabled(oldSettings)) {
-      // TODO this is not async-safe. Add `this.reinitPromise = ` or something.
-      setTimeout(async () => {
-        await this.destroy();
-        await this.init();
-      });
-      return;
+      const newInstance = new Controller(this.element, this.settings);
+      this.destroy().then(() => newInstance.init());
+      return newInstance;
+    } else {
+      this._setStateAccordingToNewSettings(oldSettings);
+      return this;
     }
-
-    this._setStateAccordingToNewSettings(oldSettings);
   }
 
   private _getSilenceDetectorNodeDurationThreshold() {
@@ -373,10 +406,10 @@ export default class Controller {
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
-  private _setSpeedAndLog(speedName: 'sounded' | 'silence') {
+  private _setSpeedAndLog(speedName: SpeedName) {
     let speedVal;
     switch (speedName) {
-      case 'sounded': {
+      case SpeedName.SOUNDED: {
         speedVal = transformSpeed(this.settings.soundedSpeed);
         // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
         // The most common case where `load` is called is when the current source is replaced with an ad (or
@@ -386,7 +419,7 @@ export default class Controller {
         this.element.defaultPlaybackRate = speedVal;
         break;
       }
-      case 'silence': speedVal = transformSpeed(this.settings.silenceSpeed); break;
+      case SpeedName.SILENCE: speedVal = transformSpeed(this.settings.silenceSpeed); break;
     }
     this.element.playbackRate = speedVal;
     this._lastActualPlaybackRateChange = {
@@ -402,17 +435,18 @@ export default class Controller {
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
 
+    const lookaheadDelay = this._lookahead?.delayTime.value ?? 0;
+    const stretcherDelay = this._stretcherAndPitch?.stretcherDelay ?? 0;
+
     /**
      * Because of lookahead and stretcher delays, stretches are delayed (duh). This function maps stretch time to where
      * it would be on the input timeline.
      */
     const stretchToInputTime = (stretch: StretchInfo): StretchInfo => ({
       ...stretch,
-      startTime: stretch.startTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.startValue),
-      endTime: stretch.endTime - getTotalDelay(this._lookahead!.delayTime.value, stretch.endValue),
+      startTime: stretch.startTime - getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.startValue),
+      endTime: stretch.endTime - getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.endValue),
     });
-
-    const stretcherDelay = this._stretcher?.delayNode.delayTime.value;
 
     return {
       unixTime: Date.now() / 1000,
@@ -421,14 +455,18 @@ export default class Controller {
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this._elementVolumeCache,
-      totalOutputDelay: this._lookahead && stretcherDelay !== undefined
-        ? getTotalDelay(this._lookahead.delayTime.value, stretcherDelay)
-        : 0,
+      totalOutputDelay: getTotalOutputDelay(
+        lookaheadDelay,
+        stretcherDelay,
+        this._stretcherAndPitch?.pitchCorrectorDelay ?? 0,
+      ),
+      delayFromInputToStretcherOutput: getDelayFromInputToStretcherOutput(lookaheadDelay, stretcherDelay),
       stretcherDelay,
       // TODO also log `interruptLastScheduledStretch` calls.
-      // lastScheduledStretch: this._stretcher.lastScheduledStretch,
+      // lastScheduledStretch: this._stretcherAndPitch.lastScheduledStretch,
       lastScheduledStretchInputTime:
-        this._stretcher?.lastScheduledStretch && stretchToInputTime(this._stretcher.lastScheduledStretch),
+        this._stretcherAndPitch?.lastScheduledStretch
+        && stretchToInputTime(this._stretcherAndPitch.lastScheduledStretch),
     };
   }
 }

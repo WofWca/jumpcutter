@@ -1,4 +1,5 @@
 import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
+import { SilenceDetectorMessage, SilenceDetectorEventType } from './SilenceDetectorMessage';
 import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
@@ -62,13 +63,15 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          this.port.postMessage({ type: 'silenceEnd', time: currentTime });
+          const m: SilenceDetectorMessage = SilenceDetectorEventType.SILENCE_END;
+          this.port.postMessage(m);
           this._lastTimePostedSilenceStart = false;
         }
       } else {
         if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          this.port.postMessage({ type: 'silenceStart', time: currentTime });
+          const m: SilenceDetectorMessage = SilenceDetectorEventType.SILENCE_START;
+          this.port.postMessage(m);
           this._lastTimePostedSilenceStart = true;
         }
       }

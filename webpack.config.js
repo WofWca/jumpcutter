@@ -114,13 +114,15 @@ module.exports = env => {
       new CopyPlugin({
         patterns: [
           { context: 'src', from: 'manifest.json' },
-          { context: 'src', from: 'icons/**' },
+          { context: 'src', from: 'icons/(icon.svg|icon128.png|icon-disabled.svg|icon-only-sounded.svg|)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
           { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
         ],
       }),
-      new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)(),
+      new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)({
+        analyzerMode: env.noreport ? 'disabled' : 'server',
+      }),
     ],
 
     optimization: {

@@ -1,8 +1,7 @@
 import browser from '@/webextensions-api';
 import {
-  Settings, getSettings, setSettings, addOnChangedListener as addOnSettingsChangedListener, MyStorageChanges,
-  removeOnChangedListener as removeOnSettingsChangedListener,
-  settingsChanges2NewValues,
+  Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges,
+  removeOnSettingsChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assert, assertNever } from '@/helpers';
 import type Controller from './Controller';
@@ -95,7 +94,9 @@ export default class AllMediaElementsController {
     assert(this.settings);
     Object.assign(this.settings, newValues);
     assert(this.controller);
-    this.controller.updateSettings(
+    // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
+    // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
+    this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
       extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
     );
   }
@@ -323,6 +324,7 @@ export default class AllMediaElementsController {
   private debouncedHandleNewElements = debounce(this.handleNewElements, 0, { maxWait: 3000 });
   /**
    * Calling with the same element multiple times is fine, calling multiple times on the same tick is fine.
+   * Order in which elements are passed in fact matters, but in practice not very much.
    */
   public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
     newElements.forEach(el => this.unhandledNewElements.add(el));

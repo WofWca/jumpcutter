@@ -1,6 +1,6 @@
 {
   "name": "Jump Cutter",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Skips silent parts in videos on the fly",
   "permissions": ["storage"],
   "browser_action": {
@@ -28,8 +28,6 @@
   ],
   "options_ui": {
     "page": "options/index.html",
-    "chrome_style": true,
-    "browser_style": true,
     "open_in_tab": false
   },
   "commands": {

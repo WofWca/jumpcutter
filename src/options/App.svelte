@@ -6,7 +6,7 @@
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
   import { cloneDeepJson, assert, assertNever } from '@/helpers';
-  import { defaultSettings, getSettings, setSettings, Settings } from '@/settings';
+  import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
 
@@ -104,6 +104,17 @@
       break;
     default: assertNever(BUILD_DEFINITIONS.BROWSER);
   }
+
+  // Yes, these don't take migartions into account at all. TODO.
+  async function downloadFromSync() {
+    Object.assign(settings, await browser.storage.sync.get() as Partial<Settings>);
+    settings = settings;
+  }
+  async function uploadToSync() {
+    assert(checkValidity(settings));
+    browser.storage.sync.clear();
+    browser.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
+  }
 </script>
 
 <main>
@@ -114,6 +125,24 @@
     >
       <section>
         <h3>General</h3>
+        <InputFieldBase
+          label="Apply to"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.applyTo}
+            required
+          >
+            {#each [
+              { v: 'videoOnly', l: '🎥 Video elements only' },
+              { v: 'audioOnly', l: '🔉 Audio elements only' },
+              { v: 'both', l: '🎥&🔉 Both video & audio elements' },
+            ] as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
         <InputFieldBase
           label="🙊= Silence speed specification method"
           let:id
@@ -294,6 +323,38 @@
         </InputFieldBase>
       </section>
 
+      <section>
+        <h3>Meta</h3>
+        <!-- TODO add confirmation dialogs or cancellation toasts and remove `style="color: red;"`? -->
+        <button
+          type="button"
+          style="color: red;"
+          on:click={downloadFromSync}
+        >📥 Download settings from sync storage</button>
+        <br/><br/>
+        <button
+          type="button"
+          disabled={!formValid}
+          on:click={uploadToSync}
+        >📤 Upload settings to sync storage</button>
+        <br/><br/>
+        <button
+          type="button"
+          style="color: red;"
+          on:click={onResetToDefaultsClick}
+        >🔄 Reset to defaults</button>
+        <!-- TODO: -->
+        <!-- <button
+          type="button"
+          style="color: red;"
+        >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
+        <!-- <button
+          type="button"
+        >Export settings...</button>
+        <button
+          type="button"
+        >Import settings...</button> -->
+
       <!-- As we're auto-saving changes, this could be omited, but this is so users can trigger form validation on
       "Enter" press. And maybe some other cool native things. -->
       <input
@@ -335,25 +396,9 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
         </span>
       {/if}
     {:else}
-      <span style="color: green;">✔️ Saved</span>
+      <span class="saved-text">✔️ Saved</span>
     {/if}
   </p>
-  <button
-    type="button"
-    style="color: red;"
-    on:click={onResetToDefaultsClick}
-  >🔄 Reset to defaults</button>
-  <!-- TODO: -->
-  <!-- <button
-    type="button"
-    style="color: red;"
-  >Cancel latest changes (or "restore values from 2 minutes ago"?) Or is it just confusing?</button> -->
-  <!-- <button
-    type="button"
-  >Export settings...</button>
-  <button
-    type="button"
-  >Import settings...</button> -->
 </div>
 
 <style>
@@ -369,9 +414,19 @@ main {
   bottom: 0;
   padding: 0.125rem var(--main-margin);
   background-color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-top: 1px solid gray;
+}
+.saved-text {
+  color: green;
+}
+@media (prefers-color-scheme: dark) {
+  .status-bar {
+    /* IDK, `background-color: inherit` doesn't make it dark with the dark theme with default colors. */
+    background: #111;
+    color: #ddd;
+  }
+  .saved-text {
+    color: lightgreen;
+  }
 }
 </style>
