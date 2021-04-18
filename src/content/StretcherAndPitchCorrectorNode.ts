@@ -31,6 +31,10 @@ const pitchSettingToItsGainNodePropName = {
   [PitchSetting.SLOWDOWN]: 'slowDownGain',
 } as const;
 
+const SUPPRESS_LATE_SCHEDULE_WARNINGS =
+  process.env.NODE_ENV === 'production'
+  && true; // Because we'll fix it later and currently don't want them spam the log.
+
 export default class StretcherAndPitchCorrectorNode {
   // 2 pitch shifts and 3 gains because `.pitch` of `PitchShift` is not an AudioParam, therefore doesn't support
   // scheduling.
@@ -270,6 +274,13 @@ export default class StretcherAndPitchCorrectorNode {
     toNode.gain.setValueAtTime(0, crossFadeStart);
     fromNode.gain.linearRampToValueAtTime(0, crossFadeEnd);
     toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
+
+    if (process.env.NODE_ENV !== 'production' && !SUPPRESS_LATE_SCHEDULE_WARNINGS) {
+      const lateBy = this.context.currentTime - crossFadeStart;
+      if (lateBy >= 0) {
+        console.error('crossFadeStart late by', lateBy)
+      }
+    }
   }
 
   private stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
@@ -310,6 +321,13 @@ export default class StretcherAndPitchCorrectorNode {
       endTime,
       speedupOrSlowdown,
     };
+
+    if (process.env.NODE_ENV !== 'production' && !SUPPRESS_LATE_SCHEDULE_WARNINGS) {
+      const lateBy = this.context.currentTime - startTime;
+      if (lateBy >= 0) {
+        console.error('stretch startTime late by', lateBy);
+      }
+    }
   }
 
   /**
@@ -333,6 +351,13 @@ export default class StretcherAndPitchCorrectorNode {
       node.gain.cancelScheduledValues(interruptAtTime);
     }
     this.setOutputPitchAt(PitchSetting.NORMAL, interruptAtTime, this.lastScheduledStretch.speedupOrSlowdown);
+
+    if (process.env.NODE_ENV !== 'production' && !SUPPRESS_LATE_SCHEDULE_WARNINGS) {
+      const lateBy = this.context.currentTime - interruptAtTime;
+      if (lateBy >= 0) {
+        console.error('interruptAtTime late by', lateBy)
+      }
+    }
   }
 
   // setDelay(value: Time): void {
