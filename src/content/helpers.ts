@@ -5,7 +5,7 @@ export function getRealtimeMargin(margin: Time, speed: number): Time {
   return margin / speed;
 }
 
-export function getNewLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
+export function getOptimalLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
   return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed)
 }
 export function getDelayFromInputToStretcherOutput(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
