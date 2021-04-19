@@ -17,7 +17,7 @@ import { assert } from '@/helpers';
 
 
 // TODO make it into a setting?
-const CROSS_FADE_DURATION = 0.01;
+const CROSS_FADE_DURATION = 0.001;
 
 const enum PitchSetting {
   SLOWDOWN,
@@ -270,6 +270,13 @@ export default class StretcherAndPitchCorrectorNode {
     toNode.gain.setValueAtTime(0, crossFadeStart);
     fromNode.gain.linearRampToValueAtTime(0, crossFadeEnd);
     toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const lateBy = this.context.currentTime - crossFadeStart;
+      if (lateBy >= 0) {
+        console.error('crossFadeStart late by', lateBy)
+      }
+    }
   }
 
   private stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
@@ -310,6 +317,13 @@ export default class StretcherAndPitchCorrectorNode {
       endTime,
       speedupOrSlowdown,
     };
+
+    if (process.env.NODE_ENV !== 'production') {
+      const lateBy = this.context.currentTime - startTime;
+      if (lateBy >= 0) {
+        console.error('stretch startTime late by', lateBy);
+      }
+    }
   }
 
   /**
@@ -333,6 +347,13 @@ export default class StretcherAndPitchCorrectorNode {
       node.gain.cancelScheduledValues(interruptAtTime);
     }
     this.setOutputPitchAt(PitchSetting.NORMAL, interruptAtTime, this.lastScheduledStretch.speedupOrSlowdown);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const lateBy = this.context.currentTime - interruptAtTime;
+      if (lateBy >= 0) {
+        console.error('interruptAtTime late by', lateBy)
+      }
+    }
   }
 
   // setDelay(value: Time): void {

@@ -3,7 +3,7 @@ import browser from '@/webextensions-api';
 import { audioContext, mediaElementSourcesMap } from './audioContext';
 import {
   getRealtimeMargin,
-  getNewLookaheadDelay,
+  getOptimalLookaheadDelay,
   getTotalOutputDelay,
   getDelayFromInputToStretcherOutput,
   transformSpeed,
@@ -369,7 +369,7 @@ export default class Controller {
     this._silenceDetectorNode!.parameters.get('durationThreshold')!.value =
       this._getSilenceDetectorNodeDurationThreshold();
     if (this.isStretcherEnabled()) {
-      this._lookahead.delayTime.value = getNewLookaheadDelay(
+      this._lookahead.delayTime.value = getOptimalLookaheadDelay(
         this.settings.marginBefore,
         this.settings.soundedSpeed,
         this.settings.silenceSpeed
