@@ -13,6 +13,7 @@ build chromium:
     paths:
       - dist/
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+  timeout: 10 minutes
 build gecko:
   stage: build
   # TODO DRY with `build chromium`? YAML anchors?
@@ -22,3 +23,4 @@ build gecko:
     paths:
       - dist/
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+  timeout: 10 minutes
