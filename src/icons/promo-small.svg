@@ -1,5 +1,13 @@
 <svg width="440" height="280" viewBox="0 0 110 70" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
   <style>
+    :root {
+      --img-width: 110;
+      --img-height: 70;
+      --img-width-px: calc(var(--img-width) * 1px);
+      --img-height-px: calc(var(--img-height) * 1px);
+      --img-half-width-px: calc(var(--img-width-px) / 2);
+    }
+
     .bg-left {
       fill: #8F8;
     }
@@ -24,6 +32,33 @@
       --x-offset: calc(var(--n) * 6px + var(--base-x-offset));
       transform: translate(var(--x-offset), calc(var(--height) * -0.5));
       rx: 1px;
+    }
+
+    .playback-arrows {
+      --sqrt3: 1.7320508075688772;
+      --triangle-side: calc(var(--img-height) / 32 * 4);
+      --triangle-height: calc(var(--triangle-side) * var(--sqrt3) / 2);
+      --padding: calc(var(--img-height-px) / 64 * 4);
+      transform: translate(var(--padding), var(--padding));
+    }
+    /* Colors are adjusted so that they have the same contrast. */
+    .playback-arrows .play {
+      --color: #070;
+    }
+    .playback-arrows .ff {
+      --color: #850000;
+      transform: translateX(var(--img-half-width-px));
+    }
+    .playback-arrows .ff_2 {
+      --rounded-borders-workaround: calc(var(--triangle-side) * 1px / 8);
+      transform: translateX(calc(var(--triangle-height) * 1px + var(--rounded-borders-workaround)));
+    }
+    .playback-triangle {
+      transform: scale(var(--triangle-height), var(--triangle-side));
+      stroke: var(--color);
+      fill: var(--color);
+      stroke-width: calc(var(--triangle-height) / 128 * 3);
+      stroke-linejoin: round;
     }
   </style>
 
@@ -57,6 +92,18 @@
       <rect style="--n: 7; --height-factor: 1;" />
       <rect style="--n: 8; --height-factor: 1;" />
       <rect style="--n: 9; --height-factor: 1;" />
+    </g>
+  </g>
+
+  <g class="playback-arrows">
+    <g class="play">
+      <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+    </g>
+    <g class="ff">
+      <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+      <g class="ff_2">
+        <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+      </g>
     </g>
   </g>
 </svg>
