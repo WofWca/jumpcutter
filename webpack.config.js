@@ -114,7 +114,7 @@ module.exports = env => {
       new CopyPlugin({
         patterns: [
           { context: 'src', from: 'manifest.json' },
-          { context: 'src', from: 'icons/(icon.svg|icon128.png|icon-disabled.svg|icon-only-sounded.svg)' },
+          { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-48.png|icon-big-padded.svg-128.png)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
           { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
