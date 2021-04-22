@@ -63,6 +63,33 @@
       transform: translate(var(--x-offset), calc(var(--height) * -0.5));
       rx: calc(var(--width) / 4);
     }
+
+    .playback-arrows {
+      --sqrt3: 1.7320508075688772;
+      --triangle-side: calc(var(--img-height) / 32 * 4);
+      --triangle-height: calc(var(--triangle-side) * var(--sqrt3) / 2);
+      --padding: calc(var(--img-height-px) / 64 * 4);
+      transform: translate(var(--padding), var(--padding));
+    }
+    /* Colors are adjusted so that they have the same contrast. */
+    .playback-arrows .play {
+      --color: #070;
+    }
+    .playback-arrows .ff {
+      --color: #850000;
+      transform: translateX(var(--img-half-width-px));
+    }
+    .playback-arrows .ff_2 {
+      --rounded-borders-workaround: calc(var(--triangle-side) * 1px / 8);
+      transform: translateX(calc(var(--triangle-height) * 1px + var(--rounded-borders-workaround)));
+    }
+    .playback-triangle {
+      transform: scale(var(--triangle-height), var(--triangle-side));
+      stroke: var(--color);
+      fill: var(--color);
+      stroke-width: calc(var(--triangle-height) / 128 * 3);
+      stroke-linejoin: round;
+    }
   </style>
 
   <g class="bg-left">
@@ -79,9 +106,9 @@
     <g class="wave-left">
       <rect style="--n: -5; --height-factor: 5;" />
       <rect style="--n: -4; --height-factor: 8;" />
-      <rect style="--n: -3; --height-factor: 13;" />
-      <rect style="--n: -2; --height-factor: 10;" />
-      <rect style="--n: -1; --height-factor: 6;" />
+      <rect style="--n: -3; --height-factor: 10;" />
+      <rect style="--n: -2; --height-factor: 12;" />
+      <rect style="--n: -1; --height-factor: 9;" />
     </g>
     <g class="wave-right">
       <rect style="--n: 1; --height-factor: 1;" />
@@ -89,6 +116,18 @@
       <rect style="--n: 3; --height-factor: 1;" />
       <rect style="--n: 4; --height-factor: 1;" />
       <rect style="--n: 5; --height-factor: 2;" />
+    </g>
+  </g>
+
+  <g class="playback-arrows">
+    <g class="play">
+      <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+    </g>
+    <g class="ff">
+      <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+      <g class="ff_2">
+        <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+      </g>
     </g>
   </g>
 </svg>
