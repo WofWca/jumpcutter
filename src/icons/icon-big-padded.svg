@@ -1,7 +1,7 @@
-<svg width="128" height="128" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+<svg width="128" height="128" viewBox="-16 -16 128 128" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
   <style>
     :root {
-      --img-size: 32 * 4;
+      --img-size: 32 * 3;
       --img-width: var(--img-size);
       --img-height: var(--img-size);
       --img-width-px: calc(var(--img-width) * 1px);
