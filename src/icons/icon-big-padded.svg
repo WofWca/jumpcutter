@@ -1,0 +1,133 @@
+<svg width="128" height="128" viewBox="-16 -16 128 128" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+  <style>
+    :root {
+      --img-size: 32 * 3;
+      --img-width: var(--img-size);
+      --img-height: var(--img-size);
+      --img-width-px: calc(var(--img-width) * 1px);
+      --img-height-px: calc(var(--img-height) * 1px);
+      --img-half-width-px: calc(var(--img-width-px) / 2);
+      --img-half-height-px: calc(var(--img-height-px) / 2);
+    }
+
+    :root {
+      --img-forth-width-px: calc(var(--img-width-px) / 4);
+      --bg-border-radius: calc(var(--img-width-px) / 32 * 2);
+    }
+    .bg-left {
+      fill: #8F8;
+    }
+    .bg-right {
+      fill: #F88;
+    }
+    .bg-outer {
+      y: 0;
+      height: var(--img-height-px);
+      width: var(--img-half-width-px);
+      rx: var(--bg-border-radius);
+    }
+    .bg-inner {
+      y: 0;
+      height: var(--img-height-px);
+      width: var(--img-forth-width-px);
+    }
+    .bg-left .bg-outer {
+      x: 0;
+    }
+    .bg-left .bg-inner {
+      x: var(--img-forth-width-px);
+    }
+    .bg-right .bg-outer {
+      x: var(--img-half-width-px);
+    }
+    .bg-right .bg-inner {
+      x: var(--img-half-width-px);
+    }
+
+    .wave {
+      fill: #00F;
+      transform: translate(var(--img-half-width-px), var(--img-half-height-px));
+    }
+    .wave-left {
+      --base-x-offset: 0px;
+    }
+    .wave-right {
+      --base-x-offset: calc(-1 * var(--img-width-px) / 16);
+    }
+    .wave rect {
+      --width: calc(var(--img-height-px) / 16);
+      width: var(--width);
+      --height: calc(var(--height-factor) * var(--width));
+      height: var(--height);
+      --x-offset: calc(var(--n) * var(--width) * 3 / 2 + var(--base-x-offset));
+      transform: translate(var(--x-offset), calc(var(--height) * -0.5));
+      rx: calc(var(--width) / 4);
+    }
+
+    .playback-arrows {
+      --sqrt3: 1.7320508075688772;
+      --triangle-side: calc(var(--img-height) / 32 * 4);
+      --triangle-height: calc(var(--triangle-side) * var(--sqrt3) / 2);
+      --padding: calc(var(--img-height-px) / 64 * 4);
+      transform: translate(var(--padding), var(--padding));
+    }
+    /* Colors are adjusted so that they have the same contrast. */
+    .playback-arrows .play {
+      --color: #070;
+    }
+    .playback-arrows .ff {
+      --color: #850000;
+      transform: translateX(var(--img-half-width-px));
+    }
+    .playback-arrows .ff_2 {
+      --rounded-borders-workaround: calc(var(--triangle-side) * 1px / 8);
+      transform: translateX(calc(var(--triangle-height) * 1px + var(--rounded-borders-workaround)));
+    }
+    .playback-triangle {
+      transform: scale(var(--triangle-height), var(--triangle-side));
+      stroke: var(--color);
+      fill: var(--color);
+      stroke-width: calc(var(--triangle-height) / 128 * 3);
+      stroke-linejoin: round;
+    }
+  </style>
+
+  <g class="bg-left">
+    <rect class="bg-outer" />
+    <rect class="bg-inner" />
+  </g>
+
+  <g class="bg-right">
+    <rect class="bg-inner" />
+    <rect class="bg-outer" />
+  </g>
+
+  <g class="wave">
+    <g class="wave-left">
+      <rect style="--n: -5; --height-factor: 5;" />
+      <rect style="--n: -4; --height-factor: 8;" />
+      <rect style="--n: -3; --height-factor: 10;" />
+      <rect style="--n: -2; --height-factor: 12;" />
+      <rect style="--n: -1; --height-factor: 9;" />
+    </g>
+    <g class="wave-right">
+      <rect style="--n: 1; --height-factor: 1;" />
+      <rect style="--n: 2; --height-factor: 2;" />
+      <rect style="--n: 3; --height-factor: 1;" />
+      <rect style="--n: 4; --height-factor: 1;" />
+      <rect style="--n: 5; --height-factor: 2;" />
+    </g>
+  </g>
+
+  <g class="playback-arrows">
+    <g class="play">
+      <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+    </g>
+    <g class="ff">
+      <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+      <g class="ff_2">
+        <polygon class="playback-triangle" points="0,0 0,1 1,0.5"/>
+      </g>
+    </g>
+  </g>
+</svg>
