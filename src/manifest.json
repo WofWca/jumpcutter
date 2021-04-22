@@ -6,7 +6,8 @@
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "128": "icons/icon128.png"
+      "48": "icons/icon.svg-48.png",
+      "128": "icons/icon-big-padded.svg-128.png"
     }
   },
   "background": {
@@ -44,7 +45,8 @@
     }
   },
   "icons": {
-    "128": "icons/icon128.png"
+    "48": "icons/icon.svg-48.png",
+    "128": "icons/icon-big-padded.svg-128.png"
   },
   "browser_specific_settings": {
     "gecko": {
