@@ -31,13 +31,6 @@ export default async function init(): Promise<void> {
     return allMediaElementsController;
   }
 
-  // The user might have enabled access to file URL for this extension. This is so it behaves the same way when access
-  // is disabled. And why do we need that? Because it doesn't work with local files:
-  // https://github.com/WofWca/jumpcutter/issues/5
-  if (location.protocol === 'file:') {
-    return;
-  }
-
   const onMessage = (message: unknown) => {
     if (process.env.NODE_ENV !== 'production') {
       if (message !== 'checkContentStatus') { // TODO DRY.
