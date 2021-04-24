@@ -23,8 +23,8 @@
   },
   "sideEffects": [
     "./src/{content,popup,background,options,local-file-player}/main.ts",
-    "./src/content/SilenceDetectorProcessor.ts",
-    "./src/content/VolumeFilter.ts"
+    "./src/content/SilenceDetector/SilenceDetectorProcessor.ts",
+    "./src/content/VolumeFilter/VolumeFilterProcessor.ts"
   ],
   "dependencies": {
     "@wofwca/smoothie": "^1.36.0-rc.0",

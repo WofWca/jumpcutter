@@ -12,7 +12,9 @@ import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assert, SpeedName } from '@/helpers';
-import { SilenceDetectorEventType, SilenceDetectorMessage } from './SilenceDetectorMessage';
+import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
+  from './SilenceDetector/SilenceDetectorNode';
+import VolumeFilterNode from './VolumeFilter/VolumeFilterNode';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -64,7 +66,7 @@ export default class Controller {
 
   _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
-  _silenceDetectorNode?: AudioWorkletNode;
+  _silenceDetectorNode?: SilenceDetectorNode;
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
@@ -114,7 +116,7 @@ export default class Controller {
 
     await Promise.all([
       ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js')),
-      ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js')),
+      ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilterProcessor.js')),
     ]);
 
     const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
@@ -135,23 +137,10 @@ export default class Controller {
       }
     });
 
-    const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
-      outputChannelCount: [1],
-      processorOptions: {
-        maxSmoothingWindowLength: 0.03,
-      },
-      parameterData: {
-        smoothingWindowLength: 0.03, // TODO make a setting out of it.
-      },
-    });
+    const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
+    const volumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
     audioWorklets.push(volumeFilter);
-    this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
-      parameterData: {
-        durationThreshold: this._getSilenceDetectorNodeDurationThreshold(),
-      },
-      processorOptions: { initialDuration: 0 },
-      numberOfOutputs: 0,
-    });
+    this._silenceDetectorNode = new SilenceDetectorNode(ctx, this._getSilenceDetectorNodeDurationThreshold());
     audioWorklets.push(this._silenceDetectorNode);
     // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
     // AudioWorkletNode destruction a few lines above, but let's future-prove it.
@@ -163,9 +152,7 @@ export default class Controller {
     // let outVolumeFilter: this extends ControllerLogging ? AudioWorkletNode : undefined;
     let outVolumeFilter: AudioWorkletNode | undefined;
     if (isLogging(this)) {
-      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
-        outputChannelCount: [1],
-      });
+      outVolumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
       audioWorklets.push(outVolumeFilter);
       this._analyzerOut = ctx.createAnalyser();
     }
@@ -365,9 +352,8 @@ export default class Controller {
       this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
 
-    this._silenceDetectorNode!.parameters.get('volumeThreshold')!.value = this.settings.volumeThreshold;
-    this._silenceDetectorNode!.parameters.get('durationThreshold')!.value =
-      this._getSilenceDetectorNodeDurationThreshold();
+    this._silenceDetectorNode!.volumeThreshold = this.settings.volumeThreshold;
+    this._silenceDetectorNode!.durationThreshold = this._getSilenceDetectorNodeDurationThreshold();
     if (this.isStretcherEnabled()) {
       this._lookahead.delayTime.value = getOptimalLookaheadDelay(
         this.settings.marginBefore,

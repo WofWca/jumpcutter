@@ -1,4 +1,4 @@
-import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
+import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
 import { SilenceDetectorMessage, SilenceDetectorEventType } from './SilenceDetectorMessage';
 import { Time } from "@/helpers";
 
