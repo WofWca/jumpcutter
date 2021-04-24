@@ -119,9 +119,6 @@ export default class Controller {
       ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilterProcessor.js')),
     ]);
 
-    const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
-    const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
-
     const audioWorklets: AudioWorkletNode[] = []; // To be filled.
     this._onDestroyCallbacks.push(() => {
       for (const w of audioWorklets) {
@@ -164,6 +161,8 @@ export default class Controller {
         /* webpackExports: ['default'] */
         './StretcherAndPitchCorrectorNode'
       );
+      const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
+      const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
       this._stretcherAndPitch = new StretcherAndPitchCorrectorNode(
         ctx,
         maxMaginStretcherDelay,
