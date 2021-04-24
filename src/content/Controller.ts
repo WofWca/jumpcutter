@@ -53,6 +53,11 @@ function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
 }
 
+function destroyAudioWorkletNode(node: AudioWorkletNode) {
+  node.port.postMessage('destroy');
+  node.port.close();
+}
+
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
@@ -119,28 +124,13 @@ export default class Controller {
       ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilterProcessor.js')),
     ]);
 
-    const audioWorklets: AudioWorkletNode[] = []; // To be filled.
-    this._onDestroyCallbacks.push(() => {
-      for (const w of audioWorklets) {
-        w.port.postMessage('destroy');
-        w.port.close();
-      }
-      if (process.env.NODE_ENV !== 'production') {
-        for (const propertyVal of Object.values(this)) {
-          if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
-            console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
-          }
-        }
-      }
-    });
-
     const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
     const volumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
-    audioWorklets.push(volumeFilter);
+    this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
     this._silenceDetectorNode = new SilenceDetectorNode(ctx, this._getSilenceDetectorNodeDurationThreshold());
-    audioWorklets.push(this._silenceDetectorNode);
+    this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(this._silenceDetectorNode!));
     // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
-    // AudioWorkletNode destruction a few lines above, but let's future-prove it.
+    // AudioWorkletNode destruction a line above, but let's future-prove it.
     this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.close())
     this._analyzerIn = ctx.createAnalyser();
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
@@ -150,7 +140,7 @@ export default class Controller {
     let outVolumeFilter: AudioWorkletNode | undefined;
     if (isLogging(this)) {
       outVolumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
-      audioWorklets.push(outVolumeFilter);
+      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter!));
       this._analyzerOut = ctx.createAnalyser();
     }
     // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
