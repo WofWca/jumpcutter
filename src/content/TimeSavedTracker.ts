@@ -18,7 +18,7 @@ class Stopwatch {
   private _getTime(nowMs: number) {
     return ((this._pausedAtMs ?? nowMs) - this._countSinceMs) / 1000;
   }
-  getTime(): number {
+  get time(): number {
     return this._getTime(Date.now());
   }
   getTimeAndReset(): number {
@@ -77,7 +77,9 @@ class MediaElementPlaybackStopwatch {
     }
   }
   getTimeAndReset = () => this._stopwatch.getTimeAndReset();
-  getTime = () => this._stopwatch.getTime();
+  get time() {
+    return this._stopwatch.time;
+  }
 }
 
 type TimeSavedData = [
@@ -262,8 +264,8 @@ export default class TimeSavedTracker {
     this._appendLastSnippetData(this._currentElementSpeed, prevSoundedSpeed);
     this._lastHandledSoundedSpeed = newSoundedSpeed;
   }
-  public getTimeSavedData() {
-    const currentSnippetDuration = this._playbackStopwatch.getTime();
+  public get timeSavedData() {
+    const currentSnippetDuration = this._playbackStopwatch.time;
     const [
       timeSavedComparedToSoundedSpeed,
       timeSavedComparedToIntrinsicSpeed,
