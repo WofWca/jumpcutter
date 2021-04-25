@@ -2,13 +2,12 @@
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
   import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
-  import type Controller from '@/content/Controller';
+  import type { TelemetryRecord } from '@/content/Controller';
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
-  type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;

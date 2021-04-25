@@ -49,6 +49,18 @@ export type ControllerSettings =
     silenceSpeed: number,
   };
 
+export interface TelemetryRecord {
+  unixTime: Time,
+  contextTime: Time,
+  inputVolume: number,
+  lastActualPlaybackRateChange: ControllerInitialized['_lastActualPlaybackRateChange'],
+  elementVolume: number,
+  totalOutputDelay: Time,
+  delayFromInputToStretcherOutput: Time,
+  stretcherDelay: Time,
+  lastScheduledStretchInputTime?: StretchInfo,
+}
+
 function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
 }
@@ -404,7 +416,7 @@ export default class Controller {
     };
   }
 
-  getTelemetry() {
+  get telemetry(): TelemetryRecord {
     assertDev(this.isInitialized());
 
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);

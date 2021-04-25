@@ -14,7 +14,7 @@ import { oncePerInstance } from './helpers';
 import debounce from 'lodash/debounce';
 
 export type TelemetryMessage =
-  ReturnType<Controller['getTelemetry']>
+  Controller['telemetry']
   & ReturnType<TimeSavedTracker['getTimeSavedData']>;
 
 function executeNonSettingsActions(
@@ -125,7 +125,7 @@ export default class AllMediaElementsController {
           }
           if (this.controller?.initialized && this.timeSavedTracker) {
             const telemetryMessage: TelemetryMessage = {
-              ...this.controller.getTelemetry(),
+              ...this.controller.telemetry,
               ...this.timeSavedTracker.getTimeSavedData(),
             };
             port.postMessage(telemetryMessage);
