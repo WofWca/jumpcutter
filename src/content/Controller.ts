@@ -251,7 +251,6 @@ export default class Controller {
       }
       outVolumeFilter!.connect(this._analyzerOut);
     }
-    this._setStateAccordingToNewSettings();
 
     if (isLogging(this)) {
       const logArr = [];
@@ -317,6 +316,9 @@ export default class Controller {
 
     this.initialized = true;
     this._resolveInitPromise(this);
+
+    this._setStateAccordingToNewSettings();
+
     return this;
   }
 
@@ -345,16 +347,15 @@ export default class Controller {
    * TODO maybe it's better to just store the state on the class instance?
    */
   private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
+    assertDev(this.isInitialized());
     if (!oldSettings) {
       this._setSpeedAndLog(SpeedName.SOUNDED);
     } else {
-      assertDev(this._lastActualPlaybackRateChange,
-        'Expected it speed to had been set at least at Controller initialization');
       this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
 
-    this._silenceDetectorNode!.volumeThreshold = this.settings.volumeThreshold;
-    this._silenceDetectorNode!.durationThreshold = this._getSilenceDetectorNodeDurationThreshold();
+    this._silenceDetectorNode.volumeThreshold = this.settings.volumeThreshold;
+    this._silenceDetectorNode.durationThreshold = this._getSilenceDetectorNodeDurationThreshold();
     if (this.isStretcherEnabled()) {
       this._lookahead.delayTime.value = getOptimalLookaheadDelay(
         this.settings.marginBefore,
