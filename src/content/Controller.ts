@@ -118,6 +118,8 @@ export default class Controller {
     const element = this.element;
     const ctx = audioContext;
 
+    const toAwait: Array<Promise<void>> = [];
+
     const {
       playbackRate: elementPlaybackRateBeforeInitialization,
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
@@ -252,7 +254,7 @@ export default class Controller {
     } else {
       mediaElementSource.connect(audioContext.destination);
     }
-    volumeFilterP.then(async volumeFilter => {
+    toAwait.push(volumeFilterP.then(async volumeFilter => {
       mediaElementSource.connect(volumeFilter);
       this._onDestroyCallbacks.push(() => {
         mediaElementSource.disconnect();
@@ -261,20 +263,20 @@ export default class Controller {
       volumeFilter.connect(this._analyzerIn!);
       const silenceDetector = await silenceDetectorP;
       volumeFilter.connect(silenceDetector);
-    });
+    }));
     if (this.isStretcherEnabled()) {
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
       this._stretcherAndPitch.connectOutputTo(ctx.destination);
     }
     if (isLogging(this)) {
-      outVolumeFilterP!.then(outVolumeFilter => {
+      toAwait.push(outVolumeFilterP!.then(outVolumeFilter => {
         if (this.isStretcherEnabled()) {
           this._stretcherAndPitch.connectOutputTo(outVolumeFilter);
         } else {
           mediaElementSource.connect(outVolumeFilter);
         }
         outVolumeFilter.connect(this._analyzerOut!);
-      })
+      }));
     }
 
     if (isLogging(this)) {
@@ -297,7 +299,7 @@ export default class Controller {
       }
     }
 
-    silenceDetectorP.then(silenceDetector => {
+    toAwait.push(silenceDetectorP.then(silenceDetector => {
       silenceDetector.port.onmessage = ({ data: silenceStartOrEnd }: MessageEvent<SilenceDetectorMessage>) => {
         const elementSpeedSwitchedAt = ctx.currentTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
@@ -332,7 +334,7 @@ export default class Controller {
       // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
       // thing retaining a reference to the listener. TODO
       this._onDestroyCallbacks.push(() => silenceDetector.port.onmessage = null);
-    });
+    }));
 
     if (isLogging(this)) {
       const logIntervalId = (setInterval as typeof window.setInterval)(() => {
@@ -340,6 +342,8 @@ export default class Controller {
       }, 1);
       this._onDestroyCallbacks.push(() => clearInterval(logIntervalId));
     }
+
+    await Promise.all(toAwait);
 
     this.initialized = true;
     this._resolveInitPromise(this);
