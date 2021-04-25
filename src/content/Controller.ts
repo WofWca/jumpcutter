@@ -134,19 +134,29 @@ export default class Controller {
 
     this.audioContext = ctx;
 
-    await Promise.all([
-      ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js')),
-      ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilterProcessor.js')),
-    ]);
+    const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
 
     const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
-    const volumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
-    this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
-    this._silenceDetectorNode = new SilenceDetectorNode(ctx, this._getSilenceDetectorNodeDurationThreshold());
-    this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(this._silenceDetectorNode!));
-    // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
-    // AudioWorkletNode destruction a line above, but let's future-prove it.
-    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.close())
+    const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
+    const volumeFilterP = volumeFilterProcessorP.then(() => {
+      const volumeFilter = new VolumeFilterNode(
+        ctx,
+        volumeFilterSmoothingWindowLength,
+        volumeFilterSmoothingWindowLength
+      );
+      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+      return volumeFilter;
+    });
+    const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
+      const silenceDetector = new SilenceDetectorNode(ctx, this._getSilenceDetectorNodeDurationThreshold())
+      this._silenceDetectorNode = silenceDetector;
+      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(silenceDetector));
+      // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
+      // AudioWorkletNode destruction a line above, but let's future-prove it.
+      this._onDestroyCallbacks.push(() => silenceDetector.port.close());
+      return silenceDetector;
+    });
+
     this._analyzerIn = ctx.createAnalyser();
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
@@ -154,6 +164,7 @@ export default class Controller {
     // let outVolumeFilter: this extends ControllerLogging ? AudioWorkletNode : undefined;
     let outVolumeFilter: AudioWorkletNode | undefined;
     if (isLogging(this)) {
+      await volumeFilterProcessorP; // Too lazy to do the same as for `volumeFilter` (the `.then` stuff).
       outVolumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
       this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter!));
       this._analyzerOut = ctx.createAnalyser();
@@ -235,17 +246,21 @@ export default class Controller {
     } else {
       mediaElementSource.connect(audioContext.destination);
     }
-    mediaElementSource.connect(volumeFilter);
-    this._onDestroyCallbacks.push(() => {
-      mediaElementSource.disconnect();
-      mediaElementSource.connect(audioContext.destination);
+    volumeFilterP.then(volumeFilter => {
+      mediaElementSource.connect(volumeFilter);
+      this._onDestroyCallbacks.push(() => {
+        mediaElementSource.disconnect();
+        mediaElementSource.connect(audioContext.destination);
+      });
+      silenceDetectorP.then(silenceDetector => {
+        volumeFilter.connect(silenceDetector);
+      })
+      volumeFilter.connect(this._analyzerIn!);
     });
-    volumeFilter.connect(this._silenceDetectorNode);
     if (this.isStretcherEnabled()) {
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
       this._stretcherAndPitch.connectOutputTo(ctx.destination);
     }
-    volumeFilter.connect(this._analyzerIn);
     if (isLogging(this)) {
       if (this.isStretcherEnabled()) {
         this._stretcherAndPitch.connectOutputTo(outVolumeFilter!);
@@ -275,40 +290,43 @@ export default class Controller {
       }
     }
 
-    this._silenceDetectorNode.port.onmessage = ({ data: silenceStartOrEnd }: MessageEvent<SilenceDetectorMessage>) => {
-      const elementSpeedSwitchedAt = ctx.currentTime;
-      if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
-        this._setSpeedAndLog(SpeedName.SOUNDED);
-        this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
-      } else {
-        this._setSpeedAndLog(SpeedName.SILENCE);
-        this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
-
-        if (this.settings.enableDesyncCorrection) {
-          // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
-          // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
-          // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
-          // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
-          // noticeable rewind in sound, so we use a smaller value.
-          // Why on silenceStart, not on silenceEnd? Becasue when it's harder to notice a rewind when it's silent.
-          // `marginAfter` ensures there's plenty of it.
-          // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
-          // pauses, so let's give it some bigger value.
-          const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
-          this._didNotDoDesyncCorrectionForNSpeedSwitches++;
-          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
-            element.currentTime -= 1e-9;
-            // TODO but it's also corrected when the user seeks the video manually.
-            this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+    silenceDetectorP.then(silenceDetector => {
+      silenceDetector.port.onmessage = ({ data: silenceStartOrEnd }: MessageEvent<SilenceDetectorMessage>) => {
+        const elementSpeedSwitchedAt = ctx.currentTime;
+        if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
+          this._setSpeedAndLog(SpeedName.SOUNDED);
+          this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
+        } else {
+          this._setSpeedAndLog(SpeedName.SILENCE);
+          this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
+  
+          if (this.settings.enableDesyncCorrection) {
+            // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
+            // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
+            // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
+            // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
+            // noticeable rewind in sound, so we use a smaller value.
+            // Why on silenceStart, not on silenceEnd? Becasue when it's harder to notice a rewind when it's silent.
+            // `marginAfter` ensures there's plenty of it.
+            // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
+            // pauses, so let's give it some bigger value.
+            const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
+            this._didNotDoDesyncCorrectionForNSpeedSwitches++;
+            if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
+              element.currentTime -= 1e-9;
+              // TODO but it's also corrected when the user seeks the video manually.
+              this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+            }
           }
         }
       }
-    }
-    // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
-    // (like 200 kB per toggle).
-    // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
-    // thing retaining a reference to the listener. TODO
-    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.onmessage = null);
+      // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
+      // (like 200 kB per toggle).
+      // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
+      // thing retaining a reference to the listener. TODO
+      this._onDestroyCallbacks.push(() => silenceDetector.port.onmessage = null);
+    });
+
     if (isLogging(this)) {
       const logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
