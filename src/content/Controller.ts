@@ -80,6 +80,9 @@ export default class Controller {
   // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
   // executor?
   _initPromise = new Promise<Controller>(resolve => this._resolveInitPromise = resolve);
+  // Settings updates that haven't been applied because `updateSettingsAndMaybeCreateNewInstance` was called before
+  // `init` finished.
+  _pendingSettingsUpdates: ControllerSettings | undefined;
 
   _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
@@ -317,7 +320,9 @@ export default class Controller {
     this.initialized = true;
     this._resolveInitPromise(this);
 
+    Object.assign(this.settings, this._pendingSettingsUpdates);
     this._setStateAccordingToNewSettings();
+    delete this._pendingSettingsUpdates;
 
     return this;
   }
@@ -384,8 +389,12 @@ export default class Controller {
       this.destroy().then(() => newInstance.init());
       return newInstance;
     } else {
-      this.settings = newSettings;
-      this._setStateAccordingToNewSettings(oldSettings);
+      if (this.initialized) {
+        this.settings = newSettings;
+        this._setStateAccordingToNewSettings(oldSettings);
+      } else {
+        this._pendingSettingsUpdates = newSettings;
+      }
       return this;
     }
   }
