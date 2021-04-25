@@ -376,7 +376,10 @@ export default class Controller {
     const oldSettings = this.settings;
     this.settings = newSettings;
 
-    if (isStretcherEnabled(newSettings) ? !isStretcherEnabled(oldSettings) : isStretcherEnabled(oldSettings)) {
+    const needReinit = isStretcherEnabled(newSettings)
+      ? !isStretcherEnabled(oldSettings)
+      : isStretcherEnabled(oldSettings);
+    if (needReinit) {
       const newInstance = new Controller(this.element, this.settings);
       this.destroy().then(() => newInstance.init());
       return newInstance;
