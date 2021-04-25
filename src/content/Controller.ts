@@ -162,11 +162,17 @@ export default class Controller {
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
     // let outVolumeFilter: this extends ControllerLogging ? AudioWorkletNode : undefined;
-    let outVolumeFilter: AudioWorkletNode | undefined;
+    let outVolumeFilterP: Promise<AudioWorkletNode> | undefined;
     if (isLogging(this)) {
-      await volumeFilterProcessorP; // Too lazy to do the same as for `volumeFilter` (the `.then` stuff).
-      outVolumeFilter = new VolumeFilterNode(ctx, volumeFilterSmoothingWindowLength, volumeFilterSmoothingWindowLength);
-      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter!));
+      outVolumeFilterP = volumeFilterProcessorP.then(() => {
+        const outVolumeFilter = new VolumeFilterNode(
+          ctx,
+          volumeFilterSmoothingWindowLength,
+          volumeFilterSmoothingWindowLength
+        );
+        this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter));
+        return outVolumeFilter;
+      });
       this._analyzerOut = ctx.createAnalyser();
     }
     // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
@@ -246,28 +252,29 @@ export default class Controller {
     } else {
       mediaElementSource.connect(audioContext.destination);
     }
-    volumeFilterP.then(volumeFilter => {
+    volumeFilterP.then(async volumeFilter => {
       mediaElementSource.connect(volumeFilter);
       this._onDestroyCallbacks.push(() => {
         mediaElementSource.disconnect();
         mediaElementSource.connect(audioContext.destination);
       });
-      silenceDetectorP.then(silenceDetector => {
-        volumeFilter.connect(silenceDetector);
-      })
       volumeFilter.connect(this._analyzerIn!);
+      const silenceDetector = await silenceDetectorP;
+      volumeFilter.connect(silenceDetector);
     });
     if (this.isStretcherEnabled()) {
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
       this._stretcherAndPitch.connectOutputTo(ctx.destination);
     }
     if (isLogging(this)) {
-      if (this.isStretcherEnabled()) {
-        this._stretcherAndPitch.connectOutputTo(outVolumeFilter!);
-      } else {
-        mediaElementSource.connect(outVolumeFilter!);
-      }
-      outVolumeFilter!.connect(this._analyzerOut);
+      outVolumeFilterP!.then(outVolumeFilter => {
+        if (this.isStretcherEnabled()) {
+          this._stretcherAndPitch.connectOutputTo(outVolumeFilter);
+        } else {
+          mediaElementSource.connect(outVolumeFilter);
+        }
+        outVolumeFilter.connect(this._analyzerOut!);
+      })
     }
 
     if (isLogging(this)) {
