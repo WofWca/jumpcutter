@@ -275,8 +275,7 @@ export default class Controller {
       }
     }
 
-    this._silenceDetectorNode.port.onmessage = (msg) => {
-      const silenceStartOrEnd = msg.data as SilenceDetectorMessage;
+    this._silenceDetectorNode.port.onmessage = ({ data: silenceStartOrEnd }: MessageEvent<SilenceDetectorMessage>) => {
       const elementSpeedSwitchedAt = ctx.currentTime;
       if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
         this._setSpeedAndLog(SpeedName.SOUNDED);
