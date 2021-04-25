@@ -374,16 +374,16 @@ export default class Controller {
   updateSettingsAndMaybeCreateNewInstance(newSettings: ControllerSettings): Controller {
     // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
-    this.settings = newSettings;
 
     const needReinit = isStretcherEnabled(newSettings)
       ? !isStretcherEnabled(oldSettings)
       : isStretcherEnabled(oldSettings);
     if (needReinit) {
-      const newInstance = new Controller(this.element, this.settings);
+      const newInstance = new Controller(this.element, newSettings);
       this.destroy().then(() => newInstance.init());
       return newInstance;
     } else {
+      this.settings = newSettings;
       this._setStateAccordingToNewSettings(oldSettings);
       return this;
     }
