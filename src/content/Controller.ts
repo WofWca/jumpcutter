@@ -321,7 +321,7 @@ export default class Controller {
     this._resolveInitPromise(this);
 
     Object.assign(this.settings, this._pendingSettingsUpdates);
-    this._setStateAccordingToNewSettings();
+    this._setStateAccordingToNewSettings(this.settings, null);
     delete this._pendingSettingsUpdates;
 
     return this;
@@ -351,7 +351,8 @@ export default class Controller {
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
+  private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
+    this.settings = newSettings;
     assertDev(this.isInitialized());
     if (!oldSettings) {
       this._setSpeedAndLog(SpeedName.SOUNDED);
@@ -390,8 +391,7 @@ export default class Controller {
       return newInstance;
     } else {
       if (this.initialized) {
-        this.settings = newSettings;
-        this._setStateAccordingToNewSettings(oldSettings);
+        this._setStateAccordingToNewSettings(newSettings, oldSettings);
       } else {
         this._pendingSettingsUpdates = newSettings;
       }
