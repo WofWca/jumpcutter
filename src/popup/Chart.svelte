@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assert, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
+  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
   import type Controller from '@/content/Controller';
   import debounce from 'lodash/debounce';
 
@@ -213,7 +213,7 @@
   };
 
   function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
-    assert(newTelemetryRecord.lastScheduledStretchInputTime,
+    assertDev(newTelemetryRecord.lastScheduledStretchInputTime,
       'Attempted to update stretch series, but stretch is not defined');
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
     const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);

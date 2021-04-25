@@ -11,7 +11,7 @@ import {
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
-import { assert, SpeedName } from '@/helpers';
+import { assertDev, SpeedName } from '@/helpers';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from './SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from './VolumeFilter/VolumeFilterNode';
@@ -314,7 +314,7 @@ export default class Controller {
    */
   async destroy(): Promise<void> {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
-    assert(this.isInitialized());
+    assertDev(this.isInitialized());
 
     for (const cb of this._onDestroyCallbacks) {
       cb();
@@ -336,7 +336,7 @@ export default class Controller {
     if (!oldSettings) {
       this._setSpeedAndLog(SpeedName.SOUNDED);
     } else {
-      assert(this._lastActualPlaybackRateChange,
+      assertDev(this._lastActualPlaybackRateChange,
         'Expected it speed to had been set at least at Controller initialization');
       this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
@@ -405,7 +405,7 @@ export default class Controller {
   }
 
   getTelemetry() {
-    assert(this.isInitialized());
+    assertDev(this.isInitialized());
 
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];

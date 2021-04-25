@@ -3,7 +3,7 @@ import {
   Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges,
   removeOnSettingsChangedListener, settingsChanges2NewValues,
 } from '@/settings';
-import { clamp, assert, assertNever } from '@/helpers';
+import { clamp, assertNever, assertDev } from '@/helpers';
 import type Controller from './Controller';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
@@ -91,9 +91,9 @@ export default class AllMediaElementsController {
 
     if (Object.keys(newValues).length === 0) return;
 
-    assert(this.settings);
+    assertDev(this.settings);
     Object.assign(this.settings, newValues);
-    assert(this.controller);
+    assertDev(this.controller);
     // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
     // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
     this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
@@ -171,7 +171,7 @@ export default class AllMediaElementsController {
     // something like `getSettings: () => Settings`?
     const handleKeydown = (e: KeyboardEvent) => {
       if (eventTargetIsInput(e)) return;
-      assert(this.settings);
+      assertDev(this.settings);
       const actions = keydownEventToActions(e, this.settings);
       const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
 

@@ -5,7 +5,7 @@
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
-  import { cloneDeepJson, assert, assertNever } from '@/helpers';
+  import { cloneDeepJson, assertDev, assertNever } from '@/helpers';
   import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
@@ -28,7 +28,7 @@
     return formEl.checkValidity();
   }
   function saveSettings() {
-    assert(checkValidity(settings), 'Expected saveSettings to be called only when the form is valid');
+    assertDev(checkValidity(settings), 'Expected saveSettings to be called only when the form is valid');
     setSettings(settings);
     unsaved = false;
   }
@@ -111,7 +111,7 @@
     settings = settings;
   }
   async function uploadToSync() {
-    assert(checkValidity(settings));
+    assertDev(checkValidity(settings));
     browser.storage.sync.clear();
     browser.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
   }
