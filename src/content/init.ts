@@ -22,12 +22,13 @@ export default async function init(): Promise<void> {
 
   let allMediaElementsController: AllMediaElementsController | undefined;
   async function ensureInitAllMediaElementsController() {
-    if (allMediaElementsController) return;
-    const { default: AllMediaElementsController } = await import(
-      /* webpackExports: ['default'] */
-      './AllMediaElementsController'
-    )
-    allMediaElementsController = new AllMediaElementsController();
+    if (!allMediaElementsController) {
+      const { default: AllMediaElementsController } = await import(
+        /* webpackExports: ['default'] */
+        './AllMediaElementsController'
+      )
+      allMediaElementsController = new AllMediaElementsController();
+    }
     return allMediaElementsController;
   }
 
@@ -63,8 +64,8 @@ export default async function init(): Promise<void> {
   for (const tagName of tagNames) {
     const allMediaElementsWThisTag = document.getElementsByTagName(tagName);
     if (allMediaElementsWThisTag.length) {
-      ensureInitAllMediaElementsController().then(() => {
-        allMediaElementsController!.onNewMediaElements(...allMediaElementsWThisTag);
+      ensureInitAllMediaElementsController().then(allMediaElementsController => {
+        allMediaElementsController.onNewMediaElements(...allMediaElementsWThisTag);
       });
     }
   }
@@ -102,8 +103,8 @@ export default async function init(): Promise<void> {
       // (attached to just one element), so it's fine.
     }
     if (newElements.length) {
-      ensureInitAllMediaElementsController().then(() => {
-        allMediaElementsController!.onNewMediaElements(...newElements);
+      ensureInitAllMediaElementsController().then(allMediaElementsController => {
+        allMediaElementsController.onNewMediaElements(...newElements);
       });
     }
   }
