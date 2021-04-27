@@ -4,6 +4,10 @@ import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
+/**
+ * Takes volume data (e.g. from `VolumeFilter`) as input. Sends `SILENCE_START` when there has been silence for the
+ * last `durationThreshold`, or `SILENCE_END` when a single sample above `volumeThreshold` is found.
+ */
 class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   _lastLoudSampleTime: Time;
   _lastTimePostedSilenceStart: boolean;
