@@ -72,6 +72,12 @@ export default class AllMediaElementsController {
     }
   }
   private detachFromActiveElement() {
+    // TODO It is possible to call this function before the `_onDetachFromActiveElementCallbacks` array has been filled
+    // and `controller` has been assigned.
+    // Same for `destroy`.
+    assertDev(this.controller); // So this assertion can fail.
+    this.controller.destroy();
+    this.controller = undefined;
     this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
     this._onDetachFromActiveElementCallbacks = [];
   }
@@ -96,6 +102,7 @@ export default class AllMediaElementsController {
     this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
       extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
     );
+    // Controller destruction is done in `detachFromActiveElement`.
   }
   private reactToSettingsChanges = (changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
@@ -244,10 +251,8 @@ export default class AllMediaElementsController {
         /* webpackExports: ['default'] */
         './Controller'
       );
-      const controller = this.controller = new Controller(el, extensionSettings2ControllerSettings(settings));
-      // TODO It is possible to call `detachFromActiveElement` before the `_onDetachFromActiveElementCallbacks` array
-      // has been filled. Same for `destroy`.
-      this._onDetachFromActiveElementCallbacks.push(() => controller.destroy());
+      this.controller = new Controller(el, extensionSettings2ControllerSettings(settings));
+      // Controller destruction is done in `detachFromActiveElement`.
 
       await this.controller.init();
     })();
