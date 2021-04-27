@@ -73,6 +73,7 @@ export default class AllMediaElementsController {
   }
   private detachFromActiveElement() {
     this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
+    this._onDetachFromActiveElementCallbacks = [];
   }
 
   public broadcastStatus(): void {
@@ -225,6 +226,10 @@ export default class AllMediaElementsController {
       this.detachFromActiveElement();
     }
     this.activeMediaElement = el;
+
+    assertDev(this._onDetachFromActiveElementCallbacks.length === 0, 'I think `_onDetachFromActiveElementCallbacks` '
+      + `should be empty here. Instead it it is ${this._onDetachFromActiveElementCallbacks.length} items long`);
+
     // Currently this is technically not required since `this.activeMediaElement` is immediately reassigned
     // in the line above after the `detachFromActiveElement` call.
     this._onDetachFromActiveElementCallbacks.push(() => this.activeMediaElement = undefined);
