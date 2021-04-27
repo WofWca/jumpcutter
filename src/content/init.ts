@@ -4,6 +4,7 @@ import {
 } from '@/settings';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
+import once from 'lodash/once';
 
 const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsController) => allMediaElementsController
   ? allMediaElementsController.broadcastStatus()
@@ -21,16 +22,14 @@ export default async function init(): Promise<void> {
   const settingsP = getSettings('applyTo');
 
   let allMediaElementsController: AllMediaElementsController | undefined;
-  async function ensureInitAllMediaElementsController() {
-    if (!allMediaElementsController) {
-      const { default: AllMediaElementsController } = await import(
-        /* webpackExports: ['default'] */
-        './AllMediaElementsController'
-      )
-      allMediaElementsController = new AllMediaElementsController();
-    }
+  const ensureInitAllMediaElementsController = once(async function () {
+    const { default: AllMediaElementsController } = await import(
+      /* webpackExports: ['default'] */
+      './AllMediaElementsController'
+    )
+    allMediaElementsController = new AllMediaElementsController();
     return allMediaElementsController;
-  }
+  });
 
   const onMessage = (message: unknown) => {
     if (process.env.NODE_ENV !== 'production') {
