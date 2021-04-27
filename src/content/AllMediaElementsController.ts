@@ -10,7 +10,7 @@ import extensionSettings2ControllerSettings from './extensionSettings2Controller
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
-import { oncePerInstance } from './helpers';
+import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 
 export type TelemetryMessage =
@@ -79,10 +79,6 @@ export default class AllMediaElementsController {
     broadcastStatus({ elementLastActivatedAt: this.elementLastActivatedAt });
   }
 
-  private oncePerInstance<T extends Parameters<typeof oncePerInstance>[1]>(f: T): T {
-    return oncePerInstance(this, f);
-  }
-
   private reactToSettingsNewValues(newValues: Partial<Settings>) {
     // Currently, this function is an event listener, and while it gets detached when the extension gets disabled, it
     // still gets executed on that change, because it gets detached within another event listener. This is to check if
@@ -111,7 +107,7 @@ export default class AllMediaElementsController {
     addOnSettingsChangedListener(this.reactToSettingsChanges);
     this._onDestroyCallbacks.push(() => removeOnSettingsChangedListener(this.reactToSettingsChanges));
   }
-  private ensureAddOnSettingsChangedListener = this.oncePerInstance(this._addOnSettingsChangedListener);
+  private ensureAddOnSettingsChangedListener = once(this._addOnSettingsChangedListener);
 
   private onConnect = (port: browser.runtime.Port) => {
     let listener: (msg: unknown) => void;
@@ -155,12 +151,12 @@ export default class AllMediaElementsController {
     browser.runtime.onConnect.addListener(this.onConnect);
     this._onDestroyCallbacks.push(() => browser.runtime.onConnect.removeListener(this.onConnect));
   }
-  private ensureAddOnConnectListener = this.oncePerInstance(this._addOnConnectListener);
+  private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
   private async _loadSettings() {
     this.settings = await getSettings();
   }
-  private ensureLoadSettings = this.oncePerInstance(this._loadSettings);
+  private ensureLoadSettings = once(this._loadSettings);
 
   private async _initHotkeyListener() {
     const { keydownEventToActions, eventTargetIsInput } = await import(
@@ -215,7 +211,7 @@ export default class AllMediaElementsController {
 
     // this.hotkeyListenerAttached = true;
   }
-  private ensureInitHotkeyListener = this.oncePerInstance(this._initHotkeyListener);
+  private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
   private async esnureAttachToElement(el: HTMLMediaElement) {
     // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded

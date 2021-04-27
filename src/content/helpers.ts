@@ -1,4 +1,3 @@
-import once from 'lodash/once';
 import type { Time, StretchInfo } from '@/helpers';
 
 export function getRealtimeMargin(margin: Time, speed: number): Time {
@@ -156,11 +155,4 @@ export function addPlaybackResumeListener(el: HTMLMediaElement, listener: () => 
 export function isPlaybackActive(el: HTMLMediaElement): boolean {
   // I wrote this looking at https://html.spec.whatwg.org/multipage/media.html#event-media-playing
   return el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA && !el.paused;
-}
-
-export function cloneFunction<T extends () => unknown>(thisArg: unknown, f: T): T {
-  return f.bind(thisArg) as T;
-}
-export function oncePerInstance<T extends () => unknown>(thisArg: unknown, f: T): T {
-  return once(cloneFunction(thisArg, f));
 }
