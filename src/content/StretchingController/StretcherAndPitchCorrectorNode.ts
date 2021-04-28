@@ -11,7 +11,7 @@ import {
   getStretcherDelayChange,
   getRealtimeMargin,
   getStretcherSoundedDelay,
-} from './helpers';
+} from '@/content/helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import { assertDev } from '@/helpers';
 

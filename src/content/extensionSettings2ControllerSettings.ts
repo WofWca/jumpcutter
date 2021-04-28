@@ -1,5 +1,5 @@
 import type { Settings as ExtensionSettings } from '@/settings';
-import type { ControllerSettings } from './Controller';
+import type { ControllerSettings } from './StretchingController/StretchingController';
 import { getAbsoluteSilenceSpeed } from '@/settings';
 
 export default function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
