@@ -242,23 +242,23 @@ export default class AllMediaElementsController {
     this._onDetachFromActiveElementCallbacks.push(() => this.activeMediaElement = undefined);
 
     await this.ensureLoadSettings();
+    assertDev(this.settings)
     this.ensureAddOnSettingsChangedListener();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const settings = this.settings!;
 
     const controllerP = (async () => {
       const { default: Controller } = await import(
         /* webpackExports: ['default'] */
         './Controller'
       );
-      this.controller = new Controller(el, extensionSettings2ControllerSettings(settings));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.controller = new Controller(el, extensionSettings2ControllerSettings(this.settings!));
       // Controller destruction is done in `detachFromActiveElement`.
 
       await this.controller.init();
     })();
 
     let hotkeyListenerP;
-    if (settings.enableHotkeys) {
+    if (this.settings.enableHotkeys) {
       hotkeyListenerP = this.ensureInitHotkeyListener();
     }
 
@@ -271,7 +271,8 @@ export default class AllMediaElementsController {
       await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
       const timeSavedTracker = this.timeSavedTracker = new TimeSavedTracker(
         el,
-        settings,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.settings!,
         addOnSettingsChangedListener,
         removeOnSettingsChangedListener,
       );
