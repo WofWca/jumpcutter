@@ -86,6 +86,11 @@ export default class AllMediaElementsController {
     broadcastStatus({ elementLastActivatedAt: this.elementLastActivatedAt });
   }
 
+  
+  private async _loadSettings() {
+    this.settings = await getSettings();
+  }
+  private ensureLoadSettings = once(this._loadSettings);
   private reactToSettingsNewValues(newValues: Partial<Settings>) {
     // Currently, this function is an event listener, and while it gets detached when the extension gets disabled, it
     // still gets executed on that change, because it gets detached within another event listener. This is to check if
@@ -160,11 +165,6 @@ export default class AllMediaElementsController {
     this._onDestroyCallbacks.push(() => browser.runtime.onConnect.removeListener(this.onConnect));
   }
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
-
-  private async _loadSettings() {
-    this.settings = await getSettings();
-  }
-  private ensureLoadSettings = once(this._loadSettings);
 
   private async _initHotkeyListener() {
     const { keydownEventToActions, eventTargetIsInput } = await import(
