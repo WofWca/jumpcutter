@@ -1,6 +1,7 @@
 import browser from '@/webextensions-api';
 import { assertDev, Time } from '@/helpers';
 import once from 'lodash/once';
+import throttle from 'lodash/throttle';
 // import { audioContext, mediaElementSourcesMap } from '../audioContext';
 // import sortedIndex from 'lodash/sortedIndex';
 
@@ -30,6 +31,7 @@ function getNextOutOfRangesTime(ranges: MyTimeRanges, forTime: Time): Time {
   const { starts, ends } = ranges;
   // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
   // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
+  // But before you optimize it, check out the comment near `seekCloneIfOriginalElIsPlayingUnprocessedRange`.
   const currentRangeInd = starts.findIndex((start, i) => {
     const end = ends[i];
     return start <= forTime && forTime <= end;
@@ -37,6 +39,19 @@ function getNextOutOfRangesTime(ranges: MyTimeRanges, forTime: Time): Time {
   return currentRangeInd !== -1
     ? ends[currentRangeInd]
     : forTime;
+}
+
+function inRanges(ranges: TimeRanges, time: Time): boolean {
+  // TODO super inefficient, same as with `getNextOutOfRangesTime`.
+  for (let i = 0; i < ranges.length; i++) {
+    const
+      start = ranges.start(i),
+      end = ranges.end(i);
+    if (start <= time && time <= end) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export default class Lookahead {
@@ -145,9 +160,30 @@ export default class Lookahead {
     // It's a bit weird that it's not at the very bottom of the function. TODO?
     await Promise.all(toAwait);
 
-    // Temporary measure in case the user wanted to enable this controller halfway through the media.
-    // TODO support seeking. Utilize `el.played` TimeRanges?
-    clone.currentTime = originalElement.currentTime;
+    // TODO but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
+    // i.e. non-sorted and having overlapping (in our case, duplicate) entries.
+    // However, the current implementation of `getNextSoundedTime` (and `getNextOutOfRangesTime`) allows this.
+    const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
+      const originalElementTime = originalElement.currentTime;
+      const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
+      if (playingUnprocessedRange) {
+        // TODO call `pushNewSilenceRange` before seeking if it's silence currently?
+        clone.currentTime = originalElementTime; // TODO `fastSeek`, because we don't need precision here.
+        // To avoid the case where it's currently silence, then you seek forward a lot and it's loud so it marks
+        // the whole range that you skipped as silence.
+        // TODO it seems to me that it would be cleaner to somehow reset the state of `silenceDetector` instead so
+        // if there is silence where we seek, it will emit `SILENCE_START` even if the last thing
+        // it emited too was `SILENCE_START`.
+        this.lastSoundedTime = originalElementTime;
+      }
+    }
+    // TODO also utilize `requestIdleCallback` so it gets called less frequently during high loads?
+    const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
+    // TODO using `timeupdate` is pretty bug-proof, but not very efficient.
+    originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
+    this._onDestroyCallbacks.push(() => {
+      originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
+    });
 
     // For performance.
     // TODO need to suspend AudioContext when the clone stops playing, and not just the original element

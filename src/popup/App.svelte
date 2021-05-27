@@ -403,7 +403,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   {/if}
   <label
     use:tippyActionAsyncPreload={{
-      content: '* Bare minimum functionality. Expect it to only work with local files, only if you don\'t seek\n'
+      content: '* Bare minimum functionality. Expect it to only work with local files\n'
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
         + '* No audio distortion\n'
         + '* No audio delay/desync\n',
