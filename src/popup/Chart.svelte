@@ -14,6 +14,7 @@
   export let widthPx: number;
   export let heightPx: number;
   export let lengthSeconds: number;
+  export let paused: boolean;
 
   let canvasEl: HTMLCanvasElement;
   $: millisPerPixel = lengthSeconds * 1000 / widthPx;
@@ -150,18 +151,20 @@
     
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
-      smoothie.render();
+      if (!paused) {
+        smoothie.render();
 
-      // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-      // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
-      // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-      const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
-      canvasContext.beginPath();
-      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-      canvasContext.moveTo(x, 0);
-      canvasContext.lineTo(x, heightPx);
-      canvasContext.closePath();
-      canvasContext.stroke();
+        // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+        // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
+        // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
+        const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
+        canvasContext.beginPath();
+        canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        canvasContext.moveTo(x, 0);
+        canvasContext.lineTo(x, heightPx);
+        canvasContext.closePath();
+        canvasContext.stroke();
+      }
 
       requestAnimationFrame(drawAndScheduleAnother);
     })();
@@ -323,6 +326,7 @@
   width={widthPx}
   height={heightPx}
   on:click
+  style={paused ? 'opacity: 0.2' : ''}
 >
   <label>
     Volume

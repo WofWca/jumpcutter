@@ -286,6 +286,7 @@
         style="width: 6rem;"
       ></meter>
     </span>
+    {#if settings.experimentalControllerType !== ControllerKind_CLONING}
     <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
     <button
       type="button"
@@ -330,6 +331,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
         <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
       {/if}
     </button>
+    {/if}
   </div>
   <!-- TODO transitions? -->
   {#if !connected}
@@ -399,6 +401,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
       on:click={onChartClick}
+      paused={settings.experimentalControllerType === ControllerKind_CLONING}
     />
   {/if}
   <label
@@ -425,6 +428,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max={maxVolume}
     step="0.0005"
     bind:value={settings.volumeThreshold}
+    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -449,6 +453,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="15"
     step="0.05"
     bind:value={settings.silenceSpeedRaw}
+    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
@@ -456,6 +461,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="0.5"
     step="0.005"
     bind:value={settings.marginBefore}
+    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin after"
@@ -463,6 +469,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="0.5"
     step="0.005"
     bind:value={settings.marginAfter}
+    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->
