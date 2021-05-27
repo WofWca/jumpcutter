@@ -403,10 +403,10 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   {/if}
   <label
     use:tippyActionAsyncPreload={{
-      content: '* Bare minimum functionality. Expect it to only work with local files\n'
+      content: '* Bare minimum usability\n'
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
-        + '* No audio distortion\n'
-        + '* No audio delay/desync\n',
+        + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
+        + '* No audio distortion, delay or desync\n',
       theme: 'my-tippy white-space-pre-line',
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
