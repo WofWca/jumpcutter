@@ -60,7 +60,7 @@ export default class Controller {
     this.element = element;
     this.settings = controllerSettings;
 
-    const lookahead = this.lookahead = new Lookahead(element, /* this.onNewSilenceRange.bind(this) */);
+    const lookahead = this.lookahead = new Lookahead(element, this.settings);
     this._onDestroyCallbacks.push(() => lookahead.destroy());
     lookahead.ensureInit();
   }

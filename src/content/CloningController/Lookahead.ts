@@ -1,4 +1,5 @@
 import browser from '@/webextensions-api';
+import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, Time } from '@/helpers';
 import { destroyAudioWorkletNode } from '@/content/helpers';
 import once from 'lodash/once';
@@ -46,6 +47,8 @@ function inRanges(ranges: TimeRanges, time: Time): boolean {
   return false;
 }
 
+type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold'>;
+
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
   lastSoundedTime: Time | undefined;
@@ -64,6 +67,7 @@ export default class Lookahead {
   _onDestroyCallbacks: Array<() => void> = [];
   constructor(
     private originalElement: HTMLMediaElement,
+    private settings: LookaheadSettings,
     // public onNewSilenceRange: (start: Time, end: Time) => void,
   ) {
     const clone = document.createElement('audio');
@@ -117,7 +121,7 @@ export default class Lookahead {
       volumeFilter.connect(silenceDetector);
     }));
     toAwait.push(silenceDetectorP.then(silenceDetector => {
-      silenceDetector.volumeThreshold = 0.015; // TODO
+      silenceDetector.volumeThreshold = this.settings.volumeThreshold;
 
       silenceDetector.port.onmessage = msg => {
         const data = msg.data as SilenceDetectorMessage;
