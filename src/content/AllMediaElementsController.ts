@@ -129,6 +129,7 @@ export default class AllMediaElementsController {
     if (newValues.experimentalControllerType !== undefined) {
       // TODO Hacky. Can just reinit the `Controller` instead. Or at least reinit `AllMediaElementsController`.
       setSettings({ enabled: false }).then(() => setSettings({ enabled: true }));
+      return;
     }
 
     if (Object.keys(newValues).length === 0) return;
