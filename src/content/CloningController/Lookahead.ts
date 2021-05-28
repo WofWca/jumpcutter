@@ -72,6 +72,13 @@ export default class Lookahead {
   ) {
     const clone = document.createElement('audio');
     this.clone = clone;
+
+    // Not doing this appears to cause a resource (memory and processing) leak in Chromium manifesting itself when
+    // creating new instances of Lookahead (and discarding the old ones).
+    // Seems like a browser bug. TODO?
+    // BTW, `clone.pause()` also works.
+    this._onDestroyCallbacks.push(() => clone.src = '');
+
     // TODO this probably doesn't cover all cases.
     clone.src = originalElement.currentSrc;
   }
