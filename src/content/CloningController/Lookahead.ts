@@ -9,7 +9,7 @@ import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
 
 // A more semantically correct version would be `Array<[start: Time, end: Time]>`, but I think this is a bit faster.
 // TODO `Float32Array` should be even faster, though it doesn't support `push`.
-// But I think array is not the best suted data structure for this application in the first place.
+// But I think array is not the best suited data structure for this application in the first place.
 type MyTimeRanges = {
   starts: Time[],
   ends: Time[],
