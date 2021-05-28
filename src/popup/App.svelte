@@ -428,7 +428,6 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max={maxVolume}
     step="0.0005"
     bind:value={settings.volumeThreshold}
-    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>

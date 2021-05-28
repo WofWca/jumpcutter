@@ -220,6 +220,7 @@ export default class Lookahead {
   }
   public ensureInit = once(this._init);
 
+  /** Can be called before `ensureInit` has finished. */
   public getNextSoundedTime(forTime: Time): Time {
     return getNextOutOfRangesTime(this.silenceRanges, forTime);
   }
