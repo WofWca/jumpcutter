@@ -47,7 +47,7 @@ function inRanges(ranges: TimeRanges, time: Time): boolean {
   return false;
 }
 
-type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold'>;
+type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefore' | 'marginAfter'>;
 
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
@@ -72,6 +72,13 @@ export default class Lookahead {
   ) {
     const clone = document.createElement('audio');
     this.clone = clone;
+
+    // Not doing this appears to cause a resource (memory and processing) leak in Chromium manifesting itself when
+    // creating new instances of Lookahead (and discarding the old ones).
+    // Seems like a browser bug. TODO?
+    // BTW, `clone.pause()` also works.
+    this._onDestroyCallbacks.push(() => clone.src = '');
+
     // TODO this probably doesn't cover all cases.
     clone.src = originalElement.currentSrc;
   }
@@ -103,9 +110,7 @@ export default class Lookahead {
     });
 
     const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
-      // TODO depend on settings and element speed, update as they change.
-      // const marginAfterIntrinsicTime = 0.05;
-      const marginAfterIntrinsicTime = 0.001;
+      const marginAfterIntrinsicTime = this.settings.marginAfter;
       const marginAfterRealTime = marginAfterIntrinsicTime / playbackRate;
 
       const silenceDetector = new SilenceDetectorNode(ctx, marginAfterRealTime);
@@ -135,8 +140,7 @@ export default class Lookahead {
 
           const negativeMarginAfterLol = smoothingWindowLenght;
 
-          // const marginBeforeIntrinsicTime = 0.05; // TODO
-          const marginBeforeIntrinsicTime = smoothingWindowLenght + 0.1; // TODO
+          const marginBeforeIntrinsicTime = smoothingWindowLenght + this.settings.marginBefore;
           const marginBeforeRealTime = marginBeforeIntrinsicTime / playbackRate;
           // TODO `this.lastSoundedTime` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
           // this.pushNewSilenceRange(this.lastSoundedTime, this.clone.currentTime - marginBeforeRealTime);
@@ -220,6 +224,7 @@ export default class Lookahead {
   }
   public ensureInit = once(this._init);
 
+  /** Can be called before `ensureInit` has finished. */
   public getNextSoundedTime(forTime: Time): Time {
     return getNextOutOfRangesTime(this.silenceRanges, forTime);
   }

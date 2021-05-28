@@ -428,7 +428,6 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max={maxVolume}
     step="0.0005"
     bind:value={settings.volumeThreshold}
-    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -461,7 +460,6 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="0.5"
     step="0.005"
     bind:value={settings.marginBefore}
-    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin after"
@@ -469,7 +467,6 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="0.5"
     step="0.005"
     bind:value={settings.marginAfter}
-    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->

@@ -2,6 +2,7 @@ import Lookahead from './Lookahead';
 import type { Time } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, SpeedName } from '@/helpers';
+import throttle from 'lodash/throttle';
 
 type ControllerInitialized =
   Controller
@@ -61,7 +62,7 @@ export default class Controller {
     this.settings = controllerSettings;
 
     const lookahead = this.lookahead = new Lookahead(element, this.settings);
-    this._onDestroyCallbacks.push(() => lookahead.destroy());
+    // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
   }
 
@@ -90,7 +91,7 @@ export default class Controller {
     // TODO Super inefficient, I know.
     const onTimeupdate = () => {
       const { currentTime } = element;
-      const nextSoundedTime = lookahead.getNextSoundedTime(currentTime);
+      const nextSoundedTime = this.lookahead.getNextSoundedTime(currentTime);
       // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
       // assigned to it, so `nextSoundedTime !== currentTime` will not work.
       // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
@@ -127,12 +128,22 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assertDev(this.isInitialized());
 
+    this.lookahead.destroy();
+
     for (const cb of this._onDestroyCallbacks) {
       cb();
     }
 
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }
+
+  private _reinitLookahead() {
+    this.lookahead.destroy();
+    const lookahead = this.lookahead = new Lookahead(this.element, this.settings);
+    // Destruction is performed in `this.destroy` directly.
+    lookahead.ensureInit();
+  }
+  private throttledReinitLookahead = throttle(this._reinitLookahead, 1000);
 
   /**
    * Can be called either when initializing or when updating settings.
@@ -147,6 +158,16 @@ export default class Controller {
     this.settings = newSettings;
     assertDev(this.isInitialized());
     this._setSpeed();
+    const lookaheadSettingsChanged =
+      oldSettings && (
+        newSettings.volumeThreshold !== oldSettings.volumeThreshold
+        || newSettings.marginBefore !== oldSettings.marginBefore
+        || newSettings.marginAfter !== oldSettings.marginAfter
+      )
+    if (lookaheadSettingsChanged) {
+      // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
+      this.throttledReinitLookahead();
+    }
   }
 
   /**
