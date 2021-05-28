@@ -142,7 +142,10 @@ export default class Lookahead {
     }));
 
     clone.playbackRate = playbackRate;
-    (clone as any).preservesPitch = false; // TODO
+    // For better performance. TODO however I'm not sure if this can significantly affect volume readings.
+    // On one hand we could say "we don't change the waveform, we're just processing it faster", on the other hand
+    // frequency characteristics are changed, and there's a risk of exceeding the Nyquist frequency.
+    (clone as any).preservesPitch = false;
 
     // It's a bit weird that it's not at the very bottom of the function. TODO?
     await Promise.all(toAwait);
