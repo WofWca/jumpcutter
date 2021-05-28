@@ -7,6 +7,7 @@ import {
   getTotalOutputDelay,
   getDelayFromInputToStretcherOutput,
   transformSpeed,
+  destroyAudioWorkletNode,
 } from '@/content/helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
@@ -63,11 +64,6 @@ export interface TelemetryRecord {
 
 function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
-}
-
-function destroyAudioWorkletNode(node: AudioWorkletNode) {
-  node.port.postMessage('destroy');
-  node.port.close();
 }
 
 export default class Controller {

@@ -1,16 +1,11 @@
 import browser from '@/webextensions-api';
 import { assertDev, Time } from '@/helpers';
+import { destroyAudioWorkletNode } from '@/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
-
-// TODO DRY
-function destroyAudioWorkletNode(node: AudioWorkletNode) {
-  node.port.postMessage('destroy');
-  node.port.close();
-}
 
 // A more semantically correct version would be `Array<[start: Time, end: Time]>`, but I think this is a bit faster.
 // TODO `Float32Array` should be even faster, though it doesn't support `push`.

@@ -156,3 +156,7 @@ export function isPlaybackActive(el: HTMLMediaElement): boolean {
   // I wrote this looking at https://html.spec.whatwg.org/multipage/media.html#event-media-playing
   return el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA && !el.paused;
 }
+export function destroyAudioWorkletNode(node: AudioWorkletNode): void {
+  node.port.postMessage('destroy');
+  node.port.close();
+}
