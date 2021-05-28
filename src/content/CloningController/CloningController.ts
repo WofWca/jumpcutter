@@ -161,8 +161,8 @@ export default class Controller {
     const lookaheadSettingsChanged =
       oldSettings && (
         newSettings.volumeThreshold !== oldSettings.volumeThreshold
-        // || newSettings.marginBefore !== oldSettings.marginBefore
-        // || newSettings.marginAfter !== oldSettings.marginAfter
+        || newSettings.marginBefore !== oldSettings.marginBefore
+        || newSettings.marginAfter !== oldSettings.marginAfter
       )
     if (lookaheadSettingsChanged) {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
