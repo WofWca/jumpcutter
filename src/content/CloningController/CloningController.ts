@@ -95,7 +95,9 @@ export default class Controller {
       // assigned to it, so `nextSoundedTime !== currentTime` will not work.
       // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
       // abovementioned seeking time error.
-      const farEnoughToPerformSeek = nextSoundedTime > currentTime + 0.1;
+      // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
+      // a precise seek (`.currentTime = ...`).
+      const farEnoughToPerformSeek = nextSoundedTime > currentTime + 0.15;
       if (farEnoughToPerformSeek) {
         element.currentTime = nextSoundedTime;
 
