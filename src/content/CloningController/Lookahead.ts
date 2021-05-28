@@ -141,10 +141,9 @@ export default class Lookahead {
           const negativeMarginAfterLol = smoothingWindowLenght;
 
           const marginBeforeIntrinsicTime = smoothingWindowLenght + this.settings.marginBefore;
-          const marginBeforeRealTime = marginBeforeIntrinsicTime / playbackRate;
           // TODO `this.lastSoundedTime` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
           // this.pushNewSilenceRange(this.lastSoundedTime, this.clone.currentTime - marginBeforeRealTime);
-          this.pushNewSilenceRange(this.lastSoundedTime - negativeMarginAfterLol, this.clone.currentTime - marginBeforeRealTime);
+          this.pushNewSilenceRange(this.lastSoundedTime - negativeMarginAfterLol, this.clone.currentTime - marginBeforeIntrinsicTime);
         }
       }
     }));
