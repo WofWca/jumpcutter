@@ -66,7 +66,6 @@ export default class Lookahead {
     ends: [],
   };
 
-  initialized = false;
   _onDestroyCallbacks: Array<() => void> = [];
   constructor(
     private originalElement: HTMLMediaElement,
@@ -79,10 +78,6 @@ export default class Lookahead {
   }
   private async _init(): Promise<void> {
     const originalElement = this.originalElement;
-
-    if (this.initialized) { // TODO Wrong. Won't return if it being initialized. `lodash.once`?
-      return;
-    }
 
     const playbackRate = 5; // TODO
 
