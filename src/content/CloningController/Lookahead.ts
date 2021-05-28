@@ -185,27 +185,43 @@ export default class Lookahead {
       originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
     });
 
-    // For performance.
-    // TODO need to suspend AudioContext when the clone stops playing, and not just the original element
-    // (e.g. it reached the end, or fetching data), so listeners must also be attached to the clone element.
-    // Also AudioContext needs to be suspended between 'seeking' and 'seeked' so silenceDetector doesn't consider that
-    // time. Same problem exists in the StretchingController.
-    const onPlay = () => {
-      clone.play();
+    // So silenceDetector doesn't process audio from the clone element while it is paused
+    // (e.g. if it reached the end, or fetching data).
+    // TODO need to also pause processing between 'seeking' and 'seeked'.
+    // TODO The same problem exists in the StretchingController. DRY?
+    const resumeAudioContext = () => {
       ctx.resume();
     };
-    const onPause = () => {
-      clone.pause();
+    const suspendAudioContext = () => {
       ctx.suspend();
     }
-    if (!originalElement.paused) {
-      onPlay();
+    if (!clone.paused) {
+      resumeAudioContext();
     }
-    originalElement.addEventListener('pause', onPause);
-    originalElement.addEventListener('play', onPlay);
+    clone.addEventListener('pause', suspendAudioContext);
+    clone.addEventListener('play', resumeAudioContext);
     this._onDestroyCallbacks.push(() => {
-      originalElement.removeEventListener('pause', onPause);
-      originalElement.removeEventListener('play', onPlay);
+      clone.removeEventListener('pause', suspendAudioContext);
+      clone.removeEventListener('play', resumeAudioContext);
+    });
+
+    // For performance
+    const playClone = () => {
+      // TODO but if the clone has been fully played and is paused now, this will start it again.
+      // Should be fixed by checking `clone.played` on `clone.ontimeupdate`.
+      clone.play();
+    };
+    const pauseClone = () => {
+      clone.pause();
+    }
+    if (!originalElement.paused) {
+      playClone();
+    }
+    originalElement.addEventListener('pause', pauseClone);
+    originalElement.addEventListener('play', playClone);
+    this._onDestroyCallbacks.push(() => {
+      originalElement.removeEventListener('pause', pauseClone);
+      originalElement.removeEventListener('play', playClone);
     });
   }
   public ensureInit = once(this._init);
