@@ -296,7 +296,8 @@ export default class Controller {
     }
 
     toAwait.push(silenceDetectorP.then(silenceDetector => {
-      silenceDetector.port.onmessage = ({ data: silenceStartOrEnd }: MessageEvent<SilenceDetectorMessage>) => {
+      silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
+        const [silenceStartOrEnd] = data;
         const elementSpeedSwitchedAt = ctx.currentTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           this._setSpeedAndLog(SpeedName.SOUNDED);

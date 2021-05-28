@@ -129,10 +129,10 @@ export default class Lookahead {
       silenceDetector.volumeThreshold = this.settings.volumeThreshold;
 
       silenceDetector.port.onmessage = msg => {
-        const data = msg.data as SilenceDetectorMessage;
+        const [eventType] = msg.data as SilenceDetectorMessage;
         // TODO for better precision the SilenceDetectorProcessor needs to send the time (`context.currentTime`)
         // when it was detected.
-        if (data === SilenceDetectorEventType.SILENCE_START) {
+        if (eventType === SilenceDetectorEventType.SILENCE_START) {
           this.lastSoundedTime = this.clone.currentTime;
         } else {
           assertDev(this.lastSoundedTime, 'Thought `this.lastSoundedTime` to be set because SilenceDetector was '
