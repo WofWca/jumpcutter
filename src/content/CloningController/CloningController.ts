@@ -87,24 +87,24 @@ export default class Controller {
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     const { lookahead } = this;
-    await lookahead.ensureInit().then(() => {
-      // TODO Super inefficient, I know.
-      const onTimeupdate = () => {
-        const { currentTime } = element;
-        const nextSoundedTime = lookahead.getNextSoundedTime(currentTime);
-        // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
-        // assigned to it, so `nextSoundedTime !== currentTime` will not work.
-        // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
-        // abovementioned seeking time error.
-        const farEnoughToPerformSeek = nextSoundedTime > currentTime + 0.1;
-        if (farEnoughToPerformSeek) {
-          element.currentTime = nextSoundedTime;
+    // TODO Super inefficient, I know.
+    const onTimeupdate = () => {
+      const { currentTime } = element;
+      const nextSoundedTime = lookahead.getNextSoundedTime(currentTime);
+      // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
+      // assigned to it, so `nextSoundedTime !== currentTime` will not work.
+      // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
+      // abovementioned seeking time error.
+      const farEnoughToPerformSeek = nextSoundedTime > currentTime + 0.1;
+      if (farEnoughToPerformSeek) {
+        element.currentTime = nextSoundedTime;
 
-          // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
-          // Also see the comment about seeking error above. TODO?
-          // element.fastSeek(nextSoundedTime);
-        }
+        // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
+        // Also see the comment about seeking error above. TODO?
+        // element.fastSeek(nextSoundedTime);
       }
+    }
+    await lookahead.ensureInit().then(() => {
       element.addEventListener('timeupdate', onTimeupdate);
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
     });
