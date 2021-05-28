@@ -2,12 +2,9 @@ import browser from '@/webextensions-api';
 import { assertDev, Time } from '@/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
-// import { audioContext, mediaElementSourcesMap } from '../audioContext';
-// import sortedIndex from 'lodash/sortedIndex';
-
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
-  from "../SilenceDetector/SilenceDetectorNode";
-import VolumeFilterNode from "../VolumeFilter/VolumeFilterNode";
+  from '@/content/SilenceDetector/SilenceDetectorNode';
+import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
 
 // TODO DRY
 function destroyAudioWorkletNode(node: AudioWorkletNode) {
