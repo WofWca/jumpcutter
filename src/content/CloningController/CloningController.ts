@@ -3,6 +3,7 @@ import type { Time } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, SpeedName } from '@/helpers';
 import throttle from 'lodash/throttle';
+import type TimeSavedTracker from '@/content/TimeSavedTracker';
 
 type ControllerInitialized =
   Controller
@@ -57,6 +58,9 @@ export default class Controller {
 
   lookahead: Lookahead;
 
+  // To be (optionally) assigned by an outside script.
+  public timeSavedTracker?: TimeSavedTracker;
+
   constructor(element: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = element;
     this.settings = controllerSettings;
@@ -107,6 +111,8 @@ export default class Controller {
         // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
         // Also see the comment about seeking error above. TODO?
         // element.fastSeek(seekTo);
+
+        this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
       }
     }
     await lookahead.ensureInit().then(() => {

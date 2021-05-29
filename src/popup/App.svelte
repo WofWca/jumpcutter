@@ -286,7 +286,6 @@
         style="width: 6rem;"
       ></meter>
     </span>
-    {#if settings.experimentalControllerType !== ControllerKind_CLONING}
     <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
     <button
       type="button"
@@ -331,7 +330,6 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
         <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
       {/if}
     </button>
-    {/if}
   </div>
   <!-- TODO transitions? -->
   {#if !connected}

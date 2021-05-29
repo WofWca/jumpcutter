@@ -16,6 +16,7 @@ import { assertDev, SpeedName } from '@/helpers';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import type TimeSavedTracker from '@/content/TimeSavedTracker';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -97,6 +98,9 @@ export default class Controller {
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
+
+  // To be (optionally) assigned by an outside script.
+  public timeSavedTracker?: TimeSavedTracker;
 
   constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;

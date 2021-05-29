@@ -290,6 +290,7 @@ export default class AllMediaElementsController {
       this.controller = controller;
       await controller.init();
       // Controller destruction is done in `detachFromActiveElement`.
+      return controller;
     });
 
     let hotkeyListenerP;
@@ -312,6 +313,8 @@ export default class AllMediaElementsController {
         removeOnSettingsChangedListener,
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
+
+      controllerP.then(controller => controller.timeSavedTracker = timeSavedTracker);
     })();
 
     await controllerP;
