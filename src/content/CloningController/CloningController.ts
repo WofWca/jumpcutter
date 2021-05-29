@@ -91,22 +91,22 @@ export default class Controller {
     // TODO Super inefficient, I know.
     const onTimeupdate = () => {
       const { currentTime } = element;
-      const nextSoundedTime = this.lookahead.getNextSoundedTime(currentTime);
+      const seekTo = this.lookahead.getNextSoundedTime(currentTime);
       // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
-      // assigned to it, so `nextSoundedTime !== currentTime` will not work.
+      // assigned to it, so `seekTo !== currentTime` will not work.
       // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
       // abovementioned seeking time error.
       // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
       // a precise seek (`.currentTime = ...`). Keep in mind that it's real time, not media-intrinsic time,
       // so the bigger `soundedSpeed` is, the less reasonable it gets to perform a seek. TODO calculate intrinsic time?
       // Or just use `fastSeek`?
-      const farEnoughToPerformSeek = nextSoundedTime > currentTime + 0.15;
+      const farEnoughToPerformSeek = seekTo > currentTime + 0.15;
       if (farEnoughToPerformSeek) {
-        element.currentTime = nextSoundedTime;
+        element.currentTime = seekTo;
 
         // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
         // Also see the comment about seeking error above. TODO?
-        // element.fastSeek(nextSoundedTime);
+        // element.fastSeek(seekTo);
       }
     }
     await lookahead.ensureInit().then(() => {
