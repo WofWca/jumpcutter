@@ -56,10 +56,7 @@ export default class Lookahead {
   // // onNewSilenceRange: TODO set in constructor?
   // silenceRanges: Array<[start: Time, end: Time]> = []; // Array is not the fastest data structure for this application.
 
-  silenceRanges: {
-    starts: Time[],
-    ends: Time[],
-  } = {
+  silenceRanges: MyTimeRanges = {
     starts: [],
     ends: [],
   };
