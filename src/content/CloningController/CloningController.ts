@@ -92,28 +92,37 @@ export default class Controller {
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     const { lookahead } = this;
+    const maybeSeek = this.maybeSeek.bind(this);
     // TODO Super inefficient, I know.
     const onTimeupdate = () => {
       const { currentTime } = element;
-      const seekTo = this.lookahead.getNextSoundedTime(currentTime);
-      // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
-      // assigned to it, so `seekTo !== currentTime` will not work.
-      // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
-      // abovementioned seeking time error.
-      // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
-      // a precise seek (`.currentTime = ...`). Keep in mind that it's real time, not media-intrinsic time,
-      // so the bigger `soundedSpeed` is, the less reasonable it gets to perform a seek. TODO calculate intrinsic time?
-      // Or just use `fastSeek`?
-      const farEnoughToPerformSeek = seekTo > currentTime + 0.15;
-      if (farEnoughToPerformSeek) {
-        element.currentTime = seekTo;
 
-        // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
-        // Also see the comment about seeking error above. TODO?
-        // element.fastSeek(seekTo);
-
-        this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
+      // Can't just use `currentTime` instead of `upcomingTime` because 'timeupdate' is not fired super often,
+      // so `silenceStart` from `getMaybeSilenceRangeForTime` can be significantly greater than `currentTime`,
+      // which would mean that we should have started a seek a bit earlier.
+      // TODO but this still does not save us from the fact that short silence ranges can be overlooked entirely
+      // (i.e. `silenceStart > currentTime && silenceEnd > currentTime`).
+      // The value is based on how often 'timeupdate' is fired. TODO should make this dynamic?
+      const advance = 0.5;
+      const upcomingTime = currentTime + advance;
+      const maybeUpcomingSilenceRange = this.lookahead.getMaybeSilenceRangeForTime(upcomingTime);
+      if (!maybeUpcomingSilenceRange) {
+        return;
       }
+      const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
+      const seekAt = silenceStart;
+      const seekTo = silenceEnd;
+      const seekIn = seekAt - currentTime;
+      // TODO should we check `seekAt < currentTime` and seek immediately instead of with `setTimeout`?
+      // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
+      // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
+      // This case is handled inside `this.maybeSeek`.
+      setTimeout(
+        maybeSeek,
+        seekIn * 1000,
+        seekTo,
+        seekAt,
+      );
     }
     await lookahead.ensureInit().then(() => {
       element.addEventListener('timeupdate', onTimeupdate);
@@ -126,6 +135,43 @@ export default class Controller {
     Object.assign(this.settings, this._pendingSettingsUpdates);
     this._setStateAccordingToNewSettings(this.settings, null);
     delete this._pendingSettingsUpdates;
+  }
+
+  maybeSeek(seekTo: Time, seekScheduledTo: Time): void {
+    const element = this.element;
+    const { currentTime, paused } = element;
+
+    // In cases where a seek is scheduled ahead of time, some event may happen that makes it better to not perform this
+    // seek. For example, if the user decided to manually seek to some other time, or if I suck at coding and performed
+    // a conflicting seek.
+    // TODO would be more efficient to `clearTimeout` instead. On what occasions though?
+    const expectedCurrentTime = seekScheduledTo;
+    const cancelSeek =
+      Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
+      || paused;
+    if (cancelSeek) {
+      return;
+    }
+
+    // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
+    // assigned to it, so `seekTo !== currentTime` will not work.
+    // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
+    // abovementioned seeking time error.
+    // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
+    // a precise seek (`.currentTime = ...`). Keep in mind that it's real time, not media-intrinsic time,
+    // so the bigger `soundedSpeed` is, the less reasonable it gets to perform a seek. TODO calculate intrinsic time?
+    // Or just use `fastSeek`?
+    // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?
+    const farEnoughToPerformSeek = seekTo > currentTime + 0.15;
+    if (farEnoughToPerformSeek) {
+      element.currentTime = seekTo;
+
+      // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
+      // Also see the comment about seeking error above. TODO?
+      // element.fastSeek(seekTo);
+
+      this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
+    }
   }
 
   /**

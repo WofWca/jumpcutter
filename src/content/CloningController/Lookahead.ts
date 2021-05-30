@@ -15,24 +15,7 @@ type MyTimeRanges = {
   starts: Time[],
   ends: Time[],
 }
-
-/**
- * @returns If [[forTime]] is not within any of the [[ranges]], returns [[forTime]].
- */
-function getNextOutOfRangesTime(ranges: MyTimeRanges, forTime: Time): Time {
-  // TODO I wrote this real quick, no edge cases considered.
-  const { starts, ends } = ranges;
-  // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
-  // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
-  // But before you optimize it, check out the comment near `seekCloneIfOriginalElIsPlayingUnprocessedRange`.
-  const currentRangeInd = starts.findIndex((start, i) => {
-    const end = ends[i];
-    return start <= forTime && forTime <= end;
-  });
-  return currentRangeInd !== -1
-    ? ends[currentRangeInd]
-    : forTime;
-}
+type TimeRange = [start: Time, end: Time];
 
 function inRanges(ranges: TimeRanges, time: Time): boolean {
   // TODO super inefficient, same as with `getNextOutOfRangesTime`.
@@ -157,7 +140,7 @@ export default class Lookahead {
 
     // TODO but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
     // i.e. non-sorted and having overlapping (in our case, duplicate) entries.
-    // However, the current implementation of `getNextSoundedTime` (and `getNextOutOfRangesTime`) allows this.
+    // However, the current implementation of `getMaybeSilenceRangeForTime` allows this.
     const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
       const originalElementTime = originalElement.currentTime;
       const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
@@ -221,9 +204,23 @@ export default class Lookahead {
   }
   public ensureInit = once(this._init);
 
-  /** Can be called before `ensureInit` has finished. */
-  public getNextSoundedTime(forTime: Time): Time {
-    return getNextOutOfRangesTime(this.silenceRanges, forTime);
+  /**
+   * @returns `TimeRange` if `forTime` falls into one, `undefined` otherwise.
+   * Can be called before `ensureInit` has finished.
+   */
+  public getMaybeSilenceRangeForTime(time: Time): TimeRange | undefined {
+    // TODO I wrote this real quick, no edge cases considered.
+    // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
+    // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
+    // But before you optimize it, check out the comment near `seekCloneIfOriginalElIsPlayingUnprocessedRange`.
+    const { starts, ends } = this.silenceRanges;
+    const currentRangeInd = starts.findIndex((start, i) => {
+      const end = ends[i];
+      return start <= time && time <= end;
+    });
+    return currentRangeInd !== -1
+      ? [starts[currentRangeInd], ends[currentRangeInd]]
+      : undefined;
   }
   private pushNewSilenceRange(elementTimeStart: Time, elementTimeEnd: Time) {
     this.silenceRanges.starts.push(elementTimeStart);
