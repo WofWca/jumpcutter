@@ -1,5 +1,6 @@
 import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
 import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, transformSpeed } from './helpers';
+import type { Time } from "@/helpers";
 
 /**
  * Not a typical stopwatch, but close.
@@ -222,6 +223,22 @@ export default class TimeSavedTracker {
     this._timeSavedComparedToIntrinsicSpeed = timeSavedComparedToIntrinsicSpeed;
     this._wouldHaveLastedIfSpeedWasSounded = wouldHaveLastedIfSpeedWasSounded;
     this._wouldHaveLastedIfSpeedWasIntrinsic = wouldHaveLastedIfSpeedWasIntrinsic;
+  }
+  // TODO we must also take into consideration how long it took to seek (time between 'seeking' and 'seeked' events).
+  // Then it will also be useful in `StretchingController` to calculate how much time has been lost due to desync
+  // correction.
+  // How about we just subtract ALL seeks' durations from time saved, and not just the ones' that were initiated by
+  // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
+  /** Useful when `silenceSpeed` is infinite. */
+  public onControllerCausedSeek(seekDelta: Time): void {
+    // Even with an exponential window there is no need to calculate decay, because it would be 0, because the
+    // change is instantaneous.
+    const seekDeltaIntrinsic = seekDelta;
+    const seekDeltaSounded = seekDelta / this._currentElementSpeed;
+    this._timeSavedComparedToSoundedSpeed += seekDeltaSounded;
+    this._timeSavedComparedToIntrinsicSpeed += seekDeltaIntrinsic;
+    this._wouldHaveLastedIfSpeedWasSounded += seekDeltaSounded;
+    this._wouldHaveLastedIfSpeedWasIntrinsic += seekDeltaIntrinsic;
   }
   private _onElementSpeedChange = () => {
     const prevSpeed = this._currentElementSpeed;

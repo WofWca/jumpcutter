@@ -1,20 +1,22 @@
 'use strict';
 import browser from '@/webextensions-api';
-import { audioContext, mediaElementSourcesMap } from './audioContext';
+import { audioContext, mediaElementSourcesMap } from '@/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
   getTotalOutputDelay,
   getDelayFromInputToStretcherOutput,
   transformSpeed,
-} from './helpers';
+  destroyAudioWorkletNode,
+} from '@/content/helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assertDev, SpeedName } from '@/helpers';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
-  from './SilenceDetector/SilenceDetectorNode';
-import VolumeFilterNode from './VolumeFilter/VolumeFilterNode';
+  from '@/content/SilenceDetector/SilenceDetectorNode';
+import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import type TimeSavedTracker from '@/content/TimeSavedTracker';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -65,11 +67,6 @@ function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
 }
 
-function destroyAudioWorkletNode(node: AudioWorkletNode) {
-  node.port.postMessage('destroy');
-  node.port.close();
-}
-
 export default class Controller {
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
@@ -101,6 +98,9 @@ export default class Controller {
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
+
+  // To be (optionally) assigned by an outside script.
+  public timeSavedTracker?: TimeSavedTracker;
 
   constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
@@ -300,7 +300,8 @@ export default class Controller {
     }
 
     toAwait.push(silenceDetectorP.then(silenceDetector => {
-      silenceDetector.port.onmessage = ({ data: silenceStartOrEnd }: MessageEvent<SilenceDetectorMessage>) => {
+      silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
+        const [silenceStartOrEnd] = data;
         const elementSpeedSwitchedAt = ctx.currentTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           this._setSpeedAndLog(SpeedName.SOUNDED);

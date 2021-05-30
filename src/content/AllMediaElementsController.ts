@@ -1,10 +1,11 @@
 import browser from '@/webextensions-api';
 import {
-  Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges,
+  Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges, ControllerKind,
   removeOnSettingsChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
-import type Controller from './Controller';
+import type StretchingController from './StretchingController/StretchingController';
+import type CloningController from './CloningController/CloningController';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
@@ -13,8 +14,10 @@ import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 
+type SomeController = StretchingController | CloningController;
+
 export type TelemetryMessage =
-  Controller['telemetry']
+  SomeController['telemetry']
   & TimeSavedTracker['timeSavedData'];
 
 function executeNonSettingsActions(
@@ -41,12 +44,38 @@ function executeNonSettingsActions(
 
 let allMediaElementsControllerActive = false;
 
+type ControllerType<T extends ControllerKind> = T extends ControllerKind.STRETCHING
+  ? typeof StretchingController
+  : typeof CloningController;
+
+async function importAndCreateController<T extends ControllerKind>(
+  kind: T,
+  // Not just `constructorArgs` because e.g. settings can change while `import()` is ongoing.
+  getConstructorArgs: () => ConstructorParameters<ControllerType<T>>
+) {
+  let Controller;
+  if (kind === ControllerKind.CLONING) {
+    ({ default: Controller } = await import(
+      /* webpackExports: ['default'] */
+      './CloningController/CloningController'
+    ));
+  } else {
+    ({ default: Controller } = await import(
+      /* webpackExports: ['default'] */
+      './StretchingController/StretchingController'
+    ));
+  }
+  type Hack = ConstructorParameters<typeof CloningController>;
+  const controller = new Controller(...(getConstructorArgs() as Hack));
+  return controller;
+}
+
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
   unhandledNewElements = new Set<HTMLMediaElement>();
   handledElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
-  controller: Controller | undefined;
+  controller: SomeController | undefined;
   timeSavedTracker: TimeSavedTracker | undefined;
   private settings: Settings | undefined;
   private _onDestroyCallbacks: Array<() => void> = [];
@@ -96,6 +125,12 @@ export default class AllMediaElementsController {
     // still gets executed on that change, because it gets detached within another event listener. This is to check if
     // this is the case.
     if (newValues.enabled === false) return;
+
+    if (newValues.experimentalControllerType !== undefined) {
+      // TODO Hacky. Can just reinit the `Controller` instead. Or at least reinit `AllMediaElementsController`.
+      setSettings({ enabled: false }).then(() => setSettings({ enabled: true }));
+      return;
+    }
 
     if (Object.keys(newValues).length === 0) return;
 
@@ -244,18 +279,19 @@ export default class AllMediaElementsController {
     await this.ensureLoadSettings();
     assertDev(this.settings)
     this.ensureAddOnSettingsChangedListener();
-
-    const controllerP = (async () => {
-      const { default: Controller } = await import(
-        /* webpackExports: ['default'] */
-        './Controller'
-      );
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.controller = new Controller(el, extensionSettings2ControllerSettings(this.settings!));
+    const controllerP = importAndCreateController(
+      this.settings.experimentalControllerType,
+      () => [
+        el,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extensionSettings2ControllerSettings(this.settings!)
+      ]
+    ).then(async controller => {
+      this.controller = controller;
+      await controller.init();
       // Controller destruction is done in `detachFromActiveElement`.
-
-      await this.controller.init();
-    })();
+      return controller;
+    });
 
     let hotkeyListenerP;
     if (this.settings.enableHotkeys) {
@@ -277,6 +313,8 @@ export default class AllMediaElementsController {
         removeOnSettingsChangedListener,
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
+
+      controllerP.then(controller => controller.timeSavedTracker = timeSavedTracker);
     })();
 
     await controllerP;

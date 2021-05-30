@@ -1,6 +1,10 @@
 import { HotkeyBinding } from '@/hotkeys';
+import { ControllerKind } from './ControllerKind';
 
 export interface Settings {
+  // TODO I made this purely for testing. For release we'll probably need something better.
+  experimentalControllerType: ControllerKind,
+
   volumeThreshold: number,
   previousVolumeThreshold: number,
 
@@ -65,6 +69,7 @@ export * from './enabledSettingDefaultValue';
 export * from './defaultSettings';
 export * from './getSettings';
 export * from './setSettings';
+export * from './ControllerKind';
 export * from './getAbsoluteSilenceSpeed';
 export * from './settingsChanges2NewValues';
 export * from './togglableSettings';
