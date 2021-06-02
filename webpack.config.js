@@ -64,8 +64,8 @@ module.exports = env => {
 
     entry: {
       content: './src/content/main.ts',
-      SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.ts',
-      VolumeFilter: './src/content/VolumeFilter.ts',
+      SilenceDetectorProcessor: './src/content/SilenceDetector/SilenceDetectorProcessor.ts',
+      VolumeFilterProcessor: './src/content/VolumeFilter/VolumeFilterProcessor.ts',
 
       popup: './src/popup/main.ts',
       background: './src/background/main.ts',
@@ -78,7 +78,7 @@ module.exports = env => {
       path: path.resolve(__dirname, 'dist'),
       filename: (pathData, assetInfo) => {
         const chunkName = pathData.chunk.name;
-        if (['SilenceDetectorProcessor', 'VolumeFilter'].includes(chunkName)) {
+        if (['SilenceDetectorProcessor', 'VolumeFilterProcessor'].includes(chunkName)) {
           return `content/${chunkName}.js`;
         }
         return `${chunkName}/main.js`;

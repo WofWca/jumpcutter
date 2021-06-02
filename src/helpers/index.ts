@@ -17,6 +17,7 @@ export type DeepReadonly<T> =
 export * from './clamp';
 export * from './cloneDeepJson';
 export * from './assert';
+export * from './assertDev';
 export * from './assertNever';
 export * from './filterOutUnchangedValues';
 export * from './speedName';

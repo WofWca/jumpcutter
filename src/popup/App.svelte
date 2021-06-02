@@ -2,7 +2,8 @@
   import browser from '@/webextensions-api';
   import { onDestroy } from 'svelte';
   import {
-    addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues
+    addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
+    ControllerKind_CLONING, ControllerKind_STRETCHING,
   } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -228,6 +229,13 @@
     mmSs(r?.timeSavedComparedToIntrinsicSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasIntrinsic =
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
+
+  function onUseExperimentalAlgorithmInput(e: Event) {
+    console.log(e.target)
+    settings.experimentalControllerType = (e.target as HTMLInputElement).checked
+      ? ControllerKind_CLONING
+      : ControllerKind_STRETCHING
+  }
 </script>
 
 <svelte:window
@@ -307,7 +315,7 @@ ${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic spe
 
 ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`
 }`,
-        theme: 'my-tippy time-saved',
+        theme: 'my-tippy white-space-pre-line',
         hideOnClick: false,
       }}
     >
@@ -391,8 +399,27 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
       on:click={onChartClick}
+      paused={settings.experimentalControllerType === ControllerKind_CLONING}
     />
   {/if}
+  <label
+    use:tippyActionAsyncPreload={{
+      content: '* Bare minimum usability\n'
+        + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
+        + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
+        + '* No audio distortion, delay or desync\n',
+      theme: 'my-tippy white-space-pre-line',
+    }}
+    style="margin-top: 1rem; display: inline-flex; align-items: center;"
+  >
+    <input
+      checked={settings.experimentalControllerType === ControllerKind_CLONING}
+      on:input={onUseExperimentalAlgorithmInput}
+      type="checkbox"
+      style="margin: 0 0.5rem 0 0;"
+    >
+    <span>Use experimental algorithm</span>
+  </label>
   <RangeSlider
     label="Volume threshold"
     min="0"
@@ -423,6 +450,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="15"
     step="0.05"
     bind:value={settings.silenceSpeedRaw}
+    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
@@ -482,7 +510,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   :global(.tippy-box[data-theme~='my-tippy']) {
     font-size: inherit;
   }
-  :global(.tippy-box[data-theme~='time-saved']) {
+  :global(.tippy-box[data-theme~='white-space-pre-line']) {
     white-space: pre-line;
   }
 

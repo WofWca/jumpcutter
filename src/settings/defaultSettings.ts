@@ -1,8 +1,11 @@
 import { enabledSettingDefaultValue } from './';
 import type { Settings } from './';
+import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
 
 export const defaultSettings: Readonly<Settings> = {
+  experimentalControllerType: ControllerKind.STRETCHING,
+
   volumeThreshold:          0.010,
   previousVolumeThreshold:  0.010,
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',

@@ -1,9 +1,13 @@
-import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
+import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
 import { SilenceDetectorMessage, SilenceDetectorEventType } from './SilenceDetectorMessage';
 import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
+/**
+ * Takes volume data (e.g. from `VolumeFilter`) as input. Sends `SILENCE_START` when there has been silence for the
+ * last `durationThreshold`, or `SILENCE_END` when a single sample above `volumeThreshold` is found.
+ */
 class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   _lastLoudSampleTime: Time;
   _lastTimePostedSilenceStart: boolean;
@@ -63,14 +67,14 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          const m: SilenceDetectorMessage = SilenceDetectorEventType.SILENCE_END;
+          const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_END, currentTime];
           this.port.postMessage(m);
           this._lastTimePostedSilenceStart = false;
         }
       } else {
         if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          const m: SilenceDetectorMessage = SilenceDetectorEventType.SILENCE_START;
+          const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_START, currentTime];
           this.port.postMessage(m);
           this._lastTimePostedSilenceStart = true;
         }

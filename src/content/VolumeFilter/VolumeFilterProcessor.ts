@@ -1,4 +1,4 @@
-import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
+import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
 import type { Time } from '@/helpers';
 
 const SAMPLES_PER_QUANTUM = 128;
@@ -42,7 +42,7 @@ class SingleChannelRingBuffer extends Float32Array {
 }
 
 // Simple rectangular window and RMS.
-class VolumeFilter extends WorkaroundAudioWorkletProcessor {
+class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
   _currWindowSquaresSum: number;
   _options: any;
@@ -123,4 +123,4 @@ class VolumeFilter extends WorkaroundAudioWorkletProcessor {
   }
 }
 
-registerProcessor('VolumeFilter', VolumeFilter);
+registerProcessor('VolumeFilter', VolumeFilterProcessor);

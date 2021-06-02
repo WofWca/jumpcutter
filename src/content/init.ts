@@ -4,6 +4,7 @@ import {
 } from '@/settings';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
+import once from 'lodash/once';
 
 const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsController) => allMediaElementsController
   ? allMediaElementsController.broadcastStatus()
@@ -21,22 +22,14 @@ export default async function init(): Promise<void> {
   const settingsP = getSettings('applyTo');
 
   let allMediaElementsController: AllMediaElementsController | undefined;
-  async function ensureInitAllMediaElementsController() {
-    if (allMediaElementsController) return;
+  const ensureInitAllMediaElementsController = once(async function () {
     const { default: AllMediaElementsController } = await import(
       /* webpackExports: ['default'] */
       './AllMediaElementsController'
     )
     allMediaElementsController = new AllMediaElementsController();
     return allMediaElementsController;
-  }
-
-  // The user might have enabled access to file URL for this extension. This is so it behaves the same way when access
-  // is disabled. And why do we need that? Because it doesn't work with local files:
-  // https://github.com/WofWca/jumpcutter/issues/5
-  if (location.protocol === 'file:') {
-    return;
-  }
+  });
 
   const onMessage = (message: unknown) => {
     if (process.env.NODE_ENV !== 'production') {
@@ -70,8 +63,8 @@ export default async function init(): Promise<void> {
   for (const tagName of tagNames) {
     const allMediaElementsWThisTag = document.getElementsByTagName(tagName);
     if (allMediaElementsWThisTag.length) {
-      ensureInitAllMediaElementsController().then(() => {
-        allMediaElementsController!.onNewMediaElements(...allMediaElementsWThisTag);
+      ensureInitAllMediaElementsController().then(allMediaElementsController => {
+        allMediaElementsController.onNewMediaElements(...allMediaElementsWThisTag);
       });
     }
   }
@@ -109,8 +102,8 @@ export default async function init(): Promise<void> {
       // (attached to just one element), so it's fine.
     }
     if (newElements.length) {
-      ensureInitAllMediaElementsController().then(() => {
-        allMediaElementsController!.onNewMediaElements(...newElements);
+      ensureInitAllMediaElementsController().then(allMediaElementsController => {
+        allMediaElementsController.onNewMediaElements(...newElements);
       });
     }
   }

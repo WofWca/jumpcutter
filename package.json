@@ -14,17 +14,17 @@
   "homepage": "https://github.com/WofWca/jumpcutter#readme",
   "scripts": {
     "_abstract-build": "yarn lint && NODE_ENV=production webpack --mode=production",
-    "build:gecko":    "yarn run _abstract-build --env browser=gecko",
+    "build:gecko": "yarn run _abstract-build --env browser=gecko",
     "build:chromium": "yarn run _abstract-build --env browser=chromium",
     "_abstract-serve": "webpack --mode=development --watch",
-    "serve:gecko":    "yarn run _abstract-serve --env browser=gecko",
+    "serve:gecko": "yarn run _abstract-serve --env browser=gecko",
     "serve:chromium": "yarn run _abstract-serve --env browser=chromium",
     "lint": "eslint ./src/"
   },
   "sideEffects": [
     "./src/{content,popup,background,options,local-file-player}/main.ts",
-    "./src/content/SilenceDetectorProcessor.ts",
-    "./src/content/VolumeFilter.ts"
+    "./src/content/SilenceDetector/SilenceDetectorProcessor.ts",
+    "./src/content/VolumeFilter/VolumeFilterProcessor.ts"
   ],
   "dependencies": {
     "@wofwca/smoothie": "^1.36.0-rc.0",
@@ -33,29 +33,29 @@
     "smoothie": "^1.35.0",
     "tippy.js": "^6.3.1",
     "tone": "^14.7.77",
-    "webextension-polyfill": "^0.7.0"
+    "webextension-polyfill": "^0.8.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.133",
+    "@types/chrome": "^0.0.143",
     "@types/firefox-webext-browser": "^82.0.0",
-    "@types/hh-mm-ss": "^1.2.0",
-    "@types/lodash": "^4.14.168",
-    "@types/node": "^14.14.36",
-    "@typescript-eslint/eslint-plugin": "^4.19.0",
-    "@typescript-eslint/parser": "^4.19.0",
-    "clean-webpack-plugin": "^3.0.0",
-    "copy-webpack-plugin": "^8.1.0",
-    "css-loader": "^5.2.0",
-    "eslint": "^7.22.0",
+    "@types/hh-mm-ss": "^1.2.1",
+    "@types/lodash": "^4.14.170",
+    "@types/node": "^15.6.1",
+    "@typescript-eslint/eslint-plugin": "^4.25.0",
+    "@typescript-eslint/parser": "^4.25.0",
+    "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "copy-webpack-plugin": "^9.0.0",
+    "css-loader": "^5.2.6",
+    "eslint": "^7.27.0",
     "style-loader": "^2.0.0",
-    "svelte": "^3.35.0",
-    "svelte-check": "^1.3.0",
-    "svelte-loader": "^3.0.0",
-    "svelte-preprocess": "^4.6.9",
-    "ts-loader": "^8.0.18",
-    "typescript": "^4.2.3",
-    "webpack": "^5.28.0",
-    "webpack-bundle-analyzer": "^4.4.0",
-    "webpack-cli": "^4.5.0"
+    "svelte": "^3.38.2",
+    "svelte-check": "^2.0.0",
+    "svelte-loader": "^3.1.1",
+    "svelte-preprocess": "^4.7.3",
+    "ts-loader": "^9.2.2",
+    "typescript": "4.2",
+    "webpack": "^5.38.1",
+    "webpack-bundle-analyzer": "^4.4.2",
+    "webpack-cli": "^4.7.0"
   }
 }

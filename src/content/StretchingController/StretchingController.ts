@@ -1,18 +1,22 @@
 'use strict';
 import browser from '@/webextensions-api';
-import { audioContext, mediaElementSourcesMap } from './audioContext';
+import { audioContext, mediaElementSourcesMap } from '@/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
   getTotalOutputDelay,
   getDelayFromInputToStretcherOutput,
   transformSpeed,
-} from './helpers';
+  destroyAudioWorkletNode,
+} from '@/content/helpers';
 import type { Time, StretchInfo } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
-import { assert, SpeedName } from '@/helpers';
-import { SilenceDetectorEventType, SilenceDetectorMessage } from './SilenceDetectorMessage';
+import { assertDev, SpeedName } from '@/helpers';
+import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
+  from '@/content/SilenceDetector/SilenceDetectorNode';
+import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import type TimeSavedTracker from '@/content/TimeSavedTracker';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -47,6 +51,18 @@ export type ControllerSettings =
     silenceSpeed: number,
   };
 
+export interface TelemetryRecord {
+  unixTime: Time,
+  contextTime: Time,
+  inputVolume: number,
+  lastActualPlaybackRateChange: ControllerInitialized['_lastActualPlaybackRateChange'],
+  elementVolume: number,
+  totalOutputDelay: Time,
+  delayFromInputToStretcherOutput: Time,
+  stretcherDelay: Time,
+  lastScheduledStretchInputTime?: StretchInfo,
+}
+
 function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
 }
@@ -61,10 +77,13 @@ export default class Controller {
   // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
   // executor?
   _initPromise = new Promise<Controller>(resolve => this._resolveInitPromise = resolve);
+  // Settings updates that haven't been applied because `updateSettingsAndMaybeCreateNewInstance` was called before
+  // `init` finished.
+  _pendingSettingsUpdates: ControllerSettings | undefined;
 
   _onDestroyCallbacks: Array<() => void> = [];
   audioContext?: AudioContext;
-  _silenceDetectorNode?: AudioWorkletNode;
+  _silenceDetectorNode?: SilenceDetectorNode;
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
   _lookahead?: DelayNode;
@@ -79,6 +98,9 @@ export default class Controller {
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
+
+  // To be (optionally) assigned by an outside script.
+  public timeSavedTracker?: TimeSavedTracker;
 
   constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
     this.element = videoElement;
@@ -96,6 +118,8 @@ export default class Controller {
     const element = this.element;
     const ctx = audioContext;
 
+    const toAwait: Array<Promise<void>> = [];
+
     const {
       playbackRate: elementPlaybackRateBeforeInitialization,
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
@@ -112,61 +136,45 @@ export default class Controller {
 
     this.audioContext = ctx;
 
-    await Promise.all([
-      ctx.audioWorklet.addModule(browser.runtime.getURL('content/SilenceDetectorProcessor.js')),
-      ctx.audioWorklet.addModule(browser.runtime.getURL('content/VolumeFilter.js')),
-    ]);
+    const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
 
-    const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
-    const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
-
-    const audioWorklets: AudioWorkletNode[] = []; // To be filled.
-    this._onDestroyCallbacks.push(() => {
-      for (const w of audioWorklets) {
-        w.port.postMessage('destroy');
-        w.port.close();
-      }
-      if (process.env.NODE_ENV !== 'production') {
-        for (const propertyVal of Object.values(this)) {
-          if (propertyVal instanceof AudioWorkletNode && !(audioWorklets as AudioWorkletNode[]).includes(propertyVal)) {
-            console.warn('Undisposed AudioWorkletNode found. Expected all to be disposed upon `destroy()` call');
-          }
-        }
-      }
+    const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
+    const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
+    const volumeFilterP = volumeFilterProcessorP.then(() => {
+      const volumeFilter = new VolumeFilterNode(
+        ctx,
+        volumeFilterSmoothingWindowLength,
+        volumeFilterSmoothingWindowLength
+      );
+      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+      return volumeFilter;
+    });
+    const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
+      const silenceDetector = new SilenceDetectorNode(ctx, this._getSilenceDetectorNodeDurationThreshold())
+      this._silenceDetectorNode = silenceDetector;
+      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(silenceDetector));
+      // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
+      // AudioWorkletNode destruction a line above, but let's future-prove it.
+      this._onDestroyCallbacks.push(() => silenceDetector.port.close());
+      return silenceDetector;
     });
 
-    const volumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
-      outputChannelCount: [1],
-      processorOptions: {
-        maxSmoothingWindowLength: 0.03,
-      },
-      parameterData: {
-        smoothingWindowLength: 0.03, // TODO make a setting out of it.
-      },
-    });
-    audioWorklets.push(volumeFilter);
-    this._silenceDetectorNode = new AudioWorkletNode(ctx, 'SilenceDetectorProcessor', {
-      parameterData: {
-        durationThreshold: this._getSilenceDetectorNodeDurationThreshold(),
-      },
-      processorOptions: { initialDuration: 0 },
-      numberOfOutputs: 0,
-    });
-    audioWorklets.push(this._silenceDetectorNode);
-    // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
-    // AudioWorkletNode destruction a few lines above, but let's future-prove it.
-    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.close())
     this._analyzerIn = ctx.createAnalyser();
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
     // let outVolumeFilter: this extends ControllerLogging ? AudioWorkletNode : undefined;
-    let outVolumeFilter: AudioWorkletNode | undefined;
+    let outVolumeFilterP: Promise<AudioWorkletNode> | undefined;
     if (isLogging(this)) {
-      outVolumeFilter = new AudioWorkletNode(ctx, 'VolumeFilter', {
-        outputChannelCount: [1],
+      outVolumeFilterP = volumeFilterProcessorP.then(() => {
+        const outVolumeFilter = new VolumeFilterNode(
+          ctx,
+          volumeFilterSmoothingWindowLength,
+          volumeFilterSmoothingWindowLength
+        );
+        this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter));
+        return outVolumeFilter;
       });
-      audioWorklets.push(outVolumeFilter);
       this._analyzerOut = ctx.createAnalyser();
     }
     // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
@@ -177,6 +185,8 @@ export default class Controller {
         /* webpackExports: ['default'] */
         './StretcherAndPitchCorrectorNode'
       );
+      const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
+      const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
       this._stretcherAndPitch = new StretcherAndPitchCorrectorNode(
         ctx,
         maxMaginStretcherDelay,
@@ -244,26 +254,30 @@ export default class Controller {
     } else {
       mediaElementSource.connect(audioContext.destination);
     }
-    mediaElementSource.connect(volumeFilter);
-    this._onDestroyCallbacks.push(() => {
-      mediaElementSource.disconnect();
-      mediaElementSource.connect(audioContext.destination);
-    });
-    volumeFilter.connect(this._silenceDetectorNode);
+    toAwait.push(volumeFilterP.then(async volumeFilter => {
+      mediaElementSource.connect(volumeFilter);
+      this._onDestroyCallbacks.push(() => {
+        mediaElementSource.disconnect();
+        mediaElementSource.connect(audioContext.destination);
+      });
+      volumeFilter.connect(this._analyzerIn!);
+      const silenceDetector = await silenceDetectorP;
+      volumeFilter.connect(silenceDetector);
+    }));
     if (this.isStretcherEnabled()) {
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
       this._stretcherAndPitch.connectOutputTo(ctx.destination);
     }
-    volumeFilter.connect(this._analyzerIn);
     if (isLogging(this)) {
-      if (this.isStretcherEnabled()) {
-        this._stretcherAndPitch.connectOutputTo(outVolumeFilter!);
-      } else {
-        mediaElementSource.connect(outVolumeFilter!);
-      }
-      outVolumeFilter!.connect(this._analyzerOut);
+      toAwait.push(outVolumeFilterP!.then(outVolumeFilter => {
+        if (this.isStretcherEnabled()) {
+          this._stretcherAndPitch.connectOutputTo(outVolumeFilter);
+        } else {
+          mediaElementSource.connect(outVolumeFilter);
+        }
+        outVolumeFilter.connect(this._analyzerOut!);
+      }));
     }
-    this._setStateAccordingToNewSettings();
 
     if (isLogging(this)) {
       const logArr = [];
@@ -285,41 +299,44 @@ export default class Controller {
       }
     }
 
-    this._silenceDetectorNode.port.onmessage = (msg) => {
-      const silenceStartOrEnd = msg.data as SilenceDetectorMessage;
-      const elementSpeedSwitchedAt = ctx.currentTime;
-      if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
-        this._setSpeedAndLog(SpeedName.SOUNDED);
-        this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
-      } else {
-        this._setSpeedAndLog(SpeedName.SILENCE);
-        this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
-
-        if (this.settings.enableDesyncCorrection) {
-          // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
-          // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
-          // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
-          // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
-          // noticeable rewind in sound, so we use a smaller value.
-          // Why on silenceStart, not on silenceEnd? Becasue when it's harder to notice a rewind when it's silent.
-          // `marginAfter` ensures there's plenty of it.
-          // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
-          // pauses, so let's give it some bigger value.
-          const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
-          this._didNotDoDesyncCorrectionForNSpeedSwitches++;
-          if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
-            element.currentTime -= 1e-9;
-            // TODO but it's also corrected when the user seeks the video manually.
-            this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+    toAwait.push(silenceDetectorP.then(silenceDetector => {
+      silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
+        const [silenceStartOrEnd] = data;
+        const elementSpeedSwitchedAt = ctx.currentTime;
+        if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
+          this._setSpeedAndLog(SpeedName.SOUNDED);
+          this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
+        } else {
+          this._setSpeedAndLog(SpeedName.SILENCE);
+          this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
+  
+          if (this.settings.enableDesyncCorrection) {
+            // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
+            // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
+            // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
+            // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
+            // noticeable rewind in sound, so we use a smaller value.
+            // Why on silenceStart, not on silenceEnd? Becasue when it's harder to notice a rewind when it's silent.
+            // `marginAfter` ensures there's plenty of it.
+            // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
+            // pauses, so let's give it some bigger value.
+            const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
+            this._didNotDoDesyncCorrectionForNSpeedSwitches++;
+            if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
+              element.currentTime -= 1e-9;
+              // TODO but it's also corrected when the user seeks the video manually.
+              this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+            }
           }
         }
       }
-    }
-    // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
-    // (like 200 kB per toggle).
-    // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
-    // thing retaining a reference to the listener. TODO
-    this._onDestroyCallbacks.push(() => this._silenceDetectorNode!.port.onmessage = null);
+      // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
+      // (like 200 kB per toggle).
+      // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
+      // thing retaining a reference to the listener. TODO
+      this._onDestroyCallbacks.push(() => silenceDetector.port.onmessage = null);
+    }));
+
     if (isLogging(this)) {
       const logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
@@ -327,8 +344,15 @@ export default class Controller {
       this._onDestroyCallbacks.push(() => clearInterval(logIntervalId));
     }
 
+    await Promise.all(toAwait);
+
     this.initialized = true;
     this._resolveInitPromise(this);
+
+    Object.assign(this.settings, this._pendingSettingsUpdates);
+    this._setStateAccordingToNewSettings(this.settings, null);
+    delete this._pendingSettingsUpdates;
+
     return this;
   }
 
@@ -338,7 +362,7 @@ export default class Controller {
    */
   async destroy(): Promise<void> {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
-    assert(this.isInitialized());
+    assertDev(this.isInitialized());
 
     for (const cb of this._onDestroyCallbacks) {
       cb();
@@ -356,18 +380,17 @@ export default class Controller {
    * parameter is omitted).
    * TODO maybe it's better to just store the state on the class instance?
    */
-  private _setStateAccordingToNewSettings(oldSettings: ControllerSettings | null = null) {
+  private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
+    this.settings = newSettings;
+    assertDev(this.isInitialized());
     if (!oldSettings) {
       this._setSpeedAndLog(SpeedName.SOUNDED);
     } else {
-      assert(this._lastActualPlaybackRateChange,
-        'Expected it speed to had been set at least at Controller initialization');
       this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
     }
 
-    this._silenceDetectorNode!.parameters.get('volumeThreshold')!.value = this.settings.volumeThreshold;
-    this._silenceDetectorNode!.parameters.get('durationThreshold')!.value =
-      this._getSilenceDetectorNodeDurationThreshold();
+    this._silenceDetectorNode.volumeThreshold = this.settings.volumeThreshold;
+    this._silenceDetectorNode.durationThreshold = this._getSilenceDetectorNodeDurationThreshold();
     if (this.isStretcherEnabled()) {
       this._lookahead.delayTime.value = getOptimalLookaheadDelay(
         this.settings.marginBefore,
@@ -387,14 +410,20 @@ export default class Controller {
   updateSettingsAndMaybeCreateNewInstance(newSettings: ControllerSettings): Controller {
     // TODO how about not updating settings that heven't been changed
     const oldSettings = this.settings;
-    this.settings = newSettings;
 
-    if (isStretcherEnabled(newSettings) ? !isStretcherEnabled(oldSettings) : isStretcherEnabled(oldSettings)) {
-      const newInstance = new Controller(this.element, this.settings);
+    const needReinit = isStretcherEnabled(newSettings)
+      ? !isStretcherEnabled(oldSettings)
+      : isStretcherEnabled(oldSettings);
+    if (needReinit) {
+      const newInstance = new Controller(this.element, newSettings);
       this.destroy().then(() => newInstance.init());
       return newInstance;
     } else {
-      this._setStateAccordingToNewSettings(oldSettings);
+      if (this.initialized) {
+        this._setStateAccordingToNewSettings(newSettings, oldSettings);
+      } else {
+        this._pendingSettingsUpdates = newSettings;
+      }
       return this;
     }
   }
@@ -429,8 +458,8 @@ export default class Controller {
     };
   }
 
-  getTelemetry() {
-    assert(this.isInitialized());
+  get telemetry(): TelemetryRecord {
+    assertDev(this.isInitialized());
 
     this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
     const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];

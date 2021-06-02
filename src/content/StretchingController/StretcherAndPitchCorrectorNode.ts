@@ -11,9 +11,9 @@ import {
   getStretcherDelayChange,
   getRealtimeMargin,
   getStretcherSoundedDelay,
-} from './helpers';
+} from '@/content/helpers';
 import type { Time, StretchInfo } from '@/helpers';
-import { assert } from '@/helpers';
+import { assertDev } from '@/helpers';
 
 
 // TODO make it into a setting?
@@ -123,7 +123,7 @@ export default class StretcherAndPitchCorrectorNode {
     // Or just use if-else?
 
     // These are guaranteed to be non-null, because `onSilenceStart` is always called before this function.
-    assert(this.lastScheduledStretch && this.lastElementSpeedChangeAtInputTime);
+    assertDev(this.lastScheduledStretch && this.lastElementSpeedChangeAtInputTime);
     const lastScheduledStretcherDelayReset = this.lastScheduledStretch;
     const lastElementSpeedChangeAtInputTime = this.lastElementSpeedChangeAtInputTime;
     // Assuming that `element.playbackRate` assignment was done in `Controller.ts` (which it was).
@@ -331,7 +331,7 @@ export default class StretcherAndPitchCorrectorNode {
    * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
    */
   private interruptLastScheduledStretch(interruptAtTimeValue: Time, interruptAtTime: Time): void {
-    assert(this.lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
+    assertDev(this.lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
       + 'yet');
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method
     this.delayNode.delayTime

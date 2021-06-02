@@ -1,20 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assert, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
-  import type Controller from '@/content/Controller';
+  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
+  import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
-  type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
   export let widthPx: number;
   export let heightPx: number;
   export let lengthSeconds: number;
+  export let paused: boolean;
 
   let canvasEl: HTMLCanvasElement;
   $: millisPerPixel = lengthSeconds * 1000 / widthPx;
@@ -151,18 +151,20 @@
     
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
-      smoothie.render();
+      if (!paused) {
+        smoothie.render();
 
-      // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-      // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
-      // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-      const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
-      canvasContext.beginPath();
-      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-      canvasContext.moveTo(x, 0);
-      canvasContext.lineTo(x, heightPx);
-      canvasContext.closePath();
-      canvasContext.stroke();
+        // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+        // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
+        // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
+        const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
+        canvasContext.beginPath();
+        canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        canvasContext.moveTo(x, 0);
+        canvasContext.lineTo(x, heightPx);
+        canvasContext.closePath();
+        canvasContext.stroke();
+      }
 
       requestAnimationFrame(drawAndScheduleAnother);
     })();
@@ -213,7 +215,7 @@
   };
 
   function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
-    assert(newTelemetryRecord.lastScheduledStretchInputTime,
+    assertDev(newTelemetryRecord.lastScheduledStretchInputTime,
       'Attempted to update stretch series, but stretch is not defined');
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
     const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
@@ -324,6 +326,7 @@
   width={widthPx}
   height={heightPx}
   on:click
+  style={paused ? 'opacity: 0.2' : ''}
 >
   <label>
     Volume
