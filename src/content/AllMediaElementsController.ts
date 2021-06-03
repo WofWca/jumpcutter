@@ -257,11 +257,11 @@ export default class AllMediaElementsController {
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
   private async esnureAttachToElement(el: HTMLMediaElement) {
-    // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
-    // media elements on the page.
-    this.elementLastActivatedAt = Date.now();
-
+    const calledAt = Date.now();
     if (this.activeMediaElement === el) {
+      // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
+      // media elements on the page.
+      this.elementLastActivatedAt = calledAt;
       return;
     }
     if (this.activeMediaElement) {
@@ -322,6 +322,10 @@ export default class AllMediaElementsController {
     await timeSavedTrackerPromise;
 
     this.ensureAddOnConnectListener();
+    // Not doing this at the beginning of the function, beside `this.activeMediaElement = el;` because the popup
+    // considers that `elementLastActivatedAt !== undefined` means that it's free to connect, but
+    // `ensureAddOnConnectListener` can still have not been called. TODO refactor?
+    this.elementLastActivatedAt = calledAt;
     this.broadcastStatus();
   }
 
