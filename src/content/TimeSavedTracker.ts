@@ -231,8 +231,11 @@ export default class TimeSavedTracker {
   // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
   /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
   public onControllerCausedSeek(seekDelta: Time): void {
-    // Even with an exponential window there is no need to calculate decay, because it would be 0, because the
-    // change is instantaneous.
+    // Looks like this call can be skipped if `this._averagingMethod === 'all-time'`. TODO?
+    this._appendLastSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
+
+    // Instead of the following, it would be more semantically correct to call `_appendLastSnippetData` a second
+    // time, but it can't handle its `speedDuring` argument being `=== Infinity`.
     const seekDeltaIntrinsic = seekDelta;
     const seekDeltaSounded = seekDelta / this._currentElementSpeed;
     this._timeSavedComparedToSoundedSpeed += seekDeltaSounded;
