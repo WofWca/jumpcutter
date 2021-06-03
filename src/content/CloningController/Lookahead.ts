@@ -65,7 +65,8 @@ export default class Lookahead {
   private async _init(): Promise<void> {
     const originalElement = this.originalElement;
 
-    const playbackRate = 5; // TODO
+    // TODO make it depend on `soundedSpeed` and how much silence there is and other stuff.
+    const playbackRate = 5;
 
     const clone = this.clone;
 
