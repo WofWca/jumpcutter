@@ -229,7 +229,7 @@ export default class TimeSavedTracker {
   // correction.
   // How about we just subtract ALL seeks' durations from time saved, and not just the ones' that were initiated by
   // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
-  /** Useful when `silenceSpeed` is infinite. */
+  /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
   public onControllerCausedSeek(seekDelta: Time): void {
     // Even with an exponential window there is no need to calculate decay, because it would be 0, because the
     // change is instantaneous.
