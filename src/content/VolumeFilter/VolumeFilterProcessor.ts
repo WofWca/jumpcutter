@@ -41,6 +41,8 @@ class SingleChannelRingBuffer extends Float32Array {
   }
 }
 
+let devErrorShown = false;
+
 // Simple rectangular window and RMS.
 class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
@@ -51,7 +53,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
     this._currWindowSquaresSum = 0;
     this._options = {
       maxChannels: DEFAULT_MAX_NUM_CHANNELS,
-      maxSmoothingWindowLength: 1,
+      maxSmoothingWindowLength: options.parameterData.smoothingWindowLength,
       ...options.processorOptions,
     };
     const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
@@ -72,6 +74,18 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
     const smoothingWindowLength = parameters.smoothingWindowLength[0];
     const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (
+        smoothingWindowLengthSamples !== windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength)
+        && !devErrorShown
+      ) {
+        console.error('Looks like you\'ve started dynamically changing `smoothingWindowLength`. You\'ll probably need'
+          + ' to revert the commit that introduced this change.', smoothingWindowLength, this._options.maxSmoothingWindowLength)
+        devErrorShown = true;
+      }
+    }
+
     const input = inputs[0];
     if (input.length === 0) {
       return this.keepAlive;

@@ -13,7 +13,7 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   _lastTimePostedSilenceStart: boolean;
   constructor(options: any) {
     super(options);
-    const initialDuration = options.processorOptions.initialDuration ?? 0;
+    const initialDuration = options.processorOptions?.initialDuration ?? 0;
     this._lastLoudSampleTime = currentTime - initialDuration;
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
