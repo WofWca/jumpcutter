@@ -1,21 +1,24 @@
 import browser from '@/webextensions-api';
 import {
-  Settings, getSettings, setSettings, addOnChangedListener as addOnSettingsChangedListener, MyStorageChanges,
-  removeOnChangedListener as removeOnSettingsChangedListener,
-  settingsChanges2NewValues,
+  Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges, ControllerKind,
+  removeOnSettingsChangedListener, settingsChanges2NewValues,
 } from '@/settings';
-import { clamp, assert, assertNever } from '@/helpers';
-import type Controller from './Controller';
+import { clamp, assertNever, assertDev } from '@/helpers';
+import type StretchingController from './StretchingController/StretchingController';
+import type CloningController from './CloningController/CloningController';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
-import { oncePerInstance } from './helpers';
+import once from 'lodash/once';
+import debounce from 'lodash/debounce';
+
+type SomeController = StretchingController | CloningController;
 
 export type TelemetryMessage =
-  ReturnType<Controller['getTelemetry']>
-  & ReturnType<TimeSavedTracker['getTimeSavedData']>;
+  SomeController['telemetry']
+  & TimeSavedTracker['timeSavedData'];
 
 function executeNonSettingsActions(
   el: HTMLMediaElement,
@@ -41,10 +44,38 @@ function executeNonSettingsActions(
 
 let allMediaElementsControllerActive = false;
 
+type ControllerType<T extends ControllerKind> = T extends ControllerKind.STRETCHING
+  ? typeof StretchingController
+  : typeof CloningController;
+
+async function importAndCreateController<T extends ControllerKind>(
+  kind: T,
+  // Not just `constructorArgs` because e.g. settings can change while `import()` is ongoing.
+  getConstructorArgs: () => ConstructorParameters<ControllerType<T>>
+) {
+  let Controller;
+  if (kind === ControllerKind.CLONING) {
+    ({ default: Controller } = await import(
+      /* webpackExports: ['default'] */
+      './CloningController/CloningController'
+    ));
+  } else {
+    ({ default: Controller } = await import(
+      /* webpackExports: ['default'] */
+      './StretchingController/StretchingController'
+    ));
+  }
+  type Hack = ConstructorParameters<typeof CloningController>;
+  const controller = new Controller(...(getConstructorArgs() as Hack));
+  return controller;
+}
+
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
+  unhandledNewElements = new Set<HTMLMediaElement>();
+  handledElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
-  controller: Controller | undefined;
+  controller: SomeController | undefined;
   timeSavedTracker: TimeSavedTracker | undefined;
   private settings: Settings | undefined;
   private _onDestroyCallbacks: Array<() => void> = [];
@@ -70,31 +101,48 @@ export default class AllMediaElementsController {
     }
   }
   private detachFromActiveElement() {
+    // TODO It is possible to call this function before the `_onDetachFromActiveElementCallbacks` array has been filled
+    // and `controller` has been assigned.
+    // Same for `destroy`.
+    assertDev(this.controller); // So this assertion can fail.
+    this.controller.destroy();
+    this.controller = undefined;
     this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
+    this._onDetachFromActiveElementCallbacks = [];
   }
 
   public broadcastStatus(): void {
     broadcastStatus({ elementLastActivatedAt: this.elementLastActivatedAt });
   }
 
-  private oncePerInstance<T extends Parameters<typeof oncePerInstance>[1]>(f: T): T {
-    return oncePerInstance(this, f);
+  
+  private async _loadSettings() {
+    this.settings = await getSettings();
   }
-
+  private ensureLoadSettings = once(this._loadSettings);
   private reactToSettingsNewValues(newValues: Partial<Settings>) {
     // Currently, this function is an event listener, and while it gets detached when the extension gets disabled, it
     // still gets executed on that change, because it gets detached within another event listener. This is to check if
     // this is the case.
     if (newValues.enabled === false) return;
 
+    if (newValues.experimentalControllerType !== undefined) {
+      // TODO Hacky. Can just reinit the `Controller` instead. Or at least reinit `AllMediaElementsController`.
+      setSettings({ enabled: false }).then(() => setSettings({ enabled: true }));
+      return;
+    }
+
     if (Object.keys(newValues).length === 0) return;
 
-    assert(this.settings);
+    assertDev(this.settings);
     Object.assign(this.settings, newValues);
-    assert(this.controller);
-    this.controller.updateSettings(
+    assertDev(this.controller);
+    // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
+    // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
+    this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
       extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
     );
+    // Controller destruction is done in `detachFromActiveElement`.
   }
   private reactToSettingsChanges = (changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
@@ -107,7 +155,7 @@ export default class AllMediaElementsController {
     addOnSettingsChangedListener(this.reactToSettingsChanges);
     this._onDestroyCallbacks.push(() => removeOnSettingsChangedListener(this.reactToSettingsChanges));
   }
-  private ensureAddOnSettingsChangedListener = this.oncePerInstance(this._addOnSettingsChangedListener);
+  private ensureAddOnSettingsChangedListener = once(this._addOnSettingsChangedListener);
 
   private onConnect = (port: browser.runtime.Port) => {
     let listener: (msg: unknown) => void;
@@ -121,8 +169,8 @@ export default class AllMediaElementsController {
           }
           if (this.controller?.initialized && this.timeSavedTracker) {
             const telemetryMessage: TelemetryMessage = {
-              ...this.controller.getTelemetry(),
-              ...this.timeSavedTracker.getTimeSavedData(),
+              ...this.controller.telemetry,
+              ...this.timeSavedTracker.timeSavedData,
             };
             port.postMessage(telemetryMessage);
           }
@@ -151,12 +199,7 @@ export default class AllMediaElementsController {
     browser.runtime.onConnect.addListener(this.onConnect);
     this._onDestroyCallbacks.push(() => browser.runtime.onConnect.removeListener(this.onConnect));
   }
-  private ensureAddOnConnectListener = this.oncePerInstance(this._addOnConnectListener);
-
-  private async _loadSettings() {
-    this.settings = await getSettings();
-  }
-  private ensureLoadSettings = this.oncePerInstance(this._loadSettings);
+  private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
   private async _initHotkeyListener() {
     const { keydownEventToActions, eventTargetIsInput } = await import(
@@ -167,7 +210,7 @@ export default class AllMediaElementsController {
     // something like `getSettings: () => Settings`?
     const handleKeydown = (e: KeyboardEvent) => {
       if (eventTargetIsInput(e)) return;
-      assert(this.settings);
+      assertDev(this.settings);
       const actions = keydownEventToActions(e, this.settings);
       const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
 
@@ -211,44 +254,47 @@ export default class AllMediaElementsController {
 
     // this.hotkeyListenerAttached = true;
   }
-  private ensureInitHotkeyListener = this.oncePerInstance(this._initHotkeyListener);
+  private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
   private async esnureAttachToElement(el: HTMLMediaElement) {
-    // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
-    // media elements on the page.
-    this.elementLastActivatedAt = Date.now();
-
+    const calledAt = Date.now();
     if (this.activeMediaElement === el) {
+      // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
+      // media elements on the page.
+      this.elementLastActivatedAt = calledAt;
       return;
     }
     if (this.activeMediaElement) {
       this.detachFromActiveElement();
     }
     this.activeMediaElement = el;
+
+    assertDev(this._onDetachFromActiveElementCallbacks.length === 0, 'I think `_onDetachFromActiveElementCallbacks` '
+      + `should be empty here. Instead it it is ${this._onDetachFromActiveElementCallbacks.length} items long`);
+
     // Currently this is technically not required since `this.activeMediaElement` is immediately reassigned
     // in the line above after the `detachFromActiveElement` call.
     this._onDetachFromActiveElementCallbacks.push(() => this.activeMediaElement = undefined);
 
     await this.ensureLoadSettings();
+    assertDev(this.settings)
     this.ensureAddOnSettingsChangedListener();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const settings = this.settings!;
-
-    const controllerP = (async () => {
-      const { default: Controller } = await import(
-        /* webpackExports: ['default'] */
-        './Controller'
-      );
-      const controller = this.controller = new Controller(el, extensionSettings2ControllerSettings(settings));
-      // TODO It is possible to call `detachFromActiveElement` before the `_onDetachFromActiveElementCallbacks` array
-      // has been filled. Same for `destroy`.
-      this._onDetachFromActiveElementCallbacks.push(() => controller.destroy());
-
-      await this.controller.init();
-    })();
+    const controllerP = importAndCreateController(
+      this.settings.experimentalControllerType,
+      () => [
+        el,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extensionSettings2ControllerSettings(this.settings!)
+      ]
+    ).then(async controller => {
+      this.controller = controller;
+      await controller.init();
+      // Controller destruction is done in `detachFromActiveElement`.
+      return controller;
+    });
 
     let hotkeyListenerP;
-    if (settings.enableHotkeys) {
+    if (this.settings.enableHotkeys) {
       hotkeyListenerP = this.ensureInitHotkeyListener();
     }
 
@@ -261,11 +307,14 @@ export default class AllMediaElementsController {
       await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
       const timeSavedTracker = this.timeSavedTracker = new TimeSavedTracker(
         el,
-        settings,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.settings!,
         addOnSettingsChangedListener,
         removeOnSettingsChangedListener,
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
+
+      controllerP.then(controller => controller.timeSavedTracker = timeSavedTracker);
     })();
 
     await controllerP;
@@ -273,19 +322,40 @@ export default class AllMediaElementsController {
     await timeSavedTrackerPromise;
 
     this.ensureAddOnConnectListener();
+    // Not doing this at the beginning of the function, beside `this.activeMediaElement = el;` because the popup
+    // considers that `elementLastActivatedAt !== undefined` means that it's free to connect, but
+    // `ensureAddOnConnectListener` can still have not been called. TODO refactor?
+    this.elementLastActivatedAt = calledAt;
     this.broadcastStatus();
   }
 
   private onMediaPlayEvent = (e: Event) => {
     this.esnureAttachToElement(e.target as HTMLMediaElement);
   }
-  public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
-    if (!this.activeMediaElement) {
-      for (const el of newElements) {
-        if (!el.paused) {
-          this.esnureAttachToElement(el);
-          break;
-        }
+  private handleNewElements() {
+    const newElements = this.unhandledNewElements;
+    this.unhandledNewElements = new Set();
+
+    for (const el of newElements) {
+      if (this.handledElements.has(el)) {
+        continue;
+      }
+      this.handledElements.add(el);
+
+      el.addEventListener('play', this.onMediaPlayEvent);
+      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.onMediaPlayEvent));
+    }
+
+    // Attach to the first new element that is not paused, even if we're already attached to another.
+    // The thoguht process is like this - if such an element has been inserted, it is most likely due to the user
+    // wanting to switch his attention to it (e.g. pressing the "play" button on a custom media player, or scrolling
+    // a page with an infinite scroll with autoplaying videos).
+    // It may be that the designer of the website is an asshole and inserts new media elements whenever he feels like
+    // it, or I missed some other common cases. TODO think about it.
+    for (const el of newElements) {
+      if (!el.paused) {
+        this.esnureAttachToElement(el);
+        break;
       }
     }
     // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
@@ -299,10 +369,14 @@ export default class AllMediaElementsController {
     }
     // Otherwise it seems that the only benefit of attaching to some other element is that it can be started with a
     // pause/unpause hotkey.
-
-    for (const el of newElements) {
-      el.addEventListener('play', this.onMediaPlayEvent);
-      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.onMediaPlayEvent));
-    }
+  }
+  private debouncedHandleNewElements = debounce(this.handleNewElements, 0, { maxWait: 3000 });
+  /**
+   * Calling with the same element multiple times is fine, calling multiple times on the same tick is fine.
+   * Order in which elements are passed in fact matters, but in practice not very much.
+   */
+  public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
+    newElements.forEach(el => this.unhandledNewElements.add(el));
+    this.debouncedHandleNewElements();
   }
 }

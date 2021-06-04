@@ -1,5 +1,5 @@
 import browser from '@/webextensions-api';
-import { addOnChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
+import { addOnSettingsChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
 
 function setBadge(text: string, color: string) {
   browser.browserAction.setBadgeBackgroundColor({ color });
@@ -87,5 +87,5 @@ export default async function initIconUpdater(): Promise<void> {
     }
   }
   handleSettingsChanges(null);
-  addOnChangedListener(handleSettingsChanges);
+  addOnSettingsChangedListener(handleSettingsChanges);
 }

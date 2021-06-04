@@ -1,20 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assert, StretchInfo, Time as TimeS } from '@/helpers';
-  import type Controller from '@/content/Controller';
+  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
+  import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
-  type TelemetryRecord = ReturnType<Controller['getTelemetry']>;
   export let latestTelemetryRecord: TelemetryRecord;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
   export let widthPx: number;
   export let heightPx: number;
   export let lengthSeconds: number;
+  export let paused: boolean;
 
   let canvasEl: HTMLCanvasElement;
   $: millisPerPixel = lengthSeconds * 1000 / widthPx;
@@ -111,20 +111,20 @@
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
-      strokeStyle: soundedSpeedColor,
+      strokeStyle: 'none',
       fillStyle: soundedSpeedColor,
     });
     smoothie.addTimeSeries(silenceSpeedSeries, {
-      strokeStyle: silenceSpeedColor,
+      strokeStyle: 'none',
       fillStyle: silenceSpeedColor,
     });
     smoothie.addTimeSeries(stretchSeries, {
-      strokeStyle: soundedSpeedColor,
+      strokeStyle: 'none',
       // fillStyle: 'rgba(0, 255, 0, 0.4)',
       fillStyle: soundedSpeedColor,
     })
     smoothie.addTimeSeries(shrinkSeries, {
-      strokeStyle: silenceSpeedColor,
+      strokeStyle: 'none',
       // fillStyle: 'rgba(255, 0, 0, 0.4)',
       fillStyle: silenceSpeedColor,
     })
@@ -151,18 +151,20 @@
     
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
-      smoothie.render();
+      if (!paused) {
+        smoothie.render();
 
-      // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-      // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
-      // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-      const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
-      canvasContext.beginPath();
-      canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-      canvasContext.moveTo(x, 0);
-      canvasContext.lineTo(x, heightPx);
-      canvasContext.closePath();
-      canvasContext.stroke();
+        // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+        // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
+        // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
+        const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
+        canvasContext.beginPath();
+        canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        canvasContext.moveTo(x, 0);
+        canvasContext.lineTo(x, heightPx);
+        canvasContext.closePath();
+        canvasContext.stroke();
+      }
 
       requestAnimationFrame(drawAndScheduleAnother);
     })();
@@ -183,8 +185,8 @@
     return sToMs(toUnixTime(...args));
   }
   function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
-    soundedSpeedSeries.append(timeMs, speedName === 'sounded' ? offTheChartsValue : 0);
-    silenceSpeedSeries.append(timeMs, speedName === 'silence' ? offTheChartsValue : 0);
+    soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
+    silenceSpeedSeries.append(timeMs, speedName === SpeedName_SILENCE ? offTheChartsValue : 0);
 
     if (process.env.NODE_ENV !== 'production') {
       if (latestTelemetryRecord?.inputVolume > offTheChartsValue) {
@@ -196,7 +198,10 @@
 
   // `+Infinity` doesn't appear to work, as well as `Number.MAX_SAFE_INTEGER`. Apparently because when the value is
   // too far beyond the chart bounds, the line is hidden.
-  const offTheChartsValue = 9999;
+  // Also just having a big value (like 1e6) causes gaps between the green and red speed backgrounds.
+  // Let's make it 1, because currently we measure volume by simply computing RMS of samples, and no sample can have
+  // value > 1.
+  const offTheChartsValue = 1;
   // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
   // the previous value on that time.
   // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
@@ -210,7 +215,7 @@
   };
 
   function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
-    assert(newTelemetryRecord.lastScheduledStretchInputTime,
+    assertDev(newTelemetryRecord.lastScheduledStretchInputTime,
       'Attempted to update stretch series, but stretch is not defined');
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
     const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
@@ -252,7 +257,7 @@
     }
     // Yes, old values' scale is not updated.
     const scaledValue = stretcherDelay / maxRecordedStretcherDelay * chartMaxValue * 0.90;
-    const inputTime = r.unixTime - r.totalOutputDelay;
+    const inputTime = r.unixTime - r.delayFromInputToStretcherOutput;
     stretcherDelaySeries.append(sToMs(inputTime), scaledValue);
   }
 
@@ -321,6 +326,7 @@
   width={widthPx}
   height={heightPx}
   on:click
+  style={paused ? 'opacity: 0.2' : ''}
 >
   <label>
     Volume

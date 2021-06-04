@@ -1,7 +1,10 @@
 <script lang="ts">
   import browser from '@/webextensions-api';
   import { onDestroy } from 'svelte';
-  import { addOnChangedListener, getSettings, MyStorageChanges, setSettings, Settings, settingsChanges2NewValues } from '@/settings';
+  import {
+    addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
+    ControllerKind_CLONING, ControllerKind_STRETCHING,
+  } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
@@ -159,8 +162,8 @@
 
   // This is to react to settings changes outside the popup. Currently I don't really see how settings can change from
   // outside the popup while it is open, but let's play it safe.
-  // Why debounce – because `addOnChangedListener` also reacts to settings changes from inside this script itself and
-  // sometimes when settings change rapidly, `onChanged` callback may lag behind so
+  // Why debounce – because `addOnSettingsChangedListener` also reacts to settings changes from inside this
+  // script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
   // the `settings` object's state begins jumping between the old and new state.
   // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
   let pendingChanges: Partial<Settings> = {};
@@ -171,7 +174,7 @@
     },
     500,
   )
-  addOnChangedListener(changes => {
+  addOnSettingsChangedListener(changes => {
     pendingChanges = Object.assign(pendingChanges, settingsChanges2NewValues(changes));
     debouncedApplyPendingChanges();
   });
@@ -226,6 +229,13 @@
     mmSs(r?.timeSavedComparedToIntrinsicSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasIntrinsic =
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
+
+  function onUseExperimentalAlgorithmInput(e: Event) {
+    console.log(e.target)
+    settings.experimentalControllerType = (e.target as HTMLInputElement).checked
+      ? ControllerKind_CLONING
+      : ControllerKind_STRETCHING
+  }
 </script>
 
 <svelte:window
@@ -305,7 +315,7 @@ ${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic spe
 
 ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`
 }`,
-        theme: 'my-tippy time-saved',
+        theme: 'my-tippy white-space-pre-line',
         hideOnClick: false,
       }}
     >
@@ -334,12 +344,9 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
           {#if gotAtLeastOneContentStatusResponse}
             <p>
               <span>⚠️ Could not find a suitable media element on the page.</span>
-              <!-- TODO at some point (hopefully) the extension is going to become smart enough to handle element search
-              properly and not outright suggest to "try tuning it off and on again". We'll remove this button then.
-              TODO also as it's here to stay at least for a while, need to tidy up `content/main.ts` so there are no
-              memory leaks or worse things caused by rapid `enabled` toggles, because it's precisely what this button
-              does. -->
-              <br>
+              <br/><br/>
+              <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
+              could be useful. -->
               <button
                 on:click={async () => {
                   settings.enabled = false;
@@ -352,6 +359,21 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
                   }, 20);
                 }}
               >Retry</button>
+              <!-- TODO how about don't show this button when there are no such elements on the page
+              (e.g. when `settings.applyTo !== 'videoOnly'` and there are no <audio> elements) -->
+              {#if settings.applyTo !== 'both'}
+                <br/><br/>
+                <button
+                  on:click={() => {
+                    settings.applyTo = 'both'
+                    settings.enabled = false;
+                    // Hacky. Same as with the "Retry" button, but at least this one disappears.
+                    setTimeout(() => {
+                      settings.enabled = true;
+                    }, 100);
+                  }}
+                >Also search for {settings.applyTo === 'videoOnly' ? 'audio' : 'video'} elements</button>
+              {/if}
             </p>
           {:else}
             <p>
@@ -377,8 +399,27 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
       on:click={onChartClick}
+      paused={settings.experimentalControllerType === ControllerKind_CLONING}
     />
   {/if}
+  <label
+    use:tippyActionAsyncPreload={{
+      content: '* Bare minimum usability\n'
+        + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
+        + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
+        + '* No audio distortion, delay or desync\n',
+      theme: 'my-tippy white-space-pre-line',
+    }}
+    style="margin-top: 1rem; display: inline-flex; align-items: center;"
+  >
+    <input
+      checked={settings.experimentalControllerType === ControllerKind_CLONING}
+      on:input={onUseExperimentalAlgorithmInput}
+      type="checkbox"
+      style="margin: 0 0.5rem 0 0;"
+    >
+    <span>Use experimental algorithm</span>
+  </label>
   <RangeSlider
     label="Volume threshold"
     min="0"
@@ -409,6 +450,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     max="15"
     step="0.05"
     bind:value={settings.silenceSpeedRaw}
+    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
@@ -468,7 +510,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   :global(.tippy-box[data-theme~='my-tippy']) {
     font-size: inherit;
   }
-  :global(.tippy-box[data-theme~='time-saved']) {
+  :global(.tippy-box[data-theme~='white-space-pre-line']) {
     white-space: pre-line;
   }
 

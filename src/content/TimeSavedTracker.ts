@@ -1,5 +1,6 @@
 import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
 import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, transformSpeed } from './helpers';
+import type { Time } from "@/helpers";
 
 /**
  * Not a typical stopwatch, but close.
@@ -18,7 +19,7 @@ class Stopwatch {
   private _getTime(nowMs: number) {
     return ((this._pausedAtMs ?? nowMs) - this._countSinceMs) / 1000;
   }
-  getTime(): number {
+  get time(): number {
     return this._getTime(Date.now());
   }
   getTimeAndReset(): number {
@@ -77,7 +78,9 @@ class MediaElementPlaybackStopwatch {
     }
   }
   getTimeAndReset = () => this._stopwatch.getTimeAndReset();
-  getTime = () => this._stopwatch.getTime();
+  get time() {
+    return this._stopwatch.time;
+  }
 }
 
 type TimeSavedData = [
@@ -221,10 +224,34 @@ export default class TimeSavedTracker {
     this._wouldHaveLastedIfSpeedWasSounded = wouldHaveLastedIfSpeedWasSounded;
     this._wouldHaveLastedIfSpeedWasIntrinsic = wouldHaveLastedIfSpeedWasIntrinsic;
   }
+  // TODO we must also take into consideration how long it took to seek (time between 'seeking' and 'seeked' events).
+  // Then it will also be useful in `StretchingController` to calculate how much time has been lost due to desync
+  // correction.
+  // How about we just subtract ALL seeks' durations from time saved, and not just the ones' that were initiated by
+  // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
+  /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
+  public onControllerCausedSeek(seekDelta: Time): void {
+    // Looks like this call can be skipped if `this._averagingMethod === 'all-time'`. TODO?
+    this._appendLastSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
+
+    // Instead of the following, it would be more semantically correct to call `_appendLastSnippetData` a second
+    // time, but it can't handle its `speedDuring` argument being `=== Infinity`.
+    const seekDeltaIntrinsic = seekDelta;
+    const seekDeltaSounded = seekDelta / this._currentElementSpeed;
+    this._timeSavedComparedToSoundedSpeed += seekDeltaSounded;
+    this._timeSavedComparedToIntrinsicSpeed += seekDeltaIntrinsic;
+    this._wouldHaveLastedIfSpeedWasSounded += seekDeltaSounded;
+    this._wouldHaveLastedIfSpeedWasIntrinsic += seekDeltaIntrinsic;
+  }
   private _onElementSpeedChange = () => {
     const prevSpeed = this._currentElementSpeed;
+    const currentElementSpeed = this.element.playbackRate;
+    // In case it is `defaultPlaybackRate` that changed, not `playbackRate`. Or some other weird case.
+    if (prevSpeed === currentElementSpeed) {
+      return;
+    }
     this._appendLastSnippetData(prevSpeed, this._lastHandledSoundedSpeed);
-    this._currentElementSpeed = this.element.playbackRate;
+    this._currentElementSpeed = currentElementSpeed;
   }
   private _setStateAccordingToNewSettings(
     {
@@ -257,8 +284,8 @@ export default class TimeSavedTracker {
     this._appendLastSnippetData(this._currentElementSpeed, prevSoundedSpeed);
     this._lastHandledSoundedSpeed = newSoundedSpeed;
   }
-  public getTimeSavedData() {
-    const currentSnippetDuration = this._playbackStopwatch.getTime();
+  public get timeSavedData() {
+    const currentSnippetDuration = this._playbackStopwatch.time;
     const [
       timeSavedComparedToSoundedSpeed,
       timeSavedComparedToIntrinsicSpeed,

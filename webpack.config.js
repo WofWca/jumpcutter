@@ -64,8 +64,8 @@ module.exports = env => {
 
     entry: {
       content: './src/content/main.ts',
-      SilenceDetectorProcessor: './src/content/SilenceDetectorProcessor.ts',
-      VolumeFilter: './src/content/VolumeFilter.ts',
+      SilenceDetectorProcessor: './src/content/SilenceDetector/SilenceDetectorProcessor.ts',
+      VolumeFilterProcessor: './src/content/VolumeFilter/VolumeFilterProcessor.ts',
 
       popup: './src/popup/main.ts',
       background: './src/background/main.ts',
@@ -78,7 +78,7 @@ module.exports = env => {
       path: path.resolve(__dirname, 'dist'),
       filename: (pathData, assetInfo) => {
         const chunkName = pathData.chunk.name;
-        if (['SilenceDetectorProcessor', 'VolumeFilter'].includes(chunkName)) {
+        if (['SilenceDetectorProcessor', 'VolumeFilterProcessor'].includes(chunkName)) {
           return `content/${chunkName}.js`;
         }
         return `${chunkName}/main.js`;
@@ -114,13 +114,15 @@ module.exports = env => {
       new CopyPlugin({
         patterns: [
           { context: 'src', from: 'manifest.json' },
-          { context: 'src', from: 'icons/**' },
+          { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-48.png|icon-big-padded.svg-128.png)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
           { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
         ],
       }),
-      new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)(),
+      new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)({
+        analyzerMode: env.noreport ? 'disabled' : 'server',
+      }),
     ],
 
     optimization: {

@@ -8,7 +8,7 @@
   <label>
     <input
       type="checkbox"
-      {...$$props}
+      {...$$restProps}
       bind:checked
     > {label}
   </label>

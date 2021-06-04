@@ -1,67 +1,37 @@
-<svg width="128" height="128" viewBox="-16 -16 128 128" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+<svg width="440" height="280" viewBox="0 0 110 70" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
   <style>
     :root {
-      --img-size: 32 * 3;
-      --img-width: var(--img-size);
-      --img-height: var(--img-size);
+      --img-width: 110;
+      --img-height: 70;
       --img-width-px: calc(var(--img-width) * 1px);
       --img-height-px: calc(var(--img-height) * 1px);
       --img-half-width-px: calc(var(--img-width-px) / 2);
-      --img-half-height-px: calc(var(--img-height-px) / 2);
     }
 
-    :root {
-      --img-forth-width-px: calc(var(--img-width-px) / 4);
-      --bg-border-radius: calc(var(--img-width-px) / 32 * 2);
-    }
     .bg-left {
       fill: #8F8;
     }
     .bg-right {
       fill: #F88;
     }
-    .bg-outer {
-      y: 0;
-      height: var(--img-height-px);
-      width: var(--img-half-width-px);
-      rx: var(--bg-border-radius);
-    }
-    .bg-inner {
-      y: 0;
-      height: var(--img-height-px);
-      width: var(--img-forth-width-px);
-    }
-    .bg-left .bg-outer {
-      x: 0;
-    }
-    .bg-left .bg-inner {
-      x: var(--img-forth-width-px);
-    }
-    .bg-right .bg-outer {
-      x: var(--img-half-width-px);
-    }
-    .bg-right .bg-inner {
-      x: var(--img-half-width-px);
-    }
-
     .wave {
       fill: #00F;
-      transform: translate(var(--img-half-width-px), var(--img-half-height-px));
+      transform: translate(55px, 35px);
     }
     .wave-left {
       --base-x-offset: 0px;
     }
     .wave-right {
-      --base-x-offset: calc(-1 * var(--img-width-px) / 16);
+      --base-x-offset: -4px;
     }
     .wave rect {
-      --width: calc(var(--img-height-px) / 16);
+      --width: 4px;
       width: var(--width);
       --height: calc(var(--height-factor) * var(--width));
       height: var(--height);
-      --x-offset: calc(var(--n) * var(--width) * 3 / 2 + var(--base-x-offset));
+      --x-offset: calc(var(--n) * 6px + var(--base-x-offset));
       transform: translate(var(--x-offset), calc(var(--height) * -0.5));
-      rx: calc(var(--width) / 4);
+      rx: 1px;
     }
 
     .playback-arrows {
@@ -93,29 +63,35 @@
   </style>
 
   <g class="bg-left">
-    <rect class="bg-outer" />
-    <rect class="bg-inner" />
+    <rect x="0" y="0" width="55" height="70"/>
   </g>
 
   <g class="bg-right">
-    <rect class="bg-inner" />
-    <rect class="bg-outer" />
+    <rect x="55" y="0" width="55" height="70"/>
   </g>
 
   <g class="wave">
     <g class="wave-left">
-      <rect style="--n: -5; --height-factor: 5;" />
-      <rect style="--n: -4; --height-factor: 8;" />
-      <rect style="--n: -3; --height-factor: 10;" />
-      <rect style="--n: -2; --height-factor: 12;" />
-      <rect style="--n: -1; --height-factor: 9;" />
+      <rect style="--n: -9; --height-factor: 5;" />
+      <rect style="--n: -8; --height-factor: 7;" />
+      <rect style="--n: -7; --height-factor: 9;" />
+      <rect style="--n: -6; --height-factor: 6;" />
+      <rect style="--n: -5; --height-factor: 7;" />
+      <rect style="--n: -4; --height-factor: 11;" />
+      <rect style="--n: -3; --height-factor: 14;" />
+      <rect style="--n: -2; --height-factor: 10;" />
+      <rect style="--n: -1; --height-factor: 6;" />
     </g>
     <g class="wave-right">
       <rect style="--n: 1; --height-factor: 1;" />
-      <rect style="--n: 2; --height-factor: 2;" />
-      <rect style="--n: 3; --height-factor: 1;" />
+      <rect style="--n: 2; --height-factor: 1;" />
+      <rect style="--n: 3; --height-factor: 2;" />
       <rect style="--n: 4; --height-factor: 1;" />
-      <rect style="--n: 5; --height-factor: 2;" />
+      <rect style="--n: 5; --height-factor: 1;" />
+      <rect style="--n: 6; --height-factor: 2;" />
+      <rect style="--n: 7; --height-factor: 1;" />
+      <rect style="--n: 8; --height-factor: 1;" />
+      <rect style="--n: 9; --height-factor: 1;" />
     </g>
   </g>
 

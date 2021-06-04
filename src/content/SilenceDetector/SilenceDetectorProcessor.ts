@@ -1,16 +1,19 @@
-import WorkaroundAudioWorkletProcessor from './WorkaroundAudioWorkletProcessor';
+import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
+import { SilenceDetectorMessage, SilenceDetectorEventType } from './SilenceDetectorMessage';
 import { Time } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
+/**
+ * Takes volume data (e.g. from `VolumeFilter`) as input. Sends `SILENCE_START` when there has been silence for the
+ * last `durationThreshold`, or `SILENCE_END` when a single sample above `volumeThreshold` is found.
+ */
 class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   _lastLoudSampleTime: Time;
   _lastTimePostedSilenceStart: boolean;
   constructor(options: any) {
     super(options);
-    const initialDuration = options.processorOptions.initialDuration !== undefined
-      ? options.processorOptions.initialDuration
-      : 0;
+    const initialDuration = options.processorOptions.initialDuration ?? 0;
     this._lastLoudSampleTime = currentTime - initialDuration;
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
@@ -62,13 +65,15 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          this.port.postMessage({ type: 'silenceEnd', time: currentTime });
+          const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_END, currentTime];
+          this.port.postMessage(m);
           this._lastTimePostedSilenceStart = false;
         }
       } else {
         if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          this.port.postMessage({ type: 'silenceStart', time: currentTime });
+          const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_START, currentTime];
+          this.port.postMessage(m);
           this._lastTimePostedSilenceStart = true;
         }
       }

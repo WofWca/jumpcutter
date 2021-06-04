@@ -1,5 +1,5 @@
 import browser from '@/webextensions-api';
-import { enabledSettingDefaultValue, getSettingsAdvanced, MyStorageChanges } from '@/settings';
+import { enabledSettingDefaultValue, getSettings, MyStorageChanges } from '@/settings';
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 
 (async function () { // Just for top-level `await`
@@ -12,11 +12,10 @@ async function importAndInit() {
   init();
 }
 
-const { enabled: enabledOnInitialization } = await getSettingsAdvanced({ enabled: enabledSettingDefaultValue });
+const { enabled: enabledOnInitialization } = await getSettings({ enabled: enabledSettingDefaultValue });
 if (enabledOnInitialization) {
   importAndInit();
 }
-// Watch the `enabled` setting. Other settings changes are handled by `reactToSettingsChanges`.
 // Not using `addOnSettingsChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
 // TODO use it when (if?) it's gone.
 browser.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {

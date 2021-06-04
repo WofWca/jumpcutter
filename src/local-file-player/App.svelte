@@ -19,9 +19,7 @@
     // For better performance. https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#Memory_management
     objectURL && URL.revokeObjectURL(objectURL);
     objectURL = URL.createObjectURL(file);
-    const savedSpeed = videoEl.playbackRate;
     videoEl.src = objectURL;
-    videoEl.playbackRate = savedSpeed; // Because apparently it's reset after `src` is changed.
     videoEl.play();
     await tick(); // Because initially it's `display: none;`.
     videoEl.focus();
@@ -53,6 +51,13 @@
   </div>
 </div>
 <style>
+  @media (prefers-color-scheme: dark) {
+    :global(body) {
+      background: #222;
+      color: #ddd;
+    }
+  }
+
   .video-and-file-input {
     --common-margin: 0.5rem;
     margin: var(--common-margin);
@@ -96,5 +101,12 @@
     color: #555;
     background:rgba(0, 255, 0, 0.3);
     border: 0.25rem dashed gray;
+  }
+  @media (prefers-color-scheme: dark) {
+    .input-box-content {
+      color: #aaa;
+      background:rgba(0, 255, 0, 0.2);
+      border-color: #111;
+    }
   }
 </style>

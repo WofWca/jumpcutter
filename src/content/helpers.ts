@@ -1,15 +1,32 @@
-import once from 'lodash/once';
 import type { Time, StretchInfo } from '@/helpers';
 
 export function getRealtimeMargin(margin: Time, speed: number): Time {
   return margin / speed;
 }
 
-export function getNewLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
-  return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed)
+/**
+ * Mathematically minimal lookahead delay which is required for marginBefore to work.
+ */
+function getMinLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
+  return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed);
 }
-export function getTotalDelay(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
+export function getOptimalLookaheadDelay(...args: Parameters<typeof getMinLookaheadDelay>): Time {
+  // If we were to use `getMinLookaheadDelay`, it would mean that we basically need to instantly start stretching as
+  // soon as we get `SilenceDetectorEventType.SILENCE_END` from `Controller._silenceDetectorNode`, but this is not a
+  // perfect world and code cannot be executed instantly, so `StretcherAndPitchCorrectorNode.stretch` ends up getting
+  // called with `startTime < context.currentTime`, which ultimately causes glitches.
+  // Introducting additional delay allows us to schedule stretcher things for a bit later.
+  // Basically set this as low as you can without getting warnings from `StretcherAndPitchCorrectorNode` (not just on
+  // your PC, ofc). TODO maybe put this in settings?
+  const codeExecutionMargin: Time = 0.01;
+
+  return getMinLookaheadDelay(...args) + codeExecutionMargin;
+}
+export function getDelayFromInputToStretcherOutput(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
   return lookaheadNodeDelay + stretcherNodeDelay;
+}
+export function getTotalOutputDelay(lookaheadNodeDelay: Time, stretcherDelay: Time, pitchCorrectorDelay: Time): Time {
+  return lookaheadNodeDelay + stretcherDelay + pitchCorrectorDelay;
 }
 export function getNewSnippetDuration(originalRealtimeDuration: Time, originalSpeed: number, newSpeed: number): Time {
   const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
@@ -43,18 +60,20 @@ export function getStretchSpeedChangeMultiplier(
 
 /**
  * The holy grail of this algorithm.
- * Answers the question "When is the sample that has been on the input at `momentTime` going to appear on the output?"
+ * Answers the question "When is the sample that has been on the input at `momentTime` going to appear
+ * on the output of the stretcher's delay node?" This means it takes into account lookahead delay and
+ * stretcher `delayNode`'s delay, but not pitch corrector's delay.
  * Contract:
  * * Only works for input values such that the correct answer is after the `lastScheduledStretcherDelayReset`'s start time.
  * * Assumes the video is never played backwards (i.e. stretcher delay never so quickly).
  */
-export function getMomentOutputTime(
+export function getStretcherDelayForInputMoment(
   momentTime: Time,
   lookaheadDelay: Time,
   lastScheduledStretcherDelayReset: StretchInfo
 ): Time {
   const stretch = lastScheduledStretcherDelayReset;
-  const stretchEndTotalDelay = getTotalDelay(lookaheadDelay, stretch.endValue);
+  const stretchEndTotalDelay = getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.endValue);
   // Simpliest case. The target moment is after the `stretch`'s end time
   // TODO DRY `const asdadsd = momentTime + stretchEndTotalDelay;`?
   if (momentTime + stretchEndTotalDelay >= stretch.endTime) {
@@ -65,7 +84,7 @@ export function getMomentOutputTime(
     // At which point between its start and end would the target moment be played if we were to not actually change the
     // delay ?
     const originalTargetMomentOffsetRelativeToStretchStart =
-      momentTime + getTotalDelay(lookaheadDelay, stretch.startValue) - stretch.startTime;
+      momentTime + getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.startValue) - stretch.startTime;
     // By how much the snippet is going to be stretched?
     const playbackSpeedupDuringStretch = getStretchSpeedChangeMultiplier(stretch);
     // How much time will pass since the stretch start until the target moment is played on the output?
@@ -133,15 +152,11 @@ export function addPlaybackResumeListener(el: HTMLMediaElement, listener: () => 
     el.removeEventListener('playing', listener);
   }
 }
-const HAVE_FUTURE_DATA = 3;
 export function isPlaybackActive(el: HTMLMediaElement): boolean {
   // I wrote this looking at https://html.spec.whatwg.org/multipage/media.html#event-media-playing
-  return el.readyState >= HAVE_FUTURE_DATA && !el.paused;
+  return el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA && !el.paused;
 }
-
-export function cloneFunction<T extends () => unknown>(thisArg: unknown, f: T): T {
-  return f.bind(thisArg) as T;
-}
-export function oncePerInstance<T extends () => unknown>(thisArg: unknown, f: T): T {
-  return once(cloneFunction(thisArg, f));
+export function destroyAudioWorkletNode(node: AudioWorkletNode): void {
+  node.port.postMessage('destroy');
+  node.port.close();
 }

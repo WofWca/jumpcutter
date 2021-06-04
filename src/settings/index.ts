@@ -1,6 +1,10 @@
 import { HotkeyBinding } from '@/hotkeys';
+import { ControllerKind } from './ControllerKind';
 
 export interface Settings {
+  // TODO I made this purely for testing. For release we'll probably need something better.
+  experimentalControllerType: ControllerKind,
+
   volumeThreshold: number,
   previousVolumeThreshold: number,
 
@@ -15,6 +19,8 @@ export interface Settings {
   previousMarginBefore: number,
   marginAfter: number,
   previousMarginAfter: number,
+
+  applyTo: 'videoOnly' | 'audioOnly' | 'both',
 
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
@@ -47,6 +53,8 @@ export interface Settings {
   badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
 
   enableDesyncCorrection: boolean,
+
+  __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
 }
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
@@ -59,10 +67,12 @@ export type MyStorageChanges = {
 
 export * from './enabledSettingDefaultValue';
 export * from './defaultSettings';
-export * from './getSettingsAdvanced';
 export * from './getSettings';
 export * from './setSettings';
+export * from './ControllerKind';
 export * from './getAbsoluteSilenceSpeed';
 export * from './settingsChanges2NewValues';
 export * from './togglableSettings';
 export * from './onChanged';
+export * from './localStorageOnlyKeys';
+export * from './filterOutLocalStorageOnlySettings';
