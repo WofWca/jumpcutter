@@ -4,9 +4,10 @@ export default class VolumeFilterNode extends AudioWorkletNode {
   constructor(context: AudioContext, maxSmoothingWindowLength: Time, smoothingWindowLength: Time) {
     super(context, 'VolumeFilter', {
       outputChannelCount: [1],
-      processorOptions: {
-        maxSmoothingWindowLength,
-      },
+      // TODO see the same comment in `SilenceDetectorNode.ts`.
+      // processorOptions: {
+      //   maxSmoothingWindowLength,
+      // },
       parameterData: {
         smoothingWindowLength,
       },

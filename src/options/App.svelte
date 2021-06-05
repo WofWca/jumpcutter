@@ -157,12 +157,16 @@
             {/each}
           </select>
         </InputFieldBase>
-        <!-- TODO I'm afraid the part in brackets may make users think that disabling this will make all the bad things
-        about the extension go away. -->
-        <CheckboxField
-          label="👫 Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)"
-          bind:checked={settings.enableDesyncCorrection}
-        />
+        {#if BUILD_DEFINITIONS.BROWSER === 'chromium'}
+          <!-- TODO should we state that the desync problem is not present in Gecko, for the people who are using the
+          both versions? -->
+          <!-- TODO I'm afraid the part in brackets may make users think that disabling this will make all the bad things
+          about the extension go away. -->
+          <CheckboxField
+            label="👫 Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)"
+            bind:checked={settings.enableDesyncCorrection}
+          />
+        {/if}
       </section>
       <section>
         <h3>Hotkeys</h3>

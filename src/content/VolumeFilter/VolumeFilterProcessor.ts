@@ -41,23 +41,19 @@ class SingleChannelRingBuffer extends Float32Array {
   }
 }
 
+let devErrorShown = false;
+
 // Simple rectangular window and RMS.
 class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
   _currWindowSquaresSum: number;
   _options: any;
   constructor(options: any, ...rest: unknown[]) {
-    if (process.env.NODE_ENV !== 'production') {
-      // Looks like just passing "1" to `super()` doen't do anythin. Will have to force the user to specify it.
-      if (options.outputChannelCount.length !== 1 || options.outputChannelCount[0] !== 1) {
-        throw new Error('`outputChannelCount` other than `[1]` is not supported');
-      }
-    }
     super(options, ...rest);
     this._currWindowSquaresSum = 0;
     this._options = {
       maxChannels: DEFAULT_MAX_NUM_CHANNELS,
-      maxSmoothingWindowLength: 1,
+      maxSmoothingWindowLength: options.parameterData.smoothingWindowLength,
       ...options.processorOptions,
     };
     const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
@@ -78,6 +74,18 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
     const smoothingWindowLength = parameters.smoothingWindowLength[0];
     const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (
+        smoothingWindowLengthSamples !== windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength)
+        && !devErrorShown
+      ) {
+        console.error('Looks like you\'ve started dynamically changing `smoothingWindowLength`. You\'ll probably need'
+          + ' to revert the commit that introduced this change.', smoothingWindowLength, this._options.maxSmoothingWindowLength)
+        devErrorShown = true;
+      }
+    }
+
     const input = inputs[0];
     if (input.length === 0) {
       return this.keepAlive;

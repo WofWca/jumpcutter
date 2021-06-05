@@ -430,6 +430,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
   <datalist id="sounded-speed-datalist">
     <option>1</option>
   </datalist>
+  <!-- See the comment in `transformSpeed` definition on why `max` is different for different browsers. -->
   <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
   Also min should be 0 for the same reason. -->
   <RangeSlider
@@ -437,7 +438,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     list="sounded-speed-datalist"
     fractionalDigits={2}
     min="0.05"
-    max="15"
+    max={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15}
     step="0.05"
     bind:value={settings.soundedSpeed}
   />
@@ -447,7 +448,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
     min="0.05"
-    max="15"
+    max={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15}
     step="0.05"
     bind:value={settings.silenceSpeedRaw}
     disabled={settings.experimentalControllerType === ControllerKind_CLONING}
