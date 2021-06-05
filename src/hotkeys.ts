@@ -201,6 +201,8 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
         ? currentSettings[prevValueSettingKey]
         : arg;
     };
+    // See the comment in `transformSpeed` definition on why this is different for different browsers.
+    const maxSpeedClamp = BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15;
     switch (binding.action) {
       // TODO DRY max and min values with values in `@/popup`. Make them adjustable even?
       //
@@ -213,15 +215,17 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       case HotkeyAction.DECREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '-', 0, 1); break;
       case HotkeyAction.SET_VOLUME_THRESHOLD: actions.settingsNewValues.volumeThreshold = arg; break;
       case HotkeyAction.TOGGLE_VOLUME_THRESHOLD: toggleSettingValue('volumeThreshold'); break;
-      case HotkeyAction.INCREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '+', binding.actionArgument!, 15); break;
-      case HotkeyAction.DECREASE_SOUNDED_SPEED: updateClamped('soundedSpeed', '-', binding.actionArgument!, 15); break;
+      case HotkeyAction.INCREASE_SOUNDED_SPEED:
+        updateClamped('soundedSpeed', '+', binding.actionArgument!, maxSpeedClamp); break;
+      case HotkeyAction.DECREASE_SOUNDED_SPEED:
+        updateClamped('soundedSpeed', '-', binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.SET_SOUNDED_SPEED: actions.settingsNewValues.soundedSpeed = arg; break;
       case HotkeyAction.TOGGLE_SOUNDED_SPEED: toggleSettingValue('soundedSpeed'); break;
       // TODO how about do different `clamps` for 'absolute' and 'relativeToSoundedSpeed' specification methods?
-      case HotkeyAction.INCREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '+', binding.actionArgument!, 15);
-        break;
-      case HotkeyAction.DECREASE_SILENCE_SPEED: updateClamped('silenceSpeedRaw', '-', binding.actionArgument!, 15);
-        break;
+      case HotkeyAction.INCREASE_SILENCE_SPEED:
+        updateClamped('silenceSpeedRaw', '+', binding.actionArgument!, maxSpeedClamp); break;
+      case HotkeyAction.DECREASE_SILENCE_SPEED:
+        updateClamped('silenceSpeedRaw', '-', binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.SET_SILENCE_SPEED: actions.settingsNewValues.silenceSpeedRaw = arg; break;
       case HotkeyAction.TOGGLE_SILENCE_SPEED: toggleSettingValue('silenceSpeedRaw'); break;
       case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;
