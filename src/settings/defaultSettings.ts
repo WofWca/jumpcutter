@@ -157,5 +157,5 @@ export const defaultSettings: Readonly<Settings> = {
 
   badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
 
-  enableDesyncCorrection: true,
+  enableDesyncCorrection: BUILD_DEFINITIONS.BROWSER === 'chromium' ? true : false,
 };

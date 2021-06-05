@@ -52,6 +52,8 @@ export interface Settings {
   // TODO should we add other options for this setting?
   badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
 
+  // It would make more sense to remove the property entirely for browsers that don't have the desyn bug,
+  // but it's a headache. Let's just wait until it's fixed everywhere. Or maybe TODO this later.
   enableDesyncCorrection: boolean,
 
   __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
