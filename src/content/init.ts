@@ -12,9 +12,9 @@ const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsControlle
 
 // TODO if it get standardized, we can simplify this.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nativeRequestIdleCallback = (window as any).requestIdleCallback;
-const myRequestIdleCallback = nativeRequestIdleCallback
-  ? (cb: () => void) => nativeRequestIdleCallback(cb, { timeout: 5000 })
+declare const requestIdleCallback: undefined | ((...args: any) => void);
+const myRequestIdleCallback = typeof requestIdleCallback !== 'undefined'
+  ? (cb: () => void) => requestIdleCallback(cb, { timeout: 5000 })
   : (cb: () => void) => setTimeout(() => setTimeout(cb));
 
 export default async function init(): Promise<void> {
