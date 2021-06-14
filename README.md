@@ -42,7 +42,7 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
 ## Donate
 
-* [bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9](bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9)
+* <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
 * https://liberapay.com/WofWca
 
 [addons-mozilla-org]: https://addons.mozilla.org/firefox/addon/jump-cutter
