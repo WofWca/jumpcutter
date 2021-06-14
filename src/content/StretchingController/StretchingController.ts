@@ -334,6 +334,7 @@ export default class Controller {
       }
       // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
       // (like 200 kB per toggle).
+      // Not doint this in `CloningController/Lookahead.ts` does not appear to cause a memory leak for some reason.
       // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
       // thing retaining a reference to the listener. TODO
       this._onDestroyCallbacks.push(() => silenceDetector.port.onmessage = null);
