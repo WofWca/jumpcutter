@@ -4,7 +4,7 @@
 [![Firefox Browser Add-ons](https://img.shields.io/amo/users/jump-cutter?logo=firefox-browser)](https://addons.mozilla.org/firefox/addon/jump-cutter)
 [![Discord](https://img.shields.io/discord/678444692592918548?logo=discord)](https://discord.gg/HCjghyT)
 
-Plays silent parts of videos on the page at faster speed.
+Plays silent parts of videos on the page at a faster speed.
 Can be useful for watching lectures and other unedited videos.
 
 ![Extension popup screenshot](./screenshots/popup-1280x800.png)
