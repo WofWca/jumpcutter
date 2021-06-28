@@ -105,10 +105,10 @@ module.exports = env => {
         },
       ),
       // This is so dynamic import works in content scripts (but it affects all scripts).
-      // TODO in the future, it should be possible to just specify `output.environment.dynamicImport = true`
-      // (which will act as `output.chunkLoading = 'import'`), but Webpack isn't able to do that yet:
-      // https://github.com/webpack/webpack/blob/15110ea6de0b53c93d697716d17037c41a3c0cd2/lib/javascript/EnableChunkLoadingPlugin.js#L99-L101
-      // Also, browsers don't support that well themselves yet.
+      // TODO replace with `output.environment.dynamicImport = true` (which will act as
+      // `output.chunkLoading = 'import'`). But doing `browser.runtime.getURL()` (in
+      // src/native-dynamic-import-webpack-plugin/LoadScriptRuntimeModule.js:19) appears to still be required.
+      // Maybe we can somehow utilize Webpack's `publicPath` option to solve this?
       new NativeDynamicImportPlugin(),
 
       new CopyPlugin({
