@@ -251,6 +251,8 @@ export default class Controller {
     }
     if (this.isStretcherEnabled()) {
       mediaElementSource.connect(this._lookahead);
+      this._stretcherAndPitch.connectInputFrom(this._lookahead);
+      this._stretcherAndPitch.connectOutputTo(ctx.destination);
     } else {
       mediaElementSource.connect(audioContext.destination);
     }
@@ -264,10 +266,6 @@ export default class Controller {
       const silenceDetector = await silenceDetectorP;
       volumeFilter.connect(silenceDetector);
     }));
-    if (this.isStretcherEnabled()) {
-      this._stretcherAndPitch.connectInputFrom(this._lookahead);
-      this._stretcherAndPitch.connectOutputTo(ctx.destination);
-    }
     if (isLogging(this)) {
       toAwait.push(outVolumeFilterP!.then(outVolumeFilter => {
         if (this.isStretcherEnabled()) {
