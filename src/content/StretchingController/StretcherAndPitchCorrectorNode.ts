@@ -5,7 +5,7 @@ import { connect as ToneConnect } from 'tone/build/esm/core/context/ToneAudioNod
 import { PitchShift } from 'tone/build/esm/effect/PitchShift';
 import { ToneAudioNode } from 'tone/build/esm/core/context/ToneAudioNode';
 import {
-  getStretcherDelayForInputMoment,
+  getWhenMomentGetsToStretchersDelayNodeOutput,
   getDelayFromInputToStretcherOutput,
   getStretchSpeedChangeMultiplier,
   getStretcherDelayChange,
@@ -153,7 +153,7 @@ export default class StretcherAndPitchCorrectorNode {
       - marginBeforePartAtSilenceSpeedRealTimeDuration
       - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
     // Same, but when it's going to be on the output.
-    const marginBeforeStartOutputTime = getStretcherDelayForInputMoment(
+    const marginBeforeStartOutputTime = getWhenMomentGetsToStretchersDelayNodeOutput(
       marginBeforeStartInputTime,
       lookaheadDelay,
       lastScheduledStretcherDelayReset
@@ -169,7 +169,7 @@ export default class StretcherAndPitchCorrectorNode {
     // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
     // snippet, because the first one is already at required (sounded) speed, due to that delay before we speed up
     // the video after some silence.
-    // This is also the reason why `getStretcherDelayForInputMoment` function is so long.
+    // This is also the reason why `getWhenMomentGetsToStretchersDelayNodeOutput` function is so long.
     // Let's find this breakpoint.
 
     if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {

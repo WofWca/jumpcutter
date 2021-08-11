@@ -67,7 +67,7 @@ export function getStretchSpeedChangeMultiplier(
  * * Only works for input values such that the correct answer is after the `lastScheduledStretcherDelayReset`'s start time.
  * * Assumes the video is never played backwards (i.e. stretcher delay never so quickly).
  */
-export function getStretcherDelayForInputMoment(
+export function getWhenMomentGetsToStretchersDelayNodeOutput(
   momentTime: Time,
   lookaheadDelay: Time,
   lastScheduledStretcherDelayReset: StretchInfo
