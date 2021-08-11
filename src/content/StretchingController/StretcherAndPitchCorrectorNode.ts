@@ -353,6 +353,16 @@ export default class StretcherAndPitchCorrectorNode {
       if (lateBy >= 0) {
         console.error('interruptAtTime late by', lateBy)
       }
+
+      const timeAfterStretchStart = interruptAtTime - this.lastScheduledStretch.startTime;
+      // Though sometimes it happens to be 0. It is when SILENCE_END is immediately followed by SILENCE_START
+      // in `silenceDetector.port.onmessage`, so `_stretcherAndPitch.onSilenceStart` & `_stretcherAndPitch.onSilenceEnd`
+      // get called with equal `elementSpeedSwitchedAt` arguments. TODO should we do something about this?
+      if (timeAfterStretchStart < 0) {
+        console.error(`A stretch interruption has been scheduled to take place ${timeAfterStretchStart}s before`
+          + ' the actual stretch start. At the time of writing it should not possible.'
+          + ' Make sure you have the consequences handled.');
+      }
     }
   }
 
