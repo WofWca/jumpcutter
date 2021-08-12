@@ -249,27 +249,38 @@ export default class Controller {
       mediaElementSource = ctx.createMediaElementSource(element);
       mediaElementSourcesMap.set(element, mediaElementSource)
     }
+    let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
+      = mediaElementSource;
     if (this.isStretcherEnabled()) {
       mediaElementSource.connect(this._lookahead);
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
-      this._stretcherAndPitch.connectOutputTo(ctx.destination);
-    } else {
-      mediaElementSource.connect(audioContext.destination);
+      toDestinationChainLastConnectedLink = this._stretcherAndPitch;
     }
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       mediaElementSource.connect(volumeFilter);
       this._onDestroyCallbacks.push(() => {
-        mediaElementSource.disconnect();
-        mediaElementSource.connect(audioContext.destination);
+        // This is so the next line doesn't throw in case it is already disconnected (e.g. by some other
+        // onDestroyCallback). The spec says this is fine:
+        // https://webaudio.github.io/web-audio-api/#dom-audionode-connect
+        // "Multiple connections with the same termini are ignored."
+        mediaElementSource.connect(volumeFilter);
+        mediaElementSource.disconnect(volumeFilter);
       });
       volumeFilter.connect(this._analyzerIn!);
       const silenceDetector = await silenceDetectorP;
       volumeFilter.connect(silenceDetector);
     }));
+    toDestinationChainLastConnectedLink.connect(ctx.destination);
+
+    this._onDestroyCallbacks.push(() => {
+      mediaElementSource.disconnect();
+      mediaElementSource.connect(audioContext.destination);
+    });
+
     if (isLogging(this)) {
       toAwait.push(outVolumeFilterP!.then(outVolumeFilter => {
         if (this.isStretcherEnabled()) {
-          this._stretcherAndPitch.connectOutputTo(outVolumeFilter);
+          this._stretcherAndPitch.connect(outVolumeFilter);
         } else {
           mediaElementSource.connect(outVolumeFilter);
         }
