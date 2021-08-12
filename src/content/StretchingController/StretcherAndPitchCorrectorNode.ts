@@ -117,6 +117,7 @@ export default class StretcherAndPitchCorrectorNode {
     this.slowDownPitchShift.connect(destinationNode)
     this.originalPitchCompensationDelay.connect(destinationNode)
   }
+  connect = this.connectOutputTo;
 
   onSilenceEnd(elementSpeedSwitchedAt: Time): void {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
