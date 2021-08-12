@@ -222,9 +222,10 @@ export default class StretcherAndPitchCorrectorNode {
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
       getStretcherSoundedDelay(settings.marginBefore, settings.soundedSpeed, settings.silenceSpeed);
-    const startIn =
+    const marginAfterEndOutputTime =
       getDelayFromInputToStretcherOutput(this.getLookaheadDelay(), stretcherDelayStartValue)
       - realtimeMarginBefore;
+    const startIn = marginAfterEndOutputTime;
 
     const speedUpBy = settings.silenceSpeed / settings.soundedSpeed;
 
