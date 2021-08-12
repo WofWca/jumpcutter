@@ -42,6 +42,7 @@ export default class StretcherAndPitchCorrectorNode {
   private slowDownPitchShift: PitchShift;
   private originalPitchCompensationDelay: DelayNode;
   private delayNode: DelayNode;
+  // private silenceMuter: GainNode;
   lastScheduledStretch?: StretchInfo & { speedupOrSlowdown: PitchSetting.SPEEDUP | PitchSetting.SLOWDOWN };
   private lastElementSpeedChangeAtInputTime?: Time;
 
@@ -89,9 +90,16 @@ export default class StretcherAndPitchCorrectorNode {
     this.delayNode = context.createDelay(maxDelay);
     this.delayNode.delayTime.value = initialDelay;
 
+    // this.silenceMuter = context.createGain();
+
+    // this.delayNode.connect(this.silenceMuter);
+
     this.delayNode.connect(this.speedUpGain);
     this.delayNode.connect(this.slowDownGain);
     this.delayNode.connect(this.normalSpeedGain);
+    // this.silenceMuter.connect(this.speedUpGain);
+    // this.silenceMuter.connect(this.slowDownGain);
+    // this.silenceMuter.connect(this.normalSpeedGain);
 
     ToneConnect(this.speedUpGain, this.speedUpPitchShift);
     ToneConnect(this.slowDownGain, this.slowDownPitchShift);
@@ -119,7 +127,10 @@ export default class StretcherAndPitchCorrectorNode {
   }
   connect = this.connectOutputTo;
 
-  onSilenceEnd(elementSpeedSwitchedAt: Time): void {
+  /**
+   * @returns marginBeforeStartOutputTime
+   */
+  onSilenceEnd(elementSpeedSwitchedAt: Time): Time {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
@@ -213,8 +224,15 @@ export default class StretcherAndPitchCorrectorNode {
     // if (isLogging(this)) {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
     // }
+
+    // this.silenceMuter.gain.setValueAtTime(1, marginBeforeStartOutputTime);
+
+    return marginBeforeStartOutputTime;
   }
-  onSilenceStart(elementSpeedSwitchedAt: Time) {
+  /**
+   * @returns marginAfterEndOutputTime
+   */
+  onSilenceStart(elementSpeedSwitchedAt: Time): Time {
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt; // See the same assignment in `onSilenceEnd`.
 
     const settings = this.getSettings();
@@ -245,6 +263,10 @@ export default class StretcherAndPitchCorrectorNode {
     // if (isLogging(this)) {
     //   this._log({ type: 'reset', lastScheduledStretch: this.lastScheduledStretch });
     // }
+
+    // this.silenceMuter.gain.setValueAtTime(0, marginAfterEndOutputTime);
+
+    return marginAfterEndOutputTime;
   }
 
   private setOutputPitchAt(pitchSetting: PitchSetting, time: Time, oldPitchSetting: PitchSetting) {
