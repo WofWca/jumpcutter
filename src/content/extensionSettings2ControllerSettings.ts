@@ -9,6 +9,7 @@ export default function extensionSettings2ControllerSettings(extensionSettings: 
     volumeThreshold: extensionSettings.volumeThreshold,
     marginBefore: extensionSettings.marginBefore,
     marginAfter: extensionSettings.marginAfter,
+    muteSilence: extensionSettings.muteSilence,
     enableDesyncCorrection: extensionSettings.enableDesyncCorrection,
 
     silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),

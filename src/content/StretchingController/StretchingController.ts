@@ -46,6 +46,7 @@ export type ControllerSettings =
     | 'soundedSpeed'
     | 'marginBefore'
     | 'marginAfter'
+    | 'muteSilence'
     | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,
@@ -255,6 +256,12 @@ export default class Controller {
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
       toDestinationChainLastConnectedLink = this._stretcherAndPitch;
     }
+    let silenceMuter: undefined | GainNode;
+    if (this.settings.muteSilence) {
+      silenceMuter = audioContext.createGain();
+      toDestinationChainLastConnectedLink.connect(silenceMuter);
+      toDestinationChainLastConnectedLink = silenceMuter;
+    }
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       mediaElementSource.connect(volumeFilter);
       this._onDestroyCallbacks.push(() => {
@@ -308,10 +315,20 @@ export default class Controller {
         const elementSpeedSwitchedAt = audioContext.currentTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           this._setSpeedAndLog(SpeedName.SOUNDED);
-          this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
+          const marginBeforeStartOutputTime = this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
+          // TODO See the problem? When the stretcher is disabled, the change is scheduled to now,
+          // without any lookahead.
+          // TODO we either need to take `_stretcherAndPitch`'s pitch shifters' delays into consideration (instead of
+          // just the `delayNode`) or explain why we don't.
+          const unmuteAt = marginBeforeStartOutputTime ?? audioContext.currentTime;
+          // TODO fade to negate clicking.
+          silenceMuter?.gain.setValueAtTime(1, unmuteAt);
         } else {
           this._setSpeedAndLog(SpeedName.SILENCE);
-          this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
+          const marginAfterEndOutputTime = this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
+          // See comments above, in the if true block.
+          const muteAt = marginAfterEndOutputTime ?? audioContext.currentTime;
+          silenceMuter?.gain.setValueAtTime(0, muteAt);
   
           if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
             // A workaround for https://github.com/vantezzen/skip-silence/issues/28.

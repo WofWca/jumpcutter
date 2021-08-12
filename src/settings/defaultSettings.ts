@@ -19,6 +19,8 @@ export const defaultSettings: Readonly<Settings> = {
   marginAfter:          0.100,
   previousMarginAfter:  0.100,
 
+  muteSilence: false,
+
   applyTo: 'videoOnly',
 
   enableHotkeys: true,
