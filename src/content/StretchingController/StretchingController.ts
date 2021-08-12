@@ -46,6 +46,7 @@ export type ControllerSettings =
     | 'soundedSpeed'
     | 'marginBefore'
     | 'marginAfter'
+    | 'muteSilence'
     | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,
@@ -116,7 +117,6 @@ export default class Controller {
 
   async init(): Promise<this> {
     const element = this.element;
-    const ctx = audioContext;
 
     const toAwait: Array<Promise<void>> = [];
 
@@ -134,15 +134,15 @@ export default class Controller {
     element.addEventListener('volumechange', onElementVolumeChange);
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
-    this.audioContext = ctx;
+    this.audioContext = audioContext;
 
-    const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
+    const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
 
     const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
     const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
     const volumeFilterP = volumeFilterProcessorP.then(() => {
       const volumeFilter = new VolumeFilterNode(
-        ctx,
+        audioContext,
         volumeFilterSmoothingWindowLength,
         volumeFilterSmoothingWindowLength
       );
@@ -150,7 +150,7 @@ export default class Controller {
       return volumeFilter;
     });
     const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
-      const silenceDetector = new SilenceDetectorNode(ctx, this._getSilenceDetectorNodeDurationThreshold())
+      const silenceDetector = new SilenceDetectorNode(audioContext, this._getSilenceDetectorNodeDurationThreshold())
       this._silenceDetectorNode = silenceDetector;
       this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(silenceDetector));
       // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
@@ -159,7 +159,7 @@ export default class Controller {
       return silenceDetector;
     });
 
-    this._analyzerIn = ctx.createAnalyser();
+    this._analyzerIn = audioContext.createAnalyser();
     // Using the minimum possible value for performance, as we're only using the node to get unchanged output values.
     this._analyzerIn.fftSize = 2 ** 5;
     this._volumeInfoBuffer = new Float32Array(this._analyzerIn.fftSize);
@@ -168,27 +168,27 @@ export default class Controller {
     if (isLogging(this)) {
       outVolumeFilterP = volumeFilterProcessorP.then(() => {
         const outVolumeFilter = new VolumeFilterNode(
-          ctx,
+          audioContext,
           volumeFilterSmoothingWindowLength,
           volumeFilterSmoothingWindowLength
         );
         this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter));
         return outVolumeFilter;
       });
-      this._analyzerOut = ctx.createAnalyser();
+      this._analyzerOut = audioContext.createAnalyser();
     }
     // Actually this check is not required as the extension handles marginBefore being 0 and stretcher being enabled
     // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
-      this._lookahead = ctx.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
+      this._lookahead = audioContext.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
       const { default: StretcherAndPitchCorrectorNode } = await import(
         /* webpackExports: ['default'] */
         './StretcherAndPitchCorrectorNode'
       );
-      const maxSpeedToPreserveSpeech = ctx.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
+      const maxSpeedToPreserveSpeech = audioContext.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
       const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
       this._stretcherAndPitch = new StretcherAndPitchCorrectorNode(
-        ctx,
+        audioContext,
         maxMaginStretcherDelay,
         0, // Doesn't matter, we'll update it in `_setStateAccordingToNewSettings`.
         () => this.settings,
@@ -246,30 +246,42 @@ export default class Controller {
       mediaElementSource = srcFromMap;
       mediaElementSource.disconnect();
     } else {
-      mediaElementSource = ctx.createMediaElementSource(element);
+      mediaElementSource = audioContext.createMediaElementSource(element);
       mediaElementSourcesMap.set(element, mediaElementSource)
     }
+    let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
+      = mediaElementSource;
     if (this.isStretcherEnabled()) {
       mediaElementSource.connect(this._lookahead);
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
-      this._stretcherAndPitch.connectOutputTo(ctx.destination);
-    } else {
-      mediaElementSource.connect(audioContext.destination);
+      toDestinationChainLastConnectedLink = this._stretcherAndPitch;
+    }
+    let silenceMuter: undefined | GainNode;
+    if (this.settings.muteSilence) {
+      silenceMuter = audioContext.createGain();
+      toDestinationChainLastConnectedLink.connect(silenceMuter);
+      toDestinationChainLastConnectedLink = silenceMuter;
     }
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       mediaElementSource.connect(volumeFilter);
       this._onDestroyCallbacks.push(() => {
-        mediaElementSource.disconnect();
-        mediaElementSource.connect(audioContext.destination);
+        mediaElementSource.disconnect(volumeFilter);
       });
       volumeFilter.connect(this._analyzerIn!);
       const silenceDetector = await silenceDetectorP;
       volumeFilter.connect(silenceDetector);
     }));
+    toDestinationChainLastConnectedLink.connect(audioContext.destination);
+
+    this._onDestroyCallbacks.push(() => {
+      mediaElementSource.disconnect();
+      mediaElementSource.connect(audioContext.destination);
+    });
+
     if (isLogging(this)) {
       toAwait.push(outVolumeFilterP!.then(outVolumeFilter => {
         if (this.isStretcherEnabled()) {
-          this._stretcherAndPitch.connectOutputTo(outVolumeFilter);
+          this._stretcherAndPitch.connect(outVolumeFilter);
         } else {
           mediaElementSource.connect(outVolumeFilter);
         }
@@ -288,7 +300,7 @@ export default class Controller {
         const inVol = logBuffer[logBuffer.length - 1];
         logArr.push({
           msg,
-          t: ctx.currentTime,
+          t: audioContext.currentTime,
           // delay: stretcherInitialDelay, // TODO fix this. It's not `initialDelay` it should be `stretcher.delay`
           speed: element.playbackRate,
           inVol,
@@ -300,13 +312,23 @@ export default class Controller {
     toAwait.push(silenceDetectorP.then(silenceDetector => {
       silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
         const [silenceStartOrEnd] = data;
-        const elementSpeedSwitchedAt = ctx.currentTime;
+        const elementSpeedSwitchedAt = audioContext.currentTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           this._setSpeedAndLog(SpeedName.SOUNDED);
-          this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
+          const marginBeforeStartOutputTime = this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
+          // TODO See the problem? When the stretcher is disabled, the change is scheduled to now,
+          // without any lookahead.
+          // TODO we either need to take `_stretcherAndPitch`'s pitch shifters' delays into consideration (instead of
+          // just the `delayNode`) or explain why we don't.
+          const unmuteAt = marginBeforeStartOutputTime ?? audioContext.currentTime;
+          // TODO fade to negate clicking.
+          silenceMuter?.gain.setValueAtTime(1, unmuteAt);
         } else {
           this._setSpeedAndLog(SpeedName.SILENCE);
-          this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
+          const marginAfterEndOutputTime = this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
+          // See comments above, in the if true block.
+          const muteAt = marginAfterEndOutputTime ?? audioContext.currentTime;
+          silenceMuter?.gain.setValueAtTime(0, muteAt);
   
           if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
             // A workaround for https://github.com/vantezzen/skip-silence/issues/28.

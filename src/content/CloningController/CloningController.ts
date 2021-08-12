@@ -17,6 +17,7 @@ export type ControllerSettings =
     | 'soundedSpeed'
     | 'marginBefore'
     | 'marginAfter'
+    | 'muteSilence'
     | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,

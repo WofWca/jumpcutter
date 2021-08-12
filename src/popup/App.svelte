@@ -453,6 +453,23 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
     bind:value={settings.silenceSpeedRaw}
     disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
+  <label
+    use:tippyActionAsyncPreload={{
+      content: '* Bare minimum usability\n'
+        + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
+        + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
+        + '* No audio distortion, delay or desync\n',
+      theme: 'my-tippy white-space-pre-line',
+    }}
+    style="margin-top: 1rem; display: inline-flex; align-items: center;"
+  >
+    <input
+      bind:checked={settings.muteSilence}
+      type="checkbox"
+      style="margin: 0 0.5rem 0 0;"
+    >
+    <span>Mute silence</span>
+  </label>
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
     min="0"

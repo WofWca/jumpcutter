@@ -20,6 +20,8 @@ export interface Settings {
   marginAfter: number,
   previousMarginAfter: number,
 
+  muteSilence: boolean,
+
   applyTo: 'videoOnly' | 'audioOnly' | 'both',
 
   enableHotkeys: boolean,
