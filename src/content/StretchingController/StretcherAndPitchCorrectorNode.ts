@@ -214,7 +214,7 @@ export default class StretcherAndPitchCorrectorNode {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
     // }
   }
-  onSilenceStart(elementSpeedSwitchedAt: Time) {
+  onSilenceStart(elementSpeedSwitchedAt: Time): void {
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt; // See the same assignment in `onSilenceEnd`.
 
     const settings = this.getSettings();
