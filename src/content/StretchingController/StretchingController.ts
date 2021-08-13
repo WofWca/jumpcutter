@@ -310,12 +310,12 @@ export default class Controller {
     toAwait.push(silenceDetectorP.then(silenceDetector => {
       silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
         const [silenceStartOrEnd] = data;
-        const elementSpeedSwitchedAt = audioContext.currentTime;
+        let elementSpeedSwitchedAt: Time;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
-          this._setSpeedAndLog(SpeedName.SOUNDED);
+          elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SOUNDED);
           this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
         } else {
-          this._setSpeedAndLog(SpeedName.SILENCE);
+          elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SILENCE);
           this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
   
           if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
@@ -446,7 +446,10 @@ export default class Controller {
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
-  private _setSpeedAndLog(speedName: SpeedName) {
+  /**
+   * @returns elementSpeedSwitchedAt
+   */
+  private _setSpeedAndLog(speedName: SpeedName): Time {
     let speedVal;
     switch (speedName) {
       case SpeedName.SOUNDED: {
@@ -462,11 +465,13 @@ export default class Controller {
       case SpeedName.SILENCE: speedVal = transformSpeed(this.settings.silenceSpeed); break;
     }
     this.element.playbackRate = speedVal;
+    const elementSpeedSwitchedAt = this.audioContext!.currentTime;
     this._lastActualPlaybackRateChange = {
-      time: this.audioContext!.currentTime,
+      time: elementSpeedSwitchedAt,
       value: speedVal,
       name: speedName,
     };
+    return elementSpeedSwitchedAt;
   }
 
   get telemetry(): TelemetryRecord {
