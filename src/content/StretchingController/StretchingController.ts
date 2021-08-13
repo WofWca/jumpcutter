@@ -395,6 +395,12 @@ export default class Controller {
     this.settings = newSettings;
     assertDev(this.isInitialized());
     if (!oldSettings) {
+      this._lastActualPlaybackRateChange = {
+        // Dummy values, will be ovewritten immediately in `_setSpeedAndLog`.
+        name: SpeedName.SOUNDED,
+        time: 0,
+        value: 1,
+      }
       this._setSpeedAndLog(SpeedName.SOUNDED);
     } else {
       this._setSpeedAndLog(this._lastActualPlaybackRateChange.name);
@@ -466,11 +472,12 @@ export default class Controller {
     }
     this.element.playbackRate = speedVal;
     const elementSpeedSwitchedAt = this.audioContext!.currentTime;
-    this._lastActualPlaybackRateChange = {
-      time: elementSpeedSwitchedAt,
-      value: speedVal,
-      name: speedName,
-    };
+    const obj = this._lastActualPlaybackRateChange;
+    assertDev(obj);
+    // Avoiding creating new objects for performance.
+    obj.time = elementSpeedSwitchedAt;
+    obj.value = speedVal;
+    obj.name = speedName;
     return elementSpeedSwitchedAt;
   }
 
