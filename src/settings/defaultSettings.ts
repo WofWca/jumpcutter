@@ -14,8 +14,10 @@ export const defaultSettings: Readonly<Settings> = {
   soundedSpeed:         1.5,
   previousSoundedSpeed: 1.5,
   enabled: enabledSettingDefaultValue,
-  marginBefore:         0.100,
-  previousMarginBefore: 0.100,
+  // Seems like new users get immediately scared by the sound distortion the extension causes, so let's let users
+  // enable marginBefore manually IF they start noticing that they need it.
+  marginBefore:         0,
+  previousMarginBefore: 0,
   marginAfter:          0.100,
   previousMarginAfter:  0.100,
 
