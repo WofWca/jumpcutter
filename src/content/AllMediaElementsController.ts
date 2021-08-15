@@ -329,7 +329,7 @@ export default class AllMediaElementsController {
     this.broadcastStatus();
   }
 
-  private onMediaPlayEvent = (e: Event) => {
+  private ensureAttachToEventTargetElement = (e: Event) => {
     this.esnureAttachToElement(e.target as HTMLMediaElement);
   }
   private handleNewElements() {
@@ -342,8 +342,8 @@ export default class AllMediaElementsController {
       }
       this.handledElements.add(el);
 
-      el.addEventListener('play', this.onMediaPlayEvent);
-      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.onMediaPlayEvent));
+      el.addEventListener('play', this.ensureAttachToEventTargetElement);
+      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.ensureAttachToEventTargetElement));
     }
 
     // Attach to the first new element that is not paused, even if we're already attached to another.

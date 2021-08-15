@@ -8,7 +8,7 @@
 
   "compilerOptions": {
     "module": "ESNext", // I believe Webpack is going to transpile it anyway, isn't it?
-    "target": "ESNext",
+    "target": "ES2021",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "esModuleInterop": true,

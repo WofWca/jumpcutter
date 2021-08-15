@@ -59,7 +59,7 @@ export function getStretchSpeedChangeMultiplier(
 }
 
 /**
- * The holy grail of this algorithm.
+ * The holy grail of the stretching algorithm.
  * Answers the question "When is the sample that has been on the input at `momentTime` going to appear
  * on the output of the stretcher's delay node?" This means it takes into account lookahead delay and
  * stretcher `delayNode`'s delay, but not pitch corrector's delay.
@@ -67,7 +67,7 @@ export function getStretchSpeedChangeMultiplier(
  * * Only works for input values such that the correct answer is after the `lastScheduledStretcherDelayReset`'s start time.
  * * Assumes the video is never played backwards (i.e. stretcher delay never so quickly).
  */
-export function getStretcherDelayForInputMoment(
+export function getWhenMomentGetsToStretchersDelayNodeOutput(
   momentTime: Time,
   lookaheadDelay: Time,
   lastScheduledStretcherDelayReset: StretchInfo

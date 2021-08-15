@@ -11,11 +11,18 @@ export const defaultSettings: Readonly<Settings> = {
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
   silenceSpeedRaw:         2.5,
   previousSilenceSpeedRaw: 2.5,
+  // Argument for `soundedSpeed !== 1`:
+  // * It reminds the user that the extension is enabled, so he's not confused by media getting seeked seemingly
+  // randomly.
+  // * It shows the user that there is such functionality.
+  // * People who have installed this extension are expected to prefer a faster `soundedSpeed`.
   soundedSpeed:         1.5,
   previousSoundedSpeed: 1.5,
   enabled: enabledSettingDefaultValue,
-  marginBefore:         0.100,
-  previousMarginBefore: 0.100,
+  // Seems like new users get immediately scared by the sound distortion the extension causes, so let's let users
+  // enable marginBefore manually IF they start noticing that they need it.
+  marginBefore:         0,
+  previousMarginBefore: 0,
   marginAfter:          0.100,
   previousMarginAfter:  0.100,
 

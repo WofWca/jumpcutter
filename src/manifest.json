@@ -1,12 +1,12 @@
 {
   "name": "Jump Cutter",
-  "version": "1.16.3",
+  "version": "1.16.4",
   "description": "Skips silent parts in videos on the fly",
   "permissions": ["storage"],
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "48": "icons/icon.svg-48.png",
+      "64": "icons/icon.svg-64.png",
       "128": "icons/icon-big-padded.svg-128.png"
     }
   },
@@ -45,12 +45,13 @@
     }
   },
   "icons": {
-    "48": "icons/icon.svg-48.png",
+    "64": "icons/icon.svg-64.png",
     "128": "icons/icon-big-padded.svg-128.png"
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "jump-cutter@example.com"
+      "id": "jump-cutter@example.com",
+      "strict_min_version": "91.0a1"
     }
   },
   "manifest_version": 2

@@ -5,7 +5,7 @@ import { connect as ToneConnect } from 'tone/build/esm/core/context/ToneAudioNod
 import { PitchShift } from 'tone/build/esm/effect/PitchShift';
 import { ToneAudioNode } from 'tone/build/esm/core/context/ToneAudioNode';
 import {
-  getStretcherDelayForInputMoment,
+  getWhenMomentGetsToStretchersDelayNodeOutput,
   getDelayFromInputToStretcherOutput,
   getStretchSpeedChangeMultiplier,
   getStretcherDelayChange,
@@ -117,6 +117,7 @@ export default class StretcherAndPitchCorrectorNode {
     this.slowDownPitchShift.connect(destinationNode)
     this.originalPitchCompensationDelay.connect(destinationNode)
   }
+  connect = this.connectOutputTo;
 
   onSilenceEnd(elementSpeedSwitchedAt: Time): void {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
@@ -153,7 +154,7 @@ export default class StretcherAndPitchCorrectorNode {
       - marginBeforePartAtSilenceSpeedRealTimeDuration
       - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
     // Same, but when it's going to be on the output.
-    const marginBeforeStartOutputTime = getStretcherDelayForInputMoment(
+    const marginBeforeStartOutputTime = getWhenMomentGetsToStretchersDelayNodeOutput(
       marginBeforeStartInputTime,
       lookaheadDelay,
       lastScheduledStretcherDelayReset
@@ -169,7 +170,7 @@ export default class StretcherAndPitchCorrectorNode {
     // overlap, and we end up in a situation where we only need to stretch the last part of the margin before
     // snippet, because the first one is already at required (sounded) speed, due to that delay before we speed up
     // the video after some silence.
-    // This is also the reason why `getStretcherDelayForInputMoment` function is so long.
+    // This is also the reason why `getWhenMomentGetsToStretchersDelayNodeOutput` function is so long.
     // Let's find this breakpoint.
 
     if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
@@ -213,7 +214,7 @@ export default class StretcherAndPitchCorrectorNode {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
     // }
   }
-  onSilenceStart(elementSpeedSwitchedAt: Time) {
+  onSilenceStart(elementSpeedSwitchedAt: Time): void {
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt; // See the same assignment in `onSilenceEnd`.
 
     const settings = this.getSettings();
@@ -222,9 +223,10 @@ export default class StretcherAndPitchCorrectorNode {
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
     const stretcherDelayStartValue =
       getStretcherSoundedDelay(settings.marginBefore, settings.soundedSpeed, settings.silenceSpeed);
-    const startIn =
+    const marginAfterEndOutputTime =
       getDelayFromInputToStretcherOutput(this.getLookaheadDelay(), stretcherDelayStartValue)
       - realtimeMarginBefore;
+    const startIn = marginAfterEndOutputTime;
 
     const speedUpBy = settings.silenceSpeed / settings.soundedSpeed;
 
@@ -352,6 +354,16 @@ export default class StretcherAndPitchCorrectorNode {
       const lateBy = this.context.currentTime - interruptAtTime;
       if (lateBy >= 0) {
         console.error('interruptAtTime late by', lateBy)
+      }
+
+      const timeAfterStretchStart = interruptAtTime - this.lastScheduledStretch.startTime;
+      // Though sometimes it happens to be 0. It is when SILENCE_END is immediately followed by SILENCE_START
+      // in `silenceDetector.port.onmessage`, so `_stretcherAndPitch.onSilenceStart` & `_stretcherAndPitch.onSilenceEnd`
+      // get called with equal `elementSpeedSwitchedAt` arguments. TODO should we do something about this?
+      if (timeAfterStretchStart < 0) {
+        console.error(`A stretch interruption has been scheduled to take place ${timeAfterStretchStart}s before`
+          + ' the actual stretch start. At the time of writing it should not possible.'
+          + ' Make sure you have the consequences handled.');
       }
     }
   }
