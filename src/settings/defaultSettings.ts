@@ -11,6 +11,11 @@ export const defaultSettings: Readonly<Settings> = {
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
   silenceSpeedRaw:         2.5,
   previousSilenceSpeedRaw: 2.5,
+  // Argument for `soundedSpeed !== 1`:
+  // * It reminds the user that the extension is enabled, so he's not confused by media getting seeked seemingly
+  // randomly.
+  // * It shows the user that there is such functionality.
+  // * People who have installed this extension are expected to prefer a faster `soundedSpeed`.
   soundedSpeed:         1.5,
   previousSoundedSpeed: 1.5,
   enabled: enabledSettingDefaultValue,
