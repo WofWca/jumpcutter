@@ -56,6 +56,7 @@ browser.runtime.onInstalled.addListener(async details => {
         /* webpackExports: ['default'] */
         './migrations/runRequiredMigrations'
       );
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await runRequiredMigrations(details.previousVersion!);
     }
   }
