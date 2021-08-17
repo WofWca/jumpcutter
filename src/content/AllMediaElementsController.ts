@@ -126,23 +126,39 @@ export default class AllMediaElementsController {
     // this is the case.
     if (newValues.enabled === false) return;
 
-    if (newValues.experimentalControllerType !== undefined) {
-      // TODO Hacky. Can just reinit the `Controller` instead. Or at least reinit `AllMediaElementsController`.
-      setSettings({ enabled: false }).then(() => setSettings({ enabled: true }));
-      return;
-    }
-
     if (Object.keys(newValues).length === 0) return;
 
     assertDev(this.settings);
     Object.assign(this.settings, newValues);
     assertDev(this.controller);
-    // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
-    // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
-    this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
-      extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
-    );
-    // Controller destruction is done in `detachFromActiveElement`.
+
+    const newControllerType = newValues.experimentalControllerType;
+    if (newControllerType !== undefined) {
+      const oldController = this.controller;
+      this.controller = undefined;
+      (async () => {
+        await oldController.destroy();
+        assertDev(this.settings);
+        const controller = this.controller = await importAndCreateController(
+          newControllerType,
+          () => [
+            oldController.element,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            extensionSettings2ControllerSettings(this.settings!),
+            this.timeSavedTracker,
+          ]
+        );
+        controller.init();
+        // Controller destruction is done in `detachFromActiveElement`.
+      })();
+    } else {
+      // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
+      // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
+      this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
+        extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
+      );
+      // Controller destruction is done in `detachFromActiveElement`.
+    }
   }
   private reactToSettingsChanges = (changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
@@ -279,12 +295,17 @@ export default class AllMediaElementsController {
     await this.ensureLoadSettings();
     assertDev(this.settings)
     this.ensureAddOnSettingsChangedListener();
+
+    let resolveTimeSavedTrackerPromise: (timeSavedTracker: TimeSavedTracker) => void;
+    const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
+
     const controllerP = importAndCreateController(
       this.settings.experimentalControllerType,
       () => [
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extensionSettings2ControllerSettings(this.settings!)
+        extensionSettings2ControllerSettings(this.settings!),
+        timeSavedTrackerPromise,
       ]
     ).then(async controller => {
       this.controller = controller;
@@ -299,7 +320,7 @@ export default class AllMediaElementsController {
     }
 
     // TODO an option to disable it.
-    const timeSavedTrackerPromise = (async () => {
+    (async () => {
       const { default: TimeSavedTracker } = await import(
         /* webpackExports: ['default'] */
         './TimeSavedTracker'
@@ -314,7 +335,8 @@ export default class AllMediaElementsController {
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
 
-      controllerP.then(controller => controller.timeSavedTracker = timeSavedTracker);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      resolveTimeSavedTrackerPromise!(timeSavedTracker);
     })();
 
     await controllerP;

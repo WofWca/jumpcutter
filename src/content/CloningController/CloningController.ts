@@ -61,13 +61,23 @@ export default class Controller {
   // To be (optionally) assigned by an outside script.
   public timeSavedTracker?: TimeSavedTracker;
 
-  constructor(element: HTMLMediaElement, controllerSettings: ControllerSettings) {
+  constructor(
+    element: HTMLMediaElement,
+    controllerSettings: ControllerSettings,
+    timeSavedTracker: TimeSavedTracker | Promise<TimeSavedTracker | undefined> | undefined,
+  ) {
     this.element = element;
     this.settings = controllerSettings;
 
     const lookahead = this.lookahead = new Lookahead(element, this.settings);
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
+
+    if (timeSavedTracker instanceof Promise) {
+      timeSavedTracker.then(tracker => this.timeSavedTracker = tracker);
+    } else {
+      this.timeSavedTracker = timeSavedTracker;
+    }
   }
 
   isInitialized(): this is ControllerInitialized {

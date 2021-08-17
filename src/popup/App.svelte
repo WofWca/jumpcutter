@@ -305,9 +305,9 @@ ${settings.timeSavedAveragingMethod === 'exponential'
 `
 ${timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute
 
-${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts`
+${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts
+`
 }
-
 ${timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %
 ${settings.timeSavedAveragingMethod === 'exponential'
 ? '' :
