@@ -279,12 +279,17 @@ export default class AllMediaElementsController {
     await this.ensureLoadSettings();
     assertDev(this.settings)
     this.ensureAddOnSettingsChangedListener();
+
+    let resolveTimeSavedTrackerPromise: (timeSavedTracker: TimeSavedTracker) => void;
+    const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
+
     const controllerP = importAndCreateController(
       this.settings.experimentalControllerType,
       () => [
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extensionSettings2ControllerSettings(this.settings!)
+        extensionSettings2ControllerSettings(this.settings!),
+        timeSavedTrackerPromise,
       ]
     ).then(async controller => {
       this.controller = controller;
@@ -299,7 +304,7 @@ export default class AllMediaElementsController {
     }
 
     // TODO an option to disable it.
-    const timeSavedTrackerPromise = (async () => {
+    (async () => {
       const { default: TimeSavedTracker } = await import(
         /* webpackExports: ['default'] */
         './TimeSavedTracker'
@@ -314,7 +319,8 @@ export default class AllMediaElementsController {
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
 
-      controllerP.then(controller => controller.timeSavedTracker = timeSavedTracker);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      resolveTimeSavedTrackerPromise!(timeSavedTracker);
     })();
 
     await controllerP;

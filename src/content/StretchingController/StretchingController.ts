@@ -99,10 +99,14 @@ export default class Controller {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
 
-  // To be (optionally) assigned by an outside script.
-  public timeSavedTracker?: TimeSavedTracker;
-
-  constructor(videoElement: HTMLMediaElement, controllerSettings: ControllerSettings) {
+  constructor(
+    videoElement: HTMLMediaElement,
+    controllerSettings: ControllerSettings,
+    // It's unused in this type of controller for now. Why do we specify it then? It's a hack. See
+    // https://github.com/WofWca/jumpcutter/blob/d58946c0654ccc4adc94d31751f006976be2e9d5/src/content/AllMediaElementsController.ts#L68
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    __timeSavedTracker: TimeSavedTracker | Promise<TimeSavedTracker | undefined> | undefined,
+  ) {
     this.element = videoElement;
     this.settings = controllerSettings;
   }
@@ -432,7 +436,7 @@ export default class Controller {
       ? !isStretcherEnabled(oldSettings)
       : isStretcherEnabled(oldSettings);
     if (needReinit) {
-      const newInstance = new Controller(this.element, newSettings);
+      const newInstance = new Controller(this.element, newSettings, undefined);
       this.destroy().then(() => newInstance.init());
       return newInstance;
     } else {
