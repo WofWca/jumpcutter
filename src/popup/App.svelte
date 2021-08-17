@@ -231,7 +231,6 @@
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 
   function onUseExperimentalAlgorithmInput(e: Event) {
-    console.log(e.target)
     settings.experimentalControllerType = (e.target as HTMLInputElement).checked
       ? ControllerKind_CLONING
       : ControllerKind_STRETCHING
