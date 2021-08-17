@@ -11,7 +11,7 @@ import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 import { storage } from '@/settings/_storage';
 
 if (process.env.NODE_ENV !== 'production') {
-  if (manifest.version !== '1.15.1') {
+  if (manifest.version !== '1.16.5') {
     console.error("Don't forget remove the following check, if you added any migrations (revert this commit), "
       + "or update the version string above otherwise");
   }
