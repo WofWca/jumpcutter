@@ -3,7 +3,7 @@
   import { onDestroy } from 'svelte';
   import {
     addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
-    ControllerKind_CLONING, ControllerKind_STRETCHING,
+    ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
   } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -231,9 +231,14 @@
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 
   function onUseExperimentalAlgorithmInput(e: Event) {
-    settings.experimentalControllerType = (e.target as HTMLInputElement).checked
+    const newControllerType = (e.target as HTMLInputElement).checked
       ? ControllerKind_CLONING
       : ControllerKind_STRETCHING
+    const newValues = changeAlgorithmAndMaybeRelatedSettings(settings, newControllerType);
+    settings = {
+      ...settings,
+      ...newValues,
+    };
   }
 </script>
 

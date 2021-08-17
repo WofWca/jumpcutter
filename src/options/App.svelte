@@ -167,6 +167,11 @@
             bind:checked={settings.enableDesyncCorrection}
           />
         {/if}
+        <CheckboxField
+          label={'🔄 Use different "margin before" and "margin after" for different algorithms'
+            + ' (related to the "Use experimental algorithm" setting)'}
+          bind:checked={settings.useSeparateMarginSettingsForDifferentAlgorithms}
+        />
       </section>
       <section>
         <h3>Hotkeys</h3>
