@@ -76,7 +76,7 @@
 
   const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
     { v: 'relativeToSoundedSpeed', l: '✖️ Relative to sounded speed' },
-    { v: 'absolute', l: '= Absolute' },
+    { v: 'absolute', l: '= Absolute (a.k.a. relative to intrinsic media speed)' },
   ]
   const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
     { v: 'none', l: '❌ None', },
