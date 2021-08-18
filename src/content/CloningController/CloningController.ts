@@ -123,16 +123,23 @@ export default class Controller {
       const seekAt = Math.max(silenceStart, currentTime);
       const seekTo = silenceEnd;
       const seekIn = seekAt - currentTime;
-      // TODO should we check `seekAt <= currentTime` and seek immediately instead of with `setTimeout`?
       // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
       // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
       // This case is handled inside `this.maybeSeek`.
-      setTimeout(
-        maybeSeek,
-        seekIn * 1000,
-        seekTo,
-        seekAt,
-      );
+      //
+      // Just so the seek is performed a bit faster compared to `setTimeout`.
+      // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
+      // called immediately (and not by `setTimeout`).
+      if (seekIn <= 0) {
+        maybeSeek(seekTo, seekAt);
+      } else {
+        setTimeout(
+          maybeSeek,
+          seekIn * 1000,
+          seekTo,
+          seekAt,
+        );
+      }
     }
     await lookahead.ensureInit().then(() => {
       element.addEventListener('timeupdate', onTimeupdate);
