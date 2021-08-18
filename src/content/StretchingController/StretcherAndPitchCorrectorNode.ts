@@ -12,7 +12,7 @@ import {
   getRealtimeMargin,
   getStretcherSoundedDelay,
 } from '@/content/helpers';
-import type { Time, StretchInfo } from '@/helpers';
+import type { StretchInfo, AudioContextTime, TimeDelta } from '@/helpers';
 import { assertDev } from '@/helpers';
 
 
@@ -43,12 +43,12 @@ export default class StretcherAndPitchCorrectorNode {
   private originalPitchCompensationDelay: DelayNode;
   private delayNode: DelayNode;
   lastScheduledStretch?: StretchInfo & { speedupOrSlowdown: PitchSetting.SPEEDUP | PitchSetting.SLOWDOWN };
-  private lastElementSpeedChangeAtInputTime?: Time;
+  private lastElementSpeedChangeAtInputTime?: AudioContextTime;
 
   constructor(
     private context: AudioContext,
-    maxDelay: Time,
-    initialDelay: Time = 0,
+    maxDelay: TimeDelta,
+    initialDelay: TimeDelta = 0,
     private getSettings: () => ({
       soundedSpeed: number,
       silenceSpeed: number,
@@ -119,7 +119,7 @@ export default class StretcherAndPitchCorrectorNode {
   }
   connect = this.connectOutputTo;
 
-  onSilenceEnd(elementSpeedSwitchedAt: Time): void {
+  onSilenceEnd(elementSpeedSwitchedAt: AudioContextTime): void {
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
@@ -214,7 +214,7 @@ export default class StretcherAndPitchCorrectorNode {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
     // }
   }
-  onSilenceStart(elementSpeedSwitchedAt: Time): void {
+  onSilenceStart(elementSpeedSwitchedAt: AudioContextTime): void {
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt; // See the same assignment in `onSilenceEnd`.
 
     const settings = this.getSettings();
@@ -247,7 +247,7 @@ export default class StretcherAndPitchCorrectorNode {
     // }
   }
 
-  private setOutputPitchAt(pitchSetting: PitchSetting, time: Time, oldPitchSetting: PitchSetting) {
+  private setOutputPitchAt(pitchSetting: PitchSetting, time: AudioContextTime, oldPitchSetting: PitchSetting) {
     if (process.env.NODE_ENV !== 'production') {
       if (pitchSetting === oldPitchSetting) {
         console.warn(`New pitchSetting is the same as oldPitchSetting: ${pitchSetting}`);
@@ -281,7 +281,12 @@ export default class StretcherAndPitchCorrectorNode {
     }
   }
 
-  private stretch(startValue: Time, endValue: Time, startTime: Time, endTime: Time): void {
+  private stretch(
+    startValue: TimeDelta,
+    endValue: TimeDelta,
+    startTime: AudioContextTime,
+    endTime: AudioContextTime
+  ): void {
     if (startValue === endValue) {
       return;
     }
@@ -332,7 +337,7 @@ export default class StretcherAndPitchCorrectorNode {
    * @param interruptAtTime the time at which to stop changing the delay.
    * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
    */
-  private interruptLastScheduledStretch(interruptAtTimeValue: Time, interruptAtTime: Time): void {
+  private interruptLastScheduledStretch(interruptAtTimeValue: TimeDelta, interruptAtTime: AudioContextTime): void {
     assertDev(this.lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
       + 'yet');
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method

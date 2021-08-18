@@ -1,6 +1,6 @@
 import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
 import { SilenceDetectorMessage, SilenceDetectorEventType } from './SilenceDetectorMessage';
-import { Time } from "@/helpers";
+import { AudioContextTime } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
@@ -9,7 +9,7 @@ const assumeSoundedWhenUnknown = true;
  * last `durationThreshold`, or `SILENCE_END` when a single sample above `volumeThreshold` is found.
  */
 class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
-  _lastLoudSampleTime: Time;
+  _lastLoudSampleTime: AudioContextTime;
   _lastTimePostedSilenceStart: boolean;
   constructor(options: any) {
     super(options);

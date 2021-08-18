@@ -1,6 +1,6 @@
 import browser from '@/webextensions-api';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { assertDev, Time } from '@/helpers';
+import { assertDev, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode } from '@/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
@@ -8,16 +8,17 @@ import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
 
-// A more semantically correct version would be `Array<[start: Time, end: Time]>`, but I think this is a bit faster.
+// A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,
+// but I think this is a bit faster.
 // TODO `Float32Array` should be even faster, though it doesn't support `push`.
 // But I think array is not the best suited data structure for this application in the first place.
 type MyTimeRanges = {
-  starts: Time[],
-  ends: Time[],
+  starts: MediaTime[],
+  ends: MediaTime[],
 }
-type TimeRange = [start: Time, end: Time];
+type TimeRange = [start: MediaTime, end: MediaTime];
 
-function inRanges(ranges: TimeRanges, time: Time): boolean {
+function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
   // TODO super inefficient, same as with `getNextOutOfRangesTime`.
   for (let i = 0; i < ranges.length; i++) {
     const
@@ -34,7 +35,7 @@ type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefo
 
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
-  lastSoundedTime: Time | undefined;
+  lastSoundedTime: MediaTime | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
   // silenceRanges: Array<[start: Time, end: Time]> = []; // Array is not the fastest data structure for this application.
@@ -215,7 +216,7 @@ export default class Lookahead {
    * @returns `TimeRange` if `forTime` falls into one, `undefined` otherwise.
    * Can be called before `ensureInit` has finished.
    */
-  public getMaybeSilenceRangeForTime(time: Time): TimeRange | undefined {
+  public getMaybeSilenceRangeForTime(time: MediaTime): TimeRange | undefined {
     // TODO I wrote this real quick, no edge cases considered.
     // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
     // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
@@ -229,7 +230,7 @@ export default class Lookahead {
       ? [starts[currentRangeInd], ends[currentRangeInd]]
       : undefined;
   }
-  private pushNewSilenceRange(elementTimeStart: Time, elementTimeEnd: Time) {
+  private pushNewSilenceRange(elementTimeStart: MediaTime, elementTimeEnd: MediaTime) {
     this.silenceRanges.starts.push(elementTimeStart);
     this.silenceRanges.ends.push(elementTimeEnd);
   }

@@ -1,16 +1,16 @@
-import type { Time, StretchInfo } from '@/helpers';
+import type { AudioContextTime, StretchInfo, TimeDelta } from '@/helpers';
 
-export function getRealtimeMargin(margin: Time, speed: number): Time {
+export function getRealtimeMargin(margin: TimeDelta, speed: number): TimeDelta {
   return margin / speed;
 }
 
 /**
  * Mathematically minimal lookahead delay which is required for marginBefore to work.
  */
-function getMinLookaheadDelay(intrinsicTimeMargin: Time, soundedSpeed: number, silenceSpeed: number): Time {
+function getMinLookaheadDelay(intrinsicTimeMargin: TimeDelta, soundedSpeed: number, silenceSpeed: number): TimeDelta {
   return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed);
 }
-export function getOptimalLookaheadDelay(...args: Parameters<typeof getMinLookaheadDelay>): Time {
+export function getOptimalLookaheadDelay(...args: Parameters<typeof getMinLookaheadDelay>): TimeDelta {
   // If we were to use `getMinLookaheadDelay`, it would mean that we basically need to instantly start stretching as
   // soon as we get `SilenceDetectorEventType.SILENCE_END` from `Controller._silenceDetectorNode`, but this is not a
   // perfect world and code cannot be executed instantly, so `StretcherAndPitchCorrectorNode.stretch` ends up getting
@@ -18,36 +18,47 @@ export function getOptimalLookaheadDelay(...args: Parameters<typeof getMinLookah
   // Introducting additional delay allows us to schedule stretcher things for a bit later.
   // Basically set this as low as you can without getting warnings from `StretcherAndPitchCorrectorNode` (not just on
   // your PC, ofc). TODO maybe put this in settings?
-  const codeExecutionMargin: Time = 0.01;
+  const codeExecutionMargin: TimeDelta = 0.01;
 
   return getMinLookaheadDelay(...args) + codeExecutionMargin;
 }
-export function getDelayFromInputToStretcherOutput(lookaheadNodeDelay: Time, stretcherNodeDelay: Time): Time {
+export function getDelayFromInputToStretcherOutput(
+  lookaheadNodeDelay: TimeDelta,
+  stretcherNodeDelay: TimeDelta
+): TimeDelta {
   return lookaheadNodeDelay + stretcherNodeDelay;
 }
-export function getTotalOutputDelay(lookaheadNodeDelay: Time, stretcherDelay: Time, pitchCorrectorDelay: Time): Time {
+export function getTotalOutputDelay(
+  lookaheadNodeDelay: TimeDelta,
+  stretcherDelay: TimeDelta,
+  pitchCorrectorDelay: TimeDelta
+): TimeDelta {
   return lookaheadNodeDelay + stretcherDelay + pitchCorrectorDelay;
 }
-export function getNewSnippetDuration(originalRealtimeDuration: Time, originalSpeed: number, newSpeed: number): Time {
+export function getNewSnippetDuration(
+  originalRealtimeDuration: TimeDelta,
+  originalSpeed: number,
+  newSpeed: number
+): TimeDelta {
   const videoSpeedSnippetDuration = originalRealtimeDuration * originalSpeed;
   return videoSpeedSnippetDuration / newSpeed;
 }
 // The delay that the stretcher node is going to have when it's done slowing down a snippet
 export function getStretcherDelayChange(
-  snippetOriginalRealtimeDuration: Time,
+  snippetOriginalRealtimeDuration: TimeDelta,
   originalSpeed: number,
   newSpeed: number
-): Time {
+): TimeDelta {
   const snippetNewDuration = getNewSnippetDuration(snippetOriginalRealtimeDuration, originalSpeed, newSpeed);
   const delayChange = snippetNewDuration - snippetOriginalRealtimeDuration;
   return delayChange;
 }
 // TODO Is it always constant though? What about these short silence snippets, where we don't have to fully reset the margin?
 export function getStretcherSoundedDelay(
-  intrinsicTimeMarginBefore: Time,
+  intrinsicTimeMarginBefore: TimeDelta,
   soundedSpeed: number,
   silenceSpeed: number
-): Time {
+): TimeDelta {
   const realTimeMarginBefore = intrinsicTimeMarginBefore / silenceSpeed;
   const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
   return 0 + delayChange;
@@ -68,10 +79,10 @@ export function getStretchSpeedChangeMultiplier(
  * * Assumes the video is never played backwards (i.e. stretcher delay never so quickly).
  */
 export function getWhenMomentGetsToStretchersDelayNodeOutput(
-  momentTime: Time,
-  lookaheadDelay: Time,
+  momentTime: AudioContextTime,
+  lookaheadDelay: TimeDelta,
   lastScheduledStretcherDelayReset: StretchInfo
-): Time {
+): AudioContextTime {
   const stretch = lastScheduledStretcherDelayReset;
   const stretchEndTotalDelay = getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.endValue);
   // Simpliest case. The target moment is after the `stretch`'s end time

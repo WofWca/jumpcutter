@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, Time as TimeS } from '@/helpers';
+  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, AnyTime as TimeS } from '@/helpers';
   import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
   import debounce from 'lodash/debounce';
 

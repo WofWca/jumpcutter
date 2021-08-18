@@ -1,9 +1,11 @@
 import Lookahead from './Lookahead';
-import type { Time } from '@/helpers';
+import type { MediaTime, AnyTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, SpeedName } from '@/helpers';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
+
+type Time = AnyTime;
 
 type ControllerInitialized =
   Controller
@@ -155,7 +157,7 @@ export default class Controller {
     delete this._pendingSettingsUpdates;
   }
 
-  maybeSeek(seekTo: Time, seekScheduledTo: Time): void {
+  maybeSeek(seekTo: MediaTime, seekScheduledTo: MediaTime): void {
     const element = this.element;
     const { currentTime, paused } = element;
 
