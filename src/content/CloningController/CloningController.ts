@@ -122,7 +122,8 @@ export default class Controller {
       const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
       const seekAt = Math.max(silenceStart, currentTime);
       const seekTo = silenceEnd;
-      const seekIn = seekAt - currentTime;
+      const seekInVideoTime = seekAt - currentTime;
+      const seekInRealTime = seekInVideoTime / this.settings.soundedSpeed;
       // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
       // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
       // This case is handled inside `this.maybeSeek`.
@@ -130,12 +131,12 @@ export default class Controller {
       // Just so the seek is performed a bit faster compared to `setTimeout`.
       // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
       // called immediately (and not by `setTimeout`).
-      if (seekIn <= 0) {
+      if (seekInRealTime <= 0) {
         maybeSeek(seekTo, seekAt);
       } else {
         setTimeout(
           maybeSeek,
-          seekIn * 1000,
+          seekInRealTime * 1000,
           seekTo,
           seekAt,
         );
