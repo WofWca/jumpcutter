@@ -120,10 +120,10 @@ export default class Controller {
         return;
       }
       const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
-      const seekAt = silenceStart;
+      const seekAt = Math.max(silenceStart, currentTime);
       const seekTo = silenceEnd;
       const seekIn = seekAt - currentTime;
-      // TODO should we check `seekAt < currentTime` and seek immediately instead of with `setTimeout`?
+      // TODO should we check `seekAt <= currentTime` and seek immediately instead of with `setTimeout`?
       // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
       // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
       // This case is handled inside `this.maybeSeek`.
