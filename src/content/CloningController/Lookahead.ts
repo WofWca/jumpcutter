@@ -61,6 +61,16 @@ export default class Lookahead {
 
     // TODO this probably doesn't cover all cases.
     clone.src = originalElement.currentSrc;
+    if (process.env.NODE_ENV !== 'production') {
+      const interval = setInterval(() => {
+        const cloneSrc = clone.src;
+        const originalSrc = originalElement.currentSrc;
+        if (cloneSrc !== originalSrc) {
+          console.error('clone.src !== originalElement.currentSrc,', '\n', cloneSrc, '\n', originalSrc);
+        }
+      }, 2000);
+      this._onDestroyCallbacks.push(() => clearInterval(interval));
+    }
   }
   private async _init(): Promise<void> {
     const originalElement = this.originalElement;

@@ -142,6 +142,14 @@ export default class Controller {
         );
       }
     }
+
+    // This indicated that `element.currentSrc` has changed.
+    // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
+    // > Its value is changed by the resource selection algorithm
+    const onNewSrc = () => this.throttledReinitLookahead();
+    element.addEventListener('loadstart', onNewSrc);
+    this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
+
     await lookahead.ensureInit().then(() => {
       element.addEventListener('timeupdate', onTimeupdate);
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
