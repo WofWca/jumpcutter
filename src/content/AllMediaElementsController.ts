@@ -364,7 +364,7 @@ export default class AllMediaElementsController {
       }
       this.handledElements.add(el);
 
-      el.addEventListener('play', this.ensureAttachToEventTargetElement);
+      el.addEventListener('play', this.ensureAttachToEventTargetElement, { passive: true });
       this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.ensureAttachToEventTargetElement));
     }
 

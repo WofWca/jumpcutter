@@ -160,7 +160,7 @@ export default class TimeSavedTracker {
     this._setStateAccordingToNewSettings(settings);
     this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
     addOnSettingsChangedListener(this._onSettingsChange);
-    element.addEventListener('ratechange', this._onElementSpeedChange);
+    element.addEventListener('ratechange', this._onElementSpeedChange, { passive: true });
     this._onDestroyCallbacks.push(() => {
       this._playbackStopwatch.destroy();
       removeOnSettingsChangedListener(this._onSettingsChange);

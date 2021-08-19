@@ -100,7 +100,7 @@ export default class Controller {
 
     this._elementVolumeCache = element.volume;
     const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', onElementVolumeChange);
+    element.addEventListener('volumechange', onElementVolumeChange, { passive: true });
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     const { lookahead } = this;
@@ -145,7 +145,7 @@ export default class Controller {
       }
     }
     await lookahead.ensureInit().then(() => {
-      element.addEventListener('timeupdate', onTimeupdate);
+      element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
     });
 

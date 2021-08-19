@@ -134,7 +134,7 @@ export default class Controller {
 
     this._elementVolumeCache = element.volume;
     const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', onElementVolumeChange);
+    element.addEventListener('volumechange', onElementVolumeChange, { passive: true });
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     this.audioContext = audioContext;
@@ -235,8 +235,8 @@ export default class Controller {
     if (element.paused) {
       suspendAudioContext();
     }
-    element.addEventListener('pause', scheduleSuspendAudioContext);
-    element.addEventListener('play', resumeAudioContext);
+    element.addEventListener('pause', scheduleSuspendAudioContext, { passive: true });
+    element.addEventListener('play', resumeAudioContext, { passive: true });
     this._onDestroyCallbacks.push(() => {
       element.removeEventListener('pause', scheduleSuspendAudioContext);
       element.removeEventListener('play', resumeAudioContext);

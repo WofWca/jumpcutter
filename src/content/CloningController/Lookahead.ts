@@ -166,7 +166,7 @@ export default class Lookahead {
     // TODO also utilize `requestIdleCallback` so it gets called less frequently during high loads?
     const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
     // TODO using `timeupdate` is pretty bug-proof, but not very efficient.
-    originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
+    originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
     this._onDestroyCallbacks.push(() => {
       originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
     });
@@ -184,8 +184,8 @@ export default class Lookahead {
     if (!clone.paused) {
       resumeAudioContext();
     }
-    clone.addEventListener('pause', suspendAudioContext);
-    clone.addEventListener('play', resumeAudioContext);
+    clone.addEventListener('pause', suspendAudioContext, { passive: true });
+    clone.addEventListener('play', resumeAudioContext, { passive: true });
     this._onDestroyCallbacks.push(() => {
       clone.removeEventListener('pause', suspendAudioContext);
       clone.removeEventListener('play', resumeAudioContext);
@@ -203,8 +203,8 @@ export default class Lookahead {
     if (!originalElement.paused) {
       playClone();
     }
-    originalElement.addEventListener('pause', pauseClone);
-    originalElement.addEventListener('play', playClone);
+    originalElement.addEventListener('pause', pauseClone, { passive: true });
+    originalElement.addEventListener('play', playClone, { passive: true });
     this._onDestroyCallbacks.push(() => {
       originalElement.removeEventListener('pause', pauseClone);
       originalElement.removeEventListener('play', playClone);
