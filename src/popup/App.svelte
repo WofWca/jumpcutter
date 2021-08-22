@@ -298,7 +298,7 @@
       use:tippyActionAsyncPreload={{
         content: `Time saved info.
 ${settings.timeSavedAveragingMethod === 'exponential'
-? `Over the last ${mmSs(settings.timeSavedAveragingWindowLength)}.`
+? `Over the last ${mmSs(settings.timeSavedAveragingWindowLength)}.\n`
 : ''
 }
 Numbers' meanings (in order):
