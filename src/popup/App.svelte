@@ -68,7 +68,7 @@
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
   };
 
-  let latestTelemetryRecord: TelemetryMessage;
+  let latestTelemetryRecord: TelemetryMessage | undefined;
   const telemetryUpdatePeriod = 0.02;
   let telemetryTimeoutId: number;
   let disconnect: undefined | (() => void);
