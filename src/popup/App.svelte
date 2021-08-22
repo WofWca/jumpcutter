@@ -192,6 +192,8 @@
     onSettingsChange(settings);
   }
 
+  let timeSavedTooltipContent: HTMLElement;
+
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
     ? 'relative to sounded speed'
     : 'absolute';
@@ -296,31 +298,8 @@
       class="others__item"
       style="border: none; padding: 0; background: unset; font: inherit;"
       use:tippyActionAsyncPreload={{
-        content: `Time saved info.
-${settings.timeSavedAveragingMethod === 'exponential'
-? `Over the last ${mmSs(settings.timeSavedAveragingWindowLength)}.\n`
-: ''
-}
-Numbers' meanings (in order):
-
-${timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %
-${settings.timeSavedAveragingMethod === 'exponential'
-? '' :
-`
-${timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute
-
-${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts
-`
-}
-${timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %
-${settings.timeSavedAveragingMethod === 'exponential'
-? '' :
-`
-${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute
-
-${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`
-}`,
-        theme: 'my-tippy white-space-pre-line',
+        content: timeSavedTooltipContent,
+        theme: 'my-tippy',
         hideOnClick: false,
       }}
     >
@@ -334,6 +313,32 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
       {/if}
+
+      <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
+      <div style="display:none">
+        <div bind:this={timeSavedTooltipContent}>
+          <p style="margin-top: 0.25rem;">
+            <span>Time saved info.</span>
+            {#if settings.timeSavedAveragingMethod === 'exponential'}
+              <br>
+              <span>Over the last {mmSs(settings.timeSavedAveragingWindowLength)}.</span>
+            {/if}
+          </p>
+          <p>Numbers' meanings (in order):</p>
+          <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
+            <li>{timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %</li>
+            {#if settings.timeSavedAveragingMethod !== 'exponential'}
+              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute</li>
+              <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
+            {/if}
+            <li>{timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %</li>
+            {#if settings.timeSavedAveragingMethod !== 'exponential'}
+              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute</li>
+              <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts</li>
+            {/if}
+          </ol>
+        </div>
+      </div>
     </button>
   </div>
   <!-- TODO transitions? -->
