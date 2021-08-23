@@ -8,7 +8,7 @@
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
-  export let latestTelemetryRecord: TelemetryRecord;
+  export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
   export let widthPx: number;
@@ -189,7 +189,7 @@
     silenceSpeedSeries.append(timeMs, speedName === SpeedName_SILENCE ? offTheChartsValue : 0);
 
     if (process.env.NODE_ENV !== 'production') {
-      if (latestTelemetryRecord?.inputVolume > offTheChartsValue) {
+      if (latestTelemetryRecord && (latestTelemetryRecord.inputVolume > offTheChartsValue)) {
         console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
           + ' background, but now it has been exceeded by inutVolume value');
       }
@@ -262,7 +262,7 @@
   }
 
   let lastHandledTelemetryRecord: TelemetryRecord | undefined;
-  function onNewTelemetry(newTelemetryRecord: TelemetryRecord) {
+  function onNewTelemetry(newTelemetryRecord: TelemetryRecord | undefined) {
     if (!smoothie || !newTelemetryRecord) {
       return;
     }
