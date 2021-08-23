@@ -232,6 +232,31 @@
   $: wouldHaveLastedIfSpeedWasIntrinsic =
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 
+  function getTimeSavedPlaybackRateEquivalents(
+    r: TelemetryMessage | undefined
+  ): [comparedToSounded: string, comparedToIntrinsic: string] {
+    function format(num: number) {
+      return num.toFixed(2);
+    }
+    const dummyValues = [
+      format(1),
+      format(1), // TODO use `getAbsoluteSilenceSpeed`?
+    ] as [string, string];
+    if (!r) {
+      return dummyValues;
+    }
+    // `r.wouldHaveLastedIfSpeedWasIntrinsic - r.timeSavedComparedToIntrinsicSpeed` would be equivalent.
+    const lastedActually = r.wouldHaveLastedIfSpeedWasSounded - r.timeSavedComparedToSoundedSpeed;
+    if (lastedActually === 0) {
+      return dummyValues;
+    }
+    return [
+      format(r.wouldHaveLastedIfSpeedWasSounded / lastedActually),
+      format(r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually),
+    ]
+  }
+  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+
   function onUseExperimentalAlgorithmInput(e: Event) {
     const newControllerType = (e.target as HTMLInputElement).checked
       ? ControllerKind_CLONING
@@ -304,12 +329,12 @@
       }}
     >
       <span>⏱️</span>
-      <span>{timeSavedComparedToSoundedSpeedPercent}</span>
+      <span>{timeSavedPlaybackRateEquivalents[0]}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
       {/if}
       <span>/</span>
-      <span>{timeSavedComparedToIntrinsicSpeedPercent}</span>
+      <span>{timeSavedPlaybackRateEquivalents[1]}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
       {/if}
@@ -326,17 +351,20 @@
           </p>
           <p>Numbers' meanings (in order):</p>
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
-            <li>{timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %</li>
+            <li>{timeSavedPlaybackRateEquivalents[0]} – how much faster the media is effectively playing compared to sounded speed</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute</li>
+              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed</li>
               <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
             {/if}
-            <li>{timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %</li>
+            <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to intrinsic speed</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute</li>
+              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed</li>
               <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts</li>
             {/if}
           </ol>
+          <p
+            style="margin-bottom: 0.25rem;"
+          >Equivalent time saved percentage:<br>{timeSavedComparedToSoundedSpeedPercent} / {timeSavedComparedToIntrinsicSpeedPercent} (compared to sounded / compared to intrinsic).</p>
         </div>
       </div>
     </button>
