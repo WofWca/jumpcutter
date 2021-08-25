@@ -137,12 +137,17 @@ export default class Lookahead {
           assertDev(this.lastSoundedTime, 'Thought `this.lastSoundedTime` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
 
-          const negativeMarginAfterLol = smoothingWindowLenght;
+          // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
+          // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
+          // The following is to compensate for this.
+          // TODO Though the delay value is up for debate. Some might say it should be half the `smoothingWindowLenght`,
+          // or even smaller.
+          const volumeSmoothingCausedDelay = smoothingWindowLenght;
 
-          const marginBeforeIntrinsicTime = smoothingWindowLenght + this.settings.marginBefore;
+          const marginBeforeIntrinsicTime = volumeSmoothingCausedDelay + this.settings.marginBefore;
           // TODO `this.lastSoundedTime` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
           // this.pushNewSilenceRange(this.lastSoundedTime, this.clone.currentTime - marginBeforeRealTime);
-          this.pushNewSilenceRange(this.lastSoundedTime - negativeMarginAfterLol, eventTimePlaybackTime - marginBeforeIntrinsicTime);
+          this.pushNewSilenceRange(this.lastSoundedTime - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
         }
       }
     }));
