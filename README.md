@@ -10,6 +10,18 @@
 Plays silent parts of videos on the page at a faster speed.
 Can be useful for watching lectures and other unedited videos.
 
+Demo:
+
+<!-- TODO put the file in the repo so it's set in stone? -->
+<!-- The source video:
+https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-034-artificial-intelligence-fall-2010/lecture-videos/lecture-16-learning-support-vector-machines/
+(or https://youtu.be/_PwhiWxHK8o).
+This video's license: CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/).
+Not sure if I did comply with the license here.
+But I believe this use case would be considered "fair use" anyway.
+ -->
+<https://user-images.githubusercontent.com/39462442/130765835-8ac8c672-b377-4dd6-b96a-1115cb5f3fd9.mp4>
+
 ![Extension popup screenshot](./docs/screenshots/popup-1280x800.png)
 
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
