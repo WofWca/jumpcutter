@@ -7,7 +7,8 @@
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
 [![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
 
-Plays silent parts of videos on the page at a faster speed.
+Skips silent parts in videos on the fly.
+
 Can be useful for watching lectures and other unedited videos.
 
 Demo:
