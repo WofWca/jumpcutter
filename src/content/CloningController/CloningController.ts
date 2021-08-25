@@ -181,14 +181,16 @@ export default class Controller {
       return;
     }
 
+    const seekAmount = seekTo - currentTime;
     // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
-    // a precise seek (`.currentTime = ...`). Keep in mind that it's real time, not media-intrinsic time,
-    // so the bigger `soundedSpeed` is, the less reasonable it gets to perform a seek. TODO calculate intrinsic time?
-    // Or just use `fastSeek`?
+    // a precise seek (`.currentTime = ...`).
+    const expectedSeekDuration = 0.15;
+    const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
+    // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
-    const farEnoughToPerformSeek = seekTo > currentTime + 0.15;
+    const farEnoughToPerformSeek = realTimeLeftUntilDestinationWithoutSeeking > expectedSeekDuration;
     if (farEnoughToPerformSeek) {
       element.currentTime = seekTo;
 
