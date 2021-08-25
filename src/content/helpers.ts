@@ -131,7 +131,6 @@ export function transformSpeed(speed: number): number {
   // calculated correctly.
   // Also would be cool to disable this behavior in Gecko. TODO.
   if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
-    // transformed = Math.min(transformed, 4);
     if (transformed > 4) {
       transformed = 4;
     }
