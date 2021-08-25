@@ -26,8 +26,13 @@
   async function getTab() {
     // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
     // guaranteed that there will be a tab, is it?
+    /*
     const tabs = await browser.tabs.query({ active: true, currentWindow: true, });
     return tabs[0];
+    */
+    // Open the popup in a separate tab, next to the tab with media.
+    const tabs = await browser.tabs.query({ /* active: true, */ currentWindow: true, });
+    return tabs[tabs.length - 2];
   }
   const tabPromise = getTab();
   const tabLoadedPromise = (async () => {
@@ -429,13 +434,14 @@
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
+    <!-- widthPx={settings.popupChartWidthPx} -->
     <Chart
       {latestTelemetryRecord}
       volumeThreshold={settings.volumeThreshold}
       loadedPromise={settingsPromise}
-      widthPx={settings.popupChartWidthPx}
-      heightPx={settings.popupChartHeightPx}
-      lengthSeconds={settings.popupChartLengthInSeconds}
+      widthPx={3840}
+      heightPx={192}
+      lengthSeconds={52}
       on:click={onChartClick}
       paused={settings.experimentalControllerType === ControllerKind_CLONING}
     />

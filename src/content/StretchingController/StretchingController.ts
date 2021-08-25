@@ -141,7 +141,8 @@ export default class Controller {
 
     const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
 
-    const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
+    // Changed for better-looking "waveform". Also don't forget to play around with chart scaling.
+    const volumeFilterSmoothingWindowLength = 0.1; // TODO make a setting out of it.
     const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
     const volumeFilterP = volumeFilterProcessorP.then(() => {
       const volumeFilter = new VolumeFilterNode(
@@ -322,7 +323,7 @@ export default class Controller {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SILENCE);
           this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
   
-          if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
+          if (false) {
             // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
             // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
             // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.

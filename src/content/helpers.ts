@@ -114,6 +114,7 @@ export function getWhenMomentGetsToStretchersDelayNodeOutput(
  */
 export function transformSpeed(speed: number): number {
   let transformed = speed;
+  return transformed;
   // On Chromium 86.0.4240.99, it appears that 1.0 is not the only "normal" speed. It's a small proximity of 1.0.
   //
   // It's not the smallest, but a value close to the smallest value for which the audio

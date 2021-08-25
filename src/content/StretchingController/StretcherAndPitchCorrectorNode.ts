@@ -209,7 +209,7 @@ export default class StretcherAndPitchCorrectorNode {
     const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
     // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
     const endTime = elementSpeedSwitchedAt + getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
-    this.stretch(startValue, endValue, startTime, endTime);
+    this.stretch(startValue, endValue || Number.MIN_VALUE, startTime, endTime);
     // if (isLogging(this)) {
     //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
     // }
@@ -236,10 +236,13 @@ export default class StretcherAndPitchCorrectorNode {
     const startTime = elementSpeedSwitchedAt + startIn;
     const endTime = startTime + snippetNewDuration;
     this.stretch(
-      stretcherDelayStartValue,
+      stretcherDelayStartValue + Number.MIN_VALUE,
       0,
       startTime,
-      endTime,
+      // endTime,
+      Number.isFinite(endTime)
+        ? endTime
+        : startTime + (this.getSettings().marginBefore / this.getSettings().soundedSpeed),
     );
 
     // if (isLogging(this)) {

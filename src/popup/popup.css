@@ -16,6 +16,7 @@ body {
   TODO report/fix it. */
   margin: 0;
   padding: 0.625rem;
+  padding: 0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,5 +24,6 @@ body {
     /* Otherwise (at least in Chromium) the border is not enough pronounced on dark-themed websites,
     which may get fixed later. On light-themed the default is fine though. */
     border: 1px solid #585858;
+    border: none;
   }
 }

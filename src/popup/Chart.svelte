@@ -6,7 +6,7 @@
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
-  const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
+  const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && false;
 
   export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;
@@ -34,15 +34,18 @@
   let stretchSeries: TimeSeries;
   let shrinkSeries: TimeSeries;
 
-  const bestYAxisRelativeVolumeThreshold = 1/6;
+  // Changed the scale so the "waveform" can be more easily seen.
+  let volumeScale = 15;
+  $: bestYAxisRelativeVolumeThreshold = 1/volumeScale;
   let chartMaxValue: number;
   function setMaxChartValueToBest() {
     chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
   }
-  const debouncedSetMaxChartValueToBest = debounce(setMaxChartValueToBest, 3000);
+  const debouncedSetMaxChartValueToBest = debounce(setMaxChartValueToBest, 10);
   setMaxChartValueToBest();
   $: {
     volumeThreshold;
+    volumeScale;
     debouncedSetMaxChartValueToBest();
   }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
@@ -61,6 +64,7 @@
       grid: {
         fillStyle: '#fff',
         strokeStyle: '#aaa',
+        strokeStyle: 'transparent',
         verticalSections: 0,
         millisPerLine: 1000,
         sharpLines: true,
@@ -157,13 +161,13 @@
         // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
         // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
         // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-        const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
-        canvasContext.beginPath();
-        canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-        canvasContext.moveTo(x, 0);
-        canvasContext.lineTo(x, heightPx);
-        canvasContext.closePath();
-        canvasContext.stroke();
+        // const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
+        // canvasContext.beginPath();
+        // canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        // canvasContext.moveTo(x, 0);
+        // canvasContext.lineTo(x, heightPx);
+        // canvasContext.closePath();
+        // canvasContext.stroke();
       }
 
       requestAnimationFrame(drawAndScheduleAnother);
@@ -326,7 +330,7 @@
   width={widthPx}
   height={heightPx}
   on:click
-  style={paused ? 'opacity: 0.2' : ''}
+  style={'position: absolute; right: 0; bottom: 0;'}
 >
   <label>
     Volume
@@ -340,6 +344,15 @@
     >{lastVolume.toFixed(3)}</span>
   </label>
 </canvas>
+<label>
+  Scale
+  <input
+    bind:value={volumeScale}
+    min="1"
+    max="100"
+    type="range"
+  />
+</label>
 
 <style>
   canvas {
