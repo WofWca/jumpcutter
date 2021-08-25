@@ -33,7 +33,7 @@ export const defaultSettings: Readonly<Settings> = {
   useSeparateMarginSettingsForDifferentAlgorithms: true,
   algorithmSpecificSettings: {
     [ControllerKind.CLONING]: {
-      marginBefore: 0.50,
+      marginBefore: 0.050,
       marginAfter: 0.030,
     },
     [ControllerKind.STRETCHING]: {
