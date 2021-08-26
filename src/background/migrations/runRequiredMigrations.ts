@@ -3,6 +3,7 @@ import migrateFrom1_3_0 from "./migrateFrom1_3_0";
 import migrateFrom1_6_0 from "./migrateFrom1_6_0";
 import migrateFrom1_8_0 from "./migrateFrom1_8_0";
 import migrateFrom1_10_0 from "./migrateFrom1_10_0";
+import migrateFrom1_16_7 from "./migrateFrom1_16_7";
 
 function compareVersions(a: string, b: string) {
   if (process.env.NODE_ENV !== 'production') {
@@ -37,6 +38,9 @@ if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
     { ver: '1.10.0', fn: migrateFrom1_10_0, },
   );
 }
+sortedMigrationsFrom.push(
+  { ver: '1.16.7', fn: migrateFrom1_16_7, },
+);
 // Post-Firefox extensions store migrations
 // sortedMigrationsFrom.push();
 

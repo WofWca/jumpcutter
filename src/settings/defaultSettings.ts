@@ -144,8 +144,8 @@ export const defaultSettings: Readonly<Settings> = {
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
   popupChartHeightPx: 75,
-  popupChartLengthInSeconds: 4,
-  popupChartSpeed: 'realTime',
+  popupChartLengthInSeconds: 8,
+  popupChartSpeed: 'intrinsicTime',
   popupAlwaysShowOpenLocalFileLink: true,
   popupSpecificHotkeys: [
     {
