@@ -112,8 +112,7 @@ export function getWhenMomentGetsToStretchersDelayNodeOutput(
  * This is to make it impossible for the user to set speed to no normal.
  * TODO give users an option (on the options page) to skip this transformation.
  */
-export function transformSpeed(speed: number): number {
-  let transformed = speed;
+ export function transformSpeed(speed: number): number {
   // On Chromium 86.0.4240.99, it appears that 1.0 is not the only "normal" speed. It's a small proximity of 1.0.
   //
   // It's not the smallest, but a value close to the smallest value for which the audio
@@ -126,29 +125,11 @@ export function transformSpeed(speed: number): number {
   const biggestNonNormalBelow1 = 1 - (smallestNonNormalAbove1 - 1);
 
   if (biggestNonNormalBelow1 < speed && speed < smallestNonNormalAbove1) {
-    transformed = smallestNonNormalAbove1 - speed < speed - biggestNonNormalBelow1
+    return smallestNonNormalAbove1 - speed < speed - biggestNonNormalBelow1
       ? biggestNonNormalBelow1
       : smallestNonNormalAbove1;
   }
-
-  // In Gecko, when `.playbackRate` is `> 4`, audio gets muted:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=495040
-  // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
-  // This is a temporary measure to avoid this, there is a couple of problems with this, TODO:
-  // * It is possible for `silenceSpeed` to be > 4, when `silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'`
-  // and `soundedSpeed > 1`.
-  // * the user can set higher playbackRate, but he will be confused why it's capped at 4.
-  // * `StretchingController` doesn't know that we're doing this thing here, so stretching parameters are not
-  // calculated correctly.
-  // Also would be cool to disable this behavior in Gecko. TODO.
-  if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
-    // transformed = Math.min(transformed, 4);
-    if (transformed > 4) {
-      transformed = 4;
-    }
-  }
-
-  return transformed;
+  return speed;
 }
 
 // The following code is not very reliable (but reliable enough, perhaps). E.g. playback can stop for reasons other than
