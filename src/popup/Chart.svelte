@@ -176,8 +176,12 @@
         // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
         // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
         // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-        // TODO this is now incorrect.
-        const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
+        const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelay;
+        const momentCurrentlyBeingOutputIntrinsicTime
+          = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
+        const totalOutputDelayIntrinsicTime
+          = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
+        const x = widthPx - sToMs(totalOutputDelayIntrinsicTime) / millisPerPixel;
         canvasContext.beginPath();
         canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
         canvasContext.moveTo(x, 0);
@@ -326,8 +330,10 @@
     }
     // Yes, old values' scale is not updated.
     const scaledValue = stretcherDelay / maxRecordedStretcherDelay * chartMaxValue * 0.90;
-    const inputTime = r.intrinsicTime - r.delayFromInputToStretcherOutput; // TODO now it's incorrect.
-    stretcherDelaySeries.append(sToMs(inputTime), scaledValue);
+    const momentCurrentlyAtStretcherOutputAudioContextTime = r.contextTime - r.delayFromInputToStretcherOutput;
+    const momentCurrentlyAtStretcherOutputIntrinsicTimeMs
+      = toIntrinsicTimeMs(momentCurrentlyAtStretcherOutputAudioContextTime, newTelemetryRecord, prevPlaybackRateChange);
+    stretcherDelaySeries.append(momentCurrentlyAtStretcherOutputIntrinsicTimeMs, scaledValue);
   }
 
   let lastHandledTelemetryRecord: TelemetryRecord | undefined;
