@@ -9,7 +9,7 @@ import {
   transformSpeed,
   destroyAudioWorkletNode,
 } from '@/content/helpers';
-import type { StretchInfo, AudioContextTime, UnixTime, TimeDelta } from '@/helpers';
+import type { StretchInfo, AudioContextTime, UnixTime, TimeDelta, MediaTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assertDev, SpeedName } from '@/helpers';
@@ -53,6 +53,7 @@ export type ControllerSettings =
 
 export interface TelemetryRecord {
   unixTime: UnixTime,
+  intrinsicTime: MediaTime,
   contextTime: AudioContextTime,
   inputVolume: number,
   lastActualPlaybackRateChange: ControllerInitialized['_lastActualPlaybackRateChange'],
@@ -506,7 +507,9 @@ export default class Controller {
 
     return {
       unixTime: Date.now() / 1000,
-      // IntrinsicTime: this.element.currentTime,
+      // I heard accessing DOM is not very efficient, so maybe we could instead utilize `addPlaybackStopListener` and
+      // 'ratechange' and infer `element.currentTime` from that?
+      intrinsicTime: this.element.currentTime,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,

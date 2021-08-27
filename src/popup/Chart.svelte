@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, AnyTime as TimeS } from '@/helpers';
+  import {
+    assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, AnyTime as TimeS,
+    MediaTime, AudioContextTime, TimeDelta,
+  } from '@/helpers';
   import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
   import debounce from 'lodash/debounce';
 
@@ -68,6 +71,7 @@
       labels: {
         disabled: true,
       },
+      nonRealtimeData: true,
       minValue: 0,
       yRangeFunction() {
         if (volumeThreshold > 0) {
@@ -150,13 +154,29 @@
     }
     
     const canvasContext = canvasEl.getContext('2d')!;
+
+    /**
+     * Why need this? Because `latestTelemetryRecord.intrinsicTime` doesn't get updated often enough.
+     * If we simply used `r.intrinsicTime`, the chart would be jumpy.
+     */
+    function getExpectedElementCurrentTime(r: TelemetryRecord): MediaTime {
+      const telemetryRecordUpdatedAt = r.unixTime;
+      const telemetryRecordAge = Date.now() / 1000 - telemetryRecordUpdatedAt;
+      const lastReportedIntrinsicTime = r.intrinsicTime;
+      const playbackRate = r.lastActualPlaybackRateChange.value;
+      const expectedTime = lastReportedIntrinsicTime + telemetryRecordAge * playbackRate;
+      return expectedTime;
+    }
+
     (function drawAndScheduleAnother() {
-      if (!paused) {
-        smoothie.render();
+      if (!paused && latestTelemetryRecord) {
+        const time = sToMs(getExpectedElementCurrentTime(latestTelemetryRecord));
+        smoothie.render(canvasEl, time);
 
         // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
         // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
         // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
+        // TODO this is now incorrect.
         const x = widthPx - sToMs(totalOutputDelay) / millisPerPixel;
         canvasContext.beginPath();
         canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
@@ -175,6 +195,7 @@
   function sToMs(seconds: TimeS): TimeMs {
     return seconds * 1000;
   }
+  /*
   function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
     // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
     // time everywhere?
@@ -183,6 +204,54 @@
   }
   function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
     return sToMs(toUnixTime(...args));
+  }
+  */
+
+  let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
+  // I have a feeling there is a way to make this simplier by doing this in the controller.
+  function toIntrinsicTime(
+    targetTime: AudioContextTime,
+    telemetryRecord: TelemetryRecord,
+    prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+  ) {
+    // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
+    // can correspond to the same `el.currentTime`.
+    const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
+    let intrinsicTimeDelta: TimeDelta;
+    const targetTimeIsWithinCurrentSpeed = targetTime >= lastSpeedChange.time;
+    if (targetTimeIsWithinCurrentSpeed) {
+      const realTimeDelta = targetTime - telemetryRecord.contextTime;
+      intrinsicTimeDelta = realTimeDelta * lastSpeedChange.value;
+    } else {
+      if (process.env.NODE_ENV !== 'production') {
+        if (prevSpeedChange && (targetTime < prevSpeedChange.time)) {
+          console.error('Cannot determine intrinsicTime because `targetTime` is before the earliest'
+            + ' playbackRateChange record.')
+        }
+      }
+      const currentSpeedRealTimeDelta = lastSpeedChange.time - telemetryRecord.contextTime;
+      const currentSpeedIntrinsicTimeDelta = currentSpeedRealTimeDelta * lastSpeedChange.value;
+      intrinsicTimeDelta = currentSpeedIntrinsicTimeDelta;
+      const prevSpeedRealTimeDelta = targetTime - lastSpeedChange.time;
+      let prevSpeed;
+      if (prevSpeedChange) {
+        prevSpeed = prevSpeedChange.value;
+      } else {
+        // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
+        // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does not get
+        // called when `prevSpeedChange` is `undefined`?
+        // if (process.env.NODE_ENV !== 'production') {
+        //   console.warn('`prevSpeedChange` is `undefined`');
+        // }
+        prevSpeed = 1;
+      }
+      const prevSpeedIntrinsicTimeDelta = prevSpeedRealTimeDelta * prevSpeed;
+      intrinsicTimeDelta += prevSpeedIntrinsicTimeDelta;
+    }
+    return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
+  }
+  function toIntrinsicTimeMs(...args: Parameters<typeof toIntrinsicTime>) {
+    return sToMs(toIntrinsicTime(...args));
   }
   function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
     soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
@@ -210,7 +279,7 @@
   function updateSpeedSeries(newTelemetryRecord: TelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
-    appendToSpeedSeries(toUnixTimeMs(r.lastActualPlaybackRateChange.time, r), speedName);
+    appendToSpeedSeries(toIntrinsicTimeMs(r.lastActualPlaybackRateChange.time, r, prevPlaybackRateChange), speedName);
     appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
@@ -218,23 +287,23 @@
     assertDev(newTelemetryRecord.lastScheduledStretchInputTime,
       'Attempted to update stretch series, but stretch is not defined');
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
-    const stretchStartUnixMs = toUnixTimeMs(stretch.startTime, newTelemetryRecord);
-    const stretchEndUnixMs = toUnixTimeMs(stretch.endTime, newTelemetryRecord);
+    const stretchStartIntrinsicMs = toIntrinsicTimeMs(stretch.startTime, newTelemetryRecord, prevPlaybackRateChange);
+    const stretchEndIntrinsicMs = toIntrinsicTimeMs(stretch.endTime, newTelemetryRecord, prevPlaybackRateChange);
     const stretchOrShrink = stretch.endValue > stretch.startValue
       ? 'stretch'
       : 'shrink';
     const series = stretchOrShrink === 'stretch'
       ? stretchSeries
       : shrinkSeries;
-    series.append(stretchStartUnixMs, offTheChartsValue);
-    series.append(stretchEndUnixMs, 0);
+    series.append(stretchStartIntrinsicMs, offTheChartsValue);
+    series.append(stretchEndIntrinsicMs, 0);
 
     // Don't draw actual video playback speed at that period so they don't overlap with stretches.
     const actualPlaybackRateDuringStretch = stretchOrShrink === 'shrink'
       ? 'sounded'
       : 'silence';
-    silenceSpeedSeries.append(stretchStartUnixMs, 0);
-    soundedSpeedSeries.append(stretchStartUnixMs, 0);
+    silenceSpeedSeries.append(stretchStartIntrinsicMs, 0);
+    soundedSpeedSeries.append(stretchStartIntrinsicMs, 0);
     // We don't have to restore the actual speed line's value after the stretch end, because stretches are always
     // followed by a speed change (at least at the moment of writing this).
   }
@@ -257,7 +326,7 @@
     }
     // Yes, old values' scale is not updated.
     const scaledValue = stretcherDelay / maxRecordedStretcherDelay * chartMaxValue * 0.90;
-    const inputTime = r.unixTime - r.delayFromInputToStretcherOutput;
+    const inputTime = r.intrinsicTime - r.delayFromInputToStretcherOutput; // TODO now it's incorrect.
     stretcherDelaySeries.append(sToMs(inputTime), scaledValue);
   }
 
@@ -269,7 +338,7 @@
     const r = newTelemetryRecord;
 
     (function updateVolumeSeries() {
-      volumeSeries.append(sToMs(r.unixTime), r.inputVolume)
+      volumeSeries.append(sToMs(r.intrinsicTime), r.inputVolume)
     })();
 
     function arePlaybackRateChangeObjectsEqual(
@@ -284,6 +353,8 @@
     );
     if (speedChanged) {
       updateSpeedSeries(r);
+
+      prevPlaybackRateChange = lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
     }
 
     function areStretchObjectsEqual(
@@ -312,7 +383,7 @@
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     // Not sure if using larger values makes it consume more memory.
-    volumeThresholdSeries.append(Date.now() - Math.round(lengthSeconds * 1000), volumeThreshold);
+    volumeThresholdSeries.append(0, volumeThreshold);
     volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
   }
   $: if (smoothie) {
