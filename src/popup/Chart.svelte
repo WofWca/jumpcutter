@@ -213,6 +213,9 @@
 
   let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
   // I have a feeling there is a way to make this simplier by doing this in the controller.
+  /**
+   * @param targetTime - can be no earlier than the third latest actualPlaybackRateChange.
+   */
   function toIntrinsicTime(
     targetTime: AudioContextTime,
     telemetryRecord: TelemetryRecord,
@@ -221,36 +224,55 @@
     // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
     // can correspond to the same `el.currentTime`.
     const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
-    let intrinsicTimeDelta: TimeDelta;
-    const targetTimeIsWithinCurrentSpeed = targetTime >= lastSpeedChange.time;
-    if (targetTimeIsWithinCurrentSpeed) {
-      const realTimeDelta = targetTime - telemetryRecord.contextTime;
-      intrinsicTimeDelta = realTimeDelta * lastSpeedChange.value;
-    } else {
-      if (process.env.NODE_ENV !== 'production') {
-        if (prevSpeedChange && (targetTime < prevSpeedChange.time)) {
-          console.error('Cannot determine intrinsicTime because `targetTime` is before the earliest'
-            + ' playbackRateChange record.')
+    let intrinsicTimeDelta: TimeDelta = 0;
+
+    for (
+      let speedChangeInd = 0, // From latest to oldest.
+        speedChange,
+        nextSpeedChange, // By "next" we mean next in time.
+        targetTimeIsWithinCurrentSpeed = false;
+
+      !targetTimeIsWithinCurrentSpeed;
+
+      nextSpeedChange = speedChange, speedChangeInd++
+    ) {
+      // TODO weels like this can be much simplier and more efficient.
+      switch (speedChangeInd) {
+        case 0: speedChange = lastSpeedChange; break;
+        case 1: {
+          if (prevSpeedChange) {
+            speedChange = prevSpeedChange;
+          } else {
+            // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
+            // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does
+            // not get called when `prevSpeedChange` is `undefined`?
+            // TODO also don't create a new object for performance?
+            speedChange = {
+              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
+              value: 1,
+            };
+          }
+          break;
         }
+        case 2: {
+          // We don't have the actual record (but maybe we should?), we just assume it. It's good enough for this
+          // function's contract.
+          // When I wrote this, the [2]nd speed change was only required for output delay calculations.
+          speedChange = {
+            time: Number.MIN_VALUE,
+            value: lastSpeedChange.value,
+          }
+          break;
+        }
+        default: throw Error();
       }
-      const currentSpeedRealTimeDelta = lastSpeedChange.time - telemetryRecord.contextTime;
-      const currentSpeedIntrinsicTimeDelta = currentSpeedRealTimeDelta * lastSpeedChange.value;
-      intrinsicTimeDelta = currentSpeedIntrinsicTimeDelta;
-      const prevSpeedRealTimeDelta = targetTime - lastSpeedChange.time;
-      let prevSpeed;
-      if (prevSpeedChange) {
-        prevSpeed = prevSpeedChange.value;
-      } else {
-        // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
-        // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does not get
-        // called when `prevSpeedChange` is `undefined`?
-        // if (process.env.NODE_ENV !== 'production') {
-        //   console.warn('`prevSpeedChange` is `undefined`');
-        // }
-        prevSpeed = 1;
-      }
-      const prevSpeedIntrinsicTimeDelta = prevSpeedRealTimeDelta * prevSpeed;
-      intrinsicTimeDelta += prevSpeedIntrinsicTimeDelta;
+
+      targetTimeIsWithinCurrentSpeed = targetTime >= speedChange.time;
+      const currSpeedSnippetUntil = nextSpeedChange?.time ?? telemetryRecord.contextTime;
+      const currSpeedSnippetFrom = Math.max(speedChange.time, targetTime);
+      const currSpeedRealimeDelta = currSpeedSnippetFrom - currSpeedSnippetUntil;
+      const currentSpeedIntrinsicTimeDelta = currSpeedRealimeDelta * speedChange.value;
+      intrinsicTimeDelta += currentSpeedIntrinsicTimeDelta;
     }
     return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
   }
