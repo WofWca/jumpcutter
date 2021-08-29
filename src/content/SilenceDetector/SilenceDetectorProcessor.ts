@@ -18,7 +18,7 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
     this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
   }
-  static get parameterDescriptors(): AudioParamDescriptor[] {
+  static get parameterDescriptors() {
     return [
       {
         name: 'volumeThreshold',
