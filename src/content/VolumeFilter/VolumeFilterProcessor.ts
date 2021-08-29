@@ -42,7 +42,6 @@ class SingleChannelRingBuffer extends Float32Array {
 }
 
 let devErrorShown = false;
-
 // Simple rectangular window and RMS.
 class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
@@ -59,7 +58,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
     const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
     this._sampleSquaresRingBuffer = new SingleChannelRingBuffer(bufferLength);
   }
-  static get parameterDescriptors(): AudioParamDescriptor[] {
+  static get parameterDescriptors() {
     return [
       // The length (duration, one could say) of the window, values of which affect the output.
       {
