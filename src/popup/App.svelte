@@ -353,12 +353,12 @@
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
             <li>{timeSavedPlaybackRateEquivalents[0]} – how much faster the media is effectively playing compared to sounded speed</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed</li>
+              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to just playing the video at sounded speed</li>
               <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
             {/if}
             <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to intrinsic speed</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed</li>
+              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at intrinsic speed</li>
               <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts</li>
             {/if}
           </ol>
