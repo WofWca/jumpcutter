@@ -88,6 +88,10 @@
     { v: 'all-time', l: '♾️ All-time average (no decay)' },
     { v: 'exponential', l: '📉 Only take into account the latest data (exponential decay)', },
   ];
+  const popupChartSpeedOptions: Array<{ v: Settings['popupChartSpeed'], l: string }> = [
+    { v: 'intrinsicTime', l: '▶️ Same as the video speed'},
+    { v: 'realTime', l: '🌎 Constant (real-time)'},
+  ];
 
   // TODO add `rel` attribute to the link element?
   let editNativeShortcutsLinkUrl: string;
@@ -252,6 +256,19 @@
           required
           min="0"
         />
+        <InputFieldBase
+          label="📈▶️ Chart movement speed"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.popupChartSpeed}
+          >
+            {#each popupChartSpeedOptions as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
           <CheckboxField
             label="⌨️🚫 Disable hotkeys while an input is in focus"
