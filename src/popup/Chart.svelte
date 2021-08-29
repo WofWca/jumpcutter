@@ -3,7 +3,7 @@
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
   import {
     assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, AnyTime as TimeS,
-    MediaTime, AudioContextTime, TimeDelta,
+    MediaTime, AudioContextTime, TimeDelta, AnyTime,
   } from '@/helpers';
   import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
   import debounce from 'lodash/debounce';
@@ -358,12 +358,58 @@
     stretcherDelaySeries.append(momentCurrentlyAtStretcherOutputIntrinsicTimeMs, scaledValue);
   }
 
+
+  /** An equivalent of `smoothie.prototype.dropOldData` */
+  function timeSeriesDropFutureData(timeSeries: TimeSeries, newestValidTime: MediaTime) {
+    type TimeSeriesWithPrivateFields = TimeSeries & {
+      data: Array<[time: AnyTime, value: number]>,
+    };
+    const data = (timeSeries as TimeSeriesWithPrivateFields).data;
+    const newestValidTimeMs = newestValidTime * 1000;
+    const firstInvalidInd = data.findIndex(([time]) => time > newestValidTimeMs);
+    if (firstInvalidInd < 0) return;
+    data.splice(firstInvalidInd);
+  }
+  function smoothieDropFutureData(smoothie: SmoothieChart, newestValidTime: MediaTime) {
+    type SmoothieWithPrivateFields = SmoothieChart & {
+      seriesSet: Array<{ timeSeries: TimeSeries }>
+    };
+    for (const { timeSeries } of (smoothie as SmoothieWithPrivateFields).seriesSet) {
+      timeSeriesDropFutureData(timeSeries, newestValidTime);
+    }
+  }
+
   let lastHandledTelemetryRecord: TelemetryRecord | undefined;
   function onNewTelemetry(newTelemetryRecord: TelemetryRecord | undefined) {
     if (!smoothie || !newTelemetryRecord) {
       return;
     }
     const r = newTelemetryRecord;
+
+    // In case there has been a seek or something, remove the data that is in the future as it needs to be overridden.
+    // If we don't do this:
+    // * The volume line will look spikey
+    // * If you constantly seek back so the same period is played over and over, all the datapoints will be clamped
+    // in the same place, which would not be good for performance, I believe.
+    // * Also if you seek back with a small step so that `currentTime` gets lower and lower, the old data will also
+    // not get deleted, which would be considered a memory leak.
+    //
+    // TODO However this does not actually fully achieve what's needed because some data gets placed with at points
+    // in time which are earlier than `r.intrinsicTime`, for example things that take output delay into account -
+    // such as `stretcherDelaySeries`, so if you do a tiny seek back, the datapoints will still get clamped up.
+    const newIntrinsicTimeIsEarlierThanPrevious
+      = lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime);
+    if (newIntrinsicTimeIsEarlierThanPrevious) {
+      smoothieDropFutureData(smoothie, r.intrinsicTime);
+
+      // Reasons to `updateSpeedSeries`:
+      // * If you seek far back (e.g. by a chart length), the green/red background would go away and not come back
+      // until there is a new speed change.
+      // * It uses `unreachableFutureMomentMs`, which gets removed on `smoothieDropFutureData`. Same with
+      // `updateSpeedSeries`.
+      updateSpeedSeries(r); // TODO perf: `updateSpeedSeries` may also get called a few lines below.
+      updateSmoothieVolumeThreshold();
+    }
 
     (function updateVolumeSeries() {
       volumeSeries.append(sToMs(r.intrinsicTime), r.inputVolume)
