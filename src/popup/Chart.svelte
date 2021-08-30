@@ -54,12 +54,13 @@
   }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
+  const smoothieImportP = import(
+    /* webpackPreload: true */
+    /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
+    '@wofwca/smoothie' // TODO replace it with just 'smoothie' when it starts being released.
+  );
   async function initSmoothie() {
-    const { SmoothieChart, TimeSeries } = await import(
-      /* webpackPreload: true */
-      /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
-      '@wofwca/smoothie' // TODO replace it with just 'smoothie' when it starts being released.
-    );
+    const { SmoothieChart, TimeSeries } = await smoothieImportP;
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
       millisPerPixel, // TODO make it reactive?
