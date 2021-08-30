@@ -50,6 +50,7 @@ export interface Settings {
   popupChartWidthPx: number,
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
+  popupChartSpeed: 'realTime' | 'intrinsicTime', // TODO add 'intrinsicTimeRelativeToSounded'
   popupAlwaysShowOpenLocalFileLink: boolean,
   // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys. TODO use
   // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?

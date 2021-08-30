@@ -145,6 +145,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupChartWidthPx: 400,
   popupChartHeightPx: 75,
   popupChartLengthInSeconds: 4,
+  popupChartSpeed: 'realTime',
   popupAlwaysShowOpenLocalFileLink: true,
   popupSpecificHotkeys: [
     {
