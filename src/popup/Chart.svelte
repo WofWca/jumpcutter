@@ -221,6 +221,9 @@
               referenceTelemetry,
               onNeedToUpdateReference,
             ))
+            // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
+            // was omitted.
+            || Number.MIN_SAFE_INTEGER
           : undefined;
         smoothie.render(canvasEl, time);
 
