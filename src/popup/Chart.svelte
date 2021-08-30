@@ -162,30 +162,72 @@
     
     const canvasContext = canvasEl.getContext('2d')!;
 
-    /**
-     * Why need this? Because `latestTelemetryRecord.intrinsicTime` doesn't get updated often enough.
-     * If we simply used `r.intrinsicTime`, the chart would be jumpy.
-     */
-    function getExpectedElementCurrentTime(r: TelemetryRecord, prevIntrinsicTime: MediaTime | undefined): MediaTime {
-      const lastReportedIntrinsicTime = r.intrinsicTime;
-
-      // To remove the shakiness when the media is paused.
-      const seemsLikePaused = lastReportedIntrinsicTime === prevIntrinsicTime;
-      if (seemsLikePaused) {
-        return lastReportedIntrinsicTime;
-      }
-
+    function getExpectedElementCurrentTimeBasic(
+      telemetryRecord: Pick<TelemetryRecord, 'unixTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>
+    ): MediaTime {
+      const r = telemetryRecord;
       const telemetryRecordUpdatedAt = r.unixTime;
       const telemetryRecordAge = Date.now() / 1000 - telemetryRecordUpdatedAt;
-      const playbackRate = r.lastActualPlaybackRateChange.value;
-      const expectedTime = lastReportedIntrinsicTime + telemetryRecordAge * playbackRate;
+      const expectedTime = r.intrinsicTime + telemetryRecordAge * r.lastActualPlaybackRateChange.value;
       return expectedTime;
     }
+    let referenceTelemetry:
+      Pick<TelemetryRecord, 'unixTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'> | undefined;
+    /**
+     * Why need this? Because:
+     * * `latestTelemetryRecord` doesn't get updated often enough.
+     * * `latestTelemetryRecord.intrinsicTime` is not precise enough.
+     * If we simply used `r.intrinsicTime`, the chart would be jumpy.
+     */
+    function getExpectedElementCurrentTime(
+      r: TelemetryRecord,
+      referenceTelemetry: Parameters<typeof getExpectedElementCurrentTimeBasic>[0] | undefined,
+      onNeedToUpdateReference: () => void,
+      prevIntrinsicTime: MediaTime | undefined,
+    ): MediaTime {
+      // To remove the shakiness when the media is paused.
+      // TODO this gets falsely triggered in Gecko every other time.
+      // const seemsLikePaused = lastReportedIntrinsicTime === prevIntrinsicTime;
+      // if (seemsLikePaused) {
+      //   return lastReportedIntrinsicTime;
+      // }
+
+      const expectedTimeBasedOnLatest = getExpectedElementCurrentTimeBasic(r);
+      const speedChangedSinceReference =
+        !referenceTelemetry
+        || referenceTelemetry.lastActualPlaybackRateChange.time !== r.lastActualPlaybackRateChange.time;
+      if (!speedChangedSinceReference) {
+        assertDev(referenceTelemetry); // `speedChangedSinceReference` would be `true` otherwise.
+        const expectedTimeBasedOnReference = getExpectedElementCurrentTimeBasic(referenceTelemetry);
+        // You would think that this is pretty big of a margin and e.g. if there is a seek that is smaller
+        // than this, it would not get noticed (for example, desync correction can take
+        // less than that), but this function (at least when I wrote this) is only responsible for how fast the
+        // chart is moving - it plays no role in `timeSeries.append(` arguments.
+        // The actual average error appears to be around 0.0008s for Chromium and 0.005s for Gecko for me.
+        const maxAllowedError = 0.25;
+        const referenceIsCorrect = Math.abs(expectedTimeBasedOnReference - expectedTimeBasedOnLatest) < maxAllowedError;
+        if (referenceIsCorrect) {
+          return expectedTimeBasedOnReference;
+        }
+      }
+      // Then the reference is incorrect.
+      onNeedToUpdateReference();
+      return expectedTimeBasedOnLatest;
+    }
+    const onNeedToUpdateReference = () => {
+      assertDev(latestTelemetryRecord);
+      referenceTelemetry = latestTelemetryRecord;
+    };
 
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
         const time = timeProgressionSpeedIntrinsic
-          ? sToMs(getExpectedElementCurrentTime(latestTelemetryRecord, prevTelemetryIntrinsicTime))
+          ? sToMs(getExpectedElementCurrentTime(
+              latestTelemetryRecord,
+              referenceTelemetry,
+              onNeedToUpdateReference,
+              prevTelemetryIntrinsicTime,
+            ))
           : undefined;
         smoothie.render(canvasEl, time);
 
