@@ -54,6 +54,7 @@ export type ControllerSettings =
 export interface TelemetryRecord {
   unixTime: UnixTime,
   intrinsicTime: MediaTime,
+  elementPaused: boolean,
   contextTime: AudioContextTime,
   inputVolume: number,
   lastActualPlaybackRateChange: ControllerInitialized['_lastActualPlaybackRateChange'],
@@ -510,6 +511,7 @@ export default class Controller {
       // I heard accessing DOM is not very efficient, so maybe we could instead utilize `addPlaybackStopListener` and
       // 'ratechange' and infer `element.currentTime` from that?
       intrinsicTime: this.element.currentTime,
+      elementPaused: this.element.paused,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,

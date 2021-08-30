@@ -3,7 +3,7 @@
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
   import {
     assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, AnyTime as TimeS,
-    MediaTime, AudioContextTime, TimeDelta, AnyTime, UnixTime,
+    MediaTime, AudioContextTime, TimeDelta, AnyTime,
   } from '@/helpers';
   import { Settings } from '@/settings';
   import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
@@ -53,9 +53,6 @@
     debouncedSetMaxChartValueToBest();
   }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
-
-  // If `intrinsicTime` is changing, then this is `undefined`.
-  let intrinsicTimeRepeatingSince: UnixTime | undefined = undefined;
 
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
@@ -184,22 +181,9 @@
       r: TelemetryRecord,
       referenceTelemetry: Parameters<typeof getExpectedElementCurrentTimeBasic>[0] | undefined,
       onNeedToUpdateReference: () => void,
-      intrinsicTimeRepeatingSince: UnixTime | undefined,
     ): MediaTime {
-      // To remove the shakiness when the media is paused.
-      if (intrinsicTimeRepeatingSince) {
-        const notChangingFor = r.unixTime - intrinsicTimeRepeatingSince;
-        // Sometimes because of low precision `r.intrinsicTime` can be the same two different times,
-        // even though playback is active. This threshold prevents false positives.
-        const pausedThreshold = BUILD_DEFINITIONS.BROWSER === 'gecko'
-          ? 0.25
-          // For me Chromium appears to hardly ever (if ever) give the same `el.currentTime` if the media
-          // is not paused. So this may well be 0.
-          : 0.01;
-        const seemsLikePaused = notChangingFor > pausedThreshold;
-        if (seemsLikePaused) {
-          return r.intrinsicTime;
-        }
+      if (r.elementPaused) {
+        return r.intrinsicTime;
       }
 
       const expectedTimeBasedOnLatest = getExpectedElementCurrentTimeBasic(r);
@@ -236,7 +220,6 @@
               latestTelemetryRecord,
               referenceTelemetry,
               onNeedToUpdateReference,
-              intrinsicTimeRepeatingSince,
             ))
           : undefined;
         smoothie.render(canvasEl, time);
@@ -540,15 +523,6 @@
       updateStretcherDelaySeries(r);
     }
 
-    if (timeProgressionSpeedIntrinsic) {
-      if (lastHandledTelemetryRecord?.intrinsicTime === r.intrinsicTime) {
-        if (!intrinsicTimeRepeatingSince) {
-          intrinsicTimeRepeatingSince = lastHandledTelemetryRecord.unixTime;
-        }
-      } else {
-        intrinsicTimeRepeatingSince = undefined;
-      }
-    }
     lastHandledTelemetryRecord = newTelemetryRecord;
   }
   $: onNewTelemetry(latestTelemetryRecord);
