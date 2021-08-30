@@ -54,6 +54,8 @@
   }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
+  let prevTelemetryIntrinsicTime: MediaTime | undefined;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await import(
       /* webpackPreload: true */
@@ -164,10 +166,17 @@
      * Why need this? Because `latestTelemetryRecord.intrinsicTime` doesn't get updated often enough.
      * If we simply used `r.intrinsicTime`, the chart would be jumpy.
      */
-    function getExpectedElementCurrentTime(r: TelemetryRecord): MediaTime {
+    function getExpectedElementCurrentTime(r: TelemetryRecord, prevIntrinsicTime: MediaTime | undefined): MediaTime {
+      const lastReportedIntrinsicTime = r.intrinsicTime;
+
+      // To remove the shakiness when the media is paused.
+      const seemsLikePaused = lastReportedIntrinsicTime === prevIntrinsicTime;
+      if (seemsLikePaused) {
+        return lastReportedIntrinsicTime;
+      }
+
       const telemetryRecordUpdatedAt = r.unixTime;
       const telemetryRecordAge = Date.now() / 1000 - telemetryRecordUpdatedAt;
-      const lastReportedIntrinsicTime = r.intrinsicTime;
       const playbackRate = r.lastActualPlaybackRateChange.value;
       const expectedTime = lastReportedIntrinsicTime + telemetryRecordAge * playbackRate;
       return expectedTime;
@@ -176,7 +185,7 @@
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
         const time = timeProgressionSpeedIntrinsic
-          ? sToMs(getExpectedElementCurrentTime(latestTelemetryRecord))
+          ? sToMs(getExpectedElementCurrentTime(latestTelemetryRecord, prevTelemetryIntrinsicTime))
           : undefined;
         smoothie.render(canvasEl, time);
 
@@ -479,6 +488,7 @@
       updateStretcherDelaySeries(r);
     }
 
+    prevTelemetryIntrinsicTime = lastHandledTelemetryRecord?.intrinsicTime;
     lastHandledTelemetryRecord = newTelemetryRecord;
   }
   $: onNewTelemetry(latestTelemetryRecord);
