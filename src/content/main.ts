@@ -1,5 +1,4 @@
-import browser from '@/webextensions-api';
-import { enabledSettingDefaultValue, getSettings, MyStorageChanges } from '@/settings';
+import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settings';
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 
 (async function () { // Just for top-level `await`
@@ -12,13 +11,38 @@ async function importAndInit() {
   init();
 }
 
-const { enabled: enabledOnInitialization } = await getSettings({ enabled: enabledSettingDefaultValue });
+// In Chromium, compared to `getSettings(`, this function does not require the whole `browser` API polyfill.
+async function isEnabled(): Promise<boolean> {
+  const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
+  const p = typeof browser !== 'undefined'
+    ? browser.storage.local.get(keys) as Promise<Settings>
+    : new Promise(r => chrome.storage.local.get(keys, r as (s: Record<string, any>) => void)) as Promise<Settings>;
+  const { enabled } = await p;
+  return enabled;
+}
+
+if (process.env.NODE_ENV !== 'production') {
+  Promise.all([
+    import('@/settings/_storage'),
+    import('@/webextensions-api'),
+  ]).then(([
+    { storage },
+    { default: browser },
+  ]) => {
+    if (browser.storage.local !== storage) {
+      console.error('Looks like you\'ve changed the default storage and `isEnabled` will not work as intended.'
+        + ' If you don\'t know what to do, just revert this commit.');
+    }
+  });
+}
+
+const enabledOnInitialization = await isEnabled();
 if (enabledOnInitialization) {
   importAndInit();
 }
 // Not using `addOnSettingsChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
 // TODO use it when (if?) it's gone.
-browser.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
+(typeof browser !== 'undefined' ? browser : chrome).storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
   if (areaName !== mainStorageAreaName) {
     return;
   }
