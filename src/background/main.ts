@@ -4,18 +4,10 @@
 // 2. settings saving.
 import browser from '@/webextensions-api';
 
-import manifest from '@/manifest.json';
-
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
 import { storage } from '@/settings/_storage';
 
-if (process.env.NODE_ENV !== 'production') {
-  if (manifest.version !== '1.16.6') {
-    console.error("Don't forget remove the following check, if you added any migrations (revert this commit), "
-      + "or update the version string above otherwise");
-  }
-}
 // This is so we don't have to retrieve settings like this `storage.local.get(defaultSettings)` every time and can
 // instead `storage.local.get()`. This at least reduces chunk size, and may be better for performance.
 async function setNewSettingsKeysToDefaults() {
@@ -49,16 +41,13 @@ browser.runtime.onInstalled.addListener(async details => {
   // In regard to popup or content scripts – this is pretty much guaranteed to finish running before them because
   // popups don't get opened immediately upon installation and in order to get content scripts to work you'd
   // need to reload the page.
-
-  if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
-    if (details.reason === 'update') {
-      const { default: runRequiredMigrations } = await import(
-        /* webpackExports: ['default'] */
-        './migrations/runRequiredMigrations'
-      );
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await runRequiredMigrations(details.previousVersion!);
-    }
+  if (details.reason === 'update') {
+    const { default: runRequiredMigrations } = await import(
+      /* webpackExports: ['default'] */
+      './migrations/runRequiredMigrations'
+    );
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await runRequiredMigrations(details.previousVersion!);
   }
   await setNewSettingsKeysToDefaults();
 

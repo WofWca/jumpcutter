@@ -3,7 +3,7 @@
   import { onDestroy } from 'svelte';
   import {
     addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
-    ControllerKind_CLONING, ControllerKind_STRETCHING,
+    ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
   } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -68,7 +68,7 @@
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
   };
 
-  let latestTelemetryRecord: TelemetryMessage;
+  let latestTelemetryRecord: TelemetryMessage | undefined;
   const telemetryUpdatePeriod = 0.02;
   let telemetryTimeoutId: number;
   let disconnect: undefined | (() => void);
@@ -192,6 +192,8 @@
     onSettingsChange(settings);
   }
 
+  let timeSavedTooltipContent: HTMLElement;
+
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
     ? 'relative to sounded speed'
     : 'absolute';
@@ -230,10 +232,40 @@
   $: wouldHaveLastedIfSpeedWasIntrinsic =
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 
+  function getTimeSavedPlaybackRateEquivalents(
+    r: TelemetryMessage | undefined
+  ): [comparedToSounded: string, comparedToIntrinsic: string] {
+    function format(num: number) {
+      return num.toFixed(2);
+    }
+    const dummyValues = [
+      format(1),
+      format(1), // TODO use `getAbsoluteSilenceSpeed`?
+    ] as [string, string];
+    if (!r) {
+      return dummyValues;
+    }
+    // `r.wouldHaveLastedIfSpeedWasIntrinsic - r.timeSavedComparedToIntrinsicSpeed` would be equivalent.
+    const lastedActually = r.wouldHaveLastedIfSpeedWasSounded - r.timeSavedComparedToSoundedSpeed;
+    if (lastedActually === 0) {
+      return dummyValues;
+    }
+    return [
+      format(r.wouldHaveLastedIfSpeedWasSounded / lastedActually),
+      format(r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually),
+    ]
+  }
+  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+
   function onUseExperimentalAlgorithmInput(e: Event) {
-    settings.experimentalControllerType = (e.target as HTMLInputElement).checked
+    const newControllerType = (e.target as HTMLInputElement).checked
       ? ControllerKind_CLONING
       : ControllerKind_STRETCHING
+    const newValues = changeAlgorithmAndMaybeRelatedSettings(settings, newControllerType);
+    settings = {
+      ...settings,
+      ...newValues,
+    };
   }
 </script>
 
@@ -291,44 +323,50 @@
       class="others__item"
       style="border: none; padding: 0; background: unset; font: inherit;"
       use:tippyActionAsyncPreload={{
-        content: `Time saved info.
-${settings.timeSavedAveragingMethod === 'exponential'
-? `Over the last ${mmSs(settings.timeSavedAveragingWindowLength)}.`
-: ''
-}
-Numbers' meanings (in order):
-
-${timeSavedComparedToSoundedSpeedPercent} – time saved compared to sounded speed, %
-${settings.timeSavedAveragingMethod === 'exponential'
-? '' :
-`
-${timeSavedComparedToSoundedSpeedAbs} – time saved compared to sounded speed, absolute
-
-${wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts
-`
-}
-${timeSavedComparedToIntrinsicSpeedPercent} – time saved compared to intrinsic speed, %
-${settings.timeSavedAveragingMethod === 'exponential'
-? '' :
-`
-${timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to intrinsic speed, absolute
-
-${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts`
-}`,
-        theme: 'my-tippy white-space-pre-line',
+        content: timeSavedTooltipContent,
+        theme: 'my-tippy',
         hideOnClick: false,
       }}
     >
       <span>⏱️</span>
-      <span>{timeSavedComparedToSoundedSpeedPercent}</span>
+      <span>{timeSavedPlaybackRateEquivalents[0]}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
       {/if}
       <span>/</span>
-      <span>{timeSavedComparedToIntrinsicSpeedPercent}</span>
+      <span>{timeSavedPlaybackRateEquivalents[1]}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
       {/if}
+
+      <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
+      <div style="display:none">
+        <div bind:this={timeSavedTooltipContent}>
+          <p style="margin-top: 0.25rem;">
+            <span>Time saved info.</span>
+            {#if settings.timeSavedAveragingMethod === 'exponential'}
+              <br>
+              <span>Over the last {mmSs(settings.timeSavedAveragingWindowLength)}.</span>
+            {/if}
+          </p>
+          <p>Numbers' meanings (in order):</p>
+          <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
+            <li>{timeSavedPlaybackRateEquivalents[0]} – how much faster the media is effectively playing compared to sounded speed</li>
+            {#if settings.timeSavedAveragingMethod !== 'exponential'}
+              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to just playing the video at sounded speed</li>
+              <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
+            {/if}
+            <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to intrinsic speed</li>
+            {#if settings.timeSavedAveragingMethod !== 'exponential'}
+              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at intrinsic speed</li>
+              <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts</li>
+            {/if}
+          </ol>
+          <p
+            style="margin-bottom: 0.25rem;"
+          >Equivalent time saved percentage:<br>{timeSavedComparedToSoundedSpeedPercent} / {timeSavedComparedToIntrinsicSpeedPercent} (compared to sounded / compared to intrinsic).</p>
+        </div>
+      </div>
     </button>
   </div>
   <!-- TODO transitions? -->
@@ -398,6 +436,7 @@ ${wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrin
       widthPx={settings.popupChartWidthPx}
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
+      timeProgressionSpeed={settings.popupChartSpeed}
       on:click={onChartClick}
       paused={settings.experimentalControllerType === ControllerKind_CLONING}
     />

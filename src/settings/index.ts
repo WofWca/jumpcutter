@@ -2,9 +2,6 @@ import { HotkeyBinding } from '@/hotkeys';
 import { ControllerKind } from './ControllerKind';
 
 export interface Settings {
-  // TODO I made this purely for testing. For release we'll probably need something better.
-  experimentalControllerType: ControllerKind,
-
   volumeThreshold: number,
   previousVolumeThreshold: number,
 
@@ -19,6 +16,23 @@ export interface Settings {
   previousMarginBefore: number,
   marginAfter: number,
   previousMarginAfter: number,
+
+  // TODO I made this purely for testing. For release we'll probably need something better.
+  experimentalControllerType: ControllerKind,
+  // Why do we need this? Controller algorithms are quite different and each have their advantages and disadvantages,
+  // which need to be considered when choosing settings such as margin(Before|After). For example, some people may hate
+  // audio distortion that is caused by the way marginBefore works in specifically the stretching algorithm, so they
+  // may want to set it to 0 for that algorithm specifically, while choosing a different value for the cloning algorithm
+  // as it is devoid of such a disadvantage.
+  // May want to replace this with a list of settings keys and rename it in the future.
+  useSeparateMarginSettingsForDifferentAlgorithms: boolean,
+  // Settings for the currently active algorithm are not synced (just in case you decided to use them).
+  // Which is a bit confusing and wasteful in terms of storage space. But not too bad.
+  algorithmSpecificSettings: {
+    [P in ControllerKind]: {
+      [P in keyof Pick<Settings, 'marginBefore' | 'marginAfter'>]: Settings[P];
+    };
+  },
 
   applyTo: 'videoOnly' | 'audioOnly' | 'both',
 
@@ -36,6 +50,7 @@ export interface Settings {
   popupChartWidthPx: number,
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
+  popupChartSpeed: 'realTime' | 'intrinsicTime', // TODO add 'intrinsicTimeRelativeToSounded'
   popupAlwaysShowOpenLocalFileLink: boolean,
   // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys. TODO use
   // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
@@ -78,3 +93,4 @@ export * from './togglableSettings';
 export * from './onChanged';
 export * from './localStorageOnlyKeys';
 export * from './filterOutLocalStorageOnlySettings';
+export * from './changeAlgorithmAndMaybeRelatedSettings';

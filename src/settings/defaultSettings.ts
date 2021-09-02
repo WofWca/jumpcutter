@@ -3,9 +3,12 @@ import type { Settings } from './';
 import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
 
-export const defaultSettings: Readonly<Settings> = {
-  experimentalControllerType: ControllerKind.STRETCHING,
+const stretchingControllerSpecificDefaults = {
+  marginBefore: 0,
+  marginAfter: 0.100,
+} as const;
 
+export const defaultSettings: Readonly<Settings> = {
   volumeThreshold:          0.010,
   previousVolumeThreshold:  0.010,
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
@@ -21,10 +24,22 @@ export const defaultSettings: Readonly<Settings> = {
   enabled: enabledSettingDefaultValue,
   // Seems like new users get immediately scared by the sound distortion the extension causes, so let's let users
   // enable marginBefore manually IF they start noticing that they need it.
-  marginBefore:         0,
-  previousMarginBefore: 0,
-  marginAfter:          0.100,
-  previousMarginAfter:  0.100,
+  marginBefore:         stretchingControllerSpecificDefaults.marginBefore,
+  previousMarginBefore: stretchingControllerSpecificDefaults.marginBefore,
+  marginAfter:          stretchingControllerSpecificDefaults.marginAfter,
+  previousMarginAfter:  stretchingControllerSpecificDefaults.marginAfter,
+
+  experimentalControllerType: ControllerKind.STRETCHING,
+  useSeparateMarginSettingsForDifferentAlgorithms: true,
+  algorithmSpecificSettings: {
+    [ControllerKind.CLONING]: {
+      marginBefore: 0.050,
+      marginAfter: 0.030,
+    },
+    [ControllerKind.STRETCHING]: {
+      ...stretchingControllerSpecificDefaults,
+    },
+  },
 
   applyTo: 'videoOnly',
 
@@ -129,7 +144,8 @@ export const defaultSettings: Readonly<Settings> = {
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
   popupChartHeightPx: 75,
-  popupChartLengthInSeconds: 4,
+  popupChartLengthInSeconds: 8,
+  popupChartSpeed: 'intrinsicTime',
   popupAlwaysShowOpenLocalFileLink: true,
   popupSpecificHotkeys: [
     {

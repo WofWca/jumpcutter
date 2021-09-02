@@ -9,7 +9,7 @@ import {
   transformSpeed,
   destroyAudioWorkletNode,
 } from '@/content/helpers';
-import type { Time, StretchInfo } from '@/helpers';
+import type { StretchInfo, AudioContextTime, UnixTime, TimeDelta, MediaTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assertDev, SpeedName } from '@/helpers';
@@ -52,14 +52,16 @@ export type ControllerSettings =
   };
 
 export interface TelemetryRecord {
-  unixTime: Time,
-  contextTime: Time,
+  unixTime: UnixTime,
+  intrinsicTime: MediaTime,
+  elementPaused: boolean,
+  contextTime: AudioContextTime,
   inputVolume: number,
   lastActualPlaybackRateChange: ControllerInitialized['_lastActualPlaybackRateChange'],
   elementVolume: number,
-  totalOutputDelay: Time,
-  delayFromInputToStretcherOutput: Time,
-  stretcherDelay: Time,
+  totalOutputDelay: TimeDelta,
+  delayFromInputToStretcherOutput: TimeDelta,
+  stretcherDelay: TimeDelta,
   lastScheduledStretchInputTime?: StretchInfo,
 }
 
@@ -89,7 +91,7 @@ export default class Controller {
   _lookahead?: DelayNode;
   _stretcherAndPitch?: StretcherAndPitchCorrectorNode;
   _lastActualPlaybackRateChange?: {
-    time: Time,
+    time: AudioContextTime,
     value: number,
     name: SpeedName,
   };
@@ -134,7 +136,7 @@ export default class Controller {
 
     this._elementVolumeCache = element.volume;
     const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', onElementVolumeChange);
+    element.addEventListener('volumechange', onElementVolumeChange, { passive: true });
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     this.audioContext = audioContext;
@@ -235,8 +237,8 @@ export default class Controller {
     if (element.paused) {
       suspendAudioContext();
     }
-    element.addEventListener('pause', scheduleSuspendAudioContext);
-    element.addEventListener('play', resumeAudioContext);
+    element.addEventListener('pause', scheduleSuspendAudioContext, { passive: true });
+    element.addEventListener('play', resumeAudioContext, { passive: true });
     this._onDestroyCallbacks.push(() => {
       element.removeEventListener('pause', scheduleSuspendAudioContext);
       element.removeEventListener('play', resumeAudioContext);
@@ -314,7 +316,7 @@ export default class Controller {
     toAwait.push(silenceDetectorP.then(silenceDetector => {
       silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
         const [silenceStartOrEnd] = data;
-        let elementSpeedSwitchedAt: Time;
+        let elementSpeedSwitchedAt: AudioContextTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SOUNDED);
           this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
@@ -459,7 +461,7 @@ export default class Controller {
   /**
    * @returns elementSpeedSwitchedAt
    */
-  private _setSpeedAndLog(speedName: SpeedName): Time {
+  private _setSpeedAndLog(speedName: SpeedName): AudioContextTime {
     let speedVal;
     switch (speedName) {
       case SpeedName.SOUNDED: {
@@ -506,7 +508,10 @@ export default class Controller {
 
     return {
       unixTime: Date.now() / 1000,
-      // IntrinsicTime: this.element.currentTime,
+      // I heard accessing DOM is not very efficient, so maybe we could instead utilize `addPlaybackStopListener` and
+      // 'ratechange' and infer `element.currentTime` from that?
+      intrinsicTime: this.element.currentTime,
+      elementPaused: this.element.paused,
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,

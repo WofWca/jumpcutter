@@ -7,10 +7,21 @@
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
 [![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
 
-Plays silent parts of videos on the page at a faster speed.
+Skips silent parts in videos on the fly.
+
 Can be useful for watching lectures and other unedited videos.
 
-![Extension popup screenshot](./docs/screenshots/popup-1280x800.png)
+Demo:
+
+<!-- TODO put the file in the repo so it's set in stone? -->
+<!-- The source video:
+https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-034-artificial-intelligence-fall-2010/lecture-videos/lecture-16-learning-support-vector-machines/
+(or https://youtu.be/_PwhiWxHK8o).
+This video's license: CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/).
+Not sure if I did comply with the license here.
+But I believe this use case would be considered "fair use" anyway.
+ -->
+<https://user-images.githubusercontent.com/39462442/131825020-5308b879-0509-41a3-95c9-bb4ad8938dc0.mp4>
 
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 

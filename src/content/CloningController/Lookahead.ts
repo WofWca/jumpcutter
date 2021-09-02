@@ -1,6 +1,6 @@
 import browser from '@/webextensions-api';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { assertDev, Time } from '@/helpers';
+import { assertDev, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode } from '@/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
@@ -8,16 +8,17 @@ import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
 
-// A more semantically correct version would be `Array<[start: Time, end: Time]>`, but I think this is a bit faster.
+// A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,
+// but I think this is a bit faster.
 // TODO `Float32Array` should be even faster, though it doesn't support `push`.
 // But I think array is not the best suited data structure for this application in the first place.
 type MyTimeRanges = {
-  starts: Time[],
-  ends: Time[],
+  starts: MediaTime[],
+  ends: MediaTime[],
 }
-type TimeRange = [start: Time, end: Time];
+type TimeRange = [start: MediaTime, end: MediaTime];
 
-function inRanges(ranges: TimeRanges, time: Time): boolean {
+function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
   // TODO super inefficient, same as with `getNextOutOfRangesTime`.
   for (let i = 0; i < ranges.length; i++) {
     const
@@ -34,7 +35,7 @@ type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefo
 
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
-  lastSoundedTime: Time | undefined;
+  lastSoundedTime: MediaTime | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
   // silenceRanges: Array<[start: Time, end: Time]> = []; // Array is not the fastest data structure for this application.
@@ -98,7 +99,7 @@ export default class Lookahead {
     // TODO DRY
     // const smoothingWindowLenght = 0.03;
     // const smoothingWindowLenght = 0.1;
-    const smoothingWindowLenght = 0.05;
+    const smoothingWindowLenght = 0.15;
     // TODO DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
       const volumeFilter = new VolumeFilterNode(ctx, smoothingWindowLenght, smoothingWindowLenght);
@@ -136,12 +137,17 @@ export default class Lookahead {
           assertDev(this.lastSoundedTime, 'Thought `this.lastSoundedTime` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
 
-          const negativeMarginAfterLol = smoothingWindowLenght;
+          // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
+          // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
+          // The following is to compensate for this.
+          // TODO Though the delay value is up for debate. Some might say it should be half the `smoothingWindowLenght`,
+          // or even smaller.
+          const volumeSmoothingCausedDelay = smoothingWindowLenght;
 
-          const marginBeforeIntrinsicTime = smoothingWindowLenght + this.settings.marginBefore;
+          const marginBeforeIntrinsicTime = volumeSmoothingCausedDelay + this.settings.marginBefore;
           // TODO `this.lastSoundedTime` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
           // this.pushNewSilenceRange(this.lastSoundedTime, this.clone.currentTime - marginBeforeRealTime);
-          this.pushNewSilenceRange(this.lastSoundedTime - negativeMarginAfterLol, eventTimePlaybackTime - marginBeforeIntrinsicTime);
+          this.pushNewSilenceRange(this.lastSoundedTime - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
         }
       }
     }));
@@ -175,7 +181,7 @@ export default class Lookahead {
     // TODO also utilize `requestIdleCallback` so it gets called less frequently during high loads?
     const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
     // TODO using `timeupdate` is pretty bug-proof, but not very efficient.
-    originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
+    originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
     this._onDestroyCallbacks.push(() => {
       originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
     });
@@ -193,8 +199,8 @@ export default class Lookahead {
     if (!clone.paused) {
       resumeAudioContext();
     }
-    clone.addEventListener('pause', suspendAudioContext);
-    clone.addEventListener('play', resumeAudioContext);
+    clone.addEventListener('pause', suspendAudioContext, { passive: true });
+    clone.addEventListener('play', resumeAudioContext, { passive: true });
     this._onDestroyCallbacks.push(() => {
       clone.removeEventListener('pause', suspendAudioContext);
       clone.removeEventListener('play', resumeAudioContext);
@@ -212,8 +218,8 @@ export default class Lookahead {
     if (!originalElement.paused) {
       playClone();
     }
-    originalElement.addEventListener('pause', pauseClone);
-    originalElement.addEventListener('play', playClone);
+    originalElement.addEventListener('pause', pauseClone, { passive: true });
+    originalElement.addEventListener('play', playClone, { passive: true });
     this._onDestroyCallbacks.push(() => {
       originalElement.removeEventListener('pause', pauseClone);
       originalElement.removeEventListener('play', playClone);
@@ -225,7 +231,7 @@ export default class Lookahead {
    * @returns `TimeRange` if `forTime` falls into one, `undefined` otherwise.
    * Can be called before `ensureInit` has finished.
    */
-  public getMaybeSilenceRangeForTime(time: Time): TimeRange | undefined {
+  public getMaybeSilenceRangeForTime(time: MediaTime): TimeRange | undefined {
     // TODO I wrote this real quick, no edge cases considered.
     // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
     // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
@@ -239,7 +245,7 @@ export default class Lookahead {
       ? [starts[currentRangeInd], ends[currentRangeInd]]
       : undefined;
   }
-  private pushNewSilenceRange(elementTimeStart: Time, elementTimeEnd: Time) {
+  private pushNewSilenceRange(elementTimeStart: MediaTime, elementTimeEnd: MediaTime) {
     this.silenceRanges.starts.push(elementTimeStart);
     this.silenceRanges.ends.push(elementTimeEnd);
   }

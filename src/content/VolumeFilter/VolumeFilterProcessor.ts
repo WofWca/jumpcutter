@@ -1,12 +1,12 @@
 import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
-import type { Time } from '@/helpers';
+import type { TimeDelta } from '@/helpers';
 
 const SAMPLES_PER_QUANTUM = 128;
 // This is the minimum number a broswer should support, apparently. TODO make sure this is correct.
 // https://webaudio.github.io/web-audio-api/#BaseAudioContent-methods
 const DEFAULT_MAX_NUM_CHANNELS = 32;
 
-function windowLengthNumSecondsToSamples(numSeconds: Time) {
+function windowLengthNumSecondsToSamples(numSeconds: TimeDelta) {
   // Why round? Because there may be a sligh difference between a custom parameter (`maxSmoothingWindowLength`) and
   // `process()`'s `parameters.smoothingWindowLength[0]` even if they were the same number at the time of passing to the
   // processor constructor (I assume because one is float32, the other is float64).
@@ -42,7 +42,6 @@ class SingleChannelRingBuffer extends Float32Array {
 }
 
 let devErrorShown = false;
-
 // Simple rectangular window and RMS.
 class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   _sampleSquaresRingBuffer: SingleChannelRingBuffer;
@@ -59,7 +58,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
     const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
     this._sampleSquaresRingBuffer = new SingleChannelRingBuffer(bufferLength);
   }
-  static get parameterDescriptors(): AudioParamDescriptor[] {
+  static get parameterDescriptors() {
     return [
       // The length (duration, one could say) of the window, values of which affect the output.
       {

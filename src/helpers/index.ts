@@ -1,8 +1,14 @@
-export type Time = number;
+// Why so many numbers? https://github.com/microsoft/TypeScript/pull/33038. TODO utilize this when it's merged.
+export type MediaTime = number;
+export type UnixTime = number;
+export type AudioContextTime = number;
+export type TimeDelta = number;
+export type AnyTime = MediaTime | UnixTime | AudioContextTime | TimeDelta;
+
 export type StretchInfo = {
-  startTime: Time,
+  startTime: AudioContextTime,
   startValue: number,
-  endTime: Time,
+  endTime: AudioContextTime,
   endValue: number,
 };
 // Honestly idk why `-?:` is the way to go, but it appears to make optional values work.

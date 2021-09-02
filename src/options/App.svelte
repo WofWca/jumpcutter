@@ -76,7 +76,7 @@
 
   const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
     { v: 'relativeToSoundedSpeed', l: '✖️ Relative to sounded speed' },
-    { v: 'absolute', l: '= Absolute' },
+    { v: 'absolute', l: '= Absolute (a.k.a. relative to intrinsic media speed)' },
   ]
   const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
     { v: 'none', l: '❌ None', },
@@ -87,6 +87,10 @@
   const timeSavedAveragingMethodOptions: Array<{ v: Settings['timeSavedAveragingMethod'], l : string }> = [
     { v: 'all-time', l: '♾️ All-time average (no decay)' },
     { v: 'exponential', l: '📉 Only take into account the latest data (exponential decay)', },
+  ];
+  const popupChartSpeedOptions: Array<{ v: Settings['popupChartSpeed'], l: string }> = [
+    { v: 'intrinsicTime', l: '▶️ Same as the video speed'},
+    { v: 'realTime', l: '🌎 Constant (real-time)'},
   ];
 
   // TODO add `rel` attribute to the link element?
@@ -167,6 +171,11 @@
             bind:checked={settings.enableDesyncCorrection}
           />
         {/if}
+        <CheckboxField
+          label={'🔄 Use different "margin before" and "margin after" for different algorithms'
+            + ' (related to the "Use experimental algorithm" setting)'}
+          bind:checked={settings.useSeparateMarginSettingsForDifferentAlgorithms}
+        />
       </section>
       <section>
         <h3>Hotkeys</h3>
@@ -247,6 +256,19 @@
           required
           min="0"
         />
+        <InputFieldBase
+          label="📈▶️ Chart movement speed"
+          let:id
+        >
+          <select
+            {id}
+            bind:value={settings.popupChartSpeed}
+          >
+            {#each popupChartSpeedOptions as { v, l }}
+              <option value={v}>{l}</option>
+            {/each}
+          </select>
+        </InputFieldBase>
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
           <CheckboxField
             label="⌨️🚫 Disable hotkeys while an input is in focus"

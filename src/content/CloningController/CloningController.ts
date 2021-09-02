@@ -1,9 +1,11 @@
 import Lookahead from './Lookahead';
-import type { Time } from '@/helpers';
+import type { MediaTime, AnyTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, SpeedName } from '@/helpers';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
+
+type Time = AnyTime;
 
 type ControllerInitialized =
   Controller
@@ -98,7 +100,7 @@ export default class Controller {
 
     this._elementVolumeCache = element.volume;
     const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', onElementVolumeChange);
+    element.addEventListener('volumechange', onElementVolumeChange, { passive: true });
     this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     const { lookahead } = this;
@@ -151,7 +153,7 @@ export default class Controller {
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
 
     await lookahead.ensureInit().then(() => {
-      element.addEventListener('timeupdate', onTimeupdate);
+      element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
     });
 
@@ -163,7 +165,7 @@ export default class Controller {
     delete this._pendingSettingsUpdates;
   }
 
-  maybeSeek(seekTo: Time, seekScheduledTo: Time): void {
+  maybeSeek(seekTo: MediaTime, seekScheduledTo: MediaTime): void {
     const element = this.element;
     const { currentTime, paused } = element;
 
@@ -179,16 +181,16 @@ export default class Controller {
       return;
     }
 
-    // Be careful, when you seek the new `currentTime` can be a bit lower (or bigger) than the value that you
-    // assigned to it, so `seekTo !== currentTime` will not work.
-    // The threshold value I chose is somewhat arbitrary, based on human perception, seeking duration and
-    // abovementioned seeking time error.
+    const seekAmount = seekTo - currentTime;
     // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
-    // a precise seek (`.currentTime = ...`). Keep in mind that it's real time, not media-intrinsic time,
-    // so the bigger `soundedSpeed` is, the less reasonable it gets to perform a seek. TODO calculate intrinsic time?
-    // Or just use `fastSeek`?
+    // a precise seek (`.currentTime = ...`).
+    const expectedSeekDuration = 0.15;
+    const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
+    // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?
-    const farEnoughToPerformSeek = seekTo > currentTime + 0.15;
+    // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
+    // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
+    const farEnoughToPerformSeek = realTimeLeftUntilDestinationWithoutSeeking > expectedSeekDuration;
     if (farEnoughToPerformSeek) {
       element.currentTime = seekTo;
 

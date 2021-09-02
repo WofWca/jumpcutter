@@ -1,6 +1,6 @@
 import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
 import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, transformSpeed } from './helpers';
-import type { Time } from "@/helpers";
+import type { TimeDelta } from "@/helpers";
 
 /**
  * Not a typical stopwatch, but close.
@@ -160,7 +160,7 @@ export default class TimeSavedTracker {
     this._setStateAccordingToNewSettings(settings);
     this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
     addOnSettingsChangedListener(this._onSettingsChange);
-    element.addEventListener('ratechange', this._onElementSpeedChange);
+    element.addEventListener('ratechange', this._onElementSpeedChange, { passive: true });
     this._onDestroyCallbacks.push(() => {
       this._playbackStopwatch.destroy();
       removeOnSettingsChangedListener(this._onSettingsChange);
@@ -230,7 +230,7 @@ export default class TimeSavedTracker {
   // How about we just subtract ALL seeks' durations from time saved, and not just the ones' that were initiated by
   // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
   /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
-  public onControllerCausedSeek(seekDelta: Time): void {
+  public onControllerCausedSeek(seekDelta: TimeDelta): void {
     // Looks like this call can be skipped if `this._averagingMethod === 'all-time'`. TODO?
     this._appendLastSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
 
