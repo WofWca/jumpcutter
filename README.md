@@ -23,8 +23,6 @@ But I believe this use case would be considered "fair use" anyway.
  -->
 <https://user-images.githubusercontent.com/39462442/131825020-5308b879-0509-41a3-95c9-bb4ad8938dc0.mp4>
 
-![Extension popup screenshot](./docs/screenshots/popup-1280x800.png)
-
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
 ## Build
