@@ -21,7 +21,7 @@ This video's license: CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-n
 Not sure if I did comply with the license here.
 But I believe this use case would be considered "fair use" anyway.
  -->
-<https://user-images.githubusercontent.com/39462442/130765835-8ac8c672-b377-4dd6-b96a-1115cb5f3fd9.mp4>
+<https://user-images.githubusercontent.com/39462442/131825020-5308b879-0509-41a3-95c9-bb4ad8938dc0.mp4>
 
 ![Extension popup screenshot](./docs/screenshots/popup-1280x800.png)
 
