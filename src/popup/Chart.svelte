@@ -285,20 +285,21 @@
     const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
     let intrinsicTimeDelta: TimeDelta = 0;
 
+    // From latest to oldest.
     for (
-      let speedChangeInd = 0, // From latest to oldest.
+      let speedChangeInd = 0,
         speedChange,
         nextSpeedChange, // By "next" we mean next in time.
         targetTimeIsWithinCurrentSpeed = false;
 
       !targetTimeIsWithinCurrentSpeed;
 
-      nextSpeedChange = speedChange, speedChangeInd++
+      nextSpeedChange = speedChange, speedChangeInd--
     ) {
       // TODO weels like this can be much simplier and more efficient.
       switch (speedChangeInd) {
         case 0: speedChange = lastSpeedChange; break;
-        case 1: {
+        case -1: {
           if (prevSpeedChange) {
             speedChange = prevSpeedChange;
           } else {
@@ -313,7 +314,7 @@
           }
           break;
         }
-        case 2: {
+        case -2: {
           // We don't have the actual record (but maybe we should?), we just assume it. It's good enough for this
           // function's contract.
           // When I wrote this, the [2]nd speed change was only required for output delay calculations.
