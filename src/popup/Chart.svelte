@@ -158,8 +158,6 @@
         fillStyle: 'transparent',
       });
     }
-    
-    const canvasContext = canvasEl.getContext('2d')!;
 
     function getExpectedElementCurrentTimeBasic(
       telemetryRecord: Pick<TelemetryRecord, 'unixTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>
@@ -215,6 +213,7 @@
       referenceTelemetry = latestTelemetryRecord;
     };
 
+    const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
         const time = timeProgressionSpeedIntrinsic
