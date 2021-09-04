@@ -285,6 +285,14 @@
     const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
     let intrinsicTimeDelta: TimeDelta = 0;
 
+    if (process.env.NODE_ENV !== 'production') {
+      if (prevSpeedChange && (prevSpeedChange.time >= lastSpeedChange.time)) {
+        // However this check doesn't catch whether it was _immediately_ before, only if it's just _before_.
+        console.error('`prevSpeedChange` must be the speed change that was immediately before'
+          + ' `telemetryRecord.lastActualPlaybackRateChange`');
+      }
+    }
+
     // From latest to oldest.
     for (
       let speedChangeInd = 0,
