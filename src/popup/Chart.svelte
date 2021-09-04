@@ -175,8 +175,9 @@
     /**
      * Why need this? Because:
      * * `latestTelemetryRecord` doesn't get updated often enough.
-     * * `latestTelemetryRecord.intrinsicTime` is not precise enough.
-     * If we simply used `r.intrinsicTime`, the chart would be jumpy.
+     * * `latestTelemetryRecord.intrinsicTime` is not precise enough, it's jumpy.
+     * If we simply used `r.intrinsicTime`, the chart would be jumpy. Instead we take a `TelemetryRecord`
+     * (referenceTelemetry) and calculate the `el.currentTime` based on it, using `Date.now()`, as it is smoother.
      */
     function getExpectedElementCurrentTime(
       r: TelemetryRecord,
@@ -191,7 +192,7 @@
       const speedChangedSinceReference =
         !referenceTelemetry
         || referenceTelemetry.lastActualPlaybackRateChange.time !== r.lastActualPlaybackRateChange.time;
-      if (!speedChangedSinceReference) {
+      if (!speedChangedSinceReference) { // Otherwise the reference is incorrect.
         assertDev(referenceTelemetry); // `speedChangedSinceReference` would be `true` otherwise.
         const expectedTimeBasedOnReference = getExpectedElementCurrentTimeBasic(referenceTelemetry);
         // You would think that this is pretty big of a margin and e.g. if there is a seek that is smaller
