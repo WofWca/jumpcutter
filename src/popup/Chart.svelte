@@ -210,7 +210,7 @@
       onNeedToUpdateReference();
       return expectedTimeBasedOnLatest;
     }
-    const onNeedToUpdateReference = () => {
+    const setReferenceToLatest = () => {
       assertDev(latestTelemetryRecord);
       referenceTelemetry = latestTelemetryRecord;
     };
@@ -221,7 +221,7 @@
           ? sToMs(getExpectedElementCurrentTime(
               latestTelemetryRecord,
               referenceTelemetry,
-              onNeedToUpdateReference,
+              setReferenceToLatest,
             ))
             // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
             // was omitted.
