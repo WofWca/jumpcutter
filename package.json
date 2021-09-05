@@ -30,7 +30,6 @@
     "@wofwca/smoothie": "^1.36.0-rc.0",
     "hh-mm-ss": "^1.2.0",
     "lodash": "^4.17.21",
-    "smoothie": "^1.35.0",
     "tippy.js": "^6.3.1",
     "tone": "^14.7.77",
     "webextension-polyfill": "^0.8.0"

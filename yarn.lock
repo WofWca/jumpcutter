@@ -1990,11 +1990,6 @@ slice-ansi@^4.0.0:
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
 
-smoothie@^1.35.0:
-  version "1.35.0"
-  resolved "https://registry.yarnpkg.com/smoothie/-/smoothie-1.35.0.tgz#91dff7f22ec770044c7e6a1323a694a4fd96d001"
-  integrity sha512-tA+p9hDOeLOkETO6HyTgo3ZzGF2mHOGS+Vbc9d9M/iHMlSIsQvVJYuOBIYW21naaAi+eU1NxvVDQ8V9UM56hvQ==
-
 source-map-js@^0.6.2:
   version "0.6.2"
   resolved "https://registry.yarnpkg.com/source-map-js/-/source-map-js-0.6.2.tgz#0bb5de631b41cfbda6cfba8bd05a80efdfd2385e"
