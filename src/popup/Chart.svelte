@@ -81,7 +81,7 @@
    */
   function toIntrinsicTime(
     targetTime: AudioContextTime,
-    telemetryRecord: TelemetryRecord,
+    telemetryRecord: Pick<TelemetryRecord, 'contextTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>,
     prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
   ) {
     // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
