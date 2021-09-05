@@ -332,31 +332,48 @@
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
-        const time = timeProgressionSpeedIntrinsic
-          ? sToMs(getExpectedElementCurrentTimeDelayed(
-              latestTelemetryRecord,
-              referenceTelemetry,
-              setReferenceToLatest,
-            ))
+        let time: AnyTime | undefined;
+        let timeMs: TimeMs | undefined;
+        if (timeProgressionSpeedIntrinsic) {
+          time = getExpectedElementCurrentTimeDelayed(
+            latestTelemetryRecord,
+            referenceTelemetry,
+            setReferenceToLatest,
+          );
+          timeMs
+            = sToMs(time)
             // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
             // was omitted.
-            || Number.MIN_SAFE_INTEGER
-          : undefined;
-        smoothie.render(canvasEl, time);
+            || Number.MAX_SAFE_INTEGER;
+        } else {
+          timeMs = undefined;
+        }
+        // const time = timeProgressionSpeedIntrinsic
+        //   ? sToMs(getExpectedElementCurrentTimeDelayed(
+        //       latestTelemetryRecord,
+        //       referenceTelemetry,
+        //       setReferenceToLatest,
+        //     ))
+        //     // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
+        //     // was omitted.
+        //     || Number.MIN_SAFE_INTEGER
+        //   : undefined;
+        smoothie.render(canvasEl, timeMs);
 
         // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
         // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
         // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
         let chartEdgeTimeOffset: TimeDelta;
         if (timeProgressionSpeedIntrinsic) {
-          const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
+          // TODO when the video is paused the marker is jumping.
+          const expectedAudioContextTime
+            = (Date.now() / 1000 - latestTelemetryRecord.unixTime) + latestTelemetryRecord.contextTime;
+          const momentCurrentlyBeingOutputContextTime = expectedAudioContextTime - totalOutputDelayRealTime;
           const momentCurrentlyBeingOutputIntrinsicTime
             = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
-          const totalOutputDelayIntrinsicTime
-            = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
-          // TODO this is incorrect because the delay introduced by `getExpectedElementCurrentTimeDelayed`
-          // is not taken into account. But it's good enough, as that delay is unnoticeable currently.
-          chartEdgeTimeOffset = totalOutputDelayIntrinsicTime;
+          assertDev(time);
+          const chartEdgeTime = time;
+          chartEdgeTimeOffset = chartEdgeTime - momentCurrentlyBeingOutputIntrinsicTime;
         } else {
           chartEdgeTimeOffset = totalOutputDelayRealTime;
         }
