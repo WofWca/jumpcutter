@@ -59,6 +59,106 @@
     /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
     '@wofwca/smoothie' // TODO replace it with just 'smoothie' when it starts being released.
   );
+
+  type TimeMs = number;
+  function sToMs(seconds: TimeS): TimeMs {
+    return seconds * 1000;
+  }
+  function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
+    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
+    // time everywhere?
+    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
+    return audioContextCreationTimeUnix + audioContextTime;
+  }
+  function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
+    return sToMs(toUnixTime(...args));
+  }
+
+  let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
+  // I have a feeling there is a way to make this simplier by doing this in the controller.
+  /**
+   * @param targetTime - can be no earlier than the third latest actualPlaybackRateChange.
+   */
+  function toIntrinsicTime(
+    targetTime: AudioContextTime,
+    telemetryRecord: TelemetryRecord,
+    prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+  ) {
+    // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
+    // can correspond to the same `el.currentTime`.
+    const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
+    let intrinsicTimeDelta: TimeDelta = 0;
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (prevSpeedChange && (prevSpeedChange.time >= lastSpeedChange.time)) {
+        // However this check doesn't catch whether it was _immediately_ before, only if it's just _before_.
+        console.error('`prevSpeedChange` must be the speed change that was immediately before'
+          + ' `telemetryRecord.lastActualPlaybackRateChange`');
+      }
+    }
+
+    // From latest to oldest.
+    for (
+      let speedChangeInd = 0,
+        speedChange,
+        nextSpeedChange, // By "next" we mean next in time.
+        targetTimeIsWithinCurrentSpeed = false;
+
+      !targetTimeIsWithinCurrentSpeed;
+
+      nextSpeedChange = speedChange, speedChangeInd--
+    ) {
+      // TODO weels like this can be much simplier and more efficient.
+      switch (speedChangeInd) {
+        case 0: speedChange = lastSpeedChange; break;
+        case -1: {
+          if (prevSpeedChange) {
+            speedChange = prevSpeedChange;
+          } else {
+            // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
+            // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does
+            // not get called when `prevSpeedChange` is `undefined`?
+            // TODO also don't create a new object for performance?
+            speedChange = {
+              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
+              value: 1,
+            };
+          }
+          break;
+        }
+        case -2: {
+          // We don't have the actual record (but maybe we should?), we just assume it. It's good enough for this
+          // function's contract.
+          // When I wrote this, the [2]nd speed change was only required for output delay calculations.
+          speedChange = {
+            time: Number.MIN_VALUE,
+            value: lastSpeedChange.value,
+          }
+          break;
+        }
+        default: throw Error();
+      }
+
+      targetTimeIsWithinCurrentSpeed = targetTime >= speedChange.time;
+      const currSpeedSnippetUntil = nextSpeedChange?.time ?? telemetryRecord.contextTime;
+      const currSpeedSnippetFrom = Math.max(speedChange.time, targetTime);
+      const currSpeedRealimeDelta = currSpeedSnippetFrom - currSpeedSnippetUntil;
+      const currentSpeedIntrinsicTimeDelta = currSpeedRealimeDelta * speedChange.value;
+      intrinsicTimeDelta += currentSpeedIntrinsicTimeDelta;
+    }
+    return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
+  }
+  function toIntrinsicTimeMs(...args: Parameters<typeof toIntrinsicTime>) {
+    return sToMs(toIntrinsicTime(...args));
+  }
+
+  const convertTime = timeProgressionSpeedIntrinsic
+    ? toIntrinsicTime
+    : toUnixTime;
+  const convertTimeMs = timeProgressionSpeedIntrinsic
+    ? toIntrinsicTimeMs
+    : toUnixTimeMs;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await smoothieImportP;
     // TODO make all these numbers customizable.
@@ -255,105 +355,6 @@
     })();
   }
   onMount(initSmoothie);
-
-  type TimeMs = number;
-  function sToMs(seconds: TimeS): TimeMs {
-    return seconds * 1000;
-  }
-  function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
-    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
-    // time everywhere?
-    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
-    return audioContextCreationTimeUnix + audioContextTime;
-  }
-  function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
-    return sToMs(toUnixTime(...args));
-  }
-
-  let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
-  // I have a feeling there is a way to make this simplier by doing this in the controller.
-  /**
-   * @param targetTime - can be no earlier than the third latest actualPlaybackRateChange.
-   */
-  function toIntrinsicTime(
-    targetTime: AudioContextTime,
-    telemetryRecord: TelemetryRecord,
-    prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
-  ) {
-    // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
-    // can correspond to the same `el.currentTime`.
-    const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
-    let intrinsicTimeDelta: TimeDelta = 0;
-
-    if (process.env.NODE_ENV !== 'production') {
-      if (prevSpeedChange && (prevSpeedChange.time >= lastSpeedChange.time)) {
-        // However this check doesn't catch whether it was _immediately_ before, only if it's just _before_.
-        console.error('`prevSpeedChange` must be the speed change that was immediately before'
-          + ' `telemetryRecord.lastActualPlaybackRateChange`');
-      }
-    }
-
-    // From latest to oldest.
-    for (
-      let speedChangeInd = 0,
-        speedChange,
-        nextSpeedChange, // By "next" we mean next in time.
-        targetTimeIsWithinCurrentSpeed = false;
-
-      !targetTimeIsWithinCurrentSpeed;
-
-      nextSpeedChange = speedChange, speedChangeInd--
-    ) {
-      // TODO weels like this can be much simplier and more efficient.
-      switch (speedChangeInd) {
-        case 0: speedChange = lastSpeedChange; break;
-        case -1: {
-          if (prevSpeedChange) {
-            speedChange = prevSpeedChange;
-          } else {
-            // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
-            // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does
-            // not get called when `prevSpeedChange` is `undefined`?
-            // TODO also don't create a new object for performance?
-            speedChange = {
-              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
-              value: 1,
-            };
-          }
-          break;
-        }
-        case -2: {
-          // We don't have the actual record (but maybe we should?), we just assume it. It's good enough for this
-          // function's contract.
-          // When I wrote this, the [2]nd speed change was only required for output delay calculations.
-          speedChange = {
-            time: Number.MIN_VALUE,
-            value: lastSpeedChange.value,
-          }
-          break;
-        }
-        default: throw Error();
-      }
-
-      targetTimeIsWithinCurrentSpeed = targetTime >= speedChange.time;
-      const currSpeedSnippetUntil = nextSpeedChange?.time ?? telemetryRecord.contextTime;
-      const currSpeedSnippetFrom = Math.max(speedChange.time, targetTime);
-      const currSpeedRealimeDelta = currSpeedSnippetFrom - currSpeedSnippetUntil;
-      const currentSpeedIntrinsicTimeDelta = currSpeedRealimeDelta * speedChange.value;
-      intrinsicTimeDelta += currentSpeedIntrinsicTimeDelta;
-    }
-    return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
-  }
-  function toIntrinsicTimeMs(...args: Parameters<typeof toIntrinsicTime>) {
-    return sToMs(toIntrinsicTime(...args));
-  }
-
-  const convertTime = timeProgressionSpeedIntrinsic
-    ? toIntrinsicTime
-    : toUnixTime;
-  const convertTimeMs = timeProgressionSpeedIntrinsic
-    ? toIntrinsicTimeMs
-    : toUnixTimeMs;
 
   function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
     soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
