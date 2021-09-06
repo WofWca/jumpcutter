@@ -20,6 +20,7 @@
   export let lengthSeconds: number;
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
   export let paused: boolean;
+  export let telemetryUpdatePeriod: TimeDelta;
 
   const timeProgressionSpeedIntrinsic = timeProgressionSpeed === 'intrinsicTime';
 
@@ -281,7 +282,7 @@
       // At the same time the delay must be small in order for:
       // * the user to see it quicker
       // * the `toIntrinsicTime` function's contract to not be breached (i.e. `targetTime` is not too early).
-      const delayToAvoidExtrapolationRealTime = 0.02; // TODO DRY with App.svelte `telemetryUpdatePeriod`.
+      const delayToAvoidExtrapolationRealTime = telemetryUpdatePeriod;
 
       if (r.elementPaused) {
         // TODO this is incorrect if the speed recently changed. Good enoguh though.
