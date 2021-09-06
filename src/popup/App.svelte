@@ -439,6 +439,7 @@
       timeProgressionSpeed={settings.popupChartSpeed}
       on:click={onChartClick}
       paused={settings.experimentalControllerType === ControllerKind_CLONING}
+      {telemetryUpdatePeriod}
     />
   {/if}
   <label
