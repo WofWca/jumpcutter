@@ -362,12 +362,14 @@
           chartEdgeTimeOffset = totalOutputDelayRealTime;
         }
         const x = widthPx - sToMs(chartEdgeTimeOffset) / millisPerPixel;
+        canvasContext.save();
         canvasContext.beginPath();
         canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
         canvasContext.moveTo(x, 0);
         canvasContext.lineTo(x, heightPx);
         canvasContext.closePath();
         canvasContext.stroke();
+        canvasContext.restore();
       }
 
       requestAnimationFrame(drawAndScheduleAnother);
