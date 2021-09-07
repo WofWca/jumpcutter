@@ -343,33 +343,40 @@
             // was omitted.
             || Number.MIN_SAFE_INTEGER
           : undefined;
+        type SmoothieChartWithPrivateFields = SmoothieChart & { lastRenderTimeMillis: number };
+        const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, time);
+        const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
+        const canvasRepainted = renderTimeBefore !== renderTimeAfter; // Not true for FPS > 1000.
 
-        // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-        // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
-        // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-        let chartEdgeTimeOffset: TimeDelta;
-        if (timeProgressionSpeedIntrinsic) {
-          const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
-          const momentCurrentlyBeingOutputIntrinsicTime
-            = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
-          const totalOutputDelayIntrinsicTime
-            = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
-          // TODO this is incorrect because the delay introduced by `getExpectedElementCurrentTimeDelayed`
-          // is not taken into account. But it's good enough, as that delay is unnoticeable currently.
-          chartEdgeTimeOffset = totalOutputDelayIntrinsicTime;
-        } else {
-          chartEdgeTimeOffset = totalOutputDelayRealTime;
+        if (canvasRepainted) {
+          // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+          // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad
+          // happens, check out the commit that introduced this change – we were drawing this marker by smoothie's
+          // means before.
+          let chartEdgeTimeOffset: TimeDelta;
+          if (timeProgressionSpeedIntrinsic) {
+            const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
+            const momentCurrentlyBeingOutputIntrinsicTime
+              = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
+            const totalOutputDelayIntrinsicTime
+              = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
+            // TODO this is incorrect because the delay introduced by `getExpectedElementCurrentTimeDelayed`
+            // is not taken into account. But it's good enough, as that delay is unnoticeable currently.
+            chartEdgeTimeOffset = totalOutputDelayIntrinsicTime;
+          } else {
+            chartEdgeTimeOffset = totalOutputDelayRealTime;
+          }
+          const x = widthPx - sToMs(chartEdgeTimeOffset) / millisPerPixel;
+          canvasContext.save();
+          canvasContext.beginPath();
+          canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+          canvasContext.moveTo(x, 0);
+          canvasContext.lineTo(x, heightPx);
+          canvasContext.closePath();
+          canvasContext.stroke();
+          canvasContext.restore();
         }
-        const x = widthPx - sToMs(chartEdgeTimeOffset) / millisPerPixel;
-        canvasContext.save();
-        canvasContext.beginPath();
-        canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-        canvasContext.moveTo(x, 0);
-        canvasContext.lineTo(x, heightPx);
-        canvasContext.closePath();
-        canvasContext.stroke();
-        canvasContext.restore();
       }
 
       requestAnimationFrame(drawAndScheduleAnother);
