@@ -20,6 +20,7 @@
   export let lengthSeconds: number;
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
   export let paused: boolean;
+  export let telemetryUpdatePeriod: TimeDelta;
 
   const timeProgressionSpeedIntrinsic = timeProgressionSpeed === 'intrinsicTime';
 
@@ -59,6 +60,106 @@
     /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
     '@wofwca/smoothie' // TODO replace it with just 'smoothie' when it starts being released.
   );
+
+  type TimeMs = number;
+  function sToMs(seconds: TimeS): TimeMs {
+    return seconds * 1000;
+  }
+  function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
+    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
+    // time everywhere?
+    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
+    return audioContextCreationTimeUnix + audioContextTime;
+  }
+  function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
+    return sToMs(toUnixTime(...args));
+  }
+
+  let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
+  // I have a feeling there is a way to make this simplier by doing this in the controller.
+  /**
+   * @param targetTime - can be no earlier than the third latest actualPlaybackRateChange.
+   */
+  function toIntrinsicTime(
+    targetTime: AudioContextTime,
+    telemetryRecord: Pick<TelemetryRecord, 'contextTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>,
+    prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+  ) {
+    // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
+    // can correspond to the same `el.currentTime`.
+    const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
+    let intrinsicTimeDelta: TimeDelta = 0;
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (prevSpeedChange && (prevSpeedChange.time >= lastSpeedChange.time)) {
+        // However this check doesn't catch whether it was _immediately_ before, only if it's just _before_.
+        console.error('`prevSpeedChange` must be the speed change that was immediately before'
+          + ' `telemetryRecord.lastActualPlaybackRateChange`');
+      }
+    }
+
+    // From latest to oldest.
+    for (
+      let speedChangeInd = 0,
+        speedChange,
+        nextSpeedChange, // By "next" we mean next in time.
+        targetTimeIsWithinCurrentSpeed = false;
+
+      !targetTimeIsWithinCurrentSpeed;
+
+      nextSpeedChange = speedChange, speedChangeInd--
+    ) {
+      // TODO weels like this can be much simplier and more efficient.
+      switch (speedChangeInd) {
+        case 0: speedChange = lastSpeedChange; break;
+        case -1: {
+          if (prevSpeedChange) {
+            speedChange = prevSpeedChange;
+          } else {
+            // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
+            // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does
+            // not get called when `prevSpeedChange` is `undefined`?
+            // TODO also don't create a new object for performance?
+            speedChange = {
+              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
+              value: 1,
+            };
+          }
+          break;
+        }
+        case -2: {
+          // We don't have the actual record (but maybe we should?), we just assume it. It's good enough for this
+          // function's contract.
+          // When I wrote this, the [2]nd speed change was only required for output delay calculations.
+          speedChange = {
+            time: Number.MIN_VALUE,
+            value: lastSpeedChange.value,
+          }
+          break;
+        }
+        default: throw Error();
+      }
+
+      targetTimeIsWithinCurrentSpeed = targetTime >= speedChange.time;
+      const currSpeedSnippetUntil = nextSpeedChange?.time ?? telemetryRecord.contextTime;
+      const currSpeedSnippetFrom = Math.max(speedChange.time, targetTime);
+      const currSpeedRealimeDelta = currSpeedSnippetFrom - currSpeedSnippetUntil;
+      const currentSpeedIntrinsicTimeDelta = currSpeedRealimeDelta * speedChange.value;
+      intrinsicTimeDelta += currentSpeedIntrinsicTimeDelta;
+    }
+    return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
+  }
+  function toIntrinsicTimeMs(...args: Parameters<typeof toIntrinsicTime>) {
+    return sToMs(toIntrinsicTime(...args));
+  }
+
+  const convertTime = timeProgressionSpeedIntrinsic
+    ? toIntrinsicTime
+    : toUnixTime;
+  const convertTimeMs = timeProgressionSpeedIntrinsic
+    ? toIntrinsicTimeMs
+    : toUnixTimeMs;
+
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await smoothieImportP;
     // TODO make all these numbers customizable.
@@ -158,42 +259,57 @@
         fillStyle: 'transparent',
       });
     }
-    
-    const canvasContext = canvasEl.getContext('2d')!;
 
-    function getExpectedElementCurrentTimeBasic(
-      telemetryRecord: Pick<TelemetryRecord, 'unixTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>
-    ): MediaTime {
-      const r = telemetryRecord;
-      const telemetryRecordUpdatedAt = r.unixTime;
-      const telemetryRecordAge = Date.now() / 1000 - telemetryRecordUpdatedAt;
-      const expectedTime = r.intrinsicTime + telemetryRecordAge * r.lastActualPlaybackRateChange.value;
-      return expectedTime;
-    }
-    let referenceTelemetry:
-      Pick<TelemetryRecord, 'unixTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'> | undefined;
+    let referenceTelemetry: Parameters<typeof toIntrinsicTime>[1] | undefined;
     /**
      * Why need this? Because:
      * * `latestTelemetryRecord` doesn't get updated often enough.
-     * * `latestTelemetryRecord.intrinsicTime` is not precise enough.
-     * If we simply used `r.intrinsicTime`, the chart would be jumpy.
+     * * `latestTelemetryRecord.intrinsicTime` is not precise enough, it's jumpy.
+     * If we simply used `r.intrinsicTime`, the chart would be jumpy. Instead we take a `TelemetryRecord`
+     * (referenceTelemetry) and calculate the `el.currentTime` based on it, using `Date.now()`, as it is smoother.
+     * Why is it "Delayed"? See the comment about `delayToAvoidExtrapolationRealTime`.
      */
-    function getExpectedElementCurrentTime(
+    function getExpectedElementCurrentTimeDelayed(
       r: TelemetryRecord,
-      referenceTelemetry: Parameters<typeof getExpectedElementCurrentTimeBasic>[0] | undefined,
+      referenceTelemetry: Parameters<typeof toIntrinsicTime>[1] | undefined,
       onNeedToUpdateReference: () => void,
     ): MediaTime {
+      // We need to introduce a delay in order to avoid extrapolation (as opposed to interpolation) as it may
+      // be wrong because the speed may change immediately after a `TelemetryRecord` was sent.
+      // So the delay must be at least the amount of time until the next `TelemetryRecord`.
+      // But if the next `TelemetryRecord` did not come by that time for some reason (high CPU load, etc)
+      // we need fall back to extrapolation.
+      // At the same time the delay must be small in order for:
+      // * the user to see it quicker
+      // * the `toIntrinsicTime` function's contract to not be breached (i.e. `targetTime` is not too early).
+      const delayToAvoidExtrapolationRealTime = telemetryUpdatePeriod;
+
       if (r.elementPaused) {
-        return r.intrinsicTime;
+        // TODO this is incorrect if the speed recently changed. Good enoguh though.
+        const delayToAvoidExtrapolationIntrinsicTime
+          = delayToAvoidExtrapolationRealTime * r.lastActualPlaybackRateChange.value;
+        return r.intrinsicTime - delayToAvoidExtrapolationIntrinsicTime;
       }
 
-      const expectedTimeBasedOnLatest = getExpectedElementCurrentTimeBasic(r);
+      const delayToAvoidExtrapolationRealTimeMs = delayToAvoidExtrapolationRealTime * 1000;
+      const targetTimeUnix = (Date.now() - delayToAvoidExtrapolationRealTimeMs) / 1000;
+      // TODO make sure this conversion doesn't add error, as with (`el.currentTime`). Or get rid of it by making
+      // `toIntrinsicTime` accept `targetTime` as `UnixTime`, not just `AudioContextTime`.
+      const targetTimeAudioContextTime = r.contextTime + (targetTimeUnix - r.unixTime);
+
+      const expectedTimeBasedOnLatest = toIntrinsicTime(targetTimeAudioContextTime, r, prevPlaybackRateChange);
       const speedChangedSinceReference =
         !referenceTelemetry
         || referenceTelemetry.lastActualPlaybackRateChange.time !== r.lastActualPlaybackRateChange.time;
-      if (!speedChangedSinceReference) {
+      // Technically considering the fact that there is `delayToAvoidExtrapolationRealTime`,
+      // `referenceTelemetry` is not immediately invalid after the speed changed in the new telemetry,
+      // but rather only after `targetTimeUnix > r.lastActualPlaybackRateChange.time`, but this does not
+      // appear to cause trouble right now, I believe this only leads to the chart jump happening a bit earlier.
+      // TODO? Maybe just rename it to `speedChangingSoonSoReferenceWillBeInvalid` for now?
+      if (!speedChangedSinceReference) { // Otherwise the reference is incorrect.
         assertDev(referenceTelemetry); // `speedChangedSinceReference` would be `true` otherwise.
-        const expectedTimeBasedOnReference = getExpectedElementCurrentTimeBasic(referenceTelemetry);
+        const expectedTimeBasedOnReference
+          = toIntrinsicTime(targetTimeAudioContextTime, referenceTelemetry, prevPlaybackRateChange);
         // You would think that this is pretty big of a margin and e.g. if there is a seek that is smaller
         // than this, it would not get noticed (for example, desync correction can take
         // less than that), but this function (at least when I wrote this) is only responsible for how fast the
@@ -209,142 +325,64 @@
       onNeedToUpdateReference();
       return expectedTimeBasedOnLatest;
     }
-    const onNeedToUpdateReference = () => {
+    const setReferenceToLatest = () => {
       assertDev(latestTelemetryRecord);
       referenceTelemetry = latestTelemetryRecord;
     };
 
+    const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
         const time = timeProgressionSpeedIntrinsic
-          ? sToMs(getExpectedElementCurrentTime(
+          ? sToMs(getExpectedElementCurrentTimeDelayed(
               latestTelemetryRecord,
               referenceTelemetry,
-              onNeedToUpdateReference,
+              setReferenceToLatest,
             ))
             // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
             // was omitted.
             || Number.MIN_SAFE_INTEGER
           : undefined;
+        type SmoothieChartWithPrivateFields = SmoothieChart & { lastRenderTimeMillis: number };
+        const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, time);
+        const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
+        const canvasRepainted = renderTimeBefore !== renderTimeAfter; // Not true for FPS > 1000.
 
-        // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
-        // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad happens,
-        // check out the commit that introduced this change – we were drawing this marker by smoothie's means before.
-        let totalOutputDelayConverted: TimeDelta;
-        if (timeProgressionSpeedIntrinsic) {
-          const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
-          const momentCurrentlyBeingOutputIntrinsicTime
-            = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
-          const totalOutputDelayIntrinsicTime
-            = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
-          totalOutputDelayConverted = totalOutputDelayIntrinsicTime;
-        } else {
-          totalOutputDelayConverted = totalOutputDelayRealTime;
+        if (canvasRepainted) {
+          // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
+          // Not sure if this is a good idea to use the canvas both directly and through a library. If anything bad
+          // happens, check out the commit that introduced this change – we were drawing this marker by smoothie's
+          // means before.
+          let chartEdgeTimeOffset: TimeDelta;
+          if (timeProgressionSpeedIntrinsic) {
+            const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
+            const momentCurrentlyBeingOutputIntrinsicTime
+              = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
+            const totalOutputDelayIntrinsicTime
+              = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
+            // TODO this is incorrect because the delay introduced by `getExpectedElementCurrentTimeDelayed`
+            // is not taken into account. But it's good enough, as that delay is unnoticeable currently.
+            chartEdgeTimeOffset = totalOutputDelayIntrinsicTime;
+          } else {
+            chartEdgeTimeOffset = totalOutputDelayRealTime;
+          }
+          const x = widthPx - sToMs(chartEdgeTimeOffset) / millisPerPixel;
+          canvasContext.save();
+          canvasContext.beginPath();
+          canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+          canvasContext.moveTo(x, 0);
+          canvasContext.lineTo(x, heightPx);
+          canvasContext.closePath();
+          canvasContext.stroke();
+          canvasContext.restore();
         }
-        const x = widthPx - sToMs(totalOutputDelayConverted) / millisPerPixel;
-        canvasContext.beginPath();
-        canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-        canvasContext.moveTo(x, 0);
-        canvasContext.lineTo(x, heightPx);
-        canvasContext.closePath();
-        canvasContext.stroke();
       }
 
       requestAnimationFrame(drawAndScheduleAnother);
     })();
   }
   onMount(initSmoothie);
-
-  type TimeMs = number;
-  function sToMs(seconds: TimeS): TimeMs {
-    return seconds * 1000;
-  }
-  function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
-    // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
-    // time everywhere?
-    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
-    return audioContextCreationTimeUnix + audioContextTime;
-  }
-  function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
-    return sToMs(toUnixTime(...args));
-  }
-
-  let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
-  // I have a feeling there is a way to make this simplier by doing this in the controller.
-  /**
-   * @param targetTime - can be no earlier than the third latest actualPlaybackRateChange.
-   */
-  function toIntrinsicTime(
-    targetTime: AudioContextTime,
-    telemetryRecord: TelemetryRecord,
-    prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
-  ) {
-    // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
-    // can correspond to the same `el.currentTime`.
-    const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
-    let intrinsicTimeDelta: TimeDelta = 0;
-
-    for (
-      let speedChangeInd = 0, // From latest to oldest.
-        speedChange,
-        nextSpeedChange, // By "next" we mean next in time.
-        targetTimeIsWithinCurrentSpeed = false;
-
-      !targetTimeIsWithinCurrentSpeed;
-
-      nextSpeedChange = speedChange, speedChangeInd++
-    ) {
-      // TODO weels like this can be much simplier and more efficient.
-      switch (speedChangeInd) {
-        case 0: speedChange = lastSpeedChange; break;
-        case 1: {
-          if (prevSpeedChange) {
-            speedChange = prevSpeedChange;
-          } else {
-            // TODO currently this can happen, just as when you open the popup. But the consequences are tolerable.
-            // Should we put `prevSpeedChange` in `TelemetryMessage`? Or maybe make it so that this function does
-            // not get called when `prevSpeedChange` is `undefined`?
-            // TODO also don't create a new object for performance?
-            speedChange = {
-              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
-              value: 1,
-            };
-          }
-          break;
-        }
-        case 2: {
-          // We don't have the actual record (but maybe we should?), we just assume it. It's good enough for this
-          // function's contract.
-          // When I wrote this, the [2]nd speed change was only required for output delay calculations.
-          speedChange = {
-            time: Number.MIN_VALUE,
-            value: lastSpeedChange.value,
-          }
-          break;
-        }
-        default: throw Error();
-      }
-
-      targetTimeIsWithinCurrentSpeed = targetTime >= speedChange.time;
-      const currSpeedSnippetUntil = nextSpeedChange?.time ?? telemetryRecord.contextTime;
-      const currSpeedSnippetFrom = Math.max(speedChange.time, targetTime);
-      const currSpeedRealimeDelta = currSpeedSnippetFrom - currSpeedSnippetUntil;
-      const currentSpeedIntrinsicTimeDelta = currSpeedRealimeDelta * speedChange.value;
-      intrinsicTimeDelta += currentSpeedIntrinsicTimeDelta;
-    }
-    return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
-  }
-  function toIntrinsicTimeMs(...args: Parameters<typeof toIntrinsicTime>) {
-    return sToMs(toIntrinsicTime(...args));
-  }
-
-  const convertTime = timeProgressionSpeedIntrinsic
-    ? toIntrinsicTime
-    : toUnixTime;
-  const convertTimeMs = timeProgressionSpeedIntrinsic
-    ? toIntrinsicTimeMs
-    : toUnixTimeMs;
 
   function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
     soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
