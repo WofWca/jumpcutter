@@ -367,7 +367,10 @@
           } else {
             chartEdgeTimeOffset = totalOutputDelayRealTime;
           }
-          const x = widthPx - sToMs(chartEdgeTimeOffset) / millisPerPixel;
+          const pixelOffset = sToMs(chartEdgeTimeOffset) / millisPerPixel;
+          // So it's not smeared accross two pixels.
+          const pixelOffsetCentered = Math.floor(pixelOffset) + 0.5;
+          const x = widthPx - pixelOffsetCentered;
           canvasContext.save();
           canvasContext.beginPath();
           canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
