@@ -7,7 +7,7 @@
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
 [![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
 
-Skips silent parts in videos on the fly.
+Skips silent parts in videos in real time.
 
 Can be useful for watching lectures and other unedited videos.
 
