@@ -24,14 +24,34 @@
     settingsLoaded = true;
   })
   async function getTab() {
-    // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
-    // guaranteed that there will be a tab, is it?
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true, });
-    return tabs[0];
+    // In, for example, Kiwi browser, extension "popups" get opened in a separate tab, so it's not a popup.
+    const thisTab = await browser.tabs.getCurrent();
+    if (!thisTab) {
+      // It's a popup
+      const active = await browser.tabs.query({ active: true, currentWindow: true, });
+      return active[0];
+    } else {
+      // It's a separate tab.
+      // Let's find the tab that the user switched from to this popup tab.
+      // FYI in Gecko `Tab` object has a property called `lastAccessed`.
+      // Keep in mind that there can be several tabs whose URL is this popup's URL.
+      // See `@/background/initPreviousActiveTabTracker.ts`.
+      const prevActiveTabId = await browser.runtime.sendMessage('getPreviousActiveTabId') as number | undefined;
+      // return prevActiveTabId !== undefined
+      return prevActiveTabId !== undefined && prevActiveTabId !== null
+        ? await browser.tabs.get(prevActiveTabId)
+        : undefined;
+    }
   }
   const tabPromise = getTab();
   const tabLoadedPromise = (async () => {
     let tab = await tabPromise;
+
+    // TODO properly handle this case, let the user know what's up.
+    if (!tab) {
+      return;
+    }
+
     if (tab.status !== 'complete') { // TODO it says `status` is optional? When is it missing?
       tab = await new Promise(r => {
         let pollTimeout: ReturnType<typeof setTimeout>;
@@ -81,6 +101,12 @@
   let keydownListener: ReturnType<typeof createKeydownListener> | (() => {}) = () => {};
   (async () => {
     const tab = await tabPromise;
+
+    // TODO properly handle this case, let the user know what's up.
+    if (!tab) {
+      return;
+    }
+
     let elementLastActivatedAt: number | undefined;
 
     const onMessageListener: Parameters<typeof browser.runtime.onMessage.addListener>[0] = (message, sender) => {

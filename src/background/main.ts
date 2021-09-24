@@ -6,6 +6,7 @@ import browser from '@/webextensions-api';
 
 import initBrowserHotkeysListener from './initBrowserHotkeysListener';
 import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
+import initPreviousActiveTabTracker from './initPreviousActiveTabTracker';
 import { storage } from '@/settings/_storage';
 
 // This is so we don't have to retrieve settings like this `storage.local.get(defaultSettings)` every time and can
@@ -54,6 +55,9 @@ browser.runtime.onInstalled.addListener(async details => {
   browser.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
   postInstallDonePromiseResolve();
 });
+
+// TODO this is only required in browsers where the popup gets opened in a separate tab (see `@/popup/App.svelte`).
+initPreviousActiveTabTracker();
 
 // Just for top-level `await`. Don't do this for the whole file cause `runtime.onInstalled.addListener` needs to be
 // called synchronously (https://developer.chrome.com/docs/extensions/mv2/background_pages/#listeners).
