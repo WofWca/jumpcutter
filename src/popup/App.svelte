@@ -415,7 +415,7 @@
             </p>
           {:else}
             <p>
-              <span>⚠️ Couldn't load the content script.<br>Trying to </span>
+              <span>⚠️ Couldn't load the content script on this page.<br>Trying to </span>
               <!-- svelte-ignore a11y-missing-attribute --->
               <a
                 {...openLocalFileLinkProps}
