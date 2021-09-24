@@ -271,6 +271,8 @@ export default class Controller {
   }
 
   private _setSpeed() {
+    // Don't need to `transformSpeed` because currently `CloningController` doesn't switch speed between
+    // silence and sounded, it performs a seek.
     const speedVal = this.settings.soundedSpeed;
     this.element.playbackRate = speedVal;
 
