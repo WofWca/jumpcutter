@@ -19,7 +19,8 @@
       "matches": ["http://*/*", "https://*/*"],
       "js": ["content/main.js"],
       "all_frames": true,
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "match_about_blank": true
     }
   ],
   "web_accessible_resources": [
