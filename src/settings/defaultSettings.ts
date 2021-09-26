@@ -147,6 +147,31 @@ export const defaultSettings: Readonly<Settings> = {
   popupChartLengthInSeconds: 8,
   popupChartSpeed: 'intrinsicTime',
   popupAlwaysShowOpenLocalFileLink: true,
+
+  // Remember that "step" also controls what the input does when you control it with the keyboard,
+  // aside from the mouse.
+  popupVolumeThresholdMin: 0,
+  popupVolumeThresholdMax: 0.050,
+  popupVolumeThresholdStep: 0.0001,
+
+  popupSoundedSpeedMin: 0,
+  popupSoundedSpeedMax: 4, // BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4
+  popupSoundedSpeedStep: 0.25,
+
+  popupSilenceSpeedRawMin: 1,
+  // See the comment in `getAbsoluteClampedSilenceSpeed` definition on why `max` is different
+  // for different browsers.
+  popupSilenceSpeedRawMax: BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 8,
+  popupSilenceSpeedRawStep: 0.25,
+
+  popupMarginBeforeMin: 0,
+  popupMarginBeforeMax: 0.5,
+  popupMarginBeforeStep: 0.010,
+
+  popupMarginAfterMin: 0,
+  popupMarginAfterMax: 0.5,
+  popupMarginAfterStep: 0.010,
+
   popupSpecificHotkeys: [
     {
       keyCombination: { code: 'Space', },
