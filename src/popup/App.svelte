@@ -240,7 +240,7 @@
     }
     const dummyValues = [
       format(1),
-      format(1), // TODO use `getAbsoluteSilenceSpeed`?
+      format(1), // TODO use `getAbsoluteClampedSilenceSpeed`?
     ] as [string, string];
     if (!r) {
       return dummyValues;

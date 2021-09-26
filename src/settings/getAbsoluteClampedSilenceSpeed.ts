@@ -1,6 +1,6 @@
 import type { Settings } from './';
 
-export function getAbsoluteSilenceSpeed(
+export function getAbsoluteClampedSilenceSpeed(
   settings: Pick<Settings, 'silenceSpeedRaw' | 'silenceSpeedSpecificationMethod' | 'soundedSpeed'>
 ): number {
   let val = settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'

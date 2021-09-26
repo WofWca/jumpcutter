@@ -87,7 +87,7 @@ export * from './defaultSettings';
 export * from './getSettings';
 export * from './setSettings';
 export * from './ControllerKind';
-export * from './getAbsoluteSilenceSpeed';
+export * from './getAbsoluteClampedSilenceSpeed';
 export * from './settingsChanges2NewValues';
 export * from './togglableSettings';
 export * from './onChanged';
