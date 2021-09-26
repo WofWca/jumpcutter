@@ -481,8 +481,6 @@
     step="0.05"
     bind:value={settings.soundedSpeed}
   />
-  <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
-  https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
