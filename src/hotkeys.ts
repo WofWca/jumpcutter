@@ -201,7 +201,7 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
         ? currentSettings[prevValueSettingKey]
         : arg;
     };
-    // See the comment in `transformSpeed` definition on why this is different for different browsers.
+    // See the comment in `getAbsoluteClampedSilenceSpeed` definition on why this is different for different browsers.
     const maxSpeedClamp = BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15;
     switch (binding.action) {
       // TODO DRY max and min values with values in `@/popup`. Make them adjustable even?

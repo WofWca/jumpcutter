@@ -470,7 +470,8 @@
   <datalist id="sounded-speed-datalist">
     <option>1</option>
   </datalist>
-  <!-- See the comment in `transformSpeed` definition on why `max` is different for different browsers. -->
+  <!-- See the comment in `getAbsoluteClampedSilenceSpeed` definition on why `max` is different
+  for different browsers. -->
   <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
   Also min should be 0 for the same reason. -->
   <RangeSlider
