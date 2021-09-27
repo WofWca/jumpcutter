@@ -4,6 +4,7 @@
   import {
     addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
     ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
+    PopupAdjustableRangeInputsCapitalized,
   } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -192,6 +193,15 @@
     onSettingsChange(settings);
   }
 
+  function rangeInputSettingNameToAttrs(name: PopupAdjustableRangeInputsCapitalized, settings: Settings) {
+    // TODO DRY?
+    return {
+      'min': settings[`popup${name}Min`],
+      'max': settings[`popup${name}Max`],
+      'step': settings[`popup${name}Step`],
+    };
+  }
+
   let timeSavedTooltipContent: HTMLElement;
 
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
@@ -205,8 +215,6 @@
       keyCombination: { code: 'stub', }, // TODO this is dumb.
     }]);
   }
-
-  const maxVolume = 0.15;
 
   const openLocalFileLinkProps = {
     href: browser.runtime.getURL('local-file-player/index.html'),
@@ -460,48 +468,37 @@
     >
     <span>Use experimental algorithm</span>
   </label>
+  <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="Volume threshold"
-    min="0"
-    max={maxVolume}
-    step="0.0005"
+    {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
   </datalist>
-  <!-- See the comment in `getAbsoluteClampedSilenceSpeed` definition on why `max` is different
-  for different browsers. -->
   <RangeSlider
     label="Sounded speed"
     list="sounded-speed-datalist"
     fractionalDigits={2}
-    min="0.05"
-    max={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15}
-    step="0.05"
+    {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
     bind:value={settings.soundedSpeed}
   />
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
-    min="0.05"
-    max={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15}
-    step="0.05"
+    {...rangeInputSettingNameToAttrs('SilenceSpeedRaw', settings)}
     bind:value={settings.silenceSpeedRaw}
     disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
-    min="0"
-    max="0.5"
-    step="0.005"
+    {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
   />
   <RangeSlider
     label="Margin after"
-    min="0"
-    max="0.5"
-    step="0.005"
+    {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}

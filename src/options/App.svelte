@@ -93,6 +93,16 @@
     { v: 'realTime', l: '🌎 Constant (real-time)'},
   ];
 
+  const rangeInputSettingsNamesCapitalized = [
+    // TODO DRY settings labels. Maybe when we get to implementing localization.
+    { v: 'VolumeThreshold', l: '🔉🎚️ Volume threshold', },
+    { v: 'SoundedSpeed', l: '🗣️▶️ Sounded speed', },
+    { v: 'SilenceSpeedRaw', l: '🙊⏩ Silence speed', },
+    { v: 'MarginBefore', l: '⏱️⬅️ Margin before (s)', },
+    { v: 'MarginAfter', l: '⏱️➡️ Margin after (s)', },
+  ] as const;
+  const rangeInputAttrs = ['Min', 'Step', 'Max'] as const;
+
   // TODO add `rel` attribute to the link element?
   let editNativeShortcutsLinkUrl: string;
   switch (BUILD_DEFINITIONS.BROWSER) {
@@ -269,6 +279,43 @@
             {/each}
           </select>
         </InputFieldBase>
+        <h4>Range sliders' attributes</h4>
+        <p>
+          Be aware that browsers do not support playback rates above a certain limit.
+          At the time of writing it's 16 for Chromium (Chrome) and 4 for Gecko (Firefox).
+        </p>
+        <table>
+          <thead>
+            <th>Input</th>
+            {#each rangeInputAttrs as attr}
+              <th>{attr}</th>
+            {/each}
+            <!-- <th>Min</th>
+            <th>Step</th>
+            <th>Max</th> -->
+          </thead>
+          <tbody>
+            {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
+              <tr>
+                <td>{rangeInputSettingNameCapitalized.l}</td>
+                {#each rangeInputAttrs as attr}
+                  <td>
+                    <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
+                    Or use a checkbox that sets it to "any"? -->
+                    <input
+                      style="width: 14ch"
+                      type="number"
+                      step="any"
+                      min={attr === 'Step' ? Number.MIN_VALUE : ''}
+                      bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
+                    />
+                  </td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
           <CheckboxField
             label="⌨️🚫 Disable hotkeys while an input is in focus"
