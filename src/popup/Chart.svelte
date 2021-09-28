@@ -588,12 +588,13 @@
   }
 </script>
 
+<!-- Don't apply `style=` directly to the canvas because smoothie.js also internally does this. -->
 <canvas
   bind:this={canvasEl}
   width={widthPx}
   height={heightPx}
   on:click
-  style={paused ? 'opacity: 0.2' : ''}
+  class:paused
 >
   <label>
     Volume
@@ -612,5 +613,8 @@
   canvas {
     /* So it doesn't create additional margin around it. */
     display: block;
+  }
+  canvas.paused {
+    opacity: 0.2;
   }
 </style>
