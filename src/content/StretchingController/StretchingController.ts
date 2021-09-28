@@ -11,6 +11,7 @@ import {
 } from '@/content/helpers';
 import type { StretchInfo, AudioContextTime, UnixTime, TimeDelta, MediaTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
+import { ControllerKind } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assertDev, SpeedName } from '@/helpers';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
@@ -70,6 +71,8 @@ function isStretcherEnabled(settings: ControllerSettings) {
 }
 
 export default class Controller {
+  static controllerType = ControllerKind.STRETCHING;
+
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
   readonly element: HTMLMediaElement;

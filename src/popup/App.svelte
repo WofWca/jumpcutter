@@ -437,6 +437,12 @@
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
+    <!-- Need `{#key}` because the Chart component does not properly support switching from one controller
+    type to another on the fly because it is is stateful (i.e. depends on older `TelemetryRecord`s).
+    Try removing this and see if it works.
+    If you're gonna remove this, consider also removing the `controllerType` property from `TelemetryRecord`.
+    (a.k.a. revert this commit). -->
+    {#key latestTelemetryRecord?.controllerType}
     <Chart
       {latestTelemetryRecord}
       volumeThreshold={settings.volumeThreshold}
@@ -449,6 +455,7 @@
       paused={settings.experimentalControllerType === ControllerKind_CLONING}
       {telemetryUpdatePeriod}
     />
+    {/key}
   {/if}
   <label
     use:tippyActionAsyncPreload={{
