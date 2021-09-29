@@ -82,7 +82,8 @@
    */
   function toIntrinsicTime(
     targetTime: AudioContextTime,
-    telemetryRecord: Pick<TelemetryRecord, 'contextTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>,
+    telemetryRecord:
+      Pick<TelemetryRecord, 'unixTime' | 'contextTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>,
     prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
   ) {
     // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
@@ -264,7 +265,12 @@
     /**
      * Why need this? Because:
      * * `latestTelemetryRecord` doesn't get updated often enough.
-     * * `latestTelemetryRecord.intrinsicTime` is not precise enough, it's jumpy.
+     * * `latestTelemetryRecord.intrinsicTime`, `.contextTime` and `.unixTime` are not precise enough, they're jumpy.
+     *   I believe it may be intentional browser behavior to mitigate timing attacks
+     *   (https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/currentTime#reduced_time_precision)
+     *   Try this, for example:
+     *   `ctx = new AudioContext(); setInterval(() => console.log(performance.now() - ctx.currentTime * 1000), 50)`
+     *   You'll see the printed value is fluctuating.
      * If we simply used `r.intrinsicTime`, the chart would be jumpy. Instead we take a `TelemetryRecord`
      * (referenceTelemetry) and calculate the `el.currentTime` based on it, using `Date.now()`, as it is smoother.
      * Why is it "Delayed"? See the comment about `delayToAvoidExtrapolationRealTime`.
@@ -295,9 +301,10 @@
       const targetTimeUnix = (Date.now() - delayToAvoidExtrapolationRealTimeMs) / 1000;
       // TODO make sure this conversion doesn't add error, as with (`el.currentTime`). Or get rid of it by making
       // `toIntrinsicTime` accept `targetTime` as `UnixTime`, not just `AudioContextTime`.
-      const targetTimeAudioContextTime = r.contextTime + (targetTimeUnix - r.unixTime);
+      const targetTimeAudioContextTimeBasedOnLatest = r.contextTime + (targetTimeUnix - r.unixTime);
 
-      const expectedTimeBasedOnLatest = toIntrinsicTime(targetTimeAudioContextTime, r, prevPlaybackRateChange);
+      const expectedTimeBasedOnLatest
+        = toIntrinsicTime(targetTimeAudioContextTimeBasedOnLatest, r, prevPlaybackRateChange);
       const speedChangedSinceReference =
         !referenceTelemetry
         || referenceTelemetry.lastActualPlaybackRateChange.time !== r.lastActualPlaybackRateChange.time;
@@ -308,8 +315,10 @@
       // TODO? Maybe just rename it to `speedChangingSoonSoReferenceWillBeInvalid` for now?
       if (!speedChangedSinceReference) { // Otherwise the reference is incorrect.
         assertDev(referenceTelemetry); // `speedChangedSinceReference` would be `true` otherwise.
+        const targetTimeAudioContextTimeBasedOnReference
+          = referenceTelemetry.contextTime + (targetTimeUnix - referenceTelemetry.unixTime);
         const expectedTimeBasedOnReference
-          = toIntrinsicTime(targetTimeAudioContextTime, referenceTelemetry, prevPlaybackRateChange);
+          = toIntrinsicTime(targetTimeAudioContextTimeBasedOnReference, referenceTelemetry, prevPlaybackRateChange);
         // You would think that this is pretty big of a margin and e.g. if there is a seek that is smaller
         // than this, it would not get noticed (for example, desync correction can take
         // less than that), but this function (at least when I wrote this) is only responsible for how fast the
