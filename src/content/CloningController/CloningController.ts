@@ -1,6 +1,7 @@
 import Lookahead from './Lookahead';
 import type { MediaTime, AnyTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
+import { ControllerKind } from '@/settings';
 import { assertDev, SpeedName } from '@/helpers';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
@@ -42,6 +43,8 @@ export interface TelemetryRecord {
 
 // TODO a lot of stuff is copy-pasted from StretchingController.
 export default class Controller {
+  static controllerType = ControllerKind.CLONING;
+
   // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
   // just too bad at TypeScript.
   readonly element: HTMLMediaElement;
@@ -271,6 +274,8 @@ export default class Controller {
   }
 
   private _setSpeed() {
+    // Don't need to `transformSpeed` because currently `CloningController` doesn't switch speed between
+    // silence and sounded, it performs a seek.
     const speedVal = this.settings.soundedSpeed;
     this.element.playbackRate = speedVal;
 

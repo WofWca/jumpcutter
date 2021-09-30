@@ -1,6 +1,6 @@
 import type { Settings as ExtensionSettings } from '@/settings';
 import type { ControllerSettings } from './StretchingController/StretchingController';
-import { getAbsoluteSilenceSpeed } from '@/settings';
+import { getAbsoluteClampedSilenceSpeed } from '@/settings';
 
 export default function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
   return {
@@ -11,6 +11,6 @@ export default function extensionSettings2ControllerSettings(extensionSettings: 
     marginAfter: extensionSettings.marginAfter,
     enableDesyncCorrection: extensionSettings.enableDesyncCorrection,
 
-    silenceSpeed: getAbsoluteSilenceSpeed(extensionSettings),
+    silenceSpeed: getAbsoluteClampedSilenceSpeed(extensionSettings),
   };
 }

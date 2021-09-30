@@ -4,6 +4,7 @@
   import {
     addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
     ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
+    PopupAdjustableRangeInputsCapitalized,
   } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -192,6 +193,15 @@
     onSettingsChange(settings);
   }
 
+  function rangeInputSettingNameToAttrs(name: PopupAdjustableRangeInputsCapitalized, settings: Settings) {
+    // TODO DRY?
+    return {
+      'min': settings[`popup${name}Min`],
+      'max': settings[`popup${name}Max`],
+      'step': settings[`popup${name}Step`],
+    };
+  }
+
   let timeSavedTooltipContent: HTMLElement;
 
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
@@ -205,8 +215,6 @@
       keyCombination: { code: 'stub', }, // TODO this is dumb.
     }]);
   }
-
-  const maxVolume = 0.15;
 
   const openLocalFileLinkProps = {
     href: browser.runtime.getURL('local-file-player/index.html'),
@@ -240,7 +248,7 @@
     }
     const dummyValues = [
       format(1),
-      format(1), // TODO use `getAbsoluteSilenceSpeed`?
+      format(1), // TODO use `getAbsoluteClampedSilenceSpeed`?
     ] as [string, string];
     if (!r) {
       return dummyValues;
@@ -415,7 +423,7 @@
             </p>
           {:else}
             <p>
-              <span>⚠️ Couldn't load the content script.<br>Trying to </span>
+              <span>⚠️ Couldn't load the content script on this page.<br>Trying to </span>
               <!-- svelte-ignore a11y-missing-attribute --->
               <a
                 {...openLocalFileLinkProps}
@@ -429,6 +437,12 @@
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
+    <!-- Need `{#key}` because the Chart component does not properly support switching from one controller
+    type to another on the fly because it is is stateful (i.e. depends on older `TelemetryRecord`s).
+    Try removing this and see if it works.
+    If you're gonna remove this, consider also removing the `controllerType` property from `TelemetryRecord`.
+    (a.k.a. revert this commit). -->
+    {#key latestTelemetryRecord?.controllerType}
     <Chart
       {latestTelemetryRecord}
       volumeThreshold={settings.volumeThreshold}
@@ -441,6 +455,7 @@
       paused={settings.experimentalControllerType === ControllerKind_CLONING}
       {telemetryUpdatePeriod}
     />
+    {/key}
   {/if}
   <label
     use:tippyActionAsyncPreload={{
@@ -460,51 +475,37 @@
     >
     <span>Use experimental algorithm</span>
   </label>
+  <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="Volume threshold"
-    min="0"
-    max={maxVolume}
-    step="0.0005"
+    {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
   </datalist>
-  <!-- See the comment in `transformSpeed` definition on why `max` is different for different browsers. -->
-  <!-- Max and max of silenceSpeed and soundedSpeed should be the same, so they can be visually compared.
-  Also min should be 0 for the same reason. -->
   <RangeSlider
     label="Sounded speed"
     list="sounded-speed-datalist"
     fractionalDigits={2}
-    min="0.05"
-    max={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15}
-    step="0.05"
+    {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
     bind:value={settings.soundedSpeed}
   />
-  <!-- Be aware, at least Chromim doesn't allow to set values higher than 16:
-  https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171. -->
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
-    min="0.05"
-    max={BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15}
-    step="0.05"
+    {...rangeInputSettingNameToAttrs('SilenceSpeedRaw', settings)}
     bind:value={settings.silenceSpeedRaw}
     disabled={settings.experimentalControllerType === ControllerKind_CLONING}
   />
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
-    min="0"
-    max="0.5"
-    step="0.005"
+    {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
   />
   <RangeSlider
     label="Margin after"
-    min="0"
-    max="0.5"
-    step="0.005"
+    {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}

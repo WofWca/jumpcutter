@@ -52,6 +52,27 @@ export interface Settings {
   popupChartLengthInSeconds: number,
   popupChartSpeed: 'realTime' | 'intrinsicTime', // TODO add 'intrinsicTimeRelativeToSounded'
   popupAlwaysShowOpenLocalFileLink: boolean,
+
+  popupVolumeThresholdMin: number,
+  popupVolumeThresholdMax: number,
+  popupVolumeThresholdStep: number,
+
+  popupSoundedSpeedMin: number,
+  popupSoundedSpeedMax: number,
+  popupSoundedSpeedStep: number,
+
+  popupSilenceSpeedRawMin: number,
+  popupSilenceSpeedRawMax: number,
+  popupSilenceSpeedRawStep: number,
+
+  popupMarginBeforeMin: number,
+  popupMarginBeforeMax: number,
+  popupMarginBeforeStep: number,
+
+  popupMarginAfterMin: number,
+  popupMarginAfterMax: number,
+  popupMarginAfterStep: number,
+
   // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys. TODO use
   // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
   popupSpecificHotkeys: HotkeyBinding[],
@@ -87,10 +108,11 @@ export * from './defaultSettings';
 export * from './getSettings';
 export * from './setSettings';
 export * from './ControllerKind';
-export * from './getAbsoluteSilenceSpeed';
+export * from './getAbsoluteClampedSilenceSpeed';
 export * from './settingsChanges2NewValues';
 export * from './togglableSettings';
 export * from './onChanged';
 export * from './localStorageOnlyKeys';
 export * from './filterOutLocalStorageOnlySettings';
 export * from './changeAlgorithmAndMaybeRelatedSettings';
+export * from './popupAdjustableRangeInputs';

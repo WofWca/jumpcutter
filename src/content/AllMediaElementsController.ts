@@ -18,7 +18,8 @@ type SomeController = StretchingController | CloningController;
 
 export type TelemetryMessage =
   SomeController['telemetry']
-  & TimeSavedTracker['timeSavedData'];
+  & TimeSavedTracker['timeSavedData']
+  & { controllerType: ControllerKind };
 
 function executeNonSettingsActions(
   el: HTMLMediaElement,
@@ -187,6 +188,7 @@ export default class AllMediaElementsController {
             const telemetryMessage: TelemetryMessage = {
               ...this.controller.telemetry,
               ...this.timeSavedTracker.timeSavedData,
+              controllerType: (this.controller.constructor as any).controllerType
             };
             port.postMessage(telemetryMessage);
           }
