@@ -8,6 +8,7 @@ import {
   getDelayFromInputToStretcherOutput,
   transformSpeed,
   destroyAudioWorkletNode,
+  isPlaybackActive,
 } from '@/content/helpers';
 import type { StretchInfo, AudioContextTime, UnixTime, TimeDelta, MediaTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
@@ -55,7 +56,7 @@ export type ControllerSettings =
 export interface TelemetryRecord {
   unixTime: UnixTime,
   intrinsicTime: MediaTime,
-  elementPaused: boolean,
+  elementPlaybackActive: boolean,
   contextTime: AudioContextTime,
   inputVolume: number,
   lastActualPlaybackRateChange: ControllerInitialized['_lastActualPlaybackRateChange'],
@@ -514,7 +515,7 @@ export default class Controller {
       // I heard accessing DOM is not very efficient, so maybe we could instead utilize `addPlaybackStopListener` and
       // 'ratechange' and infer `element.currentTime` from that?
       intrinsicTime: this.element.currentTime,
-      elementPaused: this.element.paused,
+      elementPlaybackActive: isPlaybackActive(this.element),
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,

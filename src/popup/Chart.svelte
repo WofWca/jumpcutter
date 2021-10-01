@@ -290,7 +290,7 @@
       // * the `toIntrinsicTime` function's contract to not be breached (i.e. `targetTime` is not too early).
       const delayToAvoidExtrapolationRealTime = telemetryUpdatePeriod;
 
-      if (r.elementPaused) {
+      if (!r.elementPlaybackActive) {
         // TODO this is incorrect if the speed recently changed. Good enoguh though.
         const delayToAvoidExtrapolationIntrinsicTime
           = delayToAvoidExtrapolationRealTime * r.lastActualPlaybackRateChange.value;
