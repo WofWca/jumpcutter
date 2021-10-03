@@ -154,7 +154,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupVolumeThresholdMax: 0.050,
   popupVolumeThresholdStep: 0.0001,
 
-  popupSoundedSpeedMin: 0,
+  popupSoundedSpeedMin: 0.25,
   popupSoundedSpeedMax: 4, // BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4
   popupSoundedSpeedStep: 0.25,
 
