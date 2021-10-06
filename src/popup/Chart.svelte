@@ -243,21 +243,20 @@
     smoothie.addTimeSeries(volumeSeries, {
       // RGB taken from Audacity.
       interpolation: 'linear',
-      lineWidth: 1,
-      strokeStyle: 'rgba(100, 100, 220, 0)',
+      // lineWidth: 1,
+      // strokeStyle: 'rgba(100, 100, 220, 0)',
+      strokeStyle: undefined,
       fillStyle: 'rgba(100, 100, 220, 0.8)',
     });
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
       strokeStyle: '#f44',
-      fillStyle: 'transparent',
     });
     if (PLOT_STRETCHER_DELAY) {
       smoothie.addTimeSeries(stretcherDelaySeries, {
         interpolation: 'linear',
         lineWidth: 1,
         strokeStyle: 'purple',
-        fillStyle: 'transparent',
       });
     }
 
