@@ -1,6 +1,6 @@
 'use strict';
 import browser from '@/webextensions-api';
-import { audioContext, mediaElementSourcesMap } from '@/content/audioContext';
+import { audioContext } from '@/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
@@ -19,6 +19,8 @@ import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
+
+const elementToItsTogglingGain = new WeakMap<HTMLMediaElement, GainNode>();
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -249,31 +251,55 @@ export default class Controller {
       resumeAudioContext(); // In case the video is paused.
     });
 
-    const srcFromMap = mediaElementSourcesMap.get(element);
-    let mediaElementSource: MediaElementAudioSourceNode;
-    if (srcFromMap) {
-      mediaElementSource = srcFromMap;
-      mediaElementSource.disconnect();
-    } else {
-      mediaElementSource = audioContext.createMediaElementSource(element);
-      mediaElementSourcesMap.set(element, mediaElementSource)
+    // TODO `captureStream` support is poor https://caniuse.com/?search=captureStream.
+    // TODO doesn't work if `element.src` has not been set yet (see `local-file-player` for example).
+    // TODO handle CORS error on `captureStream()`. Wait until `src` becomes non-cross-origin (see
+    // https://github.com/WebAudio/web-audio-api/issues/2453)
+    // TODO also need to make sure it works when `currentSrc` changes.
+    // TODO `element.volume` does not affect the resulting volume of the stream. Probably need to creae a `GainNode`
+    // and proxy `element.volume` to it.
+    // const stream = ((element as any).captureStream ?? (element as any).mozCaptureStream)();
+    const stream = (element as any).captureStream?.() ?? (element as any).mozCaptureStream();
+    const src = audioContext.createMediaStreamSource(stream);
+
+    // Otherwise the audio from the element is going to be doubled (at least in Chromium).
+    // Why do we create a `GainNode` instead of just `createMediaElementSource` and not `connect()`ing
+    // it to `context.destination`? Because the media would not play. Don't know if this is supposed to
+    // be like this. See https://github.com/WebAudio/web-audio-api-v2/issues/104.
+    // TODO we could also try to use `element.muted = true` instead (or `element.volume = 0.000001` because of
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=1136404), but this makes it even harder to
+    // let the user control the volume (see
+    // https://github.com/WebAudio/web-audio-api/issues/1202#issuecomment-937580382).
+    let togglingGain = elementToItsTogglingGain.get(element);
+    if (!togglingGain) {
+      togglingGain = audioContext.createGain();
+      togglingGain.connect(audioContext.destination);
+      const mediaElementSource = audioContext.createMediaElementSource(element);
+      mediaElementSource.connect(togglingGain);
+      elementToItsTogglingGain.set(element, togglingGain);
     }
+    togglingGain.gain.value = 0;
+    this._onDestroyCallbacks.push(() => {
+      assertDev(togglingGain);
+      togglingGain.gain.value = 1;
+    });
+
     let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
-      = mediaElementSource;
+      = src;
     if (this.isStretcherEnabled()) {
-      mediaElementSource.connect(this._lookahead);
+      src.connect(this._lookahead);
       this._stretcherAndPitch.connectInputFrom(this._lookahead);
       toDestinationChainLastConnectedLink = this._stretcherAndPitch;
     }
     toAwait.push(volumeFilterP.then(async volumeFilter => {
-      mediaElementSource.connect(volumeFilter);
+      src.connect(volumeFilter);
       this._onDestroyCallbacks.push(() => {
         // This is so the next line doesn't throw in case it is already disconnected (e.g. by some other
         // onDestroyCallback). The spec says this is fine:
         // https://webaudio.github.io/web-audio-api/#dom-audionode-connect
         // "Multiple connections with the same termini are ignored."
-        mediaElementSource.connect(volumeFilter);
-        mediaElementSource.disconnect(volumeFilter);
+        src.connect(volumeFilter);
+        src.disconnect(volumeFilter);
       });
       volumeFilter.connect(this._analyzerIn!);
       const silenceDetector = await silenceDetectorP;
@@ -282,8 +308,7 @@ export default class Controller {
     toDestinationChainLastConnectedLink.connect(audioContext.destination);
 
     this._onDestroyCallbacks.push(() => {
-      mediaElementSource.disconnect();
-      mediaElementSource.connect(audioContext.destination);
+      src.disconnect();
     });
 
     if (isLogging(this)) {
@@ -291,7 +316,7 @@ export default class Controller {
         if (this.isStretcherEnabled()) {
           this._stretcherAndPitch.connect(outVolumeFilter);
         } else {
-          mediaElementSource.connect(outVolumeFilter);
+          src.connect(outVolumeFilter);
         }
         outVolumeFilter.connect(this._analyzerOut!);
       }));
