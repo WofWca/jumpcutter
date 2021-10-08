@@ -18,6 +18,8 @@
   export let widthPx: number;
   export let heightPx: number;
   export let lengthSeconds: number;
+  export let jumpPeriod: number;
+  $: jumpPeriodMs = jumpPeriod * 1000;
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
   export let paused: boolean;
   export let telemetryUpdatePeriod: TimeDelta;
@@ -341,7 +343,7 @@
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
-        const time = timeProgressionSpeedIntrinsic
+        let time = timeProgressionSpeedIntrinsic
           ? sToMs(getExpectedElementCurrentTimeDelayed(
               latestTelemetryRecord,
               referenceTelemetry,
@@ -350,8 +352,25 @@
             // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
             // was omitted.
             || Number.MIN_SAFE_INTEGER
-          : undefined;
-        type SmoothieChartWithPrivateFields = SmoothieChart & { lastRenderTimeMillis: number };
+          : Date.now();
+
+        type SmoothieChartWithPrivateFields = SmoothieChart & {
+          lastRenderTimeMillis: number,
+          lastChartTimestamp: number | any,
+        };
+
+        // TODO always start at max offset so we don't jump almost immediately as the popup opens?
+        const chartJumpingOffsetMs =
+          jumpPeriodMs // Because it may be zero and `number % 0 === NaN`.
+          && (jumpPeriodMs - time % jumpPeriodMs);
+        // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
+        time += chartJumpingOffsetMs;
+        // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
+        // `time` the same as before (actually it would, but only 6 times per second).
+        if (jumpPeriodMs !== 0) {
+          (smoothie as SmoothieChartWithPrivateFields).lastChartTimestamp = null;
+        }
+
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, time);
         const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
@@ -375,13 +394,16 @@
           } else {
             chartEdgeTimeOffset = totalOutputDelayRealTime;
           }
-          const pixelOffset = sToMs(chartEdgeTimeOffset) / millisPerPixel;
+          const pixelOffset = (sToMs(chartEdgeTimeOffset) + chartJumpingOffsetMs) / millisPerPixel;
           // So it's not smeared accross two pixels.
           const pixelOffsetCentered = Math.floor(pixelOffset) + 0.5;
           const x = widthPx - pixelOffsetCentered;
           canvasContext.save();
           canvasContext.beginPath();
-          canvasContext.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+          canvasContext.strokeStyle = jumpPeriodMs === 0
+            ? 'rgba(0, 0, 0, 0.3)'
+            // So it's more clearly visible as it's moving accross the screen.
+            : 'rgba(0, 0, 0, 0.8)';
           canvasContext.moveTo(x, 0);
           canvasContext.lineTo(x, heightPx);
           canvasContext.closePath();

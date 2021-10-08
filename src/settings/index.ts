@@ -50,6 +50,7 @@ export interface Settings {
   popupChartWidthPx: number,
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
+  popupChartJumpPeriod: number,
   popupChartSpeed: 'realTime' | 'intrinsicTime', // TODO add 'intrinsicTimeRelativeToSounded'
   popupAlwaysShowOpenLocalFileLink: boolean,
 
