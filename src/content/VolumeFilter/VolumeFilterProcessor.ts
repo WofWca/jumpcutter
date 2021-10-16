@@ -101,7 +101,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
 
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
       let allChannelsSampleSquareSum = 0;
-      for (let channelI = 0; channelI < input.length; channelI++) {
+      for (let channelI = 0; channelI < numChannels; channelI++) {
         const sample = input[channelI][sampleI];
         allChannelsSampleSquareSum += sample ** 2;
       }
