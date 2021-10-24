@@ -175,7 +175,7 @@
         strokeStyle: '#aaa',
         verticalSections: 0,
         millisPerLine: 1000,
-        sharpLines: true,
+        lineWidth: 1,
       },
       labels: {
         disabled: true,
@@ -400,6 +400,7 @@
           const x = widthPx - pixelOffsetCentered;
           canvasContext.save();
           canvasContext.beginPath();
+          canvasContext.lineWidth = 1;
           canvasContext.strokeStyle = jumpPeriodMs === 0
             ? 'rgba(0, 0, 0, 0.3)'
             // So it's more clearly visible as it's moving accross the screen.
