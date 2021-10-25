@@ -40,13 +40,12 @@ if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
     { ver: '1.10.0', fn: migrateFrom1_10_0, },
   );
 }
+// Post-Firefox extensions store migrations
 sortedMigrationsFrom.push(
   { ver: '1.16.7', fn: migrateFrom1_16_7, },
   { ver: '1.18.2', fn: migrateFrom1_18_2, },
   { ver: '1.18.3', fn: migrateFrom1_18_3, },
 );
-// Post-Firefox extensions store migrations
-// sortedMigrationsFrom.push();
 
 export default async function runRequiredMigrations(
   previousVersion: Exclude<browser.runtime._OnInstalledDetails['previousVersion'], undefined>

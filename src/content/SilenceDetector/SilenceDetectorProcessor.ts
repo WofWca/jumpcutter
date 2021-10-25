@@ -51,10 +51,11 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
       this._lastLoudSampleTime = currentTime;
       return this.keepAlive;
     }
+    const numChannels = input.length;
     const numSamples = input[0].length;
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
       let loudSampleFound = false;
-      for (let channelI = 0; channelI < input.length; channelI++) {
+      for (let channelI = 0; channelI < numChannels; channelI++) {
         const sample = input[channelI][sampleI];
         if (sample >= volumeThreshold) {
           loudSampleFound = true;

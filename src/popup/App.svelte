@@ -450,6 +450,7 @@
       widthPx={settings.popupChartWidthPx}
       heightPx={settings.popupChartHeightPx}
       lengthSeconds={settings.popupChartLengthInSeconds}
+      jumpPeriod={settings.popupChartJumpPeriod}
       timeProgressionSpeed={settings.popupChartSpeed}
       on:click={onChartClick}
       paused={settings.experimentalControllerType === ControllerKind_CLONING}
