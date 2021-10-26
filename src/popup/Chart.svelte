@@ -415,7 +415,6 @@
             : 'rgba(0, 0, 0, 0.8)';
           canvasContext.moveTo(x, 0);
           canvasContext.lineTo(x, heightPx);
-          canvasContext.closePath();
           canvasContext.stroke();
           canvasContext.restore();
         }
