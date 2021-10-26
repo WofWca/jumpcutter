@@ -340,6 +340,8 @@
       referenceTelemetry = latestTelemetryRecord;
     };
 
+    updateSmoothieVolumeThreshold();
+
     const canvasContext = canvasEl.getContext('2d')!;
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
@@ -370,6 +372,12 @@
         if (jumpPeriodMs !== 0) {
           (smoothie as SmoothieChartWithPrivateFields).lastChartTimestamp = null;
         }
+
+        // This is a workaround for (apparently) a Chromium bug - on some devices, if a line's points are
+        // far beyond the canvas' bounds, `context.stroke()` would not draw the line even if the line would
+        // actually cross the canvas.
+        // TODO investigate, fix, then maybe remove (or don't, to support older browsers).
+        (volumeThresholdSeries as any).data[1][0] = time;
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, time);
