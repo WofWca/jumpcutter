@@ -1,5 +1,5 @@
 import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
-import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, transformSpeed } from './helpers';
+import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, closestNonNormalSpeed } from './helpers';
 import type { TimeDelta } from "@/helpers";
 
 /**
@@ -100,7 +100,7 @@ function getSnippetTimeSavedInfo(
 
   // If we just use `speedDuring`, it would report time saved to be 0.2% when `soundedSpeed === 1` and
   // `volumeThreshold === 0`. Yes, this causes it to be not so accurate, but it's better than confusing the user.
-  const untransformedSpeedDuring = speedDuring === transformSpeed(1)
+  const untransformedSpeedDuring = speedDuring === closestNonNormalSpeed(1)
     ? 1
     : speedDuring;
   const speedDuringComparedToSounded = untransformedSpeedDuring / soundedSpeedDuring;

@@ -112,7 +112,7 @@ export function getWhenMomentGetsToStretchersDelayNodeOutput(
  * This is to make it impossible for the user to set speed to no normal.
  * TODO give users an option (on the options page) to skip this transformation.
  */
- export function transformSpeed(speed: number): number {
+export function closestNonNormalSpeed(speed: number): number {
   // On Chromium 86.0.4240.99, it appears that 1.0 is not the only "normal" speed. It's a small proximity of 1.0.
   //
   // It's not the smallest, but a value close to the smallest value for which the audio

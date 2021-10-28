@@ -6,7 +6,7 @@ import {
   getOptimalLookaheadDelay,
   getTotalOutputDelay,
   getDelayFromInputToStretcherOutput,
-  transformSpeed,
+  closestNonNormalSpeed,
   destroyAudioWorkletNode,
   isPlaybackActive,
 } from '@/content/helpers';
@@ -469,7 +469,7 @@ export default class Controller {
     let speedVal;
     switch (speedName) {
       case SpeedName.SOUNDED: {
-        speedVal = transformSpeed(this.settings.soundedSpeed);
+        speedVal = closestNonNormalSpeed(this.settings.soundedSpeed);
         // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
         // The most common case where `load` is called is when the current source is replaced with an ad (or
         // the opposite, when the ad ends).
@@ -478,7 +478,7 @@ export default class Controller {
         this.element.defaultPlaybackRate = speedVal;
         break;
       }
-      case SpeedName.SILENCE: speedVal = transformSpeed(this.settings.silenceSpeed); break;
+      case SpeedName.SILENCE: speedVal = closestNonNormalSpeed(this.settings.silenceSpeed); break;
     }
     this.element.playbackRate = speedVal;
     const elementSpeedSwitchedAt = this.audioContext!.currentTime;
