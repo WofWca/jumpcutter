@@ -131,6 +131,15 @@ export function closestNonNormalSpeed(speed: number): number {
   }
   return speed;
 }
+/**
+ * For performance, so the browser's internal pitch shifting algorithm doesn't consume processing time.
+ * `volumeThreshold === 0` currently means that we'll never switch to the `silenceSpeed`.
+ */
+export function maybeClosestNonNormalSpeed(speed: number, volumeThreshold: number): number {
+  return volumeThreshold === 0
+    ? speed
+    : closestNonNormalSpeed(speed);
+}
 
 // The following code is not very reliable (but reliable enough, perhaps). E.g. playback can stop for reasons other than
 // 'pause' or 'waiting' events: https://html.spec.whatwg.org/multipage/media.html#event-media-waiting.

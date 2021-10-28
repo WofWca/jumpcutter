@@ -274,7 +274,7 @@ export default class Controller {
   }
 
   private _setSpeed() {
-    // Don't need to `closestNonNormalSpeed` because currently `CloningController` doesn't switch speed between
+    // Don't need to `maybeClosestNonNormalSpeed` because currently `CloningController` doesn't switch speed between
     // silence and sounded, it performs a seek.
     const speedVal = this.settings.soundedSpeed;
     this.element.playbackRate = speedVal;
