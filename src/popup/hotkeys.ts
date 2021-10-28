@@ -15,9 +15,6 @@ export default function createKeydownListener(
     const actions = keydownEventToActions(e, settings, [...settings.hotkeys, ...settings.popupSpecificHotkeys]);
     const { settingsNewValues, nonSettingsActions } = actions;
     onNewSettingsValues(settingsNewValues);
-    // TODO but this is still not fully convenient for the user as he won't be able to use hotkeys that are not provided
-    // by our extension (like "pause" and "increase volume"). Should we add such hotkeys? Or somehow teleport keydown
-    // events to the page?
     nonSettingsActionsPort.postMessage(nonSettingsActions);
   };
   // `setTimeout` only for performance.
