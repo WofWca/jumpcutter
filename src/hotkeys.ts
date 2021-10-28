@@ -164,12 +164,13 @@ export function eventTargetIsInput(event: KeyboardEvent): boolean {
     || 'isContentEditable' in t && t.isContentEditable
   );
 }
+export type NonSettingsActions = Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>;
 /**
  * @param bindings - custom keybindings array. Defaults to {@link currentSettings.hotkeys}
  */
 export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): {
   settingsNewValues: Partial<Settings>,
-  nonSettingsActions: Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>,
+  nonSettingsActions: NonSettingsActions,
   overrideWebsiteHotkeys?: true, // TODO. Doesn't this look a bit odd?
 } {
   const bindingsDefinite = bindings ?? currentSettings.hotkeys;
