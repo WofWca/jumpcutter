@@ -1,9 +1,8 @@
-import type browser from '@/webextensions-api';
-import { keydownEventToActions, eventTargetIsInput } from '@/hotkeys';
+import { keydownEventToActions, eventTargetIsInput, NonSettingsActions } from '@/hotkeys';
 import { Settings } from '@/settings';
 
 export default function createKeydownListener(
-  nonSettingsActionsPort: ReturnType<typeof browser.tabs.connect>,
+  onNonSettingsActions: (nonSettingsActions: NonSettingsActions) => void,
   getSettings: () => Settings,
   onNewSettingsValues: (newValues: Partial<Settings>) => void,
 ): (e: KeyboardEvent) => void {
@@ -15,10 +14,7 @@ export default function createKeydownListener(
     const actions = keydownEventToActions(e, settings, [...settings.hotkeys, ...settings.popupSpecificHotkeys]);
     const { settingsNewValues, nonSettingsActions } = actions;
     onNewSettingsValues(settingsNewValues);
-    // TODO but this is still not fully convenient for the user as he won't be able to use hotkeys that are not provided
-    // by our extension (like "pause" and "increase volume"). Should we add such hotkeys? Or somehow teleport keydown
-    // events to the page?
-    nonSettingsActionsPort.postMessage(nonSettingsActions);
+    onNonSettingsActions(nonSettingsActions);
   };
   // `setTimeout` only for performance.
   return (e: KeyboardEvent) => setTimeout(undeferred, 0, e);

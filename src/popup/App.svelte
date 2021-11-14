@@ -118,26 +118,6 @@
 
         nonSettingsActionsPort = browser.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
 
-        (async () => {
-          // Make a setings or a flag or something.
-          const LISTEN_TO_HOTKEYS_IN_POPUP = true;
-          await settingsPromise;
-          if (LISTEN_TO_HOTKEYS_IN_POPUP && settings!.enableHotkeys) {
-            const { default: createKeydownListener } = await import(
-              /* webpackExports: ['default'] */
-              './hotkeys'
-            );
-            keydownListener = createKeydownListener(
-              nonSettingsActionsPort as any, // TODO remove as any
-              () => settings,
-              newValues => {
-                Object.assign(settings, newValues);
-                settings = settings;
-              },
-            );
-          }
-        })();
-
         disconnect = () => {
           clearTimeout(telemetryTimeoutId);
           telemetryPort.disconnect();
@@ -149,6 +129,26 @@
     };
     browser.runtime.onMessage.addListener(onMessageListener);
     browser.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
+  })();
+
+  (async () => {
+    // Make a setings or a flag or something.
+    const LISTEN_TO_HOTKEYS_IN_POPUP = true;
+    await settingsPromise;
+    if (LISTEN_TO_HOTKEYS_IN_POPUP && settings!.enableHotkeys) {
+      const { default: createKeydownListener } = await import(
+        /* webpackExports: ['default'] */
+        './hotkeys'
+      );
+      keydownListener = createKeydownListener(
+        nonSettingsActions => nonSettingsActionsPort?.postMessage(nonSettingsActions),
+        () => settings,
+        newValues => {
+          Object.assign(settings, newValues);
+          settings = settings;
+        },
+      );
+    }
   })();
 
   (async () => {
