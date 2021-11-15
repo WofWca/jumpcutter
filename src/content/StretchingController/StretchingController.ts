@@ -34,7 +34,7 @@ type ControllerInitialized =
   Controller
   & { initialized: true }
   & Required<Pick<Controller, 'initialized' | 'audioContext' | '_silenceDetectorNode'
-    | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange' | '_elementVolumeCache'>>;
+    | '_analyzerIn' | '_volumeInfoBuffer' | '_lastActualPlaybackRateChange'>>;
 type ControllerWithStretcher = Controller & Required<Pick<Controller, '_lookahead' | '_stretcherAndPitch'>>;
 type ControllerLogging = Controller & Required<Pick<Controller, '_log' | '_analyzerOut'>>;
 
@@ -99,7 +99,6 @@ export default class Controller {
     value: number,
     name: SpeedName,
   };
-  _elementVolumeCache?: number; // Same as element.volume, but faster.
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -137,11 +136,6 @@ export default class Controller {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
-
-    this._elementVolumeCache = element.volume;
-    const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', onElementVolumeChange, { passive: true });
-    this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     this.audioContext = audioContext;
 
@@ -520,7 +514,7 @@ export default class Controller {
       contextTime: this.audioContext.currentTime,
       inputVolume,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
-      elementVolume: this._elementVolumeCache,
+      elementVolume: this.element.volume,
       totalOutputDelay: getTotalOutputDelay(
         lookaheadDelay,
         stretcherDelay,

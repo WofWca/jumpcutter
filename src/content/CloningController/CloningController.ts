@@ -11,7 +11,7 @@ type Time = AnyTime;
 type ControllerInitialized =
   Controller
   & { initialized: true }
-  & Required<Pick<Controller, 'initialized' | '_elementVolumeCache'>>;
+  & Required<Pick<Controller, 'initialized'>>;
 
 export type ControllerSettings =
   Pick<
@@ -59,7 +59,6 @@ export default class Controller {
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
   _onDestroyCallbacks: Array<() => void> = [];
-  _elementVolumeCache?: number; // Same as element.volume, but faster.
 
   lookahead: Lookahead;
 
@@ -100,11 +99,6 @@ export default class Controller {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
-
-    this._elementVolumeCache = element.volume;
-    const onElementVolumeChange = () => this._elementVolumeCache = element.volume;
-    element.addEventListener('volumechange', onElementVolumeChange, { passive: true });
-    this._onDestroyCallbacks.push(() => element.removeEventListener('volumechange', onElementVolumeChange));
 
     const { lookahead } = this;
     const maybeSeek = this.maybeSeek.bind(this);
@@ -304,7 +298,7 @@ export default class Controller {
         value: 1,
         name: SpeedName.SOUNDED,
       },
-      elementVolume: this._elementVolumeCache,
+      elementVolume: this.element.volume,
       totalOutputDelay: 0,
       delayFromInputToStretcherOutput: 0,
       stretcherDelay: 0,
