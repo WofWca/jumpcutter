@@ -500,6 +500,25 @@
           <!-- <span>⚠️ Reload the page to umute the media.</span> -->
           <span>⚠️ Reload the page if the media got muted.</span>
         {/if}
+        <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
+        of `elementCurrentSrc`, but let's future-prove it. -->
+        {#if latestTelemetryRecord.elementCurrentSrc}
+          <br>
+          Or
+          <!-- Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
+          Also `nofollow` is pointless, but it's canonical, so I let it be.
+          Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
+          in the future. -->
+          <!-- Added `title` because at least in Chromium it doesn't show the link's href on the screen when
+          you hover over it or focus. But they always can rightclick -> copy link address.
+          TODO there's probably a better way. -->
+          <a
+            href={latestTelemetryRecord.elementCurrentSrc}
+            target="_blank"
+            rel="external nofollow noreferrer noopener"
+            title={latestTelemetryRecord.elementCurrentSrc}
+          >try opening it directly</a>
+        {/if}
       </section>
     {/if}
   {/if}
