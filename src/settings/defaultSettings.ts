@@ -43,6 +43,8 @@ export const defaultSettings: Readonly<Settings> = {
 
   applyTo: 'videoOnly',
 
+  dontAttachToCrossOriginMedia: true,
+
   enableHotkeys: true,
   // TODO some code here is pretty WET, like duplicate hotkeys. DRY?
   hotkeys: [

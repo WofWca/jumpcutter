@@ -1,6 +1,10 @@
 import { HotkeyBinding } from '@/hotkeys';
 import { ControllerKind } from './ControllerKind';
 
+// It is impossible to explicitly set `experimentalControllerType` to `ControllerKind.ALWAYS_SOUNDED`.
+// See `AllMediaElementsController.ts`.
+type SettingsControllerKind = Exclude<ControllerKind, ControllerKind.ALWAYS_SOUNDED>;
+
 export interface Settings {
   volumeThreshold: number,
   previousVolumeThreshold: number,
@@ -18,7 +22,7 @@ export interface Settings {
   previousMarginAfter: number,
 
   // TODO I made this purely for testing. For release we'll probably need something better.
-  experimentalControllerType: ControllerKind,
+  experimentalControllerType: SettingsControllerKind,
   // Why do we need this? Controller algorithms are quite different and each have their advantages and disadvantages,
   // which need to be considered when choosing settings such as margin(Before|After). For example, some people may hate
   // audio distortion that is caused by the way marginBefore works in specifically the stretching algorithm, so they
@@ -29,12 +33,18 @@ export interface Settings {
   // Settings for the currently active algorithm are not synced (just in case you decided to use them).
   // Which is a bit confusing and wasteful in terms of storage space. But not too bad.
   algorithmSpecificSettings: {
-    [P in ControllerKind]: {
+    [P in SettingsControllerKind]: {
       [P in keyof Pick<Settings, 'marginBefore' | 'marginAfter'>]: Settings[P];
     };
   },
 
   applyTo: 'videoOnly' | 'audioOnly' | 'both',
+
+  /**
+   * See the comments in `getAppropriateControllerType`:
+   * https://github.com/WofWca/jumpcutter/blob/f9cafdc59e042674e494482abe2f0f3dc955e695/src/content/AllMediaElementsController.ts#L67-L77
+   */
+  dontAttachToCrossOriginMedia: boolean,
 
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],

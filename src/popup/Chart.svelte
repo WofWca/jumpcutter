@@ -6,12 +6,16 @@
     MediaTime, AudioContextTime, TimeDelta, AnyTime,
   } from '@/helpers';
   import { Settings } from '@/settings';
-  import type { TelemetryRecord } from '@/content/StretchingController/StretchingController';
+  import type { TelemetryRecord as StretchingControllerTelemetryRecord }
+    from '@/content/StretchingController/StretchingController';
+  import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
+    from '@/content/AlwaysSoundedController';
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
+  type TelemetryRecord = StretchingControllerTelemetryRecord | AlwaysSoundedControllerTelemetryRecord;
   export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;

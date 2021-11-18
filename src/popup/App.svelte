@@ -5,6 +5,7 @@
     addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
     ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
     PopupAdjustableRangeInputsCapitalized,
+    ControllerKind_ALWAYS_SOUNDED,
   } from '@/settings';
   import { tippyActionAsyncPreload } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -15,6 +16,7 @@
   import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
+  import { assertNever } from '@/helpers';
 
   let settings: Settings;
 
@@ -275,6 +277,8 @@
       ...newValues,
     };
   }
+
+  $: controllerTypeAlwaysSounded = latestTelemetryRecord?.controllerType === ControllerKind_ALWAYS_SOUNDED;
 </script>
 
 <svelte:window
@@ -453,10 +457,51 @@
       jumpPeriod={settings.popupChartJumpPeriod}
       timeProgressionSpeed={settings.popupChartSpeed}
       on:click={onChartClick}
-      paused={settings.experimentalControllerType === ControllerKind_CLONING}
+      paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
       {telemetryUpdatePeriod}
     />
     {/key}
+    <!-- TODO it an element is cross-origin and we called `createMediaElementSource` for it and it appears
+    to produce sound, don't show the warning. -->
+    {#if latestTelemetryRecord?.elementLikelyCorsRestricted}
+      <section
+        style={
+          'margin: 1rem 0 0.25rem 0;'
+          + 'text-align: center;'
+          + 'text-align: center;'
+          + `width: ${settings.popupChartWidthPx}px`
+        }
+      >
+        <span>⚠️ This media is </span>
+        <i>likely</i>
+        <span>
+          unsupported{
+          #if settings.experimentalControllerType === ControllerKind_STRETCHING}
+            {' and could get muted if we attach to it.'}
+          {:else if settings.experimentalControllerType === ControllerKind_CLONING
+            }, silence skipping won't work properly.
+          {:else}
+            {assertNever(settings.experimentalControllerType)}
+          {/if}
+        </span>
+        <label
+          style="display: inline-flex; align-items: center; margin-left: 0.5rem"
+        >
+          <input
+            type="checkbox"
+            checked={!settings.dontAttachToCrossOriginMedia}
+            on:change={e => settings.dontAttachToCrossOriginMedia = !e.target.checked}
+          />
+          Try anyway
+          <!-- Try -->
+        </label>
+        {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
+          <br>
+          <!-- <span>⚠️ Reload the page to umute the media.</span> -->
+          <span>⚠️ Reload the page if the media got muted.</span>
+        {/if}
+      </section>
+    {/if}
   {/if}
   <label
     use:tippyActionAsyncPreload={{
@@ -471,6 +516,7 @@
     <input
       checked={settings.experimentalControllerType === ControllerKind_CLONING}
       on:input={onUseExperimentalAlgorithmInput}
+      disabled={controllerTypeAlwaysSounded}
       type="checkbox"
       style="margin: 0 0.5rem 0 0;"
     >
@@ -481,6 +527,7 @@
     label="Volume threshold"
     {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
+    disabled={controllerTypeAlwaysSounded}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -497,17 +544,22 @@
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SilenceSpeedRaw', settings)}
     bind:value={settings.silenceSpeedRaw}
-    disabled={settings.experimentalControllerType === ControllerKind_CLONING}
+    disabled={
+      settings.experimentalControllerType === ControllerKind_CLONING
+      || controllerTypeAlwaysSounded
+    }
   />
   <RangeSlider
     label="Margin before (side effects: audio distortion & audio delay)"
     {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
+    disabled={controllerTypeAlwaysSounded}
   />
   <RangeSlider
     label="Margin after"
     {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
+    disabled={controllerTypeAlwaysSounded}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->
@@ -519,7 +571,7 @@
 {/await}
 
 <style>
-  label:not(:first-child) {
+  body > label:not(:first-child) {
     margin-top: 1rem;
   }
 
