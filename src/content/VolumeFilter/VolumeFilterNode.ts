@@ -1,4 +1,4 @@
-import { TimeDelta } from "@/helpers"
+import type { TimeDelta } from "@/helpers"
 
 export default class VolumeFilterNode extends AudioWorkletNode {
   constructor(context: AudioContext, maxSmoothingWindowLength: TimeDelta, smoothingWindowLength: TimeDelta) {

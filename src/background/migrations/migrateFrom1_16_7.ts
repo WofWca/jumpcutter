@@ -1,4 +1,4 @@
-import { Settings } from '@/settings';
+import type { Settings } from '@/settings';
 import browser from '@/webextensions-api';
 
 export default async function (): Promise<void> {

@@ -1,6 +1,6 @@
 import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
 import { SilenceDetectorMessage, SilenceDetectorEventType } from './SilenceDetectorMessage';
-import { AudioContextTime } from "@/helpers";
+import type { AudioContextTime } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 

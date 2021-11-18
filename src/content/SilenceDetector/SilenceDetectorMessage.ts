@@ -1,4 +1,4 @@
-import { AudioContextTime } from "@/helpers";
+import type { AudioContextTime } from "@/helpers";
 
 export const enum SilenceDetectorEventType {
   SILENCE_END,

@@ -1,4 +1,4 @@
-import { Settings } from "./";
+import type { Settings } from "./";
 
 export function changeAlgorithmAndMaybeRelatedSettings(
   settings: Settings,
