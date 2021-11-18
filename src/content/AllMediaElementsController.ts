@@ -56,8 +56,12 @@ type ControllerType<T extends ControllerKind> =
   : T extends ControllerKind.ALWAYS_SOUNDED ? typeof AlwaysSoundedController
   : never;
 
+const controllerTypeDependsOnSettings = [
+  'experimentalControllerType',
+  'dontAttachToCrossOriginMedia',
+] as const;
 function getAppropriateControllerType(
-  settings: Pick<Settings, 'experimentalControllerType'>,
+  settings: Pick<Settings, typeof controllerTypeDependsOnSettings[number]>,
   elementSourceIsCrossOrigin: boolean,
 ): ControllerKind {
   // Analyzing audio data of a CORS-restricted media element is impossible because its
@@ -71,7 +75,7 @@ function getAppropriateControllerType(
   // header set to `document.location.origin`. But currently it's not easy to detect that. See
   // https://github.com/WebAudio/web-audio-api/issues/2453.
   // It's better to not attach to an element than to risk muting it as it's more confusing to the user.
-  return elementSourceIsCrossOrigin
+  return settings.dontAttachToCrossOriginMedia && elementSourceIsCrossOrigin
     ? ControllerKind.ALWAYS_SOUNDED
     : settings.experimentalControllerType
   // TODO a setting to disable the cross-origin check.
@@ -175,7 +179,7 @@ export default class AllMediaElementsController {
     Object.assign(this.settings, newValues);
     assertDev(this.controller);
 
-    if (newValues.experimentalControllerType !== undefined) {
+    if (controllerTypeDependsOnSettings.some(key => key in newValues)) {
       const currentController = this.controller;
       const el = currentController.element;
       assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');

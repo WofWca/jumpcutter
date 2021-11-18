@@ -16,6 +16,7 @@
   import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
+  import { assertNever } from '@/helpers';
 
   let settings: Settings;
 
@@ -471,9 +472,34 @@
           + `width: ${settings.popupChartWidthPx}px`
         }
       >
-        <span
-          style="margin-right: 0.5rem;"
-        >⚠️ This media is unsupported.</span>
+        <span>⚠️ This media is </span>
+        <i>likely</i>
+        <span>
+          unsupported{
+          #if settings.experimentalControllerType === ControllerKind_STRETCHING}
+            {' and could get muted if we attach to it. A page reload would be required to umute it.'}
+          {:else if settings.experimentalControllerType === ControllerKind_CLONING
+            }, silence skipping won't work properly.
+          {:else}
+            {assertNever(settings.experimentalControllerType)}
+          {/if}
+        </span>
+        <label
+          style="display: inline-flex; align-items: center; margin-left: 0.5rem"
+        >
+          <input
+            type="checkbox"
+            checked={!settings.dontAttachToCrossOriginMedia}
+            on:change={e => settings.dontAttachToCrossOriginMedia = !e.target.checked}
+          />
+          Try anyway
+          <!-- Try -->
+        </label>
+        <!-- TODO uncomment the below code and remove "A page reload will be required to umute it" from
+        the above code. -->
+        <!-- {#if createMediaElementSourceCalled}
+          <span>⚠️ Reload the page to umute the media.</span>
+        {/if} -->
       </section>
     {/if}
   {/if}
@@ -545,7 +571,7 @@
 {/await}
 
 <style>
-  label:not(:first-child) {
+  body > label:not(:first-child) {
     margin-top: 1rem;
   }
 

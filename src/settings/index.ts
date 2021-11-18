@@ -40,6 +40,12 @@ export interface Settings {
 
   applyTo: 'videoOnly' | 'audioOnly' | 'both',
 
+  /**
+   * See the comments in `getAppropriateControllerType`:
+   * https://github.com/WofWca/jumpcutter/blob/f9cafdc59e042674e494482abe2f0f3dc955e695/src/content/AllMediaElementsController.ts#L67-L77
+   */
+  dontAttachToCrossOriginMedia: boolean,
+
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
 
