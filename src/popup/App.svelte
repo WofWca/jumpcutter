@@ -477,7 +477,7 @@
         <span>
           unsupported{
           #if settings.experimentalControllerType === ControllerKind_STRETCHING}
-            {' and could get muted if we attach to it. A page reload would be required to umute it.'}
+            {' and could get muted if we attach to it.'}
           {:else if settings.experimentalControllerType === ControllerKind_CLONING
             }, silence skipping won't work properly.
           {:else}
@@ -495,11 +495,11 @@
           Try anyway
           <!-- Try -->
         </label>
-        <!-- TODO uncomment the below code and remove "A page reload will be required to umute it" from
-        the above code. -->
-        <!-- {#if createMediaElementSourceCalled}
-          <span>⚠️ Reload the page to umute the media.</span>
-        {/if} -->
+        {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
+          <br>
+          <!-- <span>⚠️ Reload the page to umute the media.</span> -->
+          <span>⚠️ Reload the page if the media got muted.</span>
+        {/if}
       </section>
     {/if}
   {/if}

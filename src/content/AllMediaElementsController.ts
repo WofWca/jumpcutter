@@ -15,6 +15,7 @@ import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
+import { mediaElementSourcesMap } from '@/content/audioContext';
 
 type SomeController = StretchingController | CloningController | AlwaysSoundedController;
 
@@ -24,6 +25,7 @@ export type TelemetryMessage =
   & {
     controllerType: ControllerKind,
     elementLikelyCorsRestricted: boolean,
+    createMediaElementSourceCalledForElement: boolean,
   };
 
 function executeNonSettingsActions(
@@ -237,11 +239,14 @@ export default class AllMediaElementsController {
           }
           if (this.controller?.initialized && this.timeSavedTracker) {
             assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
+            assertDev(this.activeMediaElement);
             const telemetryMessage: TelemetryMessage = {
               ...this.controller.telemetry,
               ...this.timeSavedTracker.timeSavedData,
               controllerType: (this.controller.constructor as any).controllerType,
               elementLikelyCorsRestricted: this.activeMediaElementSourceIsCrossOrigin,
+              // TODO check if the map lookup is too slow to do it several times per second.
+              createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
             };
             port.postMessage(telemetryMessage);
           }
