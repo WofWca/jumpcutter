@@ -348,7 +348,7 @@
 
     const canvasContext = canvasEl.getContext('2d')!;
 
-    let firstRenderTime;
+    let offsetAdjustment;
     (function drawAndScheduleAnother() {
       if (!paused && latestTelemetryRecord) {
         let time = timeProgressionSpeedIntrinsic
@@ -363,8 +363,10 @@
           : Date.now();
 
         // TODO perf: do this only once instead of on each RAF.
-        if (firstRenderTime === undefined) {
-          firstRenderTime = time;
+        if (offsetAdjustment === undefined) {
+          // We don't care if `jumpPeriodMs` changes at a later point. The purpose of this is to adjust
+          // the time until the very first jump.
+          offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
         }
 
         type SmoothieChartWithPrivateFields = SmoothieChart & {
@@ -374,9 +376,9 @@
 
         const chartJumpingOffsetMs =
           jumpPeriodMs // Because it may be zero and `number % 0 === NaN`.
-          // `- firstRenderTime` so we always start at max offset so we don't jump almost immediately after
+          // `+ offsetAdjustment` so we always start at max offset so we don't jump almost immediately after
           // the popup opens.
-          && (jumpPeriodMs - (time - firstRenderTime) % jumpPeriodMs);
+          && (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
         // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
         time += chartJumpingOffsetMs;
         // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
