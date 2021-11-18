@@ -4,8 +4,10 @@ import {
   removeOnSettingsChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
+import { isSourceCrossOrigin } from '@/content/helpers';
 import type StretchingController from './StretchingController/StretchingController';
 import type CloningController from './CloningController/CloningController';
+import type AlwaysSoundedController from './AlwaysSoundedController';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
@@ -14,12 +16,15 @@ import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 
-type SomeController = StretchingController | CloningController;
+type SomeController = StretchingController | CloningController | AlwaysSoundedController;
 
 export type TelemetryMessage =
   SomeController['telemetry']
   & TimeSavedTracker['timeSavedData']
-  & { controllerType: ControllerKind };
+  & {
+    controllerType: ControllerKind,
+    elementLikelyCorsRestricted: boolean,
+  };
 
 function executeNonSettingsActions(
   el: HTMLMediaElement,
@@ -45,9 +50,32 @@ function executeNonSettingsActions(
 
 let allMediaElementsControllerActive = false;
 
-type ControllerType<T extends ControllerKind> = T extends ControllerKind.STRETCHING
-  ? typeof StretchingController
-  : typeof CloningController;
+type ControllerType<T extends ControllerKind> =
+  T extends ControllerKind.STRETCHING ? typeof StretchingController
+  : T extends ControllerKind.CLONING ? typeof CloningController
+  : T extends ControllerKind.ALWAYS_SOUNDED ? typeof AlwaysSoundedController
+  : never;
+
+function getAppropriateControllerType(
+  settings: Pick<Settings, 'experimentalControllerType'>,
+  elementSourceIsCrossOrigin: boolean,
+): ControllerKind {
+  // Analyzing audio data of a CORS-restricted media element is impossible because its
+  // `MediaElementAudioSourceNode` outputs silence (see
+  // https://webaudio.github.io/web-audio-api/#MediaElementAudioSourceOptions-security),
+  // so it's not that we only are unable to analyze it - the user also becomes unable to hear its sound.
+  // The following is to avoid that.
+  //
+  // Actually, the fact that a source is cross-origin doesn't guarantee that `MediaElementAudioSourceNode`
+  // will output silence. For example, if the media data is served with `Access-Control-Allow-Origin`
+  // header set to `document.location.origin`. But currently it's not easy to detect that. See
+  // https://github.com/WebAudio/web-audio-api/issues/2453.
+  // It's better to not attach to an element than to risk muting it as it's more confusing to the user.
+  return elementSourceIsCrossOrigin
+    ? ControllerKind.ALWAYS_SOUNDED
+    : settings.experimentalControllerType
+  // TODO a setting to disable the cross-origin check.
+}
 
 async function importAndCreateController<T extends ControllerKind>(
   kind: T,
@@ -55,16 +83,29 @@ async function importAndCreateController<T extends ControllerKind>(
   getConstructorArgs: () => ConstructorParameters<ControllerType<T>>
 ) {
   let Controller;
-  if (kind === ControllerKind.CLONING) {
-    ({ default: Controller } = await import(
-      /* webpackExports: ['default'] */
-      './CloningController/CloningController'
-    ));
-  } else {
-    ({ default: Controller } = await import(
-      /* webpackExports: ['default'] */
-      './StretchingController/StretchingController'
-    ));
+  switch (kind) {
+    case ControllerKind.STRETCHING: {
+      ({ default: Controller } = await import(
+        /* webpackExports: ['default'] */
+        './StretchingController/StretchingController'
+      ));
+      break;
+    }
+    case ControllerKind.CLONING: {
+      ({ default: Controller } = await import(
+        /* webpackExports: ['default'] */
+        './CloningController/CloningController'
+      ));
+      break;
+    }
+    case ControllerKind.ALWAYS_SOUNDED: {
+      ({ default: Controller } = await import(
+        /* webpackExports: ['default'] */
+        './AlwaysSoundedController'
+      ));
+      break;
+    }
+    default: assertNever(kind);
   }
   type Hack = ConstructorParameters<typeof CloningController>;
   const controller = new Controller(...(getConstructorArgs() as Hack));
@@ -73,6 +114,7 @@ async function importAndCreateController<T extends ControllerKind>(
 
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
+  activeMediaElementSourceIsCrossOrigin: boolean | undefined;
   unhandledNewElements = new Set<HTMLMediaElement>();
   handledElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
@@ -133,25 +175,30 @@ export default class AllMediaElementsController {
     Object.assign(this.settings, newValues);
     assertDev(this.controller);
 
-    const newControllerType = newValues.experimentalControllerType;
-    if (newControllerType !== undefined) {
-      const oldController = this.controller;
-      this.controller = undefined;
-      (async () => {
-        await oldController.destroy();
-        assertDev(this.settings);
-        const controller = this.controller = await importAndCreateController(
-          newControllerType,
-          () => [
-            oldController.element,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            extensionSettings2ControllerSettings(this.settings!),
-            this.timeSavedTracker,
-          ]
-        );
-        controller.init();
-        // Controller destruction is done in `detachFromActiveElement`.
-      })();
+    if (newValues.experimentalControllerType !== undefined) {
+      const currentController = this.controller;
+      const el = currentController.element;
+      assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
+      const newControllerType = getAppropriateControllerType(this.settings, this.activeMediaElementSourceIsCrossOrigin);
+      if (newControllerType !== (currentController.constructor as any).controllerType) {
+        const oldController = currentController;
+        this.controller = undefined;
+        (async () => {
+          await oldController.destroy();
+          assertDev(this.settings);
+          const controller = this.controller = await importAndCreateController(
+            newControllerType,
+            () => [
+              el,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              extensionSettings2ControllerSettings(this.settings!),
+              this.timeSavedTracker,
+            ]
+          );
+          controller.init();
+          // Controller destruction is done in `detachFromActiveElement`.
+        })();
+      }
     } else {
       // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
       // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
@@ -185,10 +232,12 @@ export default class AllMediaElementsController {
             }
           }
           if (this.controller?.initialized && this.timeSavedTracker) {
+            assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
             const telemetryMessage: TelemetryMessage = {
               ...this.controller.telemetry,
               ...this.timeSavedTracker.timeSavedData,
-              controllerType: (this.controller.constructor as any).controllerType
+              controllerType: (this.controller.constructor as any).controllerType,
+              elementLikelyCorsRestricted: this.activeMediaElementSourceIsCrossOrigin,
             };
             port.postMessage(telemetryMessage);
           }
@@ -301,8 +350,11 @@ export default class AllMediaElementsController {
     let resolveTimeSavedTrackerPromise: (timeSavedTracker: TimeSavedTracker) => void;
     const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
 
+  // TODO detect if it became cross-origin after we've attached (souce changed).
+    const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
+
     const controllerP = importAndCreateController(
-      this.settings.experimentalControllerType,
+      getAppropriateControllerType(this.settings, elCrossOrigin),
       () => [
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
