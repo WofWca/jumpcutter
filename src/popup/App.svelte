@@ -7,7 +7,7 @@
     PopupAdjustableRangeInputsCapitalized,
     ControllerKind_ALWAYS_SOUNDED,
   } from '@/settings';
-  import { tippyActionAsyncPreload } from './tippyAction';
+  import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import Chart from './Chart.svelte';
   import type { TelemetryMessage } from '@/content/AllMediaElementsController';
@@ -305,7 +305,7 @@
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
     <span
       class="others__item"
-      use:tippyActionAsyncPreload={{
+      use:tippy={{
         content: 'Volume',
         theme: 'my-tippy',
       }}
@@ -334,7 +334,7 @@
       type="button"
       class="others__item"
       style="border: none; padding: 0; background: unset; font: inherit;"
-      use:tippyActionAsyncPreload={{
+      use:tippy={{
         content: timeSavedTooltipContent,
         theme: 'my-tippy',
         hideOnClick: false,
@@ -523,7 +523,7 @@
     {/if}
   {/if}
   <label
-    use:tippyActionAsyncPreload={{
+    use:tippy={{
       content: '* Bare minimum usability\n'
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
         + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
