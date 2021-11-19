@@ -256,7 +256,7 @@
         />
         <NumberField
           label={
-            '📈⏱️ Chart jump period (s) (experimental). Should be smaller than Chart length.'
+            '📈⏱️ Chart jump period (s). Should be smaller than Chart length.'
             + ' Set to 0 for smooth movement (no jumps).'
           }
           bind:value={settings.popupChartJumpPeriod}
