@@ -79,8 +79,11 @@ export default async function init(): Promise<void> {
         if (node.nodeType !== Node.ELEMENT_NODE) {
           continue;
         }
-        // The fact that we have an array of `addedNodes` in an array of mutations may mean (idk actually) that
-        // we can have tuplicate nodes in the array, which currently is fine (see `onNewMediaElements`).
+        // Keep in mind that the same element may get removed then added to the tree again. This is handled
+        // inside `handleNewElements` (`this.handledElements.has(el)`).
+        // Also the fact that we have an array of `addedNodes` in an array of mutations may mean (idk actually)
+        // that we can have duplicate nodes in the array, which currently is fine thanks to
+        // `this.handledElements.has(el)`.
         if ((tagNames as string[]).includes(node.nodeName)) {
           newElements.push(node as HTMLMediaElement);
         } else {

@@ -1,5 +1,5 @@
 import { keydownEventToActions, eventTargetIsInput, NonSettingsActions } from '@/hotkeys';
-import { Settings } from '@/settings';
+import type { Settings } from '@/settings';
 
 export default function createKeydownListener(
   onNonSettingsActions: (nonSettingsActions: NonSettingsActions) => void,

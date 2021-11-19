@@ -1,5 +1,5 @@
 import browser from '@/webextensions-api';
-import { Settings } from "@/settings";
+import type { Settings } from "@/settings";
 
 export default async function (): Promise<void> {
   const storage = browser.storage.local;
