@@ -25,7 +25,7 @@ export type TelemetryMessage =
   & {
     controllerType: ControllerKind,
     elementLikelyCorsRestricted: boolean,
-    elementCurrentSrc?: string,
+    elementCurrentSrc: string,
     createMediaElementSourceCalledForElement: boolean,
   };
 
@@ -247,8 +247,7 @@ export default class AllMediaElementsController {
               ...this.timeSavedTracker.timeSavedData,
               controllerType: (this.controller.constructor as any).controllerType,
               elementLikelyCorsRestricted,
-              // `undefined` for performance.
-              elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
+              elementCurrentSrc: this.activeMediaElement.currentSrc,
               // TODO check if the map lookup is too slow to do it several times per second.
               createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
             };

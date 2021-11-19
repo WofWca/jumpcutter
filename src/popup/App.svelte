@@ -279,6 +279,20 @@
   }
 
   $: controllerTypeAlwaysSounded = latestTelemetryRecord?.controllerType === ControllerKind_ALWAYS_SOUNDED;
+
+  // Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
+  // Also `nofollow` is pointless, but it's canonical, so I let it be.
+  // Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
+  // in the future.
+  // Added `title` because at least in Chromium it doesn't show the link's href on the screen when
+  // you hover over it or focus. But they always can rightclick -> copy link address.
+  // TODO there's probably a better way.
+  $: mediaSourceDirectLinkAttrs = {
+    href: latestTelemetryRecord?.elementCurrentSrc,
+    target: "_blank",
+    rel: "external nofollow noreferrer noopener",
+    title: latestTelemetryRecord?.elementCurrentSrc,
+  };
 </script>
 
 <svelte:window
@@ -500,23 +514,12 @@
           <!-- <span>⚠️ Reload the page to umute the media.</span> -->
           <span>⚠️ Reload the page if the media got muted.</span>
         {/if}
-        <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
-        of `elementCurrentSrc`, but let's future-prove it. -->
         {#if latestTelemetryRecord.elementCurrentSrc}
           <br>
           Or
-          <!-- Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
-          Also `nofollow` is pointless, but it's canonical, so I let it be.
-          Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
-          in the future. -->
-          <!-- Added `title` because at least in Chromium it doesn't show the link's href on the screen when
-          you hover over it or focus. But they always can rightclick -> copy link address.
-          TODO there's probably a better way. -->
+          <!-- svelte-ignore a11y-missing-attribute it is defined in `mediaSourceDirectLinkAttrs`-->
           <a
-            href={latestTelemetryRecord.elementCurrentSrc}
-            target="_blank"
-            rel="external nofollow noreferrer noopener"
-            title={latestTelemetryRecord.elementCurrentSrc}
+            {...mediaSourceDirectLinkAttrs}
           >try opening it directly</a>
         {/if}
       </section>
@@ -527,7 +530,8 @@
       content: '* Bare minimum usability\n'
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
         + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
-        + '* No audio distortion, delay or desync\n',
+        + '* No audio distortion, delay or desync\n'
+        + '* If it doesn\'t work, try to "Open this media directly" below\n',
       theme: 'my-tippy white-space-pre-line',
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
@@ -580,13 +584,37 @@
     bind:value={settings.marginAfter}
     disabled={controllerTypeAlwaysSounded}
   />
-  {#if settings.popupAlwaysShowOpenLocalFileLink}
-    <!-- svelte-ignore a11y-missing-attribute --->
-    <a
-      {...openLocalFileLinkProps}
-      style="display: inline-block; margin-top: 1rem;"
-    >Open a local file</a>
-  {/if}
+  <!-- TODO remove margin if the elements has no contents. Apply margin to its direct children instead? -->
+  <div
+    style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 1rem;"
+  >
+    {#if settings.popupAlwaysShowOpenLocalFileLink}
+      <!-- svelte-ignore a11y-missing-attribute --->
+      <a
+        {...openLocalFileLinkProps}
+      >Open a local file</a>
+    <!-- {:else}
+      <!-- Dummy so the other element in the container is always skewed to the right. --
+      <div></div> -->
+    {/if}
+    <!-- TODO need to not show this (or "disable" it, grey out?) if
+    * `src` is a blob
+    * `currentSrc === document.location.href`.
+    * Maybe other cases? -->
+    {#if latestTelemetryRecord?.elementCurrentSrc}
+      <!-- svelte-ignore a11y-missing-attribute it is defined in `mediaSourceDirectLinkAttrs`-->
+      <a
+        {...mediaSourceDirectLinkAttrs}
+        use:tippyActionAsyncPreload={{
+          content: 'Why:\n'
+            + '* The experimental algorithm may become available\n'
+            + '* Performance may improve\n'
+            + '* May help if you see the "This media is likely unsupported" warning',
+          theme: 'my-tippy white-space-pre-line',
+        }}
+      >Open this media directly</a>
+    {/if}
+  </div>
 {/await}
 
 <style>
