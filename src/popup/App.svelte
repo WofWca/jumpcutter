@@ -9,7 +9,6 @@
   } from '@/settings';
   import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
-  import Chart from './Chart.svelte';
   import type { TelemetryMessage } from '@/content/AllMediaElementsController';
   import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
@@ -443,26 +442,46 @@
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
-    <!-- Need `{#key}` because the Chart component does not properly support switching from one controller
-    type to another on the fly because it is is stateful (i.e. depends on older `TelemetryRecord`s).
-    Try removing this and see if it works.
-    If you're gonna remove this, consider also removing the `controllerType` property from `TelemetryRecord`.
-    (a.k.a. revert this commit). -->
-    {#key latestTelemetryRecord?.controllerType}
-    <Chart
-      {latestTelemetryRecord}
-      volumeThreshold={settings.volumeThreshold}
-      loadedPromise={settingsPromise}
-      widthPx={settings.popupChartWidthPx}
-      heightPx={settings.popupChartHeightPx}
-      lengthSeconds={settings.popupChartLengthInSeconds}
-      jumpPeriod={settings.popupChartJumpPeriod}
-      timeProgressionSpeed={settings.popupChartSpeed}
-      on:click={onChartClick}
-      paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
-      {telemetryUpdatePeriod}
-    />
-    {/key}
+    {#await import(
+      /* webpackExports: ['default'] */
+      './Chart.svelte'
+    )}
+      <div
+        style={
+          `min-width: ${settings.popupChartWidthPx}px;`
+          + `min-height: ${settings.popupChartHeightPx}px;`
+          // So there's less flashing when the chart gets loaded.
+          // WET, see `soundedSpeedColor` in './Chart.svelte'
+          + 'background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));'
+        }
+      >
+        <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
+        {#await new Promise(r => setTimeout(r, 300)) then _}
+          Loading...
+        {/await}
+      </div>
+    {:then { default: Chart }}
+      <!-- Need `{#key}` because the Chart component does not properly support switching from one controller
+      type to another on the fly because it is is stateful (i.e. depends on older `TelemetryRecord`s).
+      Try removing this and see if it works.
+      If you're gonna remove this, consider also removing the `controllerType` property from `TelemetryRecord`.
+      (a.k.a. revert this commit). -->
+      {#key latestTelemetryRecord?.controllerType}
+      <Chart
+        {latestTelemetryRecord}
+        volumeThreshold={settings.volumeThreshold}
+        loadedPromise={settingsPromise}
+        widthPx={settings.popupChartWidthPx}
+        heightPx={settings.popupChartHeightPx}
+        lengthSeconds={settings.popupChartLengthInSeconds}
+        jumpPeriod={settings.popupChartJumpPeriod}
+        timeProgressionSpeed={settings.popupChartSpeed}
+        on:click={onChartClick}
+        paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
+        {telemetryUpdatePeriod}
+      />
+      {/key}
+    {/await}
     <!-- TODO it an element is cross-origin and we called `createMediaElementSource` for it and it appears
     to produce sound, don't show the warning. -->
     {#if latestTelemetryRecord?.elementLikelyCorsRestricted}

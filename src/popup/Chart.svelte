@@ -226,7 +226,8 @@
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
     // Order determines z-index
-    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)'; // WET, see the styles at the bottom of the file.
+    // WET, see the styles at the bottom of the file and `background: rgb(` in `{#await}` in './App.svelte'.
+    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
       strokeStyle: undefined,
