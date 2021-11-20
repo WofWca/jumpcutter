@@ -198,11 +198,14 @@
   function rangeInputSettingNameToAttrs(name: PopupAdjustableRangeInputsCapitalized, settings: Settings) {
     // TODO DRY?
     return {
+      'useForInput': tippy,
       'min': settings[`popup${name}Min`],
       'max': settings[`popup${name}Max`],
       'step': settings[`popup${name}Step`],
     };
   }
+  const tippyThemeMyTippy = 'my-tippy';
+  const tippyThemeMyTippyAndPreLine = tippyThemeMyTippy + ' white-space-pre-line';
 
   let timeSavedTooltipContent: HTMLElement;
 
@@ -528,7 +531,7 @@
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
         + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
         + '* No audio distortion, delay or desync\n',
-      theme: 'my-tippy white-space-pre-line',
+      theme: tippyThemeMyTippyAndPreLine,
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
   >
@@ -541,12 +544,20 @@
     >
     <span>Use experimental algorithm</span>
   </label>
+  <!-- TODO async tooltip contents -->
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="Volume threshold"
     {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
     disabled={controllerTypeAlwaysSounded}
+    useForInputParams={{
+      content: 'How quiet it needs to get before we speed up.'
+        + '\nOn the chart, this is the RED horizontal LINE.'
+        + ' The blue line is the current volume of the audio, so when the blue line is below the red line,'
+        +' we consider it to be silent.',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -557,6 +568,11 @@
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
     bind:value={settings.soundedSpeed}
+    useForInputParams={{
+      content: 'The speed at which we play the video when it\'s NOT silent, the "normal" speed.'
+        + '\nOn the chart, the parts with GREEN background are the parts that were played at this speed.',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
@@ -567,18 +583,52 @@
       settings.experimentalControllerType === ControllerKind_CLONING
       || controllerTypeAlwaysSounded
     }
+    useForInputParams={{
+      content: 'The speed at which we play the silent parts.'
+        + '\nOn the chart, the parts with RED background are the parts that were played at this speed.'
+        + (
+          settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
+            ? ('\nNote that it is specified as a multiplier of the sounded speed, so'
+              + ' e.g. if sounded speed is 1.5 and silence speed is 2, the resulting absolute value will be 3.'
+              + ' You can change this behavior on the options page.'
+            )
+            : ''
+        )
+        + '\nIf this value is very high (> ~4) the begginnings of sentences may also start getting skipped',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <RangeSlider
-    label="Margin before (side effects: audio distortion & audio delay)"
+    label="Margin before"
     {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
     disabled={controllerTypeAlwaysSounded}
+    useForInputParams={{
+      content: 'When it\'s currently silent and then we encounter a loud part, how long before it we need to'
+        + ' slow down (switch to sounded speed).'
+        + '\nThis is mostly to ensure that you can clearly hear the very first letters when someone begins to speak.'
+        + '\nThe value is in seconds.'
+        + '\n\nNOTE that non-zero values will cause audio DISTORTION when switching from silence to sounded speed'
+        + ' AND will add constant audio DELAY equivalent to the value of this setting (these drawbacks do not apply'
+        + ' if you enabled the "experimental algorithm").',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <RangeSlider
     label="Margin after"
     {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
     disabled={controllerTypeAlwaysSounded}
+    useForInputParams={{
+      content: 'This is similar to "margin before". When it was loud and then became silent, how long we need to'
+        + ' wait before speeding up (switching to silence speed).'
+        + '\nThis is mostly to keep pauses in the speech at least to some degree so words don\'t get mushed together'
+        + ' and to ensure that you can clearly hear the very last letters in a sentence.'
+        + '\nThe value is in seconds.'
+        + '\nUnlike "margin before" this doesn\'t cause audio distortion & delay (but it\'s not to say that'
+        + ' these settings are interchangeable).',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->
