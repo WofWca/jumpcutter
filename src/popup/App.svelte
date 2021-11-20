@@ -159,7 +159,7 @@
       if (!connected) {
         considerConnectionFailed = true;
       }
-    }, 70);
+    }, 300);
   })();
 
   // This is to react to settings changes outside the popup. Currently I don't really see how settings can change from
