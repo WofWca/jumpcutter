@@ -226,7 +226,7 @@
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
     // Order determines z-index
-    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
+    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)'; // WET, see the styles at the bottom of the file.
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
       strokeStyle: undefined,
@@ -665,6 +665,11 @@
   canvas {
     /* So it doesn't create additional margin around it. */
     display: block;
+    /* Otherwise it's transparent by default and will remain such until the first `render()` call.
+    This is to reduce flashing during loading. */
+    /* WET, see `soundedSpeedColor` above. */
+    background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));
+    /* background: white; */
   }
   canvas.paused {
     opacity: 0.2;
