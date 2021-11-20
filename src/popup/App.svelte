@@ -16,7 +16,6 @@
   import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
-  import { assertNever } from '@/helpers';
 
   let settings: Settings;
 
@@ -467,62 +466,20 @@
     <!-- TODO it an element is cross-origin and we called `createMediaElementSource` for it and it appears
     to produce sound, don't show the warning. -->
     {#if latestTelemetryRecord?.elementLikelyCorsRestricted}
-      <section
-        style={
-          'margin: 1rem 0 0.25rem 0;'
-          + 'text-align: center;'
-          + 'text-align: center;'
-          + `width: ${settings.popupChartWidthPx}px`
-        }
-      >
-        <span>⚠️ This media is </span>
-        <i>likely</i>
-        <span>
-          unsupported{
-          #if settings.experimentalControllerType === ControllerKind_STRETCHING}
-            {' and could get muted if we attach to it.'}
-          {:else if settings.experimentalControllerType === ControllerKind_CLONING
-            }, silence skipping won't work properly.
-          {:else}
-            {assertNever(settings.experimentalControllerType)}
-          {/if}
-        </span>
-        <label
-          style="display: inline-flex; align-items: center; margin-left: 0.5rem"
-        >
-          <input
-            type="checkbox"
-            checked={!settings.dontAttachToCrossOriginMedia}
-            on:change={e => settings.dontAttachToCrossOriginMedia = !e.target.checked}
-          />
-          Try anyway
-          <!-- Try -->
-        </label>
-        {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
-          <br>
-          <!-- <span>⚠️ Reload the page to umute the media.</span> -->
-          <span>⚠️ Reload the page if the media got muted.</span>
-        {/if}
-        <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
-        of `elementCurrentSrc`, but let's future-prove it. -->
-        {#if latestTelemetryRecord.elementCurrentSrc}
-          <br>
-          Or
-          <!-- Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
-          Also `nofollow` is pointless, but it's canonical, so I let it be.
-          Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
-          in the future. -->
-          <!-- Added `title` because at least in Chromium it doesn't show the link's href on the screen when
-          you hover over it or focus. But they always can rightclick -> copy link address.
-          TODO there's probably a better way. -->
-          <a
-            href={latestTelemetryRecord.elementCurrentSrc}
-            target="_blank"
-            rel="external nofollow noreferrer noopener"
-            title={latestTelemetryRecord.elementCurrentSrc}
-          >try opening it directly</a>
-        {/if}
-      </section>
+      {#await import(
+        /* webpackExports: ['default'] */
+        './MediaUnsupportedMessage.svelte'
+      )}
+        <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
+        {#await new Promise(r => setTimeout(r, 300)) then _}
+          Loading...
+        {/await}
+      {:then { default: MediaUnsupportedMessage }}
+        <MediaUnsupportedMessage
+          {latestTelemetryRecord}
+          {settings}
+        />
+      {/await}
     {/if}
   {/if}
   <label
