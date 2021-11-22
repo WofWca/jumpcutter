@@ -570,7 +570,7 @@
             )
             : ''
         )
-        + '\nIf this value is very high (> ~4) the begginnings of sentences may also start getting skipped',
+        + '\nIf this value is very high (> ~4) the begginnings of sentences may also start getting skipped.',
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
