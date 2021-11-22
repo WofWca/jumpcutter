@@ -570,7 +570,7 @@
             )
             : ''
         )
-        + '\nIf this value is very high (> ~4) the begginnings of sentences may also start getting skipped.',
+        + '\n⚠️ If this value is very high (> ~4) the begginnings of sentences may also start getting skipped.',
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -584,7 +584,7 @@
         + ' slow down (switch to sounded speed).'
         + '\nThis is mostly to ensure that you can clearly hear the very first letters when someone begins to speak.'
         + '\nThe value is in seconds.'
-        + '\n\nNOTE that non-zero values will cause audio DISTORTION when switching from silence to sounded speed'
+        + '\n\n⚠️ Note that non-zero values will cause audio DISTORTION when switching from silence to sounded speed'
         + ' AND will add constant audio DELAY equivalent to the value of this setting (these drawbacks do not apply'
         + ' if you enabled the "experimental algorithm").',
       theme: tippyThemeMyTippyAndPreLine,
