@@ -128,7 +128,7 @@
             // not get called when `prevSpeedChange` is `undefined`?
             // TODO also don't create a new object for performance?
             speedChange = {
-              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
+              time: -Infinity, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
               value: 1,
             };
           }
@@ -139,7 +139,7 @@
           // function's contract.
           // When I wrote this, the [2]nd speed change was only required for output delay calculations.
           speedChange = {
-            time: Number.MIN_VALUE,
+            time: -Infinity,
             value: lastSpeedChange.value,
           }
           break;
