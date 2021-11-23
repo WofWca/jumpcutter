@@ -327,11 +327,23 @@ export default class AllMediaElementsController {
     //
     // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
     // which wrap around a video element, which is not ever supposed to be in focus.
-    //
-    // `useCapture` is true because see `overrideWebsiteHotkeys`.
-    document.addEventListener('keydown', handleKeydown, true);
-    this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydown, true));
-
+    assertDev(this.settings);
+    // Why not always attach with `useCapture = true`? For performance.
+    // TODO but if the user changed `overrideWebsiteHotkeys` for some binding, an extension reload will
+    // be required. React to settings changes?
+    if (this.settings.hotkeys.some(binding => binding.overrideWebsiteHotkeys)) {
+      // `useCapture` is true because see `overrideWebsiteHotkeys`.
+      document.addEventListener('keydown', handleKeydown, true);
+      this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydown, true));
+    } else {
+      // Deferred because it's not top priority. But maybe it should be?
+      // Yes, it would mean that the `if (overrideWebsiteHotkeys) {` inside `handleKeydown` will always
+      // be false.
+      const handleKeydownDeferred =
+        (...args: Parameters<typeof handleKeydown>) => setTimeout(handleKeydown, undefined, ...args);
+      document.addEventListener('keydown', handleKeydownDeferred, { passive: true });
+      this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydownDeferred));
+    }
     // this.hotkeyListenerAttached = true;
   }
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
