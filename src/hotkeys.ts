@@ -189,7 +189,7 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
   // TODO. Fuck. This doesn't work properly. E.g. try binding the same key to two "decrease sounded speed" actions.
   // This will result in only the last binding taking effect.
   for (const binding of matchedBindings) {
-    const arg = 'actionArgument' in binding ? binding.actionArgument : undefined;
+    const arg = binding.actionArgument;
     type NumberSettings = KeysOfType<Settings, number>;
     const updateClamped = function (settingName: NumberSettings, argMultiplier: -1 | 1, min: number, max: number) {
       const unclamped = currentSettings[settingName] + argMultiplier * arg!;
