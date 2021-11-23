@@ -187,6 +187,8 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
 {
   const bindingsDefinite = bindings ?? currentSettings.hotkeys;
   // Yes, bindings, with an "S". Binding one key to multiple actions is allowed.
+  // TODO would be cool if we had a cache or something so we can at least find all bindings that have
+  // the same hotkey quickly, without having to go through the whole array every time.
   const matchedBindings = bindingsDefinite.filter(
     binding => eventMatchesCombination(e, binding.keyCombination)
   );
