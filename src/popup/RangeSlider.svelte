@@ -2,6 +2,16 @@
   export let value: number;
   export let label: string;
   export let fractionalDigits: number = 3;
+
+  type SvelteActionParameters = any;
+  type SvelteAction = (node: HTMLElement, parameters: SvelteActionParameters) => {
+    update?: (parameters: SvelteActionParameters) => void,
+    destroy?: () => void,
+  };
+
+  export let useForInput: SvelteAction = () => ({});
+  export let useForInputParams: SvelteActionParameters = undefined;
+
   // export let max;
   // export let min;
   // export let step;
@@ -17,6 +27,7 @@ TODO. -->
       type="range"
       {...$$restProps}
       bind:value
+      use:useForInput={useForInputParams}
     >
     <span
       aria-hidden="true"

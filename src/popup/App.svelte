@@ -7,16 +7,14 @@
     PopupAdjustableRangeInputsCapitalized,
     ControllerKind_ALWAYS_SOUNDED,
   } from '@/settings';
-  import { tippyActionAsyncPreload } from './tippyAction';
+  import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
-  import Chart from './Chart.svelte';
   import type { TelemetryMessage } from '@/content/AllMediaElementsController';
   import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
-  import { assertNever } from '@/helpers';
 
   let settings: Settings;
 
@@ -160,7 +158,7 @@
       if (!connected) {
         considerConnectionFailed = true;
       }
-    }, 70);
+    }, 300);
   })();
 
   // This is to react to settings changes outside the popup. Currently I don't really see how settings can change from
@@ -198,11 +196,14 @@
   function rangeInputSettingNameToAttrs(name: PopupAdjustableRangeInputsCapitalized, settings: Settings) {
     // TODO DRY?
     return {
+      'useForInput': tippy,
       'min': settings[`popup${name}Min`],
       'max': settings[`popup${name}Max`],
       'step': settings[`popup${name}Step`],
     };
   }
+  const tippyThemeMyTippy = 'my-tippy';
+  const tippyThemeMyTippyAndPreLine = tippyThemeMyTippy + ' white-space-pre-line';
 
   let timeSavedTooltipContent: HTMLElement;
 
@@ -305,7 +306,7 @@
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
     <span
       class="others__item"
-      use:tippyActionAsyncPreload={{
+      use:tippy={{
         content: 'Volume',
         theme: 'my-tippy',
       }}
@@ -334,7 +335,7 @@
       type="button"
       class="others__item"
       style="border: none; padding: 0; background: unset; font: inherit;"
-      use:tippyActionAsyncPreload={{
+      use:tippy={{
         content: timeSavedTooltipContent,
         theme: 'my-tippy',
         hideOnClick: false,
@@ -441,94 +442,72 @@
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
-    <!-- Need `{#key}` because the Chart component does not properly support switching from one controller
-    type to another on the fly because it is is stateful (i.e. depends on older `TelemetryRecord`s).
-    Try removing this and see if it works.
-    If you're gonna remove this, consider also removing the `controllerType` property from `TelemetryRecord`.
-    (a.k.a. revert this commit). -->
-    {#key latestTelemetryRecord?.controllerType}
-    <Chart
-      {latestTelemetryRecord}
-      volumeThreshold={settings.volumeThreshold}
-      loadedPromise={settingsPromise}
-      widthPx={settings.popupChartWidthPx}
-      heightPx={settings.popupChartHeightPx}
-      lengthSeconds={settings.popupChartLengthInSeconds}
-      jumpPeriod={settings.popupChartJumpPeriod}
-      timeProgressionSpeed={settings.popupChartSpeed}
-      on:click={onChartClick}
-      paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
-      {telemetryUpdatePeriod}
-    />
-    {/key}
+    {#await import(
+      /* webpackExports: ['default'] */
+      './Chart.svelte'
+    )}
+      <div
+        style={
+          `min-width: ${settings.popupChartWidthPx}px;`
+          + `min-height: ${settings.popupChartHeightPx}px;`
+          // So there's less flashing when the chart gets loaded.
+          // WET, see `soundedSpeedColor` in './Chart.svelte'
+          + 'background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));'
+        }
+      >
+        <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
+        {#await new Promise(r => setTimeout(r, 300)) then _}
+          Loading...
+        {/await}
+      </div>
+    {:then { default: Chart }}
+      <!-- Need `{#key}` because the Chart component does not properly support switching from one controller
+      type to another on the fly because it is is stateful (i.e. depends on older `TelemetryRecord`s).
+      Try removing this and see if it works.
+      If you're gonna remove this, consider also removing the `controllerType` property from `TelemetryRecord`.
+      (a.k.a. revert this commit). -->
+      {#key latestTelemetryRecord?.controllerType}
+      <Chart
+        {latestTelemetryRecord}
+        volumeThreshold={settings.volumeThreshold}
+        loadedPromise={settingsPromise}
+        widthPx={settings.popupChartWidthPx}
+        heightPx={settings.popupChartHeightPx}
+        lengthSeconds={settings.popupChartLengthInSeconds}
+        jumpPeriod={settings.popupChartJumpPeriod}
+        timeProgressionSpeed={settings.popupChartSpeed}
+        on:click={onChartClick}
+        paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
+        {telemetryUpdatePeriod}
+      />
+      {/key}
+    {/await}
     <!-- TODO it an element is cross-origin and we called `createMediaElementSource` for it and it appears
     to produce sound, don't show the warning. -->
     {#if latestTelemetryRecord?.elementLikelyCorsRestricted}
-      <section
-        style={
-          'margin: 1rem 0 0.25rem 0;'
-          + 'text-align: center;'
-          + 'text-align: center;'
-          + `width: ${settings.popupChartWidthPx}px`
-        }
-      >
-        <span>⚠️ This media is </span>
-        <i>likely</i>
-        <span>
-          unsupported{
-          #if settings.experimentalControllerType === ControllerKind_STRETCHING}
-            {' and could get muted if we attach to it.'}
-          {:else if settings.experimentalControllerType === ControllerKind_CLONING
-            }, silence skipping won't work properly.
-          {:else}
-            {assertNever(settings.experimentalControllerType)}
-          {/if}
-        </span>
-        <label
-          style="display: inline-flex; align-items: center; margin-left: 0.5rem"
-        >
-          <input
-            type="checkbox"
-            checked={!settings.dontAttachToCrossOriginMedia}
-            on:change={e => settings.dontAttachToCrossOriginMedia = !e.target.checked}
-          />
-          Try anyway
-          <!-- Try -->
-        </label>
-        {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
-          <br>
-          <!-- <span>⚠️ Reload the page to umute the media.</span> -->
-          <span>⚠️ Reload the page if the media got muted.</span>
-        {/if}
-        <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
-        of `elementCurrentSrc`, but let's future-prove it. -->
-        {#if latestTelemetryRecord.elementCurrentSrc}
-          <br>
-          Or
-          <!-- Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
-          Also `nofollow` is pointless, but it's canonical, so I let it be.
-          Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
-          in the future. -->
-          <!-- Added `title` because at least in Chromium it doesn't show the link's href on the screen when
-          you hover over it or focus. But they always can rightclick -> copy link address.
-          TODO there's probably a better way. -->
-          <a
-            href={latestTelemetryRecord.elementCurrentSrc}
-            target="_blank"
-            rel="external nofollow noreferrer noopener"
-            title={latestTelemetryRecord.elementCurrentSrc}
-          >try opening it directly</a>
-        {/if}
-      </section>
+      {#await import(
+        /* webpackExports: ['default'] */
+        './MediaUnsupportedMessage.svelte'
+      )}
+        <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
+        {#await new Promise(r => setTimeout(r, 300)) then _}
+          Loading...
+        {/await}
+      {:then { default: MediaUnsupportedMessage }}
+        <MediaUnsupportedMessage
+          {latestTelemetryRecord}
+          {settings}
+        />
+      {/await}
     {/if}
   {/if}
   <label
-    use:tippyActionAsyncPreload={{
+    use:tippy={{
       content: '* Bare minimum usability\n'
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
         + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
         + '* No audio distortion, delay or desync\n',
-      theme: 'my-tippy white-space-pre-line',
+      theme: tippyThemeMyTippyAndPreLine,
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
   >
@@ -541,12 +520,20 @@
     >
     <span>Use experimental algorithm</span>
   </label>
+  <!-- TODO async tooltip contents -->
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="Volume threshold"
     {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
     disabled={controllerTypeAlwaysSounded}
+    useForInputParams={{
+      content: 'How quiet it needs to get before we speed up.'
+        + '\nOn the chart, this is the RED horizontal LINE.'
+        + ' The blue line is the current volume of the audio, so when the blue line is below the red line,'
+        +' we consider it to be silent.',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <datalist id="sounded-speed-datalist">
     <option>1</option>
@@ -557,6 +544,11 @@
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
     bind:value={settings.soundedSpeed}
+    useForInputParams={{
+      content: 'The speed at which we play the video when it\'s NOT silent, the "normal" speed.'
+        + '\nOn the chart, the parts with GREEN background are the parts that were played at this speed.',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <RangeSlider
     label="Silence speed ({silenceSpeedLabelClarification})"
@@ -567,18 +559,52 @@
       settings.experimentalControllerType === ControllerKind_CLONING
       || controllerTypeAlwaysSounded
     }
+    useForInputParams={{
+      content: 'The speed at which we play the silent parts.'
+        + '\nOn the chart, the parts with RED background are the parts that were played at this speed.'
+        + (
+          settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
+            ? ('\nNote that it is specified as a multiplier of the sounded speed, so'
+              + ' e.g. if sounded speed is 1.5 and silence speed is 2, the resulting absolute value will be 3.'
+              + ' You can change this behavior on the options page.'
+            )
+            : ''
+        )
+        + '\n⚠️ If this value is very high (> ~4) the begginnings of sentences may also start getting skipped.',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <RangeSlider
-    label="Margin before (side effects: audio distortion & audio delay)"
+    label="Margin before"
     {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
     disabled={controllerTypeAlwaysSounded}
+    useForInputParams={{
+      content: 'When it\'s currently silent and then we encounter a loud part, how long before it we need to'
+        + ' slow down (switch to sounded speed).'
+        + '\nThis is mostly to ensure that you can clearly hear the very first letters when someone begins to speak.'
+        + '\nThe value is in seconds.'
+        + '\n\n⚠️ Note that non-zero values will cause audio DISTORTION when switching from silence to sounded speed'
+        + ' AND will add constant audio DELAY equivalent to the value of this setting (these drawbacks do not apply'
+        + ' if you enabled the "experimental algorithm").',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   <RangeSlider
     label="Margin after"
     {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
     disabled={controllerTypeAlwaysSounded}
+    useForInputParams={{
+      content: 'This is similar to "margin before". When it was loud and then became silent, how long we need to'
+        + ' wait before speeding up (switching to silence speed).'
+        + '\nThis is mostly to keep pauses in the speech at least to some degree so words don\'t get mushed together'
+        + ' and to ensure that you can clearly hear the very last letters in a sentence.'
+        + '\nThe value is in seconds.'
+        + '\nUnlike "margin before" this doesn\'t cause audio distortion & delay (but it\'s not to say that'
+        + ' these settings are interchangeable).',
+      theme: tippyThemeMyTippyAndPreLine,
+    }}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->

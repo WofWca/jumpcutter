@@ -1,8 +1,8 @@
 import Lookahead from './Lookahead';
-import type { MediaTime, AnyTime } from '@/helpers';
-import type { Settings as ExtensionSettings } from '@/settings';
-import { ControllerKind } from '@/settings';
 import { assertDev, SpeedName } from '@/helpers';
+import type { MediaTime, AnyTime } from '@/helpers';
+import { ControllerKind } from '@/settings';
+import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
 

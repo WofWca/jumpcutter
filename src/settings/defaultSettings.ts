@@ -19,8 +19,13 @@ export const defaultSettings: Readonly<Settings> = {
   // randomly.
   // * It shows the user that there is such functionality.
   // * People who have installed this extension are expected to prefer a faster `soundedSpeed`.
-  soundedSpeed:         1.5,
-  previousSoundedSpeed: 1.5,
+  // Arguments agains:
+  // * At a first glance you may think that if videos are being playing at a faster speed then it means
+  // that the extension thinks that the whole video is silent and is trying to skip silence this way.
+  // * It's better to start simple and not force the user to go to settings if they don't like
+  // `soundedSpeed !== 1`.
+  soundedSpeed:         1,
+  previousSoundedSpeed: 1,
   enabled: enabledSettingDefaultValue,
   // Seems like new users get immediately scared by the sound distortion the extension causes, so let's let users
   // enable marginBefore manually IF they start noticing that they need it.

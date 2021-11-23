@@ -128,7 +128,7 @@
             // not get called when `prevSpeedChange` is `undefined`?
             // TODO also don't create a new object for performance?
             speedChange = {
-              time: Number.MIN_VALUE, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
+              time: -Infinity, // To guarantee `targetTimeIsWithinCurrentSpeed` being to `true`.
               value: 1,
             };
           }
@@ -139,7 +139,7 @@
           // function's contract.
           // When I wrote this, the [2]nd speed change was only required for output delay calculations.
           speedChange = {
-            time: Number.MIN_VALUE,
+            time: -Infinity,
             value: lastSpeedChange.value,
           }
           break;
@@ -226,6 +226,7 @@
     stretchSeries = new TimeSeries();
     shrinkSeries = new TimeSeries();
     // Order determines z-index
+    // WET, see the styles at the bottom of the file and `background: rgb(` in `{#await}` in './App.svelte'.
     const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
     const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
     smoothie.addTimeSeries(soundedSpeedSeries, {
@@ -665,6 +666,11 @@
   canvas {
     /* So it doesn't create additional margin around it. */
     display: block;
+    /* Otherwise it's transparent by default and will remain such until the first `render()` call.
+    This is to reduce flashing during loading. */
+    /* WET, see `soundedSpeedColor` above. */
+    background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));
+    /* background: white; */
   }
   canvas.paused {
     opacity: 0.2;
