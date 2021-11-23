@@ -175,20 +175,27 @@ export function eventTargetIsInput(event: KeyboardEvent): boolean {
 export type NonSettingsActions = Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>;
 /**
  * @param bindings - custom keybindings array. Defaults to {@link currentSettings.hotkeys}
+ * @returns `undefined` when no actions need to be performed (equivalent to empty `settingsNewValues`
+ * & `nonSettingsActions`).
  */
 export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): [
   settingsNewValues: Partial<Settings>,
   nonSettingsActions: NonSettingsActions,
   overrideWebsiteHotkeys: boolean,
-] {
+]
+| undefined
+{
   const bindingsDefinite = bindings ?? currentSettings.hotkeys;
-  const settingsNewValues: ReturnType<typeof keydownEventToActions>[0] = {};
-  const nonSettingsActions: ReturnType<typeof keydownEventToActions>[1] = [];
-  let overrideWebsiteHotkeys = false;
   // Yes, bindings, with an "S". Binding one key to multiple actions is allowed.
   const matchedBindings = bindingsDefinite.filter(
     binding => eventMatchesCombination(e, binding.keyCombination)
   );
+  if (!matchedBindings.length) {
+    return;
+  }
+  const settingsNewValues: Exclude<ReturnType<typeof keydownEventToActions>, undefined>[0] = {};
+  const nonSettingsActions: Exclude<ReturnType<typeof keydownEventToActions>, undefined>[1] = [];
+  let overrideWebsiteHotkeys = false;
   // TODO. Fuck. This doesn't work properly. E.g. try binding the same key to two "decrease sounded speed" actions.
   // This will result in only the last binding taking effect.
   for (const binding of matchedBindings) {
