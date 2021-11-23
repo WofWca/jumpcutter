@@ -118,14 +118,14 @@ export type HotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
 );
 
 export function eventToCombination(e: KeyboardEvent): KeyCombination {
-  const combination = {
+  const modifiers = modifierFlagPropNames.filter(flagName => e[flagName]);
+  const combination: KeyCombination = {
     code: e.code,
+  };
+  if (modifiers.length) {
     // But this can create objects like `{ code: 'ControlLeft', modifiers: ['ctrlKey'] }`, which is redundant. TODO?
     // Or leave it as it is, just modify the `combinationToString` function to account for it?
-    modifiers: modifierFlagPropNames.filter(flagName => e[flagName]),
-  };
-  if (combination.modifiers.length === 0) {
-    delete (combination as KeyCombination).modifiers;
+    combination.modifiers = modifiers;
   }
   return combination;
 }
