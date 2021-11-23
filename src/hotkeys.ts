@@ -191,8 +191,8 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
   for (const binding of matchedBindings) {
     const arg = 'actionArgument' in binding ? binding.actionArgument : undefined;
     type NumberSettings = KeysOfType<Settings, number>;
-    const updateClamped = function (settingName: NumberSettings, sign: '+' | '-', min: number, max: number) {
-      const unclamped = currentSettings[settingName] + (sign === '-' ? -1 : 1) * arg!;
+    const updateClamped = function (settingName: NumberSettings, argMultiplier: -1 | 1, min: number, max: number) {
+      const unclamped = currentSettings[settingName] + argMultiplier * arg!;
       settingsNewValues[settingName] = clamp(unclamped, min, max);
     };
     // Gosh frick it. We only update previous values in this function and nowhere else. So when the user changes,
@@ -215,29 +215,29 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       // Maybe instead do not allow decreasing it from 0.5 to 0.2 (like we do now for sounded/silence speeds)?
       // Or why do you assume it has to be so that the value
       // is a multiple of the step. Why can't it be 0.8/1.3/1.8, for example?
-      case HotkeyAction.INCREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '+', 0, 1); break;
-      case HotkeyAction.DECREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '-', 0, 1); break;
+      case HotkeyAction.INCREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', 1, 0, 1); break;
+      case HotkeyAction.DECREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', -1, 0, 1); break;
       case HotkeyAction.SET_VOLUME_THRESHOLD: settingsNewValues.volumeThreshold = arg; break;
       case HotkeyAction.TOGGLE_VOLUME_THRESHOLD: toggleSettingValue('volumeThreshold'); break;
       case HotkeyAction.INCREASE_SOUNDED_SPEED:
-        updateClamped('soundedSpeed', '+', binding.actionArgument!, maxSpeedClamp); break;
+        updateClamped('soundedSpeed', 1, binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.DECREASE_SOUNDED_SPEED:
-        updateClamped('soundedSpeed', '-', binding.actionArgument!, maxSpeedClamp); break;
+        updateClamped('soundedSpeed', -1, binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.SET_SOUNDED_SPEED: settingsNewValues.soundedSpeed = arg; break;
       case HotkeyAction.TOGGLE_SOUNDED_SPEED: toggleSettingValue('soundedSpeed'); break;
       // TODO how about do different `clamps` for 'absolute' and 'relativeToSoundedSpeed' specification methods?
       case HotkeyAction.INCREASE_SILENCE_SPEED:
-        updateClamped('silenceSpeedRaw', '+', binding.actionArgument!, maxSpeedClamp); break;
+        updateClamped('silenceSpeedRaw', 1, binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.DECREASE_SILENCE_SPEED:
-        updateClamped('silenceSpeedRaw', '-', binding.actionArgument!, maxSpeedClamp); break;
+        updateClamped('silenceSpeedRaw', -1, binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.SET_SILENCE_SPEED: settingsNewValues.silenceSpeedRaw = arg; break;
       case HotkeyAction.TOGGLE_SILENCE_SPEED: toggleSettingValue('silenceSpeedRaw'); break;
-      case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;
-      case HotkeyAction.DECREASE_MARGIN_BEFORE: updateClamped('marginBefore', '-', 0, 1); break;
+      case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', 1, 0, 1); break;
+      case HotkeyAction.DECREASE_MARGIN_BEFORE: updateClamped('marginBefore', -1, 0, 1); break;
       case HotkeyAction.SET_MARGIN_BEFORE: settingsNewValues.marginBefore = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_BEFORE: toggleSettingValue('marginBefore'); break;
-      case HotkeyAction.INCREASE_MARGIN_AFTER: updateClamped('marginAfter', '+', 0, 10); break;
-      case HotkeyAction.DECREASE_MARGIN_AFTER: updateClamped('marginAfter', '-', 0, 10); break;
+      case HotkeyAction.INCREASE_MARGIN_AFTER: updateClamped('marginAfter', 1, 0, 10); break;
+      case HotkeyAction.DECREASE_MARGIN_AFTER: updateClamped('marginAfter', -1, 0, 10); break;
       case HotkeyAction.SET_MARGIN_AFTER: settingsNewValues.marginAfter = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_AFTER: toggleSettingValue('marginAfter'); break;
       case HotkeyAction.ADVANCE:
