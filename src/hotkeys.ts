@@ -129,6 +129,10 @@ export function eventToCombination(e: KeyboardEvent): KeyCombination {
   }
   return combination;
 }
+export function eventMatchesCombination(event: KeyboardEvent, combination: KeyCombination): boolean {
+  return combination.code === event.code
+    && modifierFlagPropNames.every(key => event[key] === (combination.modifiers ?? []).includes(key))
+}
 
 export function combinationIsEqual(a: KeyCombination, b: KeyCombination): boolean {
   const modifiersA = a.modifiers ?? [];
@@ -181,10 +185,9 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
   const settingsNewValues: ReturnType<typeof keydownEventToActions>[0] = {};
   const nonSettingsActions: ReturnType<typeof keydownEventToActions>[1] = [];
   let overrideWebsiteHotkeys = false;
-  const executedCombination = eventToCombination(e);
   // Yes, bindings, with an "S". Binding one key to multiple actions is allowed.
   const matchedBindings = bindingsDefinite.filter(
-    binding => combinationIsEqual(executedCombination, binding.keyCombination)
+    binding => eventMatchesCombination(e, binding.keyCombination)
   );
   // TODO. Fuck. This doesn't work properly. E.g. try binding the same key to two "decrease sounded speed" actions.
   // This will result in only the last binding taking effect.
