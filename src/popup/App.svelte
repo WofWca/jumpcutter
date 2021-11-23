@@ -497,6 +497,7 @@
         <MediaUnsupportedMessage
           {latestTelemetryRecord}
           {settings}
+          on:dontAttachToCrossOriginMediaChange={({ detail }) => settings.dontAttachToCrossOriginMedia = detail}
         />
       {/await}
     {/if}
