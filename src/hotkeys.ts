@@ -1,5 +1,5 @@
 import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings } from "./settings";
-import { clamp, assertNever, DeepReadonly, KeysOfType } from "./helpers";
+import { clamp, assertNever, DeepReadonly, KeysOfType, assertDev } from "./helpers";
 
 // I've got a feeling that this code will become obsolete sooner than it should. TODO maybe use a library?
 
@@ -240,19 +240,22 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       case HotkeyAction.DECREASE_MARGIN_AFTER: updateClamped('marginAfter', -1, 0, 10); break;
       case HotkeyAction.SET_MARGIN_AFTER: settingsNewValues.marginAfter = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_AFTER: toggleSettingValue('marginAfter'); break;
-      case HotkeyAction.ADVANCE:
-      case HotkeyAction.REWIND:
-      case HotkeyAction.TOGGLE_PAUSE:
-      case HotkeyAction.TOGGLE_MUTE:
-      case HotkeyAction.INCREASE_VOLUME:
-      case HotkeyAction.DECREASE_VOLUME:
-      {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const assertNonSettingsAction: NonSettingsAction = binding.action; // TODO is there a not haсky way to do this?
+      default: {
+        if (process.env.NODE_ENV !== 'production') {
+          if (
+            HotkeyAction.ADVANCE !== binding.action
+            && HotkeyAction.REWIND !== binding.action
+            && HotkeyAction.TOGGLE_PAUSE !== binding.action
+            && HotkeyAction.TOGGLE_MUTE !== binding.action
+            && HotkeyAction.INCREASE_VOLUME !== binding.action
+            && HotkeyAction.DECREASE_VOLUME !== binding.action
+          ) {
+            assertNever(binding.action);
+          }
+        }
+
         nonSettingsActions.push(binding as HotkeyBinding<NonSettingsAction>)
-        break;
       }
-      default: assertNever(binding.action);
     }
 
     if (binding.overrideWebsiteHotkeys) {
