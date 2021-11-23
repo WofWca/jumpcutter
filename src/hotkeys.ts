@@ -160,8 +160,12 @@ export function combinationToString(combination: KeyCombination): string {
 export function eventTargetIsInput(event: KeyboardEvent): boolean {
   const t = event.target as Document | HTMLElement;
   return (
-    'tagName' in t && ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName)
-    || 'isContentEditable' in t && t.isContentEditable
+    ['INPUT', 'SELECT', 'TEXTAREA']
+      // @ts-expect-error 2339 for performance because doing `'tagName' in t` would be redundant, because
+      // it is present most of the time.
+      .includes(t.tagName)
+    // @ts-expect-error 2339 same as above
+    || t.isContentEditable
   );
 }
 export type NonSettingsActions = Array<DeepReadonly<HotkeyBinding<NonSettingsAction>>>;
