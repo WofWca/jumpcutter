@@ -1,4 +1,5 @@
 <script lang="ts">
+import { createEventDispatcher } from 'svelte';
 import { Settings, ControllerKind_CLONING, ControllerKind_STRETCHING, } from '@/settings';
 import type { TelemetryMessage } from '@/content/AllMediaElementsController';
 import { assertNever } from '@/helpers';
@@ -12,6 +13,11 @@ export let latestTelemetryRecord: Pick<TelemetryMessage,
   'createMediaElementSourceCalledForElement'
   | 'elementCurrentSrc'
 >;
+
+const dispatch = createEventDispatcher();
+function onDontAttachToCrossOriginMediaChange(e: Event) {
+  dispatch('dontAttachToCrossOriginMediaChange', !(e.target as HTMLInputElement).checked);
+}
 </script>
 
 <section
@@ -40,7 +46,7 @@ export let latestTelemetryRecord: Pick<TelemetryMessage,
     <input
       type="checkbox"
       checked={!settings.dontAttachToCrossOriginMedia}
-      on:change={e => settings.dontAttachToCrossOriginMedia = !e.target.checked}
+      on:change={onDontAttachToCrossOriginMediaChange}
     />
     Try anyway
     <!-- Try -->
