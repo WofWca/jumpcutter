@@ -168,16 +168,15 @@ export type NonSettingsActions = Array<DeepReadonly<HotkeyBinding<NonSettingsAct
 /**
  * @param bindings - custom keybindings array. Defaults to {@link currentSettings.hotkeys}
  */
-export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): {
+export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): [
   settingsNewValues: Partial<Settings>,
   nonSettingsActions: NonSettingsActions,
-  overrideWebsiteHotkeys?: true, // TODO. Doesn't this look a bit odd?
-} {
+  overrideWebsiteHotkeys: boolean,
+] {
   const bindingsDefinite = bindings ?? currentSettings.hotkeys;
-  const actions: ReturnType<typeof keydownEventToActions> = {
-    settingsNewValues: {},
-    nonSettingsActions: [],
-  };
+  const settingsNewValues: ReturnType<typeof keydownEventToActions>[0] = {};
+  const nonSettingsActions: ReturnType<typeof keydownEventToActions>[1] = [];
+  let overrideWebsiteHotkeys = false;
   const executedCombination = eventToCombination(e);
   // Yes, bindings, with an "S". Binding one key to multiple actions is allowed.
   const matchedBindings = bindingsDefinite.filter(
@@ -190,7 +189,7 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
     type NumberSettings = KeysOfType<Settings, number>;
     const updateClamped = function (settingName: NumberSettings, sign: '+' | '-', min: number, max: number) {
       const unclamped = currentSettings[settingName] + (sign === '-' ? -1 : 1) * arg!;
-      actions.settingsNewValues[settingName] = clamp(unclamped, min, max);
+      settingsNewValues[settingName] = clamp(unclamped, min, max);
     };
     // Gosh frick it. We only update previous values in this function and nowhere else. So when the user changes,
     // for example, volumeThreshold from X to Y and then presses a hotkey to toggle volumeThreshold to X, it would not
@@ -198,7 +197,7 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
     // surface, so it's not super crucial. TODO fix.
     const toggleSettingValue = (key: TogglableSettings) => {
       const prevValueSettingKey = settingKeyToPreviousValueKey[key];
-      actions.settingsNewValues[key] = currentSettings[key] === arg
+      settingsNewValues[key] = currentSettings[key] === arg
         ? currentSettings[prevValueSettingKey]
         : arg;
     };
@@ -214,28 +213,28 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       // is a multiple of the step. Why can't it be 0.8/1.3/1.8, for example?
       case HotkeyAction.INCREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '+', 0, 1); break;
       case HotkeyAction.DECREASE_VOLUME_THRESHOLD: updateClamped('volumeThreshold', '-', 0, 1); break;
-      case HotkeyAction.SET_VOLUME_THRESHOLD: actions.settingsNewValues.volumeThreshold = arg; break;
+      case HotkeyAction.SET_VOLUME_THRESHOLD: settingsNewValues.volumeThreshold = arg; break;
       case HotkeyAction.TOGGLE_VOLUME_THRESHOLD: toggleSettingValue('volumeThreshold'); break;
       case HotkeyAction.INCREASE_SOUNDED_SPEED:
         updateClamped('soundedSpeed', '+', binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.DECREASE_SOUNDED_SPEED:
         updateClamped('soundedSpeed', '-', binding.actionArgument!, maxSpeedClamp); break;
-      case HotkeyAction.SET_SOUNDED_SPEED: actions.settingsNewValues.soundedSpeed = arg; break;
+      case HotkeyAction.SET_SOUNDED_SPEED: settingsNewValues.soundedSpeed = arg; break;
       case HotkeyAction.TOGGLE_SOUNDED_SPEED: toggleSettingValue('soundedSpeed'); break;
       // TODO how about do different `clamps` for 'absolute' and 'relativeToSoundedSpeed' specification methods?
       case HotkeyAction.INCREASE_SILENCE_SPEED:
         updateClamped('silenceSpeedRaw', '+', binding.actionArgument!, maxSpeedClamp); break;
       case HotkeyAction.DECREASE_SILENCE_SPEED:
         updateClamped('silenceSpeedRaw', '-', binding.actionArgument!, maxSpeedClamp); break;
-      case HotkeyAction.SET_SILENCE_SPEED: actions.settingsNewValues.silenceSpeedRaw = arg; break;
+      case HotkeyAction.SET_SILENCE_SPEED: settingsNewValues.silenceSpeedRaw = arg; break;
       case HotkeyAction.TOGGLE_SILENCE_SPEED: toggleSettingValue('silenceSpeedRaw'); break;
       case HotkeyAction.INCREASE_MARGIN_BEFORE: updateClamped('marginBefore', '+', 0, 1); break;
       case HotkeyAction.DECREASE_MARGIN_BEFORE: updateClamped('marginBefore', '-', 0, 1); break;
-      case HotkeyAction.SET_MARGIN_BEFORE: actions.settingsNewValues.marginBefore = arg; break;
+      case HotkeyAction.SET_MARGIN_BEFORE: settingsNewValues.marginBefore = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_BEFORE: toggleSettingValue('marginBefore'); break;
       case HotkeyAction.INCREASE_MARGIN_AFTER: updateClamped('marginAfter', '+', 0, 10); break;
       case HotkeyAction.DECREASE_MARGIN_AFTER: updateClamped('marginAfter', '-', 0, 10); break;
-      case HotkeyAction.SET_MARGIN_AFTER: actions.settingsNewValues.marginAfter = arg; break;
+      case HotkeyAction.SET_MARGIN_AFTER: settingsNewValues.marginAfter = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_AFTER: toggleSettingValue('marginAfter'); break;
       case HotkeyAction.ADVANCE:
       case HotkeyAction.REWIND:
@@ -246,30 +245,30 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
       {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const assertNonSettingsAction: NonSettingsAction = binding.action; // TODO is there a not haсky way to do this?
-        actions.nonSettingsActions.push(binding as HotkeyBinding<NonSettingsAction>)
+        nonSettingsActions.push(binding as HotkeyBinding<NonSettingsAction>)
         break;
       }
       default: assertNever(binding.action);
     }
 
     if (binding.overrideWebsiteHotkeys) {
-      actions.overrideWebsiteHotkeys = true;
+      overrideWebsiteHotkeys = true;
     }
   }
 
   // TODO how about this needs to more to `syncSetSettings` or something?
-  for (const key_ of Object.keys(actions.settingsNewValues)) {
-    const key = key_ as keyof typeof actions.settingsNewValues;
+  for (const key_ of Object.keys(settingsNewValues)) {
+    const key = key_ as keyof typeof settingsNewValues;
     if ((togglableSettings as any).includes(key)) {
       const currValue = currentSettings[key as TogglableSettings];
       const prevValueSettingKey = settingKeyToPreviousValueKey[key as TogglableSettings];
       // Technically the code above should be responsible for the fact that this check always returns true.
       // Or should it?
-      if (actions.settingsNewValues[key] !== currValue) {
-        actions.settingsNewValues[prevValueSettingKey] = currValue;
+      if (settingsNewValues[key] !== currValue) {
+        settingsNewValues[prevValueSettingKey] = currValue;
       }
     }
   }
 
-  return actions;
+  return [settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys];
 }

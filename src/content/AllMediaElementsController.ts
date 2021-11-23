@@ -31,7 +31,7 @@ export type TelemetryMessage =
 
 function executeNonSettingsActions(
   el: HTMLMediaElement,
-  nonSettingsActions: ReturnType<typeof keydownEventToActions>['nonSettingsActions']
+  nonSettingsActions: ReturnType<typeof keydownEventToActions>[1]
 ) {
   for (const action of nonSettingsActions) {
     switch (action.action) {
@@ -292,7 +292,7 @@ export default class AllMediaElementsController {
       if (eventTargetIsInput(e)) return;
       assertDev(this.settings);
       const actions = keydownEventToActions(e, this.settings);
-      const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
+      const [ settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys ] = actions;
 
       // Works because `useCapture` of `addEventListener` is `true`. However, it's not guaranteed to work on every
       // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow. Maybe attach it before
