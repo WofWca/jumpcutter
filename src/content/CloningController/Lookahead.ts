@@ -80,6 +80,7 @@ export default class Lookahead {
     const playbackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
       // Firefox mutes media elements whose `playbackRate > 4`:
       // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1630569#c9
       // TODO?
       ? 4
       // Somewhat arbitrary.
