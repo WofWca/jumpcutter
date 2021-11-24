@@ -165,23 +165,23 @@ export default class Controller {
 
     const { lookahead } = this;
     const maybeSeek = this.maybeSeek.bind(this);
+    let lastHandledSilenceRangeStart: number;
     // TODO Super inefficient, I know.
     const onTimeupdate = () => {
       const { currentTime } = element;
-
-      // Can't just use `currentTime` instead of `upcomingTime` because 'timeupdate' is not fired super often,
-      // so `silenceStart` from `getMaybeSilenceRangeForTime` can be significantly greater than `currentTime`,
-      // which would mean that we should have started a seek a bit earlier.
-      // TODO but this still does not save us from the fact that short silence ranges can be overlooked entirely
-      // (i.e. `silenceStart > currentTime && silenceEnd > currentTime`).
-      // The value is based on how often 'timeupdate' is fired. TODO should make this dynamic?
-      const advance = 0.5;
-      const upcomingTime = currentTime + advance;
-      const maybeUpcomingSilenceRange = this.lookahead.getMaybeSilenceRangeForTime(upcomingTime);
+      const maybeUpcomingSilenceRange = this.lookahead.getNextSilenceRange(currentTime);
       if (!maybeUpcomingSilenceRange) {
         return;
       }
       const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
+      const alreadyHandledThisSilenceRange = lastHandledSilenceRangeStart === silenceStart;
+      if (alreadyHandledThisSilenceRange) {
+        return;
+      }
+      lastHandledSilenceRangeStart = silenceStart;
+      // TODO would it be maybe better to also just do nothing if the next silence range is too far, and
+      // `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`? Would time accuracy
+      // increase?
       const seekAt = Math.max(silenceStart, currentTime);
       const seekTo = silenceEnd;
       const seekInVideoTime = seekAt - currentTime;

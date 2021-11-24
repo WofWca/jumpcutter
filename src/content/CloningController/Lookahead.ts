@@ -253,23 +253,51 @@ export default class Lookahead {
   public ensureInit = once(this._init);
 
   /**
-   * @returns `TimeRange` if `forTime` falls into one, `undefined` otherwise.
    * Can be called before `ensureInit` has finished.
+   * @returns If the `time` argument falls into a silence range, that range is returned.
+   *    `undefined` if there's no next silence range.
    */
-  public getMaybeSilenceRangeForTime(time: MediaTime): TimeRange | undefined {
+  public getNextSilenceRange(time: MediaTime): TimeRange | undefined {
     // TODO I wrote this real quick, no edge cases considered.
     // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
     // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
     // But before you optimize it, check out the comment near `seekCloneIfOriginalElIsPlayingUnprocessedRange`.
     const { starts, ends } = this.silenceRanges;
-    const currentRangeInd = starts.findIndex((start, i) => {
-      const end = ends[i];
-      return start <= time && time <= end;
-    });
-    return currentRangeInd !== -1
-      ? [starts[currentRangeInd], ends[currentRangeInd]]
-      : undefined;
+    const numRanges = ends.length;
+    let closestFutureEnd = Infinity;
+    let closestFutureEndI;
+    for (let i = 0; i < numRanges; i++) {
+      const currEnd = ends[i];
+      if (currEnd > time && currEnd < closestFutureEnd) {
+        closestFutureEnd = currEnd;
+        closestFutureEndI = i;
+      }
+    }
+    if (!closestFutureEndI) {
+      // `time` is past all the ranges.
+      return undefined;
+    }
+    const nextSilenceRange: TimeRange = [starts[closestFutureEndI], ends[closestFutureEndI]];
+    return nextSilenceRange;
   }
+  // /**
+  //  * @returns `TimeRange` if `forTime` falls into one, `undefined` otherwise.
+  //  * Can be called before `ensureInit` has finished.
+  //  */
+  // public getMaybeSilenceRangeForTime(time: MediaTime): TimeRange | undefined {
+  //   // TODO I wrote this real quick, no edge cases considered.
+  //   // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
+  //   // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
+  //   // But before you optimize it, check out the comment near `seekCloneIfOriginalElIsPlayingUnprocessedRange`.
+  //   const { starts, ends } = this.silenceRanges;
+  //   const currentRangeInd = starts.findIndex((start, i) => {
+  //     const end = ends[i];
+  //     return start <= time && time <= end;
+  //   });
+  //   return currentRangeInd !== -1
+  //     ? [starts[currentRangeInd], ends[currentRangeInd]]
+  //     : undefined;
+  // }
   private pushNewSilenceRange(elementTimeStart: MediaTime, elementTimeEnd: MediaTime) {
     this.silenceRanges.starts.push(elementTimeStart);
     this.silenceRanges.ends.push(elementTimeEnd);
