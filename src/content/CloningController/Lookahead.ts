@@ -77,7 +77,7 @@ export default class Lookahead {
     const originalElement = this.originalElement;
 
     // TODO make it depend on `soundedSpeed` and how much silence there is and other stuff.
-    const playbackRate = BUILD_DEFINITIONS.BROWSER ===  'gecko'
+    const playbackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
       // Firefox mutes media elements whose `playbackRate > 4`:
       // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
       // TODO?
