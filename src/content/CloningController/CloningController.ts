@@ -164,10 +164,6 @@ export default class Controller {
     });
 
     const { lookahead } = this;
-    // TODO Super inefficient, I know.
-    const onTimeupdate = () => {
-      this.maybeScheduleMaybeSeek();
-    }
 
     // This indicated that `element.currentSrc` has changed.
     // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
@@ -177,6 +173,10 @@ export default class Controller {
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
 
     await lookahead.ensureInit().then(() => {
+      // TODO Super inefficient, I know.
+      const onTimeupdate = () => {
+        this.maybeScheduleMaybeSeek();
+      }
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
     });
