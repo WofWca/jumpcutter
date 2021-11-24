@@ -98,8 +98,8 @@ export default class Lookahead {
 
     // TODO DRY
     // const smoothingWindowLenght = 0.03;
-    // const smoothingWindowLenght = 0.1;
-    const smoothingWindowLenght = 0.15;
+    // const smoothingWindowLenght = 0.15;
+    const smoothingWindowLenght = 0.05;
     // TODO DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
       const volumeFilter = new VolumeFilterNode(ctx, smoothingWindowLenght, smoothingWindowLenght);
