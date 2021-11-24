@@ -163,8 +163,6 @@ export default class Controller {
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
 
-    const { lookahead } = this;
-
     const onNewSrc = () => {
       // This indicated that `element.currentSrc` has changed.
       // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
@@ -177,7 +175,7 @@ export default class Controller {
     element.addEventListener('loadstart', onNewSrc);
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
 
-    await lookahead.ensureInit().then(() => {
+    await this.lookahead.ensureInit().then(() => {
       // TODO Super inefficient, I know.
       const onTimeupdate = () => {
         this.maybeScheduleMaybeSeek();
