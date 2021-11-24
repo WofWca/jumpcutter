@@ -119,6 +119,14 @@ export default class Lookahead {
 
     const src = ctx.createMediaElementSource(clone);
 
+    // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
+    // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
+    // The following is to compensate for this.
+    // TODO Though the delay value is up for debate. Some might say it should be half the `smoothingWindowLenght`,
+    // or even smaller.
+    const volumeSmoothingCausedDelay = smoothingWindowLenght;
+
+    let currentlySilence = false;
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       src.connect(volumeFilter);
       const silenceDetector = await silenceDetectorP;
@@ -134,24 +142,40 @@ export default class Lookahead {
         const eventTimePlaybackTime = this.clone.currentTime - intrinsicTimePassedSinceEvent;
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
           this.lastSoundedTime = eventTimePlaybackTime;
+
+          currentlySilence = true;
         } else {
           assertDev(this.lastSoundedTime, 'Thought `this.lastSoundedTime` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
-
-          // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
-          // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
-          // The following is to compensate for this.
-          // TODO Though the delay value is up for debate. Some might say it should be half the `smoothingWindowLenght`,
-          // or even smaller.
-          const volumeSmoothingCausedDelay = smoothingWindowLenght;
 
           const marginBeforeIntrinsicTime = volumeSmoothingCausedDelay + this.settings.marginBefore;
           // TODO `this.lastSoundedTime` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
           // this.pushNewSilenceRange(this.lastSoundedTime, this.clone.currentTime - marginBeforeRealTime);
           this.pushNewSilenceRange(this.lastSoundedTime - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
+
+          currentlySilence = false;
         }
       }
     }));
+
+    // If it's currently silent and we've reached the end of the video, `silenceDetector` won't emit
+    // `SilenceDetectorEventType.SILENCE_END` (and righly so), so `pushNewSilenceRange` wouldn't be performed.
+    // Need to handle this case separately.
+    // You could ask - but is it useful at all to just seek to the end of the video, even though there is silence.
+    // The answer - yes, e.g. if the user is watching a playlist, where e.g. in each video there is a silent outro.
+    const onEnded = () => {
+      if (!currentlySilence) {
+        return;
+      }
+      // In case it's due to a seek to the end of the file, so we don't create a silence range of 0 length.
+      if (this.lastSoundedTime === this.clone.duration) {
+        return;
+      }
+      assertDev(this.lastSoundedTime);
+      this.pushNewSilenceRange(this.lastSoundedTime - volumeSmoothingCausedDelay, this.clone.duration);
+    }
+    clone.addEventListener('ended', onEnded, { passive: true });
+    this._onDestroyCallbacks.push(() => clone.removeEventListener('ended', onEnded));
 
     clone.playbackRate = playbackRate;
     // For better performance. TODO however I'm not sure if this can significantly affect volume readings.
