@@ -41,6 +41,64 @@ export interface TelemetryRecord {
   lastScheduledStretchInputTime?: undefined,
 }
 
+const seekDurationProphetHistoryLength = 5;
+const seekDurationProphetNoDataInitialAssumedDuration = 150;
+/**
+ * Tells us how long (based on previous data) the next seek is gonna take.
+ */
+class SeekDurationProphet {
+  el: HTMLMediaElement
+  // TODO replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
+  history: number[] = [];
+  historyAverage = seekDurationProphetNoDataInitialAssumedDuration;
+  _onDestroyCallbacks: Array<() => void> = [];
+  // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
+  // been fired, but before 'seeked'. `performance.now()` is not technically correct, but
+  // handling this being `undefined` separately seems worse.
+  lastSeekStartTime: number = performance.now();
+  constructor (el: HTMLMediaElement) {
+    this.el = el;
+    // Keep in mind that 'seeking' can be fired more than once before 'seeked' is fired, if the previous
+    // seek didn't manage to finish.
+    const onSeeking = this.onSeeking.bind(this);
+    const onSeeked = this.onSeeked.bind(this);
+    el.addEventListener('seeking', onSeeking, { passive: true });
+    el.addEventListener('seeked', onSeeked, { passive: true });
+    this._onDestroyCallbacks.push(() => {
+      el.removeEventListener('seeking', onSeeking);
+      el.removeEventListener('seeked', onSeeked);
+    })
+  }
+  onSeeking(e: Event) {
+    this.lastSeekStartTime = e.timeStamp;
+
+    // TODO probably need to take into account whether a seek has been performed into an unbuffered range
+    // and adjust the seek duration accordingly or not consider it at all.
+    // if (inRanges(this.el.buffered, this.el.currentTime))
+  }
+  onSeeked(e: Event) {
+    const seekDuration = e.timeStamp - this.lastSeekStartTime;
+
+    // if (seekDuration > 2000) return;
+
+    this.history.push(seekDuration);
+    // TODO performance - once this becomes `true`, it will never cease to.
+    if (this.history.length > seekDurationProphetHistoryLength) {
+      this.history.shift();
+    }
+    // TODO performance - only have consider the removed and the added element, not recalculate the whole array
+    // every time
+    const sum = this.history.reduce((acc, curr) => acc + curr);
+    this.historyAverage = sum / this.history.length;
+  }
+  public destroy(): void {
+    this._onDestroyCallbacks.forEach(cb => cb());
+  }
+  get nextSeekDurationMs(): number {
+    return this.historyAverage;
+  }
+}
+
 // TODO a lot of stuff is copy-pasted from StretchingController.
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
@@ -65,6 +123,8 @@ export default class Controller {
   // To be (optionally) assigned by an outside script.
   public timeSavedTracker?: TimeSavedTracker;
 
+  seekDurationProphet: SeekDurationProphet;
+
   constructor(
     element: HTMLMediaElement,
     controllerSettings: ControllerSettings,
@@ -82,6 +142,9 @@ export default class Controller {
     } else {
       this.timeSavedTracker = timeSavedTracker;
     }
+
+    this.seekDurationProphet = new SeekDurationProphet(element);
+    this._onDestroyCallbacks.push(() => this.seekDurationProphet.destroy());
   }
 
   isInitialized(): this is ControllerInitialized {
@@ -179,9 +242,7 @@ export default class Controller {
     }
 
     const seekAmount = seekTo - currentTime;
-    // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
-    // a precise seek (`.currentTime = ...`).
-    const expectedSeekDuration = 0.15;
+    const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
     const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
     // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?
