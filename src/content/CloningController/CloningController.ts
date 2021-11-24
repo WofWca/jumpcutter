@@ -165,10 +165,15 @@ export default class Controller {
 
     const { lookahead } = this;
 
-    // This indicated that `element.currentSrc` has changed.
-    // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
-    // > Its value is changed by the resource selection algorithm
-    const onNewSrc = () => this.throttledReinitLookahead();
+    const onNewSrc = () => {
+      // This indicated that `element.currentSrc` has changed.
+      // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
+      // > Its value is changed by the resource selection algorithm
+      this.throttledReinitLookahead();
+
+      // Not strictly necessary, as it is very unlikely that they would match. Also looks spaghett-y.
+      this.lastHandledSilenceRangeStart = undefined;
+    }
     element.addEventListener('loadstart', onNewSrc);
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
 
