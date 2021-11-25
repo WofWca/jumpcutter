@@ -301,7 +301,7 @@ export default class StretcherAndPitchCorrectorNode {
       PitchSetting.NORMAL
     );
     this.setOutputPitchAt(PitchSetting.NORMAL, endTime, speedupOrSlowdown);
-    
+
     const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
     // So it is changed a bit earlier to make sure that tail time has passed and the pitch value is what we want it to
     // be.
@@ -390,7 +390,7 @@ export default class StretcherAndPitchCorrectorNode {
     for (const node of toneAudioNodes) {
       node.dispose();
     }
-    
+
     if (process.env.NODE_ENV !== 'production') {
       Object.values(this).forEach(propertyVal => {
         if (propertyVal instanceof ToneAudioNode && !(toneAudioNodes as ToneAudioNode[]).includes(propertyVal)) {

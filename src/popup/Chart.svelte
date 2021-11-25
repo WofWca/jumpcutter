@@ -190,7 +190,7 @@
         disabled: true,
       },
       // This doesn't matter as we manually call `.render` anyway.
-      // nonRealtimeData: timeProgressionSpeedIntrinsic, 
+      // nonRealtimeData: timeProgressionSpeedIntrinsic,
       minValue: 0,
       yRangeFunction() {
         if (volumeThreshold > 0) {

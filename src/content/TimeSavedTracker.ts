@@ -189,13 +189,13 @@ export default class TimeSavedTracker {
       const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayTimeConstant);
       // TODO show the math behind this formula. And the ones above maybe.
       const currentSnippetIntegralDecayMultiplier = this._decayTimeConstant * (1 - decayMultiplier)
-  
+
       const getNewDecayedTotal = (accumulatedValue: number, currentSnippetValue: number) =>
         accumulatedValue * decayMultiplier
         // What's that `|| 1`? It's because when `currSnippetDuration === 0`, `currentSnippetValue` is also 0, and the
         // whole also needs to be 0.
         + currentSnippetIntegralDecayMultiplier * currentSnippetValue / (currSnippetDuration || 1);
-  
+
       return [
         getNewDecayedTotal(this._timeSavedComparedToSoundedSpeed, currSnippetTimeSavedComparedToSoundedSpeed),
         getNewDecayedTotal(this._timeSavedComparedToIntrinsicSpeed, currSnippetTimeSavedComparedToIntrinsicSpeed),

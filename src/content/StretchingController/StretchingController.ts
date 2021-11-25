@@ -321,7 +321,7 @@ export default class Controller {
         } else {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SILENCE);
           this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
-  
+
           if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
             // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
             // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921

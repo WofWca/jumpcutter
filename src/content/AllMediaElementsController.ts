@@ -165,7 +165,6 @@ export default class AllMediaElementsController {
     broadcastStatus({ elementLastActivatedAt: this.elementLastActivatedAt });
   }
 
-  
   private async _loadSettings() {
     this.settings = await getSettings();
   }

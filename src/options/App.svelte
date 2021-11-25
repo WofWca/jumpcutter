@@ -456,7 +456,7 @@
 However, in Gecko the whole page is stretched, so the scroll is outside of the document, so it's the same as with
 `position: static;` TODO? -->
 <div class="status-bar">
-  <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is 
+  <!-- `min-height` just so its height doesn't change when "Show errors" text appears (because its button is
   pretty tall. TODO this can be removed when the button is gone). -->
   <p style="min-height: 2rem; opacity: 0.8; display: flex; margin: 0; align-items: center;">
     <!-- TODO doesn't this annoy users by constantly blinking? -->
