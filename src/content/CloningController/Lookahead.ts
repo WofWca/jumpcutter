@@ -60,8 +60,11 @@ export default class Lookahead {
     // BTW, `clone.pause()` also works.
     this._onDestroyCallbacks.push(() => clone.src = '');
 
-    // TODO this probably doesn't cover all cases.
+    // TODO this probably doesn't cover all cases. Maybe it's better to just `originalElement.cloneNode(true)`?
+    // TODO also need to watch for changes of `crossOrigin` (in `CloningController.ts`).
+    clone.crossOrigin = originalElement.crossOrigin;
     clone.src = originalElement.currentSrc;
+
     if (process.env.NODE_ENV !== 'production') {
       const interval = setInterval(() => {
         const cloneSrc = clone.src;
