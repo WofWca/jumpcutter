@@ -378,10 +378,6 @@ export default class AllMediaElementsController {
     const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
 
     const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
-    // I believe 'loadstart' might get emited even if the source didn't change (e.g. `el.load()`
-    // has been called manually), but you pretty much can't change source and begin its playback
-    // without firing the 'loadstart' event.
-    // So this is reliable.
     const onMaybeSourceChange = () => {
       this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
       // TODO perhaps we also need to re-run the controller selection code (which is inside
@@ -389,6 +385,10 @@ export default class AllMediaElementsController {
       // called? There isn't really a point in switching to the `ALWAYS_SOUNDED` controller in that case,
       // is there?
     };
+    // I believe 'loadstart' might get emited even if the source didn't change (e.g. `el.load()`
+    // has been called manually), but you pretty much can't change source and begin its playback
+    // without firing the 'loadstart' event.
+    // So this is reliable.
     el.addEventListener('loadstart', onMaybeSourceChange, { passive: true });
     this._onDetachFromActiveElementCallbacks.push(() => el.removeEventListener('loadstart', onMaybeSourceChange));
 
