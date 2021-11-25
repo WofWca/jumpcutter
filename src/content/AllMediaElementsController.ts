@@ -81,7 +81,6 @@ function getAppropriateControllerType(
   return settings.dontAttachToCrossOriginMedia && elementSourceIsCrossOrigin
     ? ControllerKind.ALWAYS_SOUNDED
     : settings.experimentalControllerType
-  // TODO a setting to disable the cross-origin check.
 }
 
 async function importAndCreateController<T extends ControllerKind>(
