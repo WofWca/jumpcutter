@@ -507,7 +507,8 @@
       content: '* Bare minimum usability\n'
         + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
         + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
-        + '* No audio distortion, delay or desync\n',
+        + '* No audio distortion, delay or desync\n'
+        + '* The chart won\'t display the volume\n',
       theme: tippyThemeMyTippyAndPreLine,
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
