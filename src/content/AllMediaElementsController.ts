@@ -384,7 +384,6 @@ export default class AllMediaElementsController {
     // without firing the 'loadstart' event.
     // So this is reliable.
     const onMaybeSourceChange = () => {
-      console.log(el.currentSrc);
       this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
       // TODO perhaps we also need to re-run the controller selection code (which is inside
       // `reactToSettingsNewValues` right now)? But what if `createMediaElementSource` has already been
