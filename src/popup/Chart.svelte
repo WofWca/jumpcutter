@@ -301,6 +301,10 @@
       // * the `toIntrinsicTime` function's contract to not be breached (i.e. `targetTime` is not too early).
       const delayToAvoidExtrapolationRealTime = telemetryUpdatePeriod;
 
+      // TODO when `el.seeking`, `elementPlaybackActive` is `false`. And seeking happens on every seilence range
+      // when `silenceSpeed === Infinity` (currently that is when the `CloningController` is used), so this causes
+      // jumps. Perhaps we should also base this on `referenceTelemetry`, so it doesn't jump when the video
+      // gets paused?
       if (!r.elementPlaybackActive) {
         // TODO this is incorrect if the speed recently changed. Good enoguh though.
         const delayToAvoidExtrapolationIntrinsicTime
@@ -621,6 +625,9 @@
       if (newSilenceSkippingSeekPerformed) {
         appendToSpeedSeries(lastSilenceSkippingSeek[0] * 1000, SpeedName_SILENCE);
         appendToSpeedSeries(lastSilenceSkippingSeek[1] * 1000, SpeedName_SOUNDED);
+
+        // TODO shouldn't we `setReferenceToLatest` here, because it became incorrect?
+        // It will be detected automatically when the error tolerance is exceeded though.
       }
     }
 
