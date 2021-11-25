@@ -40,27 +40,9 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
       {assertNever(settings.experimentalControllerType)}
     {/if}
   </span>
-  <label
-    style="display: inline-flex; align-items: center; margin-left: 0.5rem"
-  >
-    <input
-      type="checkbox"
-      checked={!settings.dontAttachToCrossOriginMedia}
-      on:change={onDontAttachToCrossOriginMediaChange}
-    />
-    Try anyway
-    <!-- Try -->
-  </label>
-  {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
-    <br>
-    <!-- <span>⚠️ Reload the page to umute the media.</span> -->
-    <span>⚠️ Reload the page if the media got muted.</span>
-  {/if}
   <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
   of `elementCurrentSrc`, but let's future-prove it. -->
   {#if latestTelemetryRecord.elementCurrentSrc}
-    <br>
-    Or
     <!-- Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
     Also `nofollow` is pointless, but it's canonical, so I let it be.
     Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
@@ -73,6 +55,27 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
       target="_blank"
       rel="external nofollow noreferrer noopener"
       title={latestTelemetryRecord.elementCurrentSrc}
-    >try opening it directly</a>
+    >Try opening it directly</a>
+
+    <br>
+    Or
+  {:else}
+    <br>
+  {/if}
+  <label
+    style="display: inline-flex; align-items: center; margin-left: 0.25rem"
+  >
+    <input
+      type="checkbox"
+      checked={!settings.dontAttachToCrossOriginMedia}
+      on:change={onDontAttachToCrossOriginMediaChange}
+    />
+    Try to attach anyway
+    <!-- Try -->
+  </label>
+  {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
+    <br>
+    <!-- <span>⚠️ Reload the page to umute the media.</span> -->
+    <span>⚠️ Reload the page if the media got muted.</span>
   {/if}
 </section>
