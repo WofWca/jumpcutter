@@ -477,7 +477,6 @@
         jumpPeriod={settings.popupChartJumpPeriod}
         timeProgressionSpeed={settings.popupChartSpeed}
         on:click={onChartClick}
-        paused={false}
         {telemetryUpdatePeriod}
       />
       {/key}

@@ -31,7 +31,6 @@
   export let jumpPeriod: number;
   $: jumpPeriodMs = jumpPeriod * 1000;
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
-  export let paused: boolean;
   export let telemetryUpdatePeriod: TimeDelta;
 
   const timeProgressionSpeedIntrinsic = timeProgressionSpeed === 'intrinsicTime';
@@ -357,7 +356,7 @@
 
     let offsetAdjustment;
     (function drawAndScheduleAnother() {
-      if (!paused && latestTelemetryRecord) {
+      if (latestTelemetryRecord) {
         let time = timeProgressionSpeedIntrinsic
           ? sToMs(getExpectedElementCurrentTimeDelayed(
               latestTelemetryRecord,
@@ -671,7 +670,6 @@
   width={widthPx}
   height={heightPx}
   on:click
-  class:paused
 >
   <label>
     Volume
@@ -695,8 +693,5 @@
     /* WET, see `soundedSpeedColor` above. */
     background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));
     /* background: white; */
-  }
-  canvas.paused {
-    opacity: 0.2;
   }
 </style>
