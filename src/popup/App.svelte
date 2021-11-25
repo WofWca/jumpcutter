@@ -477,7 +477,7 @@
         jumpPeriod={settings.popupChartJumpPeriod}
         timeProgressionSpeed={settings.popupChartSpeed}
         on:click={onChartClick}
-        paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
+        paused={false}
         {telemetryUpdatePeriod}
       />
       {/key}

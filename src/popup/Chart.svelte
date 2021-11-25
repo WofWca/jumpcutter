@@ -8,6 +8,8 @@
   import { Settings } from '@/settings';
   import type { TelemetryRecord as StretchingControllerTelemetryRecord }
     from '@/content/StretchingController/StretchingController';
+  import type { TelemetryRecord as CloningControllerTelemetryRecord }
+    from '@/content/CloningController/CloningController';
   import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
     from '@/content/AlwaysSoundedController';
   import debounce from 'lodash/debounce';
@@ -15,7 +17,11 @@
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
-  type TelemetryRecord = StretchingControllerTelemetryRecord | AlwaysSoundedControllerTelemetryRecord;
+  type TelemetryRecord =
+    StretchingControllerTelemetryRecord
+    | CloningControllerTelemetryRecord
+    | AlwaysSoundedControllerTelemetryRecord
+  ;
   export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
@@ -601,6 +607,24 @@
         prevPlaybackRateChange = lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
       }
     }
+
+    if (timeProgressionSpeedIntrinsic && 'lastSilenceSkippingSeek' in r) {
+      const lastSilenceSkippingSeek = r.lastSilenceSkippingSeek
+      const prevSilenceSkippingSeek =
+        (lastHandledTelemetryRecord && 'lastSilenceSkippingSeek' in lastHandledTelemetryRecord)
+          ? lastHandledTelemetryRecord.lastSilenceSkippingSeek
+          : undefined;
+      const newSilenceSkippingSeekPerformed =
+        lastSilenceSkippingSeek
+        && prevSilenceSkippingSeek?.[0] !== lastSilenceSkippingSeek[0];
+      // TODO but if we seek back and then the same silence skipping seek gets performed, it won't be drawn
+      // on the chart because it will consider it "the same". Add a timestamp for every seek?
+      if (newSilenceSkippingSeekPerformed) {
+        appendToSpeedSeries(lastSilenceSkippingSeek[0] * 1000, SpeedName_SILENCE);
+        appendToSpeedSeries(lastSilenceSkippingSeek[1] * 1000, SpeedName_SOUNDED);
+      }
+    }
+
 
     function areStretchObjectsEqual(
       stretchA: StretchInfo | undefined | null,

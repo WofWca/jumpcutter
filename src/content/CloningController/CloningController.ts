@@ -1,10 +1,12 @@
-import Lookahead from './Lookahead';
-import { assertDev, SpeedName } from '@/helpers';
+import Lookahead, { TimeRange } from './Lookahead';
+import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
+import { isPlaybackActive } from '@/content/helpers';
 import { ControllerKind } from '@/settings';
 import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
+import { audioContext } from '@/content/audioContext';
 
 type Time = AnyTime;
 
@@ -27,6 +29,8 @@ export type ControllerSettings =
 
 export interface TelemetryRecord {
   unixTime: Time,
+  intrinsicTime: MediaTime,
+  elementPlaybackActive: boolean,
   contextTime: Time,
   inputVolume: number,
   lastActualPlaybackRateChange: {
@@ -34,6 +38,7 @@ export interface TelemetryRecord {
     value: number,
     name: SpeedName,
   },
+  lastSilenceSkippingSeek?: TimeRange,
   elementVolume: number,
   totalOutputDelay: Time,
   delayFromInputToStretcherOutput: Time,
@@ -117,6 +122,17 @@ export default class Controller {
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
   _onDestroyCallbacks: Array<() => void> = [];
+  _lastSilenceSkippingSeek: TimeRange | undefined;
+  _lastActualPlaybackRateChange: {
+    time: AudioContextTime,
+    value: number,
+    name: SpeedName,
+  } = {
+    // Dummy values (except for `name`), will be ovewritten in `_setSpeed`.
+    name: SpeedName.SOUNDED,
+    time: 0,
+    value: 1,
+  };
 
   lookahead: Lookahead;
 
@@ -271,6 +287,8 @@ export default class Controller {
       // element.fastSeek(seekTo);
 
       this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
+
+      this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
     }
   }
   maybeSeekBounded = this.maybeSeek.bind(this);
@@ -368,6 +386,13 @@ export default class Controller {
     // It's also a good practice.
     // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
     this.element.defaultPlaybackRate = speedVal;
+
+    const speedChangeObj = this._lastActualPlaybackRateChange;
+    // Avoiding creating new objects for performance.
+    speedChangeObj.time = audioContext.currentTime;
+    speedChangeObj.value = speedVal;
+    // Currently the speed is always `SOUNDED`.
+    // speedChangeObj.name = SpeedName.SOUNDED;
   }
 
   get telemetry(): TelemetryRecord {
@@ -379,14 +404,12 @@ export default class Controller {
     // TODO that's a lot of 0s, can we do something about it?
     return {
       unixTime: Date.now() / 1000,
-      // IntrinsicTime: this.element.currentTime,
-      contextTime: 0,
+      intrinsicTime: this.element.currentTime,
+      elementPlaybackActive: isPlaybackActive(this.element),
+      contextTime: audioContext.currentTime,
       inputVolume: 0, // TODO
-      lastActualPlaybackRateChange: {
-        time: 0,
-        value: 1,
-        name: SpeedName.SOUNDED,
-      },
+      lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      lastSilenceSkippingSeek: this._lastSilenceSkippingSeek,
       elementVolume: this.element.volume,
       totalOutputDelay: 0,
       delayFromInputToStretcherOutput: 0,

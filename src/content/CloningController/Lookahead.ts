@@ -16,7 +16,7 @@ type MyTimeRanges = {
   starts: MediaTime[],
   ends: MediaTime[],
 }
-type TimeRange = [start: MediaTime, end: MediaTime];
+export type TimeRange = [start: MediaTime, end: MediaTime];
 
 function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
   // TODO super inefficient, same as with `getNextOutOfRangesTime`.
