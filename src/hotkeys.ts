@@ -1,5 +1,5 @@
 import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings } from "./settings";
-import { clamp, assertNever, DeepReadonly, KeysOfType, assertDev } from "./helpers";
+import { clamp, assertNever, DeepReadonly, KeysOfType } from "./helpers";
 
 // I've got a feeling that this code will become obsolete sooner than it should. TODO maybe use a library?
 
