@@ -623,8 +623,14 @@
       // TODO but if we seek back and then the same silence skipping seek gets performed, it won't be drawn
       // on the chart because it will consider it "the same". Add a timestamp for every seek?
       if (newSilenceSkippingSeekPerformed) {
-        appendToSpeedSeries(lastSilenceSkippingSeek[0] * 1000, SpeedName_SILENCE);
-        appendToSpeedSeries(lastSilenceSkippingSeek[1] * 1000, SpeedName_SOUNDED);
+        const startMs = lastSilenceSkippingSeek[0] * 1000;
+        const endMs = lastSilenceSkippingSeek[1] * 1000;
+        appendToSpeedSeries(startMs, SpeedName_SILENCE);
+        appendToSpeedSeries(endMs, SpeedName_SOUNDED);
+
+        // We don't have data for this period, so let's show just 0.
+        volumeSeries.append(startMs + 0.01, 0);
+        volumeSeries.append(endMs - 0.01, 0);
 
         // TODO shouldn't we `setReferenceToLatest` here, because it became incorrect?
         // It will be detected automatically when the error tolerance is exceeded though.

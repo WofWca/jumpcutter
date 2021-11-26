@@ -1,12 +1,14 @@
+import browser from '@/webextensions-api';
 import Lookahead, { TimeRange } from './Lookahead';
 import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
-import { isPlaybackActive } from '@/content/helpers';
+import { isPlaybackActive, destroyAudioWorkletNode } from '@/content/helpers';
 import { ControllerKind } from '@/settings';
 import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
-import { audioContext } from '@/content/audioContext';
+import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
 
 type Time = AnyTime;
 
@@ -122,6 +124,8 @@ export default class Controller {
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
   _onDestroyCallbacks: Array<() => void> = [];
+  audioContext: AudioContext;
+  getVolume: () => number = () => 0;
   _lastSilenceSkippingSeek: TimeRange | undefined;
   _lastActualPlaybackRateChange: {
     time: AudioContextTime,
@@ -161,6 +165,16 @@ export default class Controller {
 
     this.seekDurationProphet = new SeekDurationProphet(element);
     this._onDestroyCallbacks.push(() => this.seekDurationProphet.destroy());
+
+    // We don't need a high sample rate as this context is currently only used to volume on the chart,
+    // so consider setting it manually to a lower one. But I'm thinking whether it woruld actually
+    // add performance overhead instead (would make resampling harder or something).
+    const audioContext = this.audioContext = new AudioContext({
+      latencyHint: 'playback',
+    });
+    this._onDestroyCallbacks.push(() => {
+      audioContext.close();
+    })
   }
 
   isInitialized(): this is ControllerInitialized {
@@ -169,6 +183,8 @@ export default class Controller {
 
   async init(): Promise<void> {
     const element = this.element;
+
+    const toAwait : Array<Promise<void>> = [];
 
     const {
       playbackRate: elementPlaybackRateBeforeInitialization,
@@ -191,15 +207,75 @@ export default class Controller {
     element.addEventListener('loadstart', onNewSrc);
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
 
-    await this.lookahead.ensureInit().then(() => {
+    toAwait.push(this.lookahead.ensureInit().then(() => {
       // TODO Super inefficient, I know.
       const onTimeupdate = () => {
         this.maybeScheduleMaybeSeek();
       }
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
-    });
+    }));
 
+    {
+      // This is not strictly necessary, so not pushing anything to `toAwait`.
+      // Also mostly copy-pasted from `StretchingController`.
+      const audioContext = this.audioContext;
+      const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
+      // Must be the same so what the user sees matches what the lookahead sees.
+      const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
+      const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
+      const volumeFilterP = volumeFilterProcessorP.then(() => {
+        const volumeFilter = new VolumeFilterNode(
+          audioContext,
+          volumeFilterSmoothingWindowLength,
+          volumeFilterSmoothingWindowLength
+        );
+        this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+        return volumeFilter;
+      });
+      // Why not `createMediaElementSource`? Because:
+      // * There's a risk that the element would get muted due to CORS-restrictions.
+      // * I believe performance drops may cause audio to glitch when it passes through an AudioContext,
+      //     so it's better to do it raw.
+      // But `captureStream` is not well-supported.
+      // Also keep in mind that `createMediaElementSource` and `captureStream` are not 100% interchangeable.
+      // For example, for `el.volume` doesn't affect the volume for `captureStream()`.
+      // TODO fall-back to `createMediaElementSource` if these are not supported?
+      //
+      // TODO if the media is CORS-restricted, this throws an error. You may say that "if it is
+      // CORS-restricted then we won't be able to use the cloning algorithm anyway". Right now you're right,
+      // but in the future we may create the clone inside an <iframe> where it's not CORS-restricted. Wait,
+      // but then it would be leaking information about the contents of the media to the other origin.
+      // Alright, let's discuss it somewhere else.
+      type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
+        captureStream?: () => MediaStream,
+        mozCaptureStream?: () => MediaStream,
+      }
+      const stream =
+        (element as HTMLMediaElementWithMaybeMissingFields).captureStream?.()
+        || (element as HTMLMediaElementWithMaybeMissingFields).mozCaptureStream?.();
+      if (stream) {
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2 ** 5;
+        volumeFilterP.then(volumeFilter => {
+          source.connect(volumeFilter);
+          volumeFilter.connect(analyser);
+        });
+        // Using the minimum possible value for performance, as we're only using the node to get unchanged
+        // output values.
+        const volumeBuffer = new Float32Array(analyser.fftSize);
+        const volumeBufferLastInd = volumeBuffer.length - 1;
+        this.getVolume = () => {
+          analyser.getFloatTimeDomainData(volumeBuffer);
+          return volumeBuffer[volumeBufferLastInd];
+        };
+      } else {
+        this.getVolume = () => 0;
+      }
+    }
+
+    await Promise.all(toAwait);
     this.initialized = true;
     this._resolveInitPromise(this);
 
@@ -399,7 +475,7 @@ export default class Controller {
 
     const speedChangeObj = this._lastActualPlaybackRateChange;
     // Avoiding creating new objects for performance.
-    speedChangeObj.time = audioContext.currentTime;
+    speedChangeObj.time = this.audioContext.currentTime;
     speedChangeObj.value = speedVal;
     // Currently the speed is always `SOUNDED`.
     // speedChangeObj.name = SpeedName.SOUNDED;
@@ -416,8 +492,8 @@ export default class Controller {
       unixTime: Date.now() / 1000,
       intrinsicTime: this.element.currentTime,
       elementPlaybackActive: isPlaybackActive(this.element),
-      contextTime: audioContext.currentTime,
-      inputVolume: 0, // TODO
+      contextTime: this.audioContext.currentTime,
+      inputVolume: this.getVolume(),
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       lastSilenceSkippingSeek: this._lastSilenceSkippingSeek,
       elementVolume: this.element.volume,

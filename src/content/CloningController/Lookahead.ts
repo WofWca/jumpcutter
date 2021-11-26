@@ -7,6 +7,7 @@ import throttle from 'lodash/throttle';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
 
 // A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,
 // but I think this is a bit faster.
@@ -104,7 +105,7 @@ export default class Lookahead {
     // TODO DRY
     // const smoothingWindowLenght = 0.03;
     // const smoothingWindowLenght = 0.15;
-    const smoothingWindowLenght = 0.05;
+    const smoothingWindowLenght = lookaheadVolumeFilterSmoothing;
     // TODO DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
       const volumeFilter = new VolumeFilterNode(ctx, smoothingWindowLenght, smoothingWindowLenght);
