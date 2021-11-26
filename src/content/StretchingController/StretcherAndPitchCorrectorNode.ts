@@ -120,6 +120,9 @@ export default class StretcherAndPitchCorrectorNode {
   connect = this.connectOutputTo;
 
   onSilenceEnd(elementSpeedSwitchedAt: AudioContextTime): void {
+    // If you feel like your head is about to explode, check out `silenceDetector.port.onmessage = ` in
+    // `CloningController/Lookahead.ts` first. This code kind of does the same.
+
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
