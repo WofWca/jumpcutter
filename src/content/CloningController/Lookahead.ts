@@ -1,7 +1,7 @@
 import browser from '@/webextensions-api';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, MediaTime } from '@/helpers';
-import { destroyAudioWorkletNode } from '@/content/helpers';
+import { destroyAudioWorkletNode, getRealtimeMargin } from '@/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
@@ -32,6 +32,17 @@ function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
 }
 
 type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefore' | 'marginAfter'>;
+
+// TODO make it depend on `soundedSpeed` and how much silence there is and other stuff.
+const clonePlaybackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
+  // Firefox mutes media elements whose `playbackRate > 4`:
+  // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1630569#c9
+  // TODO?
+  ? 4
+  // Somewhat arbitrary.
+  : 5;
+
 
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
@@ -79,16 +90,6 @@ export default class Lookahead {
   private async _init(): Promise<void> {
     const originalElement = this.originalElement;
 
-    // TODO make it depend on `soundedSpeed` and how much silence there is and other stuff.
-    const playbackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
-      // Firefox mutes media elements whose `playbackRate > 4`:
-      // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=1630569#c9
-      // TODO?
-      ? 4
-      // Somewhat arbitrary.
-      : 5;
-
     const clone = this.clone;
 
     const toAwait: Array<Promise<void>> = [];
@@ -111,11 +112,9 @@ export default class Lookahead {
       return volumeFilter;
     });
 
+    const silenceDetectorDurationThreshold = this._getSilenceDetectorNodeDurationThreshold();
     const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
-      const marginAfterIntrinsicTime = this.settings.marginAfter;
-      const marginAfterRealTime = marginAfterIntrinsicTime / playbackRate;
-
-      const silenceDetector = new SilenceDetectorNode(ctx, marginAfterRealTime);
+      const silenceDetector = new SilenceDetectorNode(ctx, silenceDetectorDurationThreshold);
       this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(silenceDetector));
       return silenceDetector;
     });
@@ -140,18 +139,24 @@ export default class Lookahead {
       silenceDetector.port.onmessage = msg => {
         const [eventType, eventTimeAudioContextTime] = msg.data as SilenceDetectorMessage;
         const realTimePassedSinceEvent = ctx.currentTime - eventTimeAudioContextTime;
-        const intrinsicTimePassedSinceEvent = realTimePassedSinceEvent * playbackRate;
-        const eventTimeIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceEvent;
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
-          this.silenceSince = eventTimeIntrinsicTime;
+          // `marginAfter` will be taken into account when we `pushNewSilenceRange`.
+          const realTimePassedSinceSilenceStart =
+            realTimePassedSinceEvent + silenceDetectorDurationThreshold + volumeSmoothingCausedDelay;
+          const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * clonePlaybackRate;
+          const silenceStartAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceStart;
+          this.silenceSince = silenceStartAtIntrinsicTime;
         } else {
           assertDev(this.silenceSince, 'Thought `this.silenceSince` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
-
-          const marginBeforeIntrinsicTime = volumeSmoothingCausedDelay + this.settings.marginBefore;
-          // TODO `this.silenceSince` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
-          // this.pushNewSilenceRange(this.silenceSince, this.clone.currentTime - marginBeforeRealTime);
-          this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, eventTimeIntrinsicTime - marginBeforeIntrinsicTime);
+          const realTimePassedSinceSilenceEnd =
+            realTimePassedSinceEvent + volumeSmoothingCausedDelay;
+          const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * clonePlaybackRate;
+          const silenceEndAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
+          this.pushNewSilenceRange(
+            this.silenceSince + this.settings.marginAfter,
+            silenceEndAtIntrinsicTime - this.settings.marginBefore,
+          );
 
           this.silenceSince = undefined;
         }
@@ -173,12 +178,15 @@ export default class Lookahead {
         return;
       }
       assertDev(this.silenceSince);
-      this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, this.clone.duration);
+      this.pushNewSilenceRange(
+        this.silenceSince + this.settings.marginAfter,
+        this.clone.duration,
+      );
     }
     clone.addEventListener('ended', onEnded, { passive: true });
     this._onDestroyCallbacks.push(() => clone.removeEventListener('ended', onEnded));
 
-    clone.playbackRate = playbackRate;
+    clone.playbackRate = clonePlaybackRate;
     // For better performance. TODO however I'm not sure if this can significantly affect volume readings.
     // On one hand we could say "we don't change the waveform, we're just processing it faster", on the other hand
     // frequency characteristics are changed, and there's a risk of exceeding the Nyquist frequency.
@@ -252,6 +260,10 @@ export default class Lookahead {
     });
   }
   public ensureInit = once(this._init);
+
+  private _getSilenceDetectorNodeDurationThreshold() {
+    return getRealtimeMargin(this.settings.marginAfter + this.settings.marginBefore, clonePlaybackRate);
+  }
 
   /**
    * Can be called before `ensureInit` has finished.
