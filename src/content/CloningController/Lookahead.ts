@@ -35,7 +35,7 @@ type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefo
 
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
-  lastSoundedTime: MediaTime | undefined;
+  silenceSince: MediaTime | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
   // silenceRanges: Array<[start: Time, end: Time]> = []; // Array is not the fastest data structure for this application.
@@ -144,17 +144,17 @@ export default class Lookahead {
         const intrinsicTimePassedSinceEvent = realTimePassedSinceEvent * playbackRate;
         const eventTimePlaybackTime = this.clone.currentTime - intrinsicTimePassedSinceEvent;
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
-          this.lastSoundedTime = eventTimePlaybackTime;
+          this.silenceSince = eventTimePlaybackTime;
 
           currentlySilence = true;
         } else {
-          assertDev(this.lastSoundedTime, 'Thought `this.lastSoundedTime` to be set because SilenceDetector was '
+          assertDev(this.silenceSince, 'Thought `this.silenceSince` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
 
           const marginBeforeIntrinsicTime = volumeSmoothingCausedDelay + this.settings.marginBefore;
-          // TODO `this.lastSoundedTime` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
-          // this.pushNewSilenceRange(this.lastSoundedTime, this.clone.currentTime - marginBeforeRealTime);
-          this.pushNewSilenceRange(this.lastSoundedTime - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
+          // TODO `this.silenceSince` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
+          // this.pushNewSilenceRange(this.silenceSince, this.clone.currentTime - marginBeforeRealTime);
+          this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
 
           currentlySilence = false;
         }
@@ -171,11 +171,11 @@ export default class Lookahead {
         return;
       }
       // In case it's due to a seek to the end of the file, so we don't create a silence range of 0 length.
-      if (this.lastSoundedTime === this.clone.duration) {
+      if (this.silenceSince === this.clone.duration) {
         return;
       }
-      assertDev(this.lastSoundedTime);
-      this.pushNewSilenceRange(this.lastSoundedTime - volumeSmoothingCausedDelay, this.clone.duration);
+      assertDev(this.silenceSince);
+      this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, this.clone.duration);
     }
     clone.addEventListener('ended', onEnded, { passive: true });
     this._onDestroyCallbacks.push(() => clone.removeEventListener('ended', onEnded));
@@ -203,7 +203,7 @@ export default class Lookahead {
         // TODO it seems to me that it would be cleaner to somehow reset the state of `silenceDetector` instead so
         // if there is silence where we seek, it will emit `SILENCE_START` even if the last thing
         // it emited too was `SILENCE_START`.
-        this.lastSoundedTime = originalElementTime;
+        this.silenceSince = originalElementTime;
       }
     }
     // TODO also utilize `requestIdleCallback` so it gets called less frequently during high loads?
