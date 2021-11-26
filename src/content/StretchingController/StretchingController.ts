@@ -450,9 +450,9 @@ export default class Controller {
   }
 
   private _getSilenceDetectorNodeDurationThreshold() {
-    const marginBeforeAddition = this.isStretcherEnabled()
-      ? this.settings.marginBefore
-      : 0;
+    const marginBeforeAddition = this.settings.marginBefore;
+    assertDev(this.isStretcherEnabled() ? marginBeforeAddition > 0 : marginBeforeAddition === 0,
+      'Currently the stretcher should only be enabled when marginBefore > 0 and vice versa?');
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 
