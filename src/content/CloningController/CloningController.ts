@@ -273,6 +273,16 @@ export default class Controller {
 
     const seekAmount = seekTo - currentTime;
     const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (expectedSeekDuration < 0.010) {
+        console.warn(
+          '`expectedSeekDuration` got lower than 0.010, but we ignore silence ranges that are shorter than this.'
+          + ' See `pushNewSilenceRange` in `CloningController/Lookahead.ts`'
+        );
+      }
+    }
+
     const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
     // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?

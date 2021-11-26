@@ -312,6 +312,15 @@ export default class Lookahead {
   //     : undefined;
   // }
   private pushNewSilenceRange(elementTimeStart: MediaTime, elementTimeEnd: MediaTime) {
+    const silenceDuration = elementTimeEnd - elementTimeStart;
+    // Not really necessary, but reduces the size of silenceRanges arrays a bit.
+    // The final decision on whether or not to perform a seek is made in `CloningController`, see
+    // `farEnoughToPerformSeek`. `expectedSeekDuration` is ulikely to get lower than this value.
+    // But even if it were to get lower, if we don't encounter silence ranges of such duration too often,
+    // we don't loose too much time not skipping them anyway.
+    if (silenceDuration < 0.010) {
+      return;
+    }
     this.silenceRanges.starts.push(elementTimeStart);
     this.silenceRanges.ends.push(elementTimeEnd);
   }
