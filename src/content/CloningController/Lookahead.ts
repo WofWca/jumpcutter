@@ -141,9 +141,9 @@ export default class Lookahead {
         const [eventType, eventTimeAudioContextTime] = msg.data as SilenceDetectorMessage;
         const realTimePassedSinceEvent = ctx.currentTime - eventTimeAudioContextTime;
         const intrinsicTimePassedSinceEvent = realTimePassedSinceEvent * playbackRate;
-        const eventTimePlaybackTime = this.clone.currentTime - intrinsicTimePassedSinceEvent;
+        const eventTimeIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceEvent;
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
-          this.silenceSince = eventTimePlaybackTime;
+          this.silenceSince = eventTimeIntrinsicTime;
         } else {
           assertDev(this.silenceSince, 'Thought `this.silenceSince` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
@@ -151,7 +151,7 @@ export default class Lookahead {
           const marginBeforeIntrinsicTime = volumeSmoothingCausedDelay + this.settings.marginBefore;
           // TODO `this.silenceSince` can be bigger than `this.clone.currentTime - marginBeforeRealTime`.
           // this.pushNewSilenceRange(this.silenceSince, this.clone.currentTime - marginBeforeRealTime);
-          this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
+          this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, eventTimeIntrinsicTime - marginBeforeIntrinsicTime);
 
           this.silenceSince = undefined;
         }
