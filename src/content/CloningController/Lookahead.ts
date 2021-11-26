@@ -129,7 +129,6 @@ export default class Lookahead {
     // or even smaller.
     const volumeSmoothingCausedDelay = smoothingWindowLenght;
 
-    let currentlySilence = false;
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       src.connect(volumeFilter);
       const silenceDetector = await silenceDetectorP;
@@ -145,8 +144,6 @@ export default class Lookahead {
         const eventTimePlaybackTime = this.clone.currentTime - intrinsicTimePassedSinceEvent;
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
           this.silenceSince = eventTimePlaybackTime;
-
-          currentlySilence = true;
         } else {
           assertDev(this.silenceSince, 'Thought `this.silenceSince` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
@@ -156,7 +153,7 @@ export default class Lookahead {
           // this.pushNewSilenceRange(this.silenceSince, this.clone.currentTime - marginBeforeRealTime);
           this.pushNewSilenceRange(this.silenceSince - volumeSmoothingCausedDelay, eventTimePlaybackTime - marginBeforeIntrinsicTime);
 
-          currentlySilence = false;
+          this.silenceSince = undefined;
         }
       }
     }));
@@ -167,7 +164,8 @@ export default class Lookahead {
     // You could ask - but is it useful at all to just seek to the end of the video, even though there is silence.
     // The answer - yes, e.g. if the user is watching a playlist, where e.g. in each video there is a silent outro.
     const onEnded = () => {
-      if (!currentlySilence) {
+      const currentlySounded = !this.silenceSince;
+      if (currentlySounded) {
         return;
       }
       // In case it's due to a seek to the end of the file, so we don't create a silence range of 0 length.
