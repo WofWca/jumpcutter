@@ -319,6 +319,16 @@ export default class Lookahead {
     // But even if it were to get lower, if we don't encounter silence ranges of such duration too often,
     // we don't loose too much time not skipping them anyway.
     if (silenceDuration < 0.010) {
+      if (process.env.NODE_ENV !== 'production') {
+        if (silenceDuration <= 0) {
+          if (silenceDuration < -0.050) {
+            console.error('Huge negative silence duration', silenceDuration);
+          } else {
+            console.warn('Negative silence duration', silenceDuration);
+          }
+        }
+      }
+
       return;
     }
     this.silenceRanges.starts.push(elementTimeStart);
