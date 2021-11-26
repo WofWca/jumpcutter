@@ -124,9 +124,9 @@ export default class Lookahead {
     // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
     // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
     // The following is to compensate for this.
-    // TODO Though the delay value is up for debate. Some might say it should be half the `smoothingWindowLenght`,
-    // or even smaller.
-    const volumeSmoothingCausedDelay = smoothingWindowLenght;
+    // TODO Though the delay value is up for debate. Some might say it should be half equal to
+    // `smoothingWindowLenght`, or smaller than a half.
+    const volumeSmoothingCausedDelay = smoothingWindowLenght / 2;
 
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       src.connect(volumeFilter);
