@@ -218,21 +218,7 @@ export default class Controller {
 
     {
       // This is not strictly necessary, so not pushing anything to `toAwait`.
-      // Also mostly copy-pasted from `StretchingController`.
-      const audioContext = this.audioContext;
-      const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
-      // Must be the same so what the user sees matches what the lookahead sees.
-      const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
-      const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
-      const volumeFilterP = volumeFilterProcessorP.then(() => {
-        const volumeFilter = new VolumeFilterNode(
-          audioContext,
-          volumeFilterSmoothingWindowLength,
-          volumeFilterSmoothingWindowLength
-        );
-        this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
-        return volumeFilter;
-      });
+      //
       // Why not `createMediaElementSource`? Because:
       // * There's a risk that the element would get muted due to CORS-restrictions.
       // * I believe performance drops may cause audio to glitch when it passes through an AudioContext,
@@ -259,6 +245,22 @@ export default class Controller {
         || (element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
 
       if (captureStream) {
+        // Also mostly copy-pasted from `StretchingController`.
+        const audioContext = this.audioContext;
+        const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
+        // Must be the same so what the user sees matches what the lookahead sees.
+        const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
+        const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
+        const volumeFilterP = volumeFilterProcessorP.then(() => {
+          const volumeFilter = new VolumeFilterNode(
+            audioContext,
+            volumeFilterSmoothingWindowLength,
+            volumeFilterSmoothingWindowLength
+          );
+          this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+          return volumeFilter;
+        });
+
         // The following paragraph is pretty stupid because Web Audio API is still pretty new.
         // Or because I'm pretty new to it.
         let source: MediaStreamAudioSourceNode;
