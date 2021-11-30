@@ -240,11 +240,12 @@ export default class Controller {
       }
       const element_ = element as HTMLMediaElementWithMaybeMissingFields;
       const unprefixedCaptureStreamPresent = element_.captureStream;
+      const browserGecko = BUILD_DEFINITIONS.BROWSER === 'gecko';
       const captureStream =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         (unprefixedCaptureStreamPresent && (() => element_.captureStream!()))
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        || (element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
+        || (browserGecko && element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
 
       if (captureStream) {
         // Also mostly copy-pasted from `StretchingController`.
