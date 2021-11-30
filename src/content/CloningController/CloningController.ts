@@ -287,7 +287,15 @@ export default class Controller {
           }
         }
 
-        reinit();
+        // This means that the 'playing' has already been emited.
+        // https://html.spec.whatwg.org/multipage/media.html#mediaevents:event-media-playing
+        const nowPlaying = element.readyState > HTMLMediaElement.HAVE_FUTURE_DATA && !element.paused;
+        const canCaptureStreamNow = nowPlaying;
+        if (canCaptureStreamNow) {
+          reinit();
+        }
+        const alreadyInitialized = canCaptureStreamNow;
+
         // Workaround for
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1178751
         if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
@@ -301,7 +309,7 @@ export default class Controller {
         // Hopefully this covers all cases where the `MediaStreamAudioSourceNode` stops working.
         // 'loadstart' is for when the source changes, 'ended' speaks for itself.
         // https://w3c.github.io/mediacapture-fromelement/#dom-htmlmediaelement-capturestream
-        let unhandledLoadstartOrEndedEvent = false;
+        let unhandledLoadstartOrEndedEvent = alreadyInitialized ? false : true;
         const onPlaying = () => {
           if (unhandledLoadstartOrEndedEvent) {
             ensureReinitDeferred();
