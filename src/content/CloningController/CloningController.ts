@@ -2,7 +2,7 @@ import browser from '@/webextensions-api';
 import Lookahead, { TimeRange } from './Lookahead';
 import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
-import { isPlaybackActive, destroyAudioWorkletNode } from '@/content/helpers';
+import { isPlaybackActive, destroyAudioWorkletNode, requestIdleCallbackPolyfill } from '@/content/helpers';
 import { ControllerKind } from '@/settings';
 import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
@@ -251,15 +251,63 @@ export default class Controller {
         captureStream?: () => MediaStream,
         mozCaptureStream?: () => MediaStream,
       }
-      const stream =
-        (element as HTMLMediaElementWithMaybeMissingFields).captureStream?.()
-        || (element as HTMLMediaElementWithMaybeMissingFields).mozCaptureStream?.();
-      if (stream && stream.getAudioTracks().length) {
-        const source = audioContext.createMediaStreamSource(stream);
+      const element_ = element as HTMLMediaElementWithMaybeMissingFields;
+      const captureStream =
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        (element_.captureStream && (() => element_.captureStream!()))
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        || (element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
+
+      if (captureStream) {
+        // The following paragraph is pretty stupid because Web Audio API is still pretty new.
+        // Or because I'm pretty new to it.
+        let source: MediaStreamAudioSourceNode;
+        let reinitScheduled = false;
+        const reinit = () => {
+          source?.disconnect();
+          const newStream = captureStream();
+          assertDev(newStream);
+          // Shouldn't we do something if there are no tracks?
+          if (newStream.getAudioTracks().length) {
+            source = audioContext.createMediaStreamSource(newStream);
+            volumeFilterP.then(filter => source.connect(filter));
+          }
+
+          reinitScheduled = false;
+        }
+        const ensureReinitDeferred = () => {
+          if (!reinitScheduled) {
+            reinitScheduled = true;
+            requestIdleCallbackPolyfill(reinit, { timeout: 2000 });
+          }
+        }
+
+        reinit();
+        // Hopefully this covers all cases where the `MediaStreamAudioSourceNode` stops working.
+        // 'loadstart' is for when the source changes, 'ended' speaks for itself.
+        // https://w3c.github.io/mediacapture-fromelement/#dom-htmlmediaelement-capturestream
+        let unhandledLoadstartOrEndedEvent = false;
+        const onPlaying = () => {
+          if (unhandledLoadstartOrEndedEvent) {
+            ensureReinitDeferred();
+            unhandledLoadstartOrEndedEvent = false;
+          }
+        }
+        element.addEventListener('playing', onPlaying, { passive: true });
+        this._onDestroyCallbacks.push(() => element.removeEventListener('playing', onPlaying));
+        const onLoadstartOrEnded = () => {
+          unhandledLoadstartOrEndedEvent = true;
+        }
+        element.addEventListener('loadstart', onLoadstartOrEnded, { passive: true });
+        element.addEventListener('ended', onLoadstartOrEnded, { passive: true });
+        this._onDestroyCallbacks.push(() => {
+          element.removeEventListener('loadstart', onLoadstartOrEnded);
+          element.removeEventListener('ended', onLoadstartOrEnded);
+        });
+
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 2 ** 5;
         volumeFilterP.then(volumeFilter => {
-          source.connect(volumeFilter);
           volumeFilter.connect(analyser);
         });
         // Using the minimum possible value for performance, as we're only using the node to get unchanged
