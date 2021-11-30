@@ -5,17 +5,11 @@ import {
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
+import { requestIdleCallbackPolyfill } from './helpers';
 
 const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsController) => allMediaElementsController
   ? allMediaElementsController.broadcastStatus()
   : broadcastStatus({ elementLastActivatedAt: undefined });
-
-// TODO if it get standardized, we can simplify this.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const requestIdleCallback: undefined | ((...args: any) => void);
-const myRequestIdleCallback = typeof requestIdleCallback !== 'undefined'
-  ? (cb: () => void) => requestIdleCallback(cb, { timeout: 5000 })
-  : (cb: () => void) => setTimeout(() => setTimeout(cb));
 
 export default async function init(): Promise<void> {
   // TODO would be better to pass them as a parameter from `main.ts`.
@@ -111,7 +105,10 @@ export default async function init(): Promise<void> {
     }
   }
   const handleMutationsOnIdle =
-    (mutations: MutationRecord[]) => myRequestIdleCallback(() => handleMutations(mutations));
+    (mutations: MutationRecord[]) => requestIdleCallbackPolyfill(
+      () => handleMutations(mutations),
+      { timeout: 5000 },
+    );
   const mutationObserver = new MutationObserver(handleMutationsOnIdle);
   mutationObserver.observe(document, {
     subtree: true,
