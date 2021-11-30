@@ -287,7 +287,7 @@ export default class Lookahead {
         closestFutureEndI = i;
       }
     }
-    if (!closestFutureEndI) {
+    if (closestFutureEndI === undefined) {
       // `time` is past all the ranges.
       return undefined;
     }
