@@ -477,7 +477,6 @@
         jumpPeriod={settings.popupChartJumpPeriod}
         timeProgressionSpeed={settings.popupChartSpeed}
         on:click={onChartClick}
-        paused={latestTelemetryRecord?.controllerType === ControllerKind_CLONING}
         {telemetryUpdatePeriod}
       />
       {/key}
@@ -504,10 +503,12 @@
   {/if}
   <label
     use:tippy={{
-      content: '* Bare minimum usability\n'
-        + '* Allows skipping silent parts entirely instead of playing them at a faster rate\n'
-        + '* Doesn\'t work on many websites (YouTube, Vimeo). Works for local files\n'
-        + '* No audio distortion, delay or desync\n',
+      content: '- Bare minimum usability\n'
+        + '+ Allows skipping silent parts entirely instead of playing them at a faster rate\n'
+        + '- Doesn\'t work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply'
+        + ' won\'t skip silence.\n'
+        + '+ No audio distortion, delay or desync\n'
+        + '- The chart won\'t display the actual volume on silent parts (it will just show 0 instead)\n',
       theme: tippyThemeMyTippyAndPreLine,
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"

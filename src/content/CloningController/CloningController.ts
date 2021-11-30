@@ -1,10 +1,15 @@
-import Lookahead from './Lookahead';
-import { assertDev, SpeedName } from '@/helpers';
+import browser from '@/webextensions-api';
+import Lookahead, { TimeRange } from './Lookahead';
+import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
+import { isPlaybackActive, destroyAudioWorkletNode, requestIdleCallbackPolyfill } from '@/content/helpers';
 import { ControllerKind } from '@/settings';
 import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
+import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
+import { audioContext as commonAudioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
 
 type Time = AnyTime;
 
@@ -27,6 +32,8 @@ export type ControllerSettings =
 
 export interface TelemetryRecord {
   unixTime: Time,
+  intrinsicTime: MediaTime,
+  elementPlaybackActive: boolean,
   contextTime: Time,
   inputVolume: number,
   lastActualPlaybackRateChange: {
@@ -34,11 +41,70 @@ export interface TelemetryRecord {
     value: number,
     name: SpeedName,
   },
+  lastSilenceSkippingSeek?: TimeRange,
   elementVolume: number,
   totalOutputDelay: Time,
   delayFromInputToStretcherOutput: Time,
   stretcherDelay: Time,
   lastScheduledStretchInputTime?: undefined,
+}
+
+const seekDurationProphetHistoryLength = 5;
+const seekDurationProphetNoDataInitialAssumedDuration = 150;
+/**
+ * Tells us how long (based on previous data) the next seek is gonna take.
+ */
+class SeekDurationProphet {
+  el: HTMLMediaElement
+  // TODO replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
+  history: number[] = [];
+  historyAverage = seekDurationProphetNoDataInitialAssumedDuration;
+  _onDestroyCallbacks: Array<() => void> = [];
+  // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
+  // been fired, but before 'seeked'. `performance.now()` is not technically correct, but
+  // handling this being `undefined` separately seems worse.
+  lastSeekStartTime: number = performance.now();
+  constructor (el: HTMLMediaElement) {
+    this.el = el;
+    // Keep in mind that 'seeking' can be fired more than once before 'seeked' is fired, if the previous
+    // seek didn't manage to finish.
+    const onSeeking = this.onSeeking.bind(this);
+    const onSeeked = this.onSeeked.bind(this);
+    el.addEventListener('seeking', onSeeking, { passive: true });
+    el.addEventListener('seeked', onSeeked, { passive: true });
+    this._onDestroyCallbacks.push(() => {
+      el.removeEventListener('seeking', onSeeking);
+      el.removeEventListener('seeked', onSeeked);
+    })
+  }
+  onSeeking(e: Event) {
+    this.lastSeekStartTime = e.timeStamp;
+
+    // TODO probably need to take into account whether a seek has been performed into an unbuffered range
+    // and adjust the seek duration accordingly or not consider it at all.
+    // if (inRanges(this.el.buffered, this.el.currentTime))
+  }
+  onSeeked(e: Event) {
+    const seekDuration = e.timeStamp - this.lastSeekStartTime;
+
+    // if (seekDuration > 2000) return;
+
+    this.history.push(seekDuration);
+    // TODO performance - once this becomes `true`, it will never cease to.
+    if (this.history.length > seekDurationProphetHistoryLength) {
+      this.history.shift();
+    }
+    // TODO performance - only have consider the removed and the added element, not recalculate the whole array
+    // every time
+    const sum = this.history.reduce((acc, curr) => acc + curr);
+    this.historyAverage = sum / this.history.length;
+  }
+  public destroy(): void {
+    this._onDestroyCallbacks.forEach(cb => cb());
+  }
+  get nextSeekDurationMs(): number {
+    return this.historyAverage;
+  }
 }
 
 // TODO a lot of stuff is copy-pasted from StretchingController.
@@ -59,11 +125,26 @@ export default class Controller {
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
   _onDestroyCallbacks: Array<() => void> = [];
+  audioContext: AudioContext;
+  getVolume: () => number = () => 0;
+  _lastSilenceSkippingSeek: TimeRange | undefined;
+  _lastActualPlaybackRateChange: {
+    time: AudioContextTime,
+    value: number,
+    name: SpeedName,
+  } = {
+    // Dummy values (except for `name`), will be ovewritten in `_setSpeed`.
+    name: SpeedName.SOUNDED,
+    time: 0,
+    value: 1,
+  };
 
   lookahead: Lookahead;
 
   // To be (optionally) assigned by an outside script.
   public timeSavedTracker?: TimeSavedTracker;
+
+  seekDurationProphet: SeekDurationProphet;
 
   constructor(
     element: HTMLMediaElement,
@@ -82,6 +163,19 @@ export default class Controller {
     } else {
       this.timeSavedTracker = timeSavedTracker;
     }
+
+    this.seekDurationProphet = new SeekDurationProphet(element);
+    this._onDestroyCallbacks.push(() => this.seekDurationProphet.destroy());
+
+    // We don't need a high sample rate as this context is currently only used to volume on the chart,
+    // so consider setting it manually to a lower one. But I'm thinking whether it woruld actually
+    // add performance overhead instead (would make resampling harder or something).
+    const audioContext = this.audioContext = new AudioContext({
+      latencyHint: 'playback',
+    });
+    this._onDestroyCallbacks.push(() => {
+      audioContext.close();
+    })
   }
 
   isInitialized(): this is ControllerInitialized {
@@ -90,6 +184,8 @@ export default class Controller {
 
   async init(): Promise<void> {
     const element = this.element;
+
+    const toAwait : Array<Promise<void>> = [];
 
     const {
       playbackRate: elementPlaybackRateBeforeInitialization,
@@ -100,60 +196,157 @@ export default class Controller {
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
 
-    const { lookahead } = this;
-    const maybeSeek = this.maybeSeek.bind(this);
-    // TODO Super inefficient, I know.
-    const onTimeupdate = () => {
-      const { currentTime } = element;
+    const onNewSrc = () => {
+      // This indicated that `element.currentSrc` has changed.
+      // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
+      // > Its value is changed by the resource selection algorithm
+      this.throttledReinitLookahead();
 
-      // Can't just use `currentTime` instead of `upcomingTime` because 'timeupdate' is not fired super often,
-      // so `silenceStart` from `getMaybeSilenceRangeForTime` can be significantly greater than `currentTime`,
-      // which would mean that we should have started a seek a bit earlier.
-      // TODO but this still does not save us from the fact that short silence ranges can be overlooked entirely
-      // (i.e. `silenceStart > currentTime && silenceEnd > currentTime`).
-      // The value is based on how often 'timeupdate' is fired. TODO should make this dynamic?
-      const advance = 0.5;
-      const upcomingTime = currentTime + advance;
-      const maybeUpcomingSilenceRange = this.lookahead.getMaybeSilenceRangeForTime(upcomingTime);
-      if (!maybeUpcomingSilenceRange) {
-        return;
-      }
-      const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
-      const seekAt = Math.max(silenceStart, currentTime);
-      const seekTo = silenceEnd;
-      const seekInVideoTime = seekAt - currentTime;
-      const seekInRealTime = seekInVideoTime / this.settings.soundedSpeed;
-      // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
-      // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
-      // This case is handled inside `this.maybeSeek`.
-      //
-      // Just so the seek is performed a bit faster compared to `setTimeout`.
-      // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
-      // called immediately (and not by `setTimeout`).
-      if (seekInRealTime <= 0) {
-        maybeSeek(seekTo, seekAt);
-      } else {
-        setTimeout(
-          maybeSeek,
-          seekInRealTime * 1000,
-          seekTo,
-          seekAt,
-        );
-      }
+      // Not strictly necessary, as it is very unlikely that they would match. Also looks spaghett-y.
+      this.lastHandledSilenceRangeStart = undefined;
     }
-
-    // This indicated that `element.currentSrc` has changed.
-    // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
-    // > Its value is changed by the resource selection algorithm
-    const onNewSrc = () => this.throttledReinitLookahead();
     element.addEventListener('loadstart', onNewSrc);
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
 
-    await lookahead.ensureInit().then(() => {
+    toAwait.push(this.lookahead.ensureInit().then(() => {
+      // TODO Super inefficient, I know.
+      const onTimeupdate = () => {
+        this.maybeScheduleMaybeSeek();
+      }
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
-    });
+    }));
 
+    {
+      // This is not strictly necessary, so not pushing anything to `toAwait`.
+      //
+      // Why not `createMediaElementSource`? Because:
+      // * There's a risk that the element would get muted due to CORS-restrictions.
+      // * I believe performance drops may cause audio to glitch when it passes through an AudioContext,
+      //     so it's better to do it raw.
+      // But `captureStream` is not well-supported.
+      // Also keep in mind that `createMediaElementSource` and `captureStream` are not 100% interchangeable.
+      // For example, for `el.volume` doesn't affect the volume for `captureStream()`.
+      // TODO fall-back to `createMediaElementSource` if these are not supported?
+      //
+      // TODO if the media is CORS-restricted, this throws an error. You may say that "if it is
+      // CORS-restricted then we won't be able to use the cloning algorithm anyway". Right now you're right,
+      // but in the future we may create the clone inside an <iframe> where it's not CORS-restricted. Wait,
+      // but then it would be leaking information about the contents of the media to the other origin.
+      // Alright, let's discuss it somewhere else.
+      type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
+        captureStream?: () => MediaStream,
+        mozCaptureStream?: () => MediaStream,
+      }
+      const element_ = element as HTMLMediaElementWithMaybeMissingFields;
+      const unprefixedCaptureStreamPresent = element_.captureStream;
+      const browserGecko = BUILD_DEFINITIONS.BROWSER === 'gecko';
+      const captureStream =
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        (unprefixedCaptureStreamPresent && (() => element_.captureStream!()))
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        || (browserGecko && element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
+
+      if (captureStream) {
+        // Also mostly copy-pasted from `StretchingController`.
+        const audioContext = this.audioContext;
+        const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
+        // Must be the same so what the user sees matches what the lookahead sees.
+        const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
+        const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
+        const volumeFilterP = volumeFilterProcessorP.then(() => {
+          const volumeFilter = new VolumeFilterNode(
+            audioContext,
+            volumeFilterSmoothingWindowLength,
+            volumeFilterSmoothingWindowLength
+          );
+          this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+          return volumeFilter;
+        });
+
+        // The following paragraph is pretty stupid because Web Audio API is still pretty new.
+        // Or because I'm pretty new to it.
+        let source: MediaStreamAudioSourceNode;
+        let reinitScheduled = false;
+        const reinit = () => {
+          source?.disconnect();
+          const newStream = captureStream();
+          assertDev(newStream);
+          // Shouldn't we do something if there are no tracks?
+          if (newStream.getAudioTracks().length) {
+            source = audioContext.createMediaStreamSource(newStream);
+            volumeFilterP.then(filter => source.connect(filter));
+          }
+
+          reinitScheduled = false;
+        }
+        const ensureReinitDeferred = () => {
+          if (!reinitScheduled) {
+            reinitScheduled = true;
+            requestIdleCallbackPolyfill(reinit, { timeout: 2000 });
+          }
+        }
+
+        // This means that the 'playing' has already been emited.
+        // https://html.spec.whatwg.org/multipage/media.html#mediaevents:event-media-playing
+        const nowPlaying = element.readyState > HTMLMediaElement.HAVE_FUTURE_DATA && !element.paused;
+        const canCaptureStreamNow = nowPlaying;
+        if (canCaptureStreamNow) {
+          reinit();
+        }
+        const alreadyInitialized = canCaptureStreamNow;
+
+        // Workaround for
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1178751
+        if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
+          const mozCaptureStreamUsed = !unprefixedCaptureStreamPresent;
+          if (mozCaptureStreamUsed) {
+            const mediaElementSource = getOrCreateMediaElementSourceAndUpdateMap(element);
+            mediaElementSource.connect(commonAudioContext.destination);
+          }
+        }
+
+        // Hopefully this covers all cases where the `MediaStreamAudioSourceNode` stops working.
+        // 'loadstart' is for when the source changes, 'ended' speaks for itself.
+        // https://w3c.github.io/mediacapture-fromelement/#dom-htmlmediaelement-capturestream
+        let unhandledLoadstartOrEndedEvent = alreadyInitialized ? false : true;
+        const onPlaying = () => {
+          if (unhandledLoadstartOrEndedEvent) {
+            ensureReinitDeferred();
+            unhandledLoadstartOrEndedEvent = false;
+          }
+        }
+        element.addEventListener('playing', onPlaying, { passive: true });
+        this._onDestroyCallbacks.push(() => element.removeEventListener('playing', onPlaying));
+        const onLoadstartOrEnded = () => {
+          unhandledLoadstartOrEndedEvent = true;
+        }
+        element.addEventListener('loadstart', onLoadstartOrEnded, { passive: true });
+        element.addEventListener('ended', onLoadstartOrEnded, { passive: true });
+        this._onDestroyCallbacks.push(() => {
+          element.removeEventListener('loadstart', onLoadstartOrEnded);
+          element.removeEventListener('ended', onLoadstartOrEnded);
+        });
+
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2 ** 5;
+        volumeFilterP.then(volumeFilter => {
+          volumeFilter.connect(analyser);
+        });
+        // Using the minimum possible value for performance, as we're only using the node to get unchanged
+        // output values.
+        const volumeBuffer = new Float32Array(analyser.fftSize);
+        const volumeBufferLastInd = volumeBuffer.length - 1;
+        this.getVolume = () => {
+          analyser.getFloatTimeDomainData(volumeBuffer);
+          return volumeBuffer[volumeBufferLastInd];
+        };
+      } else {
+        this.getVolume = () => 0;
+      }
+    }
+
+    await Promise.all(toAwait);
     this.initialized = true;
     this._resolveInitPromise(this);
 
@@ -162,6 +355,52 @@ export default class Controller {
     delete this._pendingSettingsUpdates;
   }
 
+  lastHandledSilenceRangeStart: number | undefined;
+  maybeSeekTimeoutId = -1;
+  /**
+   * Does not cancel the previously scheduled `setTimeout`.
+   */
+  rerunMaybeScheduleMaybeSeek() {
+    this.lastHandledSilenceRangeStart = undefined; // Otherwise `maybeScheduleMaybeSeek` may do noting.
+    this.maybeScheduleMaybeSeek();
+  }
+  maybeScheduleMaybeSeek() {
+    const { currentTime } = this.element;
+    const maybeUpcomingSilenceRange = this.lookahead.getNextSilenceRange(currentTime);
+    if (!maybeUpcomingSilenceRange) {
+      return;
+    }
+    const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
+    const alreadyHandledThisSilenceRange = this.lastHandledSilenceRangeStart === silenceStart;
+    if (alreadyHandledThisSilenceRange) {
+      return;
+    }
+    this.lastHandledSilenceRangeStart = silenceStart;
+    // TODO would it be maybe better to also just do nothing if the next silence range is too far, and
+    // `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`? Would time accuracy
+    // increase?
+    const seekAt = Math.max(silenceStart, currentTime);
+    const seekTo = silenceEnd;
+    const seekInVideoTime = seekAt - currentTime;
+    const seekInRealTime = seekInVideoTime / this.settings.soundedSpeed;
+    // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
+    // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
+    // This case is handled inside `this.maybeSeek`.
+    //
+    // Just so the seek is performed a bit faster compared to `setTimeout`.
+    // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
+    // called immediately (and not by `setTimeout`).
+    if (seekInRealTime <= 0) {
+      this.maybeSeek(seekTo, seekAt);
+    } else {
+      this.maybeSeekTimeoutId = (setTimeout as typeof window.setTimeout)(
+        this.maybeSeekBounded,
+        seekInRealTime * 1000,
+        seekTo,
+        seekAt,
+      );
+    }
+  }
   maybeSeek(seekTo: MediaTime, seekScheduledTo: MediaTime): void {
     const element = this.element;
     const { currentTime, paused } = element;
@@ -175,13 +414,22 @@ export default class Controller {
       Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
       || paused;
     if (cancelSeek) {
+      this.rerunMaybeScheduleMaybeSeek();
       return;
     }
 
     const seekAmount = seekTo - currentTime;
-    // Based on a bit of testing, it appears that it usually takes 20-200ms to perform
-    // a precise seek (`.currentTime = ...`).
-    const expectedSeekDuration = 0.15;
+    const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (expectedSeekDuration < 0.010) {
+        console.warn(
+          '`expectedSeekDuration` got lower than 0.010, but we ignore silence ranges that are shorter than this.'
+          + ' See `pushNewSilenceRange` in `CloningController/Lookahead.ts`'
+        );
+      }
+    }
+
     const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
     // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?
@@ -196,8 +444,11 @@ export default class Controller {
       // element.fastSeek(seekTo);
 
       this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
+
+      this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
     }
   }
+  maybeSeekBounded = this.maybeSeek.bind(this);
 
   /**
    * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved).
@@ -247,6 +498,19 @@ export default class Controller {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
       this.throttledReinitLookahead();
     }
+    // The previously scheduled `maybeSeek` became scheduled to an incorrect time because of this
+    // (so `Math.abs(currentTime - expectedCurrentTime)` inside `maybeSeek` will be big).
+    if (newSettings.soundedSpeed !== oldSettings?.soundedSpeed) {
+      // Clearing timeout is desireable because `maybeSeek` currently has a pretty high tolerance for
+      // `expectedCurrentTime` error, so the incorrectly scheduled `maybeSeek` may still be performed
+      // if we don't do this.
+      //
+      // If in the future this starts getting spaghettified, consider instead of `lastHandledSilenceRangeStart`
+      // storing `scheduledMaybeSeekAtRealTime` & `scheduledMaybeSeekSeekTo`, as they unambiguously describe
+      // a seek, then just check if a seek with these parameters has already been scheduled.
+      clearTimeout(this.maybeSeekTimeoutId);
+      this.rerunMaybeScheduleMaybeSeek();
+    }
   }
 
   /**
@@ -279,6 +543,13 @@ export default class Controller {
     // It's also a good practice.
     // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
     this.element.defaultPlaybackRate = speedVal;
+
+    const speedChangeObj = this._lastActualPlaybackRateChange;
+    // Avoiding creating new objects for performance.
+    speedChangeObj.time = this.audioContext.currentTime;
+    speedChangeObj.value = speedVal;
+    // Currently the speed is always `SOUNDED`.
+    // speedChangeObj.name = SpeedName.SOUNDED;
   }
 
   get telemetry(): TelemetryRecord {
@@ -290,14 +561,12 @@ export default class Controller {
     // TODO that's a lot of 0s, can we do something about it?
     return {
       unixTime: Date.now() / 1000,
-      // IntrinsicTime: this.element.currentTime,
-      contextTime: 0,
-      inputVolume: 0, // TODO
-      lastActualPlaybackRateChange: {
-        time: 0,
-        value: 1,
-        name: SpeedName.SOUNDED,
-      },
+      intrinsicTime: this.element.currentTime,
+      elementPlaybackActive: isPlaybackActive(this.element),
+      contextTime: this.audioContext.currentTime,
+      inputVolume: this.getVolume(),
+      lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
+      lastSilenceSkippingSeek: this._lastSilenceSkippingSeek,
       elementVolume: this.element.volume,
       totalOutputDelay: 0,
       delayFromInputToStretcherOutput: 0,

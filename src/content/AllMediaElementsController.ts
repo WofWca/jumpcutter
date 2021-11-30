@@ -31,7 +31,7 @@ export type TelemetryMessage =
 
 function executeNonSettingsActions(
   el: HTMLMediaElement,
-  nonSettingsActions: ReturnType<typeof keydownEventToActions>['nonSettingsActions']
+  nonSettingsActions: Exclude<ReturnType<typeof keydownEventToActions>, undefined>[1]
 ) {
   for (const action of nonSettingsActions) {
     switch (action.action) {
@@ -81,7 +81,6 @@ function getAppropriateControllerType(
   return settings.dontAttachToCrossOriginMedia && elementSourceIsCrossOrigin
     ? ControllerKind.ALWAYS_SOUNDED
     : settings.experimentalControllerType
-  // TODO a setting to disable the cross-origin check.
 }
 
 async function importAndCreateController<T extends ControllerKind>(
@@ -165,7 +164,6 @@ export default class AllMediaElementsController {
     broadcastStatus({ elementLastActivatedAt: this.elementLastActivatedAt });
   }
 
-  
   private async _loadSettings() {
     this.settings = await getSettings();
   }
@@ -292,7 +290,10 @@ export default class AllMediaElementsController {
       if (eventTargetIsInput(e)) return;
       assertDev(this.settings);
       const actions = keydownEventToActions(e, this.settings);
-      const { settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys } = actions;
+      if (!actions) {
+        return;
+      }
+      const [ settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys ] = actions;
 
       // Works because `useCapture` of `addEventListener` is `true`. However, it's not guaranteed to work on every
       // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow. Maybe attach it before
@@ -327,11 +328,23 @@ export default class AllMediaElementsController {
     //
     // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
     // which wrap around a video element, which is not ever supposed to be in focus.
-    //
-    // `useCapture` is true because see `overrideWebsiteHotkeys`.
-    document.addEventListener('keydown', handleKeydown, true);
-    this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydown, true));
-
+    assertDev(this.settings);
+    // Why not always attach with `useCapture = true`? For performance.
+    // TODO but if the user changed `overrideWebsiteHotkeys` for some binding, an extension reload will
+    // be required. React to settings changes?
+    if (this.settings.hotkeys.some(binding => binding.overrideWebsiteHotkeys)) {
+      // `useCapture` is true because see `overrideWebsiteHotkeys`.
+      document.addEventListener('keydown', handleKeydown, true);
+      this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydown, true));
+    } else {
+      // Deferred because it's not top priority. But maybe it should be?
+      // Yes, it would mean that the `if (overrideWebsiteHotkeys) {` inside `handleKeydown` will always
+      // be false.
+      const handleKeydownDeferred =
+        (...args: Parameters<typeof handleKeydown>) => setTimeout(handleKeydown, undefined, ...args);
+      document.addEventListener('keydown', handleKeydownDeferred, { passive: true });
+      this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydownDeferred));
+    }
     // this.hotkeyListenerAttached = true;
   }
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
@@ -364,18 +377,17 @@ export default class AllMediaElementsController {
     const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
 
     const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
-    // I believe 'loadstart' might get emited even if the source didn't change (e.g. `el.load()`
-    // has been called manually), but you pretty much can't change source and begin its playback
-    // without firing the 'loadstart' event.
-    // So this is reliable.
     const onMaybeSourceChange = () => {
-      console.log(el.currentSrc);
       this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
       // TODO perhaps we also need to re-run the controller selection code (which is inside
       // `reactToSettingsNewValues` right now)? But what if `createMediaElementSource` has already been
       // called? There isn't really a point in switching to the `ALWAYS_SOUNDED` controller in that case,
       // is there?
     };
+    // I believe 'loadstart' might get emited even if the source didn't change (e.g. `el.load()`
+    // has been called manually), but you pretty much can't change source and begin its playback
+    // without firing the 'loadstart' event.
+    // So this is reliable.
     el.addEventListener('loadstart', onMaybeSourceChange, { passive: true });
     this._onDetachFromActiveElementCallbacks.push(() => el.removeEventListener('loadstart', onMaybeSourceChange));
 

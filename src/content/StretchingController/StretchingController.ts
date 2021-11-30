@@ -1,6 +1,6 @@
 'use strict';
 import browser from '@/webextensions-api';
-import { audioContext, mediaElementSourcesMap } from '@/content/audioContext';
+import { audioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
@@ -243,15 +243,7 @@ export default class Controller {
       resumeAudioContext(); // In case the video is paused.
     });
 
-    const srcFromMap = mediaElementSourcesMap.get(element);
-    let mediaElementSource: MediaElementAudioSourceNode;
-    if (srcFromMap) {
-      mediaElementSource = srcFromMap;
-      mediaElementSource.disconnect();
-    } else {
-      mediaElementSource = audioContext.createMediaElementSource(element);
-      mediaElementSourcesMap.set(element, mediaElementSource)
-    }
+    const mediaElementSource = getOrCreateMediaElementSourceAndUpdateMap(element);
     let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
       = mediaElementSource;
     if (this.isStretcherEnabled()) {
@@ -321,7 +313,7 @@ export default class Controller {
         } else {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SILENCE);
           this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
-  
+
           if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
             // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
             // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
@@ -450,9 +442,9 @@ export default class Controller {
   }
 
   private _getSilenceDetectorNodeDurationThreshold() {
-    const marginBeforeAddition = this.isStretcherEnabled()
-      ? this.settings.marginBefore
-      : 0;
+    const marginBeforeAddition = this.settings.marginBefore;
+    assertDev(this.isStretcherEnabled() ? marginBeforeAddition > 0 : marginBeforeAddition === 0,
+      'Currently the stretcher should only be enabled when marginBefore > 0 and vice versa?');
     return getRealtimeMargin(this.settings.marginAfter + marginBeforeAddition, this.settings.soundedSpeed);
   }
 

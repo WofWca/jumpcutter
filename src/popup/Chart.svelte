@@ -8,6 +8,8 @@
   import { Settings } from '@/settings';
   import type { TelemetryRecord as StretchingControllerTelemetryRecord }
     from '@/content/StretchingController/StretchingController';
+  import type { TelemetryRecord as CloningControllerTelemetryRecord }
+    from '@/content/CloningController/CloningController';
   import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
     from '@/content/AlwaysSoundedController';
   import debounce from 'lodash/debounce';
@@ -15,7 +17,11 @@
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
 
-  type TelemetryRecord = StretchingControllerTelemetryRecord | AlwaysSoundedControllerTelemetryRecord;
+  type TelemetryRecord =
+    StretchingControllerTelemetryRecord
+    | CloningControllerTelemetryRecord
+    | AlwaysSoundedControllerTelemetryRecord
+  ;
   export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
@@ -25,7 +31,6 @@
   export let jumpPeriod: number;
   $: jumpPeriodMs = jumpPeriod * 1000;
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
-  export let paused: boolean;
   export let telemetryUpdatePeriod: TimeDelta;
 
   const timeProgressionSpeedIntrinsic = timeProgressionSpeed === 'intrinsicTime';
@@ -185,7 +190,7 @@
         disabled: true,
       },
       // This doesn't matter as we manually call `.render` anyway.
-      // nonRealtimeData: timeProgressionSpeedIntrinsic, 
+      // nonRealtimeData: timeProgressionSpeedIntrinsic,
       minValue: 0,
       yRangeFunction() {
         if (volumeThreshold > 0) {
@@ -296,6 +301,10 @@
       // * the `toIntrinsicTime` function's contract to not be breached (i.e. `targetTime` is not too early).
       const delayToAvoidExtrapolationRealTime = telemetryUpdatePeriod;
 
+      // TODO when `el.seeking`, `elementPlaybackActive` is `false`. And seeking happens on every seilence range
+      // when `silenceSpeed === Infinity` (currently that is when the `CloningController` is used), so this causes
+      // jumps. Perhaps we should also base this on `referenceTelemetry`, so it doesn't jump when the video
+      // gets paused?
       if (!r.elementPlaybackActive) {
         // TODO this is incorrect if the speed recently changed. Good enoguh though.
         const delayToAvoidExtrapolationIntrinsicTime
@@ -351,7 +360,7 @@
 
     let offsetAdjustment;
     (function drawAndScheduleAnother() {
-      if (!paused && latestTelemetryRecord) {
+      if (latestTelemetryRecord) {
         let time = timeProgressionSpeedIntrinsic
           ? sToMs(getExpectedElementCurrentTimeDelayed(
               latestTelemetryRecord,
@@ -564,8 +573,13 @@
       // TODO However this does not actually fully achieve what's needed because some data gets placed with at points
       // in time which are earlier than `r.intrinsicTime`, for example things that take output delay into account -
       // such as `stretcherDelaySeries`, so if you do a tiny seek back, the datapoints will still get clamped up.
-      const newIntrinsicTimeIsEarlierThanPrevious
-        = lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime);
+      const newIntrinsicTimeIsEarlierThanPrevious = BUILD_DEFINITIONS.BROWSER === 'gecko'
+        // A workaround for the fact that in Gecko even if we seeked forward, `el.currentTime` can still become
+        // a little smaller for some reason (perhaps due to reduced time precision or something).
+        // This is especially noticeable when you skip silence by seeking instead of increasing `playbackRate`.
+        // TODO investiagate and maybe report bug.
+        ? lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime - r.intrinsicTime > 0.01)
+        : lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime);
       if (newIntrinsicTimeIsEarlierThanPrevious) {
         smoothieDropFutureData(smoothie, r.intrinsicTime);
 
@@ -601,6 +615,33 @@
         prevPlaybackRateChange = lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
       }
     }
+
+    if (timeProgressionSpeedIntrinsic && 'lastSilenceSkippingSeek' in r) {
+      const lastSilenceSkippingSeek = r.lastSilenceSkippingSeek
+      const prevSilenceSkippingSeek =
+        (lastHandledTelemetryRecord && 'lastSilenceSkippingSeek' in lastHandledTelemetryRecord)
+          ? lastHandledTelemetryRecord.lastSilenceSkippingSeek
+          : undefined;
+      const newSilenceSkippingSeekPerformed =
+        lastSilenceSkippingSeek
+        && prevSilenceSkippingSeek?.[0] !== lastSilenceSkippingSeek[0];
+      // TODO but if we seek back and then the same silence skipping seek gets performed, it won't be drawn
+      // on the chart because it will consider it "the same". Add a timestamp for every seek?
+      if (newSilenceSkippingSeekPerformed) {
+        const startMs = lastSilenceSkippingSeek[0] * 1000;
+        const endMs = lastSilenceSkippingSeek[1] * 1000;
+        appendToSpeedSeries(startMs, SpeedName_SILENCE);
+        appendToSpeedSeries(endMs, SpeedName_SOUNDED);
+
+        // We don't have data for this period, so let's show just 0.
+        volumeSeries.append(startMs + 0.01, 0);
+        volumeSeries.append(endMs - 0.01, 0);
+
+        // TODO shouldn't we `setReferenceToLatest` here, because it became incorrect?
+        // It will be detected automatically when the error tolerance is exceeded though.
+      }
+    }
+
 
     function areStretchObjectsEqual(
       stretchA: StretchInfo | undefined | null,
@@ -647,7 +688,6 @@
   width={widthPx}
   height={heightPx}
   on:click
-  class:paused
 >
   <label>
     Volume
@@ -671,8 +711,5 @@
     /* WET, see `soundedSpeedColor` above. */
     background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));
     /* background: white; */
-  }
-  canvas.paused {
-    opacity: 0.2;
   }
 </style>
