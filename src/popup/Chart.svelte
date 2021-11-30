@@ -573,8 +573,13 @@
       // TODO However this does not actually fully achieve what's needed because some data gets placed with at points
       // in time which are earlier than `r.intrinsicTime`, for example things that take output delay into account -
       // such as `stretcherDelaySeries`, so if you do a tiny seek back, the datapoints will still get clamped up.
-      const newIntrinsicTimeIsEarlierThanPrevious
-        = lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime);
+      const newIntrinsicTimeIsEarlierThanPrevious = BUILD_DEFINITIONS.BROWSER === 'gecko'
+        // A workaround for the fact that in Gecko even if we seeked forward, `el.currentTime` can still become
+        // a little smaller for some reason (perhaps due to reduced time precision or something).
+        // This is especially noticeable when you skip silence by seeking instead of increasing `playbackRate`.
+        // TODO investiagate and maybe report bug.
+        ? lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime - r.intrinsicTime > 0.01)
+        : lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime);
       if (newIntrinsicTimeIsEarlierThanPrevious) {
         smoothieDropFutureData(smoothie, r.intrinsicTime);
 
