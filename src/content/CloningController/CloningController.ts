@@ -9,6 +9,7 @@ import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/content/TimeSavedTracker';
 import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
+import { audioContext as commonAudioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
 
 type Time = AnyTime;
 
@@ -238,9 +239,10 @@ export default class Controller {
         mozCaptureStream?: () => MediaStream,
       }
       const element_ = element as HTMLMediaElementWithMaybeMissingFields;
+      const unprefixedCaptureStreamPresent = element_.captureStream;
       const captureStream =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (element_.captureStream && (() => element_.captureStream!()))
+        (unprefixedCaptureStreamPresent && (() => element_.captureStream!()))
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         || (element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
 
@@ -285,6 +287,16 @@ export default class Controller {
         }
 
         reinit();
+        // Workaround for
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1178751
+        if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
+          const mozCaptureStreamUsed = !unprefixedCaptureStreamPresent;
+          if (mozCaptureStreamUsed) {
+            const mediaElementSource = getOrCreateMediaElementSourceAndUpdateMap(element);
+            mediaElementSource.connect(commonAudioContext.destination);
+          }
+        }
+
         // Hopefully this covers all cases where the `MediaStreamAudioSourceNode` stops working.
         // 'loadstart' is for when the source changes, 'ended' speaks for itself.
         // https://w3c.github.io/mediacapture-fromelement/#dom-htmlmediaelement-capturestream

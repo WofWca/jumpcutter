@@ -1,6 +1,6 @@
 'use strict';
 import browser from '@/webextensions-api';
-import { audioContext, mediaElementSourcesMap } from '@/content/audioContext';
+import { audioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
@@ -243,15 +243,7 @@ export default class Controller {
       resumeAudioContext(); // In case the video is paused.
     });
 
-    const srcFromMap = mediaElementSourcesMap.get(element);
-    let mediaElementSource: MediaElementAudioSourceNode;
-    if (srcFromMap) {
-      mediaElementSource = srcFromMap;
-      mediaElementSource.disconnect();
-    } else {
-      mediaElementSource = audioContext.createMediaElementSource(element);
-      mediaElementSourcesMap.set(element, mediaElementSource)
-    }
+    const mediaElementSource = getOrCreateMediaElementSourceAndUpdateMap(element);
     let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
       = mediaElementSource;
     if (this.isStretcherEnabled()) {
