@@ -254,7 +254,7 @@ export default class Controller {
       const stream =
         (element as HTMLMediaElementWithMaybeMissingFields).captureStream?.()
         || (element as HTMLMediaElementWithMaybeMissingFields).mozCaptureStream?.();
-      if (stream) {
+      if (stream && stream.getAudioTracks().length) {
         const source = audioContext.createMediaStreamSource(stream);
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 2 ** 5;
