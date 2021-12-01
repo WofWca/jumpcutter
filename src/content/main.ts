@@ -23,8 +23,14 @@ async function isEnabled(): Promise<boolean> {
 
 if (process.env.NODE_ENV !== 'production') {
   Promise.all([
-    import('@/settings/_storage'),
-    import('@/webextensions-api'),
+    import(
+      /* webpackExports: ['storage']*/
+      '@/settings/_storage'
+    ),
+    import(
+      /* webpackExports: ['default']*/
+      '@/webextensions-api'
+    ),
   ]).then(([
     { storage },
     { default: browser },
