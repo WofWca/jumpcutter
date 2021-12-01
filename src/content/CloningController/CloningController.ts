@@ -201,9 +201,6 @@ export default class Controller {
       // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
       // > Its value is changed by the resource selection algorithm
       this.throttledReinitLookahead();
-
-      // Not strictly necessary, as it is very unlikely that they would match. Also looks spaghett-y.
-      this.lastHandledSilenceRangeStart = undefined;
     }
     element.addEventListener('loadstart', onNewSrc);
     this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
@@ -355,15 +352,7 @@ export default class Controller {
     delete this._pendingSettingsUpdates;
   }
 
-  lastHandledSilenceRangeStart: number | undefined;
   maybeSeekTimeoutId = -1;
-  /**
-   * Does not cancel the previously scheduled `setTimeout`.
-   */
-  rerunMaybeScheduleMaybeSeek() {
-    this.lastHandledSilenceRangeStart = undefined; // Otherwise `maybeScheduleMaybeSeek` may do noting.
-    this.maybeScheduleMaybeSeek();
-  }
   maybeScheduleMaybeSeek() {
     const { currentTime } = this.element;
     const maybeUpcomingSilenceRange = this.lookahead.getNextSilenceRange(currentTime);
@@ -371,11 +360,6 @@ export default class Controller {
       return;
     }
     const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
-    const alreadyHandledThisSilenceRange = this.lastHandledSilenceRangeStart === silenceStart;
-    if (alreadyHandledThisSilenceRange) {
-      return;
-    }
-    this.lastHandledSilenceRangeStart = silenceStart;
     // TODO would it be maybe better to also just do nothing if the next silence range is too far, and
     // `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`? Would time accuracy
     // increase?
@@ -390,6 +374,7 @@ export default class Controller {
     // Just so the seek is performed a bit faster compared to `setTimeout`.
     // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
     // called immediately (and not by `setTimeout`).
+    clearTimeout(this.maybeSeekTimeoutId);
     if (seekInRealTime <= 0) {
       this.maybeSeek(seekTo, seekAt);
     } else {
@@ -414,7 +399,7 @@ export default class Controller {
       Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
       || paused;
     if (cancelSeek) {
-      this.rerunMaybeScheduleMaybeSeek();
+      this.maybeScheduleMaybeSeek();
       return;
     }
 
@@ -501,15 +486,8 @@ export default class Controller {
     // The previously scheduled `maybeSeek` became scheduled to an incorrect time because of this
     // (so `Math.abs(currentTime - expectedCurrentTime)` inside `maybeSeek` will be big).
     if (newSettings.soundedSpeed !== oldSettings?.soundedSpeed) {
-      // Clearing timeout is desireable because `maybeSeek` currently has a pretty high tolerance for
-      // `expectedCurrentTime` error, so the incorrectly scheduled `maybeSeek` may still be performed
-      // if we don't do this.
-      //
-      // If in the future this starts getting spaghettified, consider instead of `lastHandledSilenceRangeStart`
-      // storing `scheduledMaybeSeekAtRealTime` & `scheduledMaybeSeekSeekTo`, as they unambiguously describe
-      // a seek, then just check if a seek with these parameters has already been scheduled.
       clearTimeout(this.maybeSeekTimeoutId);
-      this.rerunMaybeScheduleMaybeSeek();
+      this.maybeScheduleMaybeSeek();
     }
   }
 
