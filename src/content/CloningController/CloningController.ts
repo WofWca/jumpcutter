@@ -399,7 +399,6 @@ export default class Controller {
       Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
       || paused;
     if (cancelSeek) {
-      this.maybeScheduleMaybeSeek();
       return;
     }
 
