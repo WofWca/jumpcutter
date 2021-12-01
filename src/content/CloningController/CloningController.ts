@@ -375,6 +375,7 @@ export default class Controller {
     // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
     // called immediately (and not by `setTimeout`).
     clearTimeout(this.maybeSeekTimeoutId);
+    // TODO should this be `<= expectedMinSetTimeoutDelay` instead of `<= 0`?
     if (seekInRealTime <= 0) {
       this.maybeSeek(seekTo, seekAt);
     } else {
