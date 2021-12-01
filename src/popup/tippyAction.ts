@@ -8,11 +8,11 @@ import type tippy from 'tippy.js';
 export function tippyActionAsyncPreload(node: HTMLElement, props?: Parameters<typeof tippy>[1]) {
   const tippyInstancePromise = (async () => {
     const tippyPromise = import(
-      /* webpackPreload */
+      /* webpackPreload: true */
       /* webpackExports: ['default'] */
       'tippy.js'
     );
-    import(/* webpackPreload */ 'tippy.js/dist/tippy.css');
+    import(/* webpackPreload: true */ 'tippy.js/dist/tippy.css');
     const tippy = (await tippyPromise).default;
     return tippy(node, {
       ignoreAttributes: true, // For performance.
