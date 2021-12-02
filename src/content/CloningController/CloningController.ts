@@ -139,7 +139,7 @@ export default class Controller {
     value: 1,
   };
 
-  lookahead: Lookahead;
+  lookahead?: Lookahead;
 
   // To be (optionally) assigned by an outside script.
   public timeSavedTracker?: TimeSavedTracker;
@@ -196,16 +196,7 @@ export default class Controller {
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
 
-    const onNewSrc = () => {
-      // This indicated that `element.currentSrc` has changed.
-      // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
-      // > Its value is changed by the resource selection algorithm
-      this.throttledReinitLookahead();
-    }
-    element.addEventListener('loadstart', onNewSrc, { passive: true });
-    this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
-
-    toAwait.push(this.lookahead.ensureInit().then(() => {
+    toAwait.push(this.lookahead!.ensureInit().then(() => {
       // TODO Super inefficient, I know.
       const onTimeupdate = () => {
         this.maybeScheduleMaybeSeek();
@@ -213,6 +204,15 @@ export default class Controller {
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
     }));
+
+    const onNewSrc = () => {
+      // This indicated that `element.currentSrc` has changed.
+      // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
+      // > Its value is changed by the resource selection algorithm
+      this.destroyAndThrottledInitLookahead();
+    }
+    element.addEventListener('loadstart', onNewSrc, { passive: true });
+    this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
 
     {
       // This is not strictly necessary, so not pushing anything to `toAwait`.
@@ -355,7 +355,7 @@ export default class Controller {
   maybeSeekTimeoutId = -1;
   maybeScheduleMaybeSeek() {
     const { currentTime } = this.element;
-    const maybeUpcomingSilenceRange = this.lookahead.getNextSilenceRange(currentTime);
+    const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
     if (!maybeUpcomingSilenceRange) {
       return;
     }
@@ -443,7 +443,8 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assertDev(this.isInitialized());
 
-    this.lookahead.destroy();
+    this._throttledInitLookahead.cancel();
+    this.lookahead?.destroy();
 
     for (const cb of this._onDestroyCallbacks) {
       cb();
@@ -452,13 +453,17 @@ export default class Controller {
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }
 
-  private _reinitLookahead() {
-    this.lookahead.destroy();
+  private _initLookahead() {
     const lookahead = this.lookahead = new Lookahead(this.element, this.settings);
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
   }
-  private throttledReinitLookahead = throttle(this._reinitLookahead, 1000);
+  private _throttledInitLookahead = throttle(this._initLookahead, 1000);
+  private destroyAndThrottledInitLookahead() {
+    this.lookahead?.destroy();
+    this.lookahead = undefined;
+    this._throttledInitLookahead();
+  }
 
   /**
    * Can be called either when initializing or when updating settings.
@@ -481,7 +486,7 @@ export default class Controller {
       )
     if (lookaheadSettingsChanged) {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
-      this.throttledReinitLookahead();
+      this.destroyAndThrottledInitLookahead();
     }
     // The previously scheduled `maybeSeek` became scheduled to an incorrect time because of this
     // (so `Math.abs(currentTime - expectedCurrentTime)` inside `maybeSeek` will be big).
