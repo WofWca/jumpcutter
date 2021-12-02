@@ -223,11 +223,8 @@
                       disabled
                       readonly
                       value={command.shortcut}
+                      style="width: calc(100% - 5ch)"
                     />
-                  </td>
-                  <td></td> <!-- No argument -->
-                  <td></td> <!-- No "overrideWebsiteHotkeys" -->
-                  <td style="text-align: center;">
                     <!-- Shortcuts page opening method was looked up in the Dark Reader extension. Though it appeared
                     to not work fully (no scrolling to anchor). Just 'href' doesn't work. -->
                     <a
@@ -240,6 +237,9 @@
                       style="text-decoration: none; padding: 0.125rem;"
                     >✏️</a>
                   </td>
+                  <td></td> <!-- No argument -->
+                  <td></td> <!-- No "overrideWebsiteHotkeys" -->
+                  <td></td> <!-- No "delete" -->
                 </tr>
               {/each}
             {/await}
