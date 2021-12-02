@@ -131,7 +131,7 @@ export default class Controller {
   _lastActualPlaybackRateChange: {
     time: AudioContextTime,
     value: number,
-    name: SpeedName,
+    name: SpeedName.SOUNDED,
   } = {
     // Dummy values (except for `name`), will be ovewritten in `_setSpeed`.
     name: SpeedName.SOUNDED,
