@@ -214,6 +214,17 @@ export default class Controller {
     element.addEventListener('loadstart', onNewSrc, { passive: true });
     this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
 
+    // Why `onNewSrc` is not enough? Because a 'timeupdate' event gets emited before 'loadstart', so
+    // 'maybeScheduleMaybeSeek' gets executed, and it tries to use the lookahead that was used for the
+    // previous source, so if the previous source started with silence, a seek will be performed
+    // immediately on the new source.
+    const onOldSrcGone = () => {
+      this.lookahead?.destroy();
+      this.lookahead = undefined;
+    }
+    element.addEventListener('emptied', onOldSrcGone, { passive: true });
+    this._onDestroyCallbacks.push(() => element.removeEventListener('emptied', onOldSrcGone));
+
     {
       // This is not strictly necessary, so not pushing anything to `toAwait`.
       //
