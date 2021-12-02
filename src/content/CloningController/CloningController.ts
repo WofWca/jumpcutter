@@ -202,7 +202,7 @@ export default class Controller {
       // > Its value is changed by the resource selection algorithm
       this.throttledReinitLookahead();
     }
-    element.addEventListener('loadstart', onNewSrc);
+    element.addEventListener('loadstart', onNewSrc, { passive: true });
     this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
 
     toAwait.push(this.lookahead.ensureInit().then(() => {
