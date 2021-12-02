@@ -1,41 +1,95 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { tick, onMount } from 'svelte';
   // TODO get rid of svelte?
   const defaultDocumentTitle = 'Jump Cutter: local video player';
   document.title = defaultDocumentTitle;
 
-  let inputEl: HTMLInputElement;
+  type HTMLInputElementTypeFile = HTMLInputElement & { files: NonNullable<HTMLInputElement['files']> };
+  let inputEl: HTMLInputElementTypeFile;
   let videoEl: HTMLVideoElement;
   let objectURL: ReturnType<typeof URL.createObjectURL> | undefined;
+
+  let numFiles = 0;
+  let currFileInd: number;
+  // Need this because Svelte's reactivity doesn't appear to work properly with `FileList`.
+  let files: File[] = [];
   async function onInputChange() {
-    const file = inputEl.files?.[0];
-    if (!file) {
+    files = [];
+
+    numFiles = inputEl.files.length;
+    if (numFiles <= 0) {
       // In case it was un-selected (I think that's the only case when it can happen).
       document.title = defaultDocumentTitle;
       return;
     }
+
+    for (const file of inputEl.files) {
+      files.push(file);
+    }
+
+    playFile(0);
+  }
+  async function playFile(ind: number) {
+    currFileInd = ind;
+    const file = inputEl.files[ind];
     // TODO handle `!video.canPlayType(file.type)`?
     document.title = file.name + ' – Jump Cutter';
     // For better performance. https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#Memory_management
     objectURL && URL.revokeObjectURL(objectURL);
     objectURL = URL.createObjectURL(file);
+    // TODO make the dimensions of the video element not jump when switching between videos.
     videoEl.src = objectURL;
     videoEl.play();
     await tick(); // Because initially it's `display: none;`.
     videoEl.focus();
   }
 
+  onMount(() => {
+    videoEl.addEventListener('ended', async () => {
+      // TODO `if (loop)` `const nextFileInd = (currFileInd + 1) % inputEl.files.length;`
+      const nextFileInd = currFileInd + 1;
+      if (nextFileInd < inputEl.files.length) {
+        // TODO `if (autoplay)`
+        playFile(nextFileInd);
+      }
+    }, { passive: true });
+  });
+
 </script>
 
 <!-- TODO but can we add a way to add captions? -->
 <!-- svelte-ignore a11y-media-has-caption -->
 <div class="video-and-file-input">
-  <div>
+  <div
+    style="display: flex; flex-wrap: wrap;"
+  >
     <video
       bind:this={videoEl}
       controls
       style={objectURL ? '' : 'display: none; '}
     />
+    <!-- <label>
+      <input
+        type="checkbox"
+      />
+      Autoplay
+    </label> -->
+
+    {#if files.length > 1}
+      <ol class="playlist">
+        <!-- {#each inputEl?.files ?? [] as file, ind} -->
+        {#each files as file, ind}
+          <li>
+            <button
+              on:click={() => playFile(ind)}
+              disabled={ind === currFileInd}
+            >
+              {file.name}
+            </button>
+          </li>
+        {/each}
+      </ol>
+    {/if}
   </div>
   <div class="video-input-wrapper">
     <input
@@ -44,9 +98,10 @@
       id="video-input"
       type="file"
       accept="video/*,audio/*"
+      multiple
     />
     <div class="input-box-content">
-      <p style="text-align: center; margin: 1rem;">Drop a file here<br>or click to select</p>
+      <p style="text-align: center; margin: 1rem;">Drop one or several files here<br>or click to select</p>
     </div>
   </div>
 </div>
@@ -70,6 +125,15 @@
     max-height: calc(100vh - 2 * var(--common-margin));
     margin-bottom: var(--common-margin);
     max-width: 100%;
+  }
+
+  .playlist {
+    padding-left: 1rem;
+    margin: var(--common-margin);
+    margin-top: 0;
+  }
+  .playlist > li {
+    margin: 0.25rem;
   }
 
   .video-input-wrapper {
