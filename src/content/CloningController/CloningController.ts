@@ -548,10 +548,6 @@ export default class Controller {
 
   get telemetry(): TelemetryRecord {
     assertDev(this.isInitialized());
-
-    // this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
-    // const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
-
     // TODO that's a lot of 0s, can we do something about it?
     return {
       unixTime: Date.now() / 1000,
