@@ -203,7 +203,7 @@ export default class Controller {
       this.throttledReinitLookahead();
     }
     element.addEventListener('loadstart', onNewSrc);
-    this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
+    this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
 
     toAwait.push(this.lookahead.ensureInit().then(() => {
       // TODO Super inefficient, I know.
