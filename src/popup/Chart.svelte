@@ -634,8 +634,18 @@
         appendToSpeedSeries(endMs, SpeedName_SOUNDED);
 
         // We don't have data for this period, so let's show just 0.
-        volumeSeries.append(startMs + 0.01, 0);
-        volumeSeries.append(endMs - 0.01, 0);
+        const length = endMs - startMs;
+        // Sometimes due to reduced `element.currentTime` precision (or something else, maybe?)
+        // a volume datapoint can occur to be at the start or the end of this silence range, and if it's
+        // non-zero, it will create a diagonal line on the silence range. This is a workaround for this.
+        const maxExpectedTimeErrorMs = 20;
+        const datapointTimeOffsetMs = Math.min(
+          length / 10, // In case the range is pretty short (compared to `maxExpectedTimeErrorMs`).
+          maxExpectedTimeErrorMs
+        );
+
+        volumeSeries.append(startMs + datapointTimeOffsetMs, 0);
+        volumeSeries.append(endMs - datapointTimeOffsetMs, 0);
 
         // TODO shouldn't we `setReferenceToLatest` here, because it became incorrect?
         // It will be detected automatically when the error tolerance is exceeded though.

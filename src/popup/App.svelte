@@ -369,15 +369,15 @@
               <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to just playing the video at sounded speed</li>
               <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
             {/if}
-            <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to intrinsic speed</li>
+            <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to normal (intrinsic) speed</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at intrinsic speed</li>
-              <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at intrinsic speed without jump cuts</li>
+              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at normal (intrinsic) speed</li>
+              <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at normal (intrinsic) speed without jump cuts</li>
             {/if}
           </ol>
           <p
             style="margin-bottom: 0.25rem;"
-          >Equivalent time saved percentage:<br>{timeSavedComparedToSoundedSpeedPercent} / {timeSavedComparedToIntrinsicSpeedPercent} (compared to sounded / compared to intrinsic).</p>
+          >Equivalent time saved percentage:<br>{timeSavedComparedToSoundedSpeedPercent} / {timeSavedComparedToIntrinsicSpeedPercent} (compared to sounded / compared to normal (intrinsic)).</p>
         </div>
       </div>
     </button>

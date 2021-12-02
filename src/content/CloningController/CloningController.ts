@@ -131,7 +131,7 @@ export default class Controller {
   _lastActualPlaybackRateChange: {
     time: AudioContextTime,
     value: number,
-    name: SpeedName,
+    name: SpeedName.SOUNDED,
   } = {
     // Dummy values (except for `name`), will be ovewritten in `_setSpeed`.
     name: SpeedName.SOUNDED,
@@ -139,7 +139,7 @@ export default class Controller {
     value: 1,
   };
 
-  lookahead: Lookahead;
+  lookahead?: Lookahead;
 
   // To be (optionally) assigned by an outside script.
   public timeSavedTracker?: TimeSavedTracker;
@@ -196,19 +196,7 @@ export default class Controller {
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
 
-    const onNewSrc = () => {
-      // This indicated that `element.currentSrc` has changed.
-      // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
-      // > Its value is changed by the resource selection algorithm
-      this.throttledReinitLookahead();
-
-      // Not strictly necessary, as it is very unlikely that they would match. Also looks spaghett-y.
-      this.lastHandledSilenceRangeStart = undefined;
-    }
-    element.addEventListener('loadstart', onNewSrc);
-    this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onNewSrc));
-
-    toAwait.push(this.lookahead.ensureInit().then(() => {
+    toAwait.push(this.lookahead!.ensureInit().then(() => {
       // TODO Super inefficient, I know.
       const onTimeupdate = () => {
         this.maybeScheduleMaybeSeek();
@@ -216,6 +204,26 @@ export default class Controller {
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
     }));
+
+    const onNewSrc = () => {
+      // This indicated that `element.currentSrc` has changed.
+      // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
+      // > Its value is changed by the resource selection algorithm
+      this.destroyAndThrottledInitLookahead();
+    }
+    element.addEventListener('loadstart', onNewSrc, { passive: true });
+    this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
+
+    // Why `onNewSrc` is not enough? Because a 'timeupdate' event gets emited before 'loadstart', so
+    // 'maybeScheduleMaybeSeek' gets executed, and it tries to use the lookahead that was used for the
+    // previous source, so if the previous source started with silence, a seek will be performed
+    // immediately on the new source.
+    const onOldSrcGone = () => {
+      this.lookahead?.destroy();
+      this.lookahead = undefined;
+    }
+    element.addEventListener('emptied', onOldSrcGone, { passive: true });
+    this._onDestroyCallbacks.push(() => element.removeEventListener('emptied', onOldSrcGone));
 
     {
       // This is not strictly necessary, so not pushing anything to `toAwait`.
@@ -355,27 +363,14 @@ export default class Controller {
     delete this._pendingSettingsUpdates;
   }
 
-  lastHandledSilenceRangeStart: number | undefined;
   maybeSeekTimeoutId = -1;
-  /**
-   * Does not cancel the previously scheduled `setTimeout`.
-   */
-  rerunMaybeScheduleMaybeSeek() {
-    this.lastHandledSilenceRangeStart = undefined; // Otherwise `maybeScheduleMaybeSeek` may do noting.
-    this.maybeScheduleMaybeSeek();
-  }
   maybeScheduleMaybeSeek() {
     const { currentTime } = this.element;
-    const maybeUpcomingSilenceRange = this.lookahead.getNextSilenceRange(currentTime);
+    const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
     if (!maybeUpcomingSilenceRange) {
       return;
     }
     const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
-    const alreadyHandledThisSilenceRange = this.lastHandledSilenceRangeStart === silenceStart;
-    if (alreadyHandledThisSilenceRange) {
-      return;
-    }
-    this.lastHandledSilenceRangeStart = silenceStart;
     // TODO would it be maybe better to also just do nothing if the next silence range is too far, and
     // `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`? Would time accuracy
     // increase?
@@ -390,6 +385,8 @@ export default class Controller {
     // Just so the seek is performed a bit faster compared to `setTimeout`.
     // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
     // called immediately (and not by `setTimeout`).
+    clearTimeout(this.maybeSeekTimeoutId);
+    // TODO should this be `<= expectedMinSetTimeoutDelay` instead of `<= 0`?
     if (seekInRealTime <= 0) {
       this.maybeSeek(seekTo, seekAt);
     } else {
@@ -414,7 +411,6 @@ export default class Controller {
       Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
       || paused;
     if (cancelSeek) {
-      this.rerunMaybeScheduleMaybeSeek();
       return;
     }
 
@@ -458,7 +454,8 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assertDev(this.isInitialized());
 
-    this.lookahead.destroy();
+    this._throttledInitLookahead.cancel();
+    this.lookahead?.destroy();
 
     for (const cb of this._onDestroyCallbacks) {
       cb();
@@ -467,13 +464,17 @@ export default class Controller {
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }
 
-  private _reinitLookahead() {
-    this.lookahead.destroy();
+  private _initLookahead() {
     const lookahead = this.lookahead = new Lookahead(this.element, this.settings);
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
   }
-  private throttledReinitLookahead = throttle(this._reinitLookahead, 1000);
+  private _throttledInitLookahead = throttle(this._initLookahead, 1000);
+  private destroyAndThrottledInitLookahead() {
+    this.lookahead?.destroy();
+    this.lookahead = undefined;
+    this._throttledInitLookahead();
+  }
 
   /**
    * Can be called either when initializing or when updating settings.
@@ -496,20 +497,13 @@ export default class Controller {
       )
     if (lookaheadSettingsChanged) {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
-      this.throttledReinitLookahead();
+      this.destroyAndThrottledInitLookahead();
     }
     // The previously scheduled `maybeSeek` became scheduled to an incorrect time because of this
     // (so `Math.abs(currentTime - expectedCurrentTime)` inside `maybeSeek` will be big).
     if (newSettings.soundedSpeed !== oldSettings?.soundedSpeed) {
-      // Clearing timeout is desireable because `maybeSeek` currently has a pretty high tolerance for
-      // `expectedCurrentTime` error, so the incorrectly scheduled `maybeSeek` may still be performed
-      // if we don't do this.
-      //
-      // If in the future this starts getting spaghettified, consider instead of `lastHandledSilenceRangeStart`
-      // storing `scheduledMaybeSeekAtRealTime` & `scheduledMaybeSeekSeekTo`, as they unambiguously describe
-      // a seek, then just check if a seek with these parameters has already been scheduled.
       clearTimeout(this.maybeSeekTimeoutId);
-      this.rerunMaybeScheduleMaybeSeek();
+      this.maybeScheduleMaybeSeek();
     }
   }
 
@@ -554,10 +548,6 @@ export default class Controller {
 
   get telemetry(): TelemetryRecord {
     assertDev(this.isInitialized());
-
-    // this._analyzerIn.getFloatTimeDomainData(this._volumeInfoBuffer);
-    // const inputVolume = this._volumeInfoBuffer[this._volumeInfoBuffer.length - 1];
-
     // TODO that's a lot of 0s, can we do something about it?
     return {
       unixTime: Date.now() / 1000,
