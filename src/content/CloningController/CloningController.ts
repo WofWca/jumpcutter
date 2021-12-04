@@ -218,7 +218,8 @@ export default class Controller {
     // 'maybeScheduleMaybeSeek' gets executed, and it tries to use the lookahead that was used for the
     // previous source, so if the previous source started with silence, a seek will be performed
     // immediately on the new source.
-    // TODO doesn't work on Gecko
+    // TODO doesn't work on Gecko:
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1744398
     const onOldSrcGone = () => {
       this.lookahead?.destroy();
       this.lookahead = undefined;
