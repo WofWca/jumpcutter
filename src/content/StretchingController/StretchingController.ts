@@ -316,9 +316,12 @@ export default class Controller {
           this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
 
           if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
-            // A workaround for https://github.com/vantezzen/skip-silence/issues/28.
+            // A workaround for
+            // https://bugs.chromium.org/p/chromium/issues/detail?id=1231093
+            // (or https://github.com/vantezzen/skip-silence/issues/28).
             // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
             // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
+            // Or keep for older browsers (and disable for newer)?
             // Gecko doesn't have this problem (anymore?). Maybe thanks to this
             // https://bugzilla.mozilla.org/show_bug.cgi?id=1712595
             // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a
