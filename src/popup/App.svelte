@@ -244,27 +244,27 @@
   $: wouldHaveLastedIfSpeedWasIntrinsic =
     mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 
+  function formatTimeSaved(num: number) {
+    return num.toFixed(2);
+  }
+  const dummyTimeSavedValues = [
+    formatTimeSaved(1),
+    formatTimeSaved(1), // TODO use `getAbsoluteClampedSilenceSpeed`?
+  ] as [string, string];
   function getTimeSavedPlaybackRateEquivalents(
     r: TelemetryMessage | undefined
   ): [comparedToSounded: string, comparedToIntrinsic: string] {
-    function format(num: number) {
-      return num.toFixed(2);
-    }
-    const dummyValues = [
-      format(1),
-      format(1), // TODO use `getAbsoluteClampedSilenceSpeed`?
-    ] as [string, string];
     if (!r) {
-      return dummyValues;
+      return dummyTimeSavedValues;
     }
     // `r.wouldHaveLastedIfSpeedWasIntrinsic - r.timeSavedComparedToIntrinsicSpeed` would be equivalent.
     const lastedActually = r.wouldHaveLastedIfSpeedWasSounded - r.timeSavedComparedToSoundedSpeed;
     if (lastedActually === 0) {
-      return dummyValues;
+      return dummyTimeSavedValues;
     }
     return [
-      format(r.wouldHaveLastedIfSpeedWasSounded / lastedActually),
-      format(r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually),
+      formatTimeSaved(r.wouldHaveLastedIfSpeedWasSounded / lastedActually),
+      formatTimeSaved(r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually),
     ]
   }
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
