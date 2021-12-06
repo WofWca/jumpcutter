@@ -26,10 +26,19 @@ export default async function init(): Promise<void> {
   });
 
   const onMessage = (message: unknown) => {
-    if (process.env.NODE_ENV !== 'production') {
-      if (message !== 'checkContentStatus') { // TODO DRY.
-        console.error('Unrecognized message', message);
+    // Keep in mind that although it is not supposed to be possible to send messages to content script with
+    // `browser.runtime.sendMessage`, this code is not only run as a content script - on the `local-file-player`
+    // page it is run as the page script, so this listener will catch all messages sent with
+    // `browser.runtime.sendMessage`, including other `broadcastStatus`.
+    if (message !== 'checkContentStatus') { // TODO DRY.
+      if (process.env.NODE_ENV !== 'production') {
+        const extensionPage = document.location.href.startsWith(browser.runtime.getURL(''));
+        const thisIsLocalFilePlayer = extensionPage;
+        if (!thisIsLocalFilePlayer) {
+          console.error('Unrecognized message', message);
+        }
       }
+      return;
     }
     broadcastStatus2(allMediaElementsController);
   }

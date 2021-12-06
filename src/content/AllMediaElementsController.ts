@@ -140,6 +140,14 @@ export default class AllMediaElementsController {
       }
       allMediaElementsControllerActive = true;
     }
+
+    // Keep in mind that this listener is also responsible for the desturction of this instance in case
+    // `enabled` gets changed to `false`.
+    const reactToSettingsChanges = (changes: MyStorageChanges) => {
+      this.reactToSettingsNewValues(settingsChanges2NewValues(changes));
+    }
+    addOnSettingsChangedListener(reactToSettingsChanges);
+    this._onDestroyCallbacks.push(() => removeOnSettingsChangedListener(reactToSettingsChanges));
   }
   private destroy() {
     this.detachFromActiveElement();
@@ -152,9 +160,10 @@ export default class AllMediaElementsController {
   private detachFromActiveElement() {
     // TODO It is possible to call this function before the `_onDetachFromActiveElementCallbacks` array has been filled
     // and `controller` has been assigned.
+    // Also keep in mind that it's possible to never attached to any elements at all, even if `onNewMediaElements()`
+    // has been called (see that function).
     // Same for `destroy`.
-    assertDev(this.controller); // So this assertion can fail.
-    this.controller.destroy();
+    this.controller?.destroy();
     this.controller = undefined;
     this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
     this._onDetachFromActiveElementCallbacks = [];
@@ -169,14 +178,19 @@ export default class AllMediaElementsController {
   }
   private ensureLoadSettings = once(this._loadSettings);
   private reactToSettingsNewValues(newValues: Partial<Settings>) {
-    // Currently, this function is an event listener, and while it gets detached when the extension gets disabled, it
-    // still gets executed on that change, because it gets detached within another event listener. This is to check if
-    // this is the case.
-    if (newValues.enabled === false) return;
+    if (newValues.enabled === false) {
+      this.destroy();
+      return;
+    }
 
     if (Object.keys(newValues).length === 0) return;
 
-    assertDev(this.settings);
+    if (!this.settings) {
+      // The fact that the settings haven't yet been loaded means that nothing is initialized yet because
+      // it couldn't have been initialized because nobody knows how to initialize it.
+      // Might want to refactor this in the future.
+      return;
+    }
     Object.assign(this.settings, newValues);
     assertDev(this.controller);
 
@@ -213,18 +227,6 @@ export default class AllMediaElementsController {
       // Controller destruction is done in `detachFromActiveElement`.
     }
   }
-  private reactToSettingsChanges = (changes: MyStorageChanges) => {
-    if (changes.enabled?.newValue === false) {
-      this.destroy();
-      return;
-    }
-    this.reactToSettingsNewValues(settingsChanges2NewValues(changes));
-  }
-  private _addOnSettingsChangedListener() {
-    addOnSettingsChangedListener(this.reactToSettingsChanges);
-    this._onDestroyCallbacks.push(() => removeOnSettingsChangedListener(this.reactToSettingsChanges));
-  }
-  private ensureAddOnSettingsChangedListener = once(this._addOnSettingsChangedListener);
 
   private onConnect = (port: browser.runtime.Port) => {
     let listener: (msg: unknown) => void;
@@ -371,7 +373,6 @@ export default class AllMediaElementsController {
 
     await this.ensureLoadSettings();
     assertDev(this.settings)
-    this.ensureAddOnSettingsChangedListener();
 
     let resolveTimeSavedTrackerPromise: (timeSavedTracker: TimeSavedTracker) => void;
     const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
