@@ -59,7 +59,8 @@ class SeekDurationProphet {
   // TODO replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
   history: number[] = [];
   historyAverage = seekDurationProphetNoDataInitialAssumedDuration;
-  _onDestroyCallbacks: Array<() => void> = [];
+  public destroy!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this.destroy = r);
   // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
   // been fired, but before 'seeked'. `performance.now()` is not technically correct, but
   // handling this being `undefined` separately seems worse.
@@ -72,7 +73,7 @@ class SeekDurationProphet {
     const onSeeked = this.onSeeked.bind(this);
     el.addEventListener('seeking', onSeeking, { passive: true });
     el.addEventListener('seeked', onSeeked, { passive: true });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       el.removeEventListener('seeking', onSeeking);
       el.removeEventListener('seeked', onSeeked);
     })
@@ -99,9 +100,6 @@ class SeekDurationProphet {
     const sum = this.history.reduce((acc, curr) => acc + curr);
     this.historyAverage = sum / this.history.length;
   }
-  public destroy(): void {
-    this._onDestroyCallbacks.forEach(cb => cb());
-  }
   get nextSeekDurationMs(): number {
     return this.historyAverage;
   }
@@ -124,7 +122,8 @@ export default class Controller {
   // `init` finished.
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
-  _onDestroyCallbacks: Array<() => void> = [];
+  private _resolveDestroyedPromise!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
   audioContext: AudioContext;
   getVolume: () => number = () => 0;
   _lastSilenceSkippingSeek: TimeRange | undefined;
@@ -165,7 +164,7 @@ export default class Controller {
     }
 
     this.seekDurationProphet = new SeekDurationProphet(element);
-    this._onDestroyCallbacks.push(() => this.seekDurationProphet.destroy());
+    this._destroyedPromise.then(() => this.seekDurationProphet.destroy());
 
     // We don't need a high sample rate as this context is currently only used to volume on the chart,
     // so consider setting it manually to a lower one. But I'm thinking whether it woruld actually
@@ -173,7 +172,7 @@ export default class Controller {
     const audioContext = this.audioContext = new AudioContext({
       latencyHint: 'playback',
     });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       audioContext.close();
     })
   }
@@ -191,7 +190,7 @@ export default class Controller {
       playbackRate: elementPlaybackRateBeforeInitialization,
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
@@ -202,7 +201,7 @@ export default class Controller {
         this.maybeScheduleMaybeSeek();
       }
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
-      this._onDestroyCallbacks.push(() => element.removeEventListener('timeupdate', onTimeupdate));
+      this._destroyedPromise.then(() => element.removeEventListener('timeupdate', onTimeupdate));
     }));
 
     const onNewSrc = () => {
@@ -212,7 +211,7 @@ export default class Controller {
       this.destroyAndThrottledInitLookahead();
     }
     element.addEventListener('loadstart', onNewSrc, { passive: true });
-    this._onDestroyCallbacks.push(() => element.removeEventListener('loadstart', onNewSrc));
+    this._destroyedPromise.then(() => element.removeEventListener('loadstart', onNewSrc));
 
     // Why `onNewSrc` is not enough? Because a 'timeupdate' event gets emited before 'loadstart', so
     // 'maybeScheduleMaybeSeek' gets executed, and it tries to use the lookahead that was used for the
@@ -225,7 +224,7 @@ export default class Controller {
       this.lookahead = undefined;
     }
     element.addEventListener('emptied', onOldSrcGone, { passive: true });
-    this._onDestroyCallbacks.push(() => element.removeEventListener('emptied', onOldSrcGone));
+    this._destroyedPromise.then(() => element.removeEventListener('emptied', onOldSrcGone));
 
     {
       // This is not strictly necessary, so not pushing anything to `toAwait`.
@@ -270,7 +269,7 @@ export default class Controller {
             volumeFilterSmoothingWindowLength,
             volumeFilterSmoothingWindowLength
           );
-          this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+          this._destroyedPromise.then(() => destroyAudioWorkletNode(volumeFilter));
           return volumeFilter;
         });
 
@@ -327,13 +326,13 @@ export default class Controller {
           }
         }
         element.addEventListener('playing', onPlaying, { passive: true });
-        this._onDestroyCallbacks.push(() => element.removeEventListener('playing', onPlaying));
+        this._destroyedPromise.then(() => element.removeEventListener('playing', onPlaying));
         const onLoadstartOrEnded = () => {
           unhandledLoadstartOrEndedEvent = true;
         }
         element.addEventListener('loadstart', onLoadstartOrEnded, { passive: true });
         element.addEventListener('ended', onLoadstartOrEnded, { passive: true });
-        this._onDestroyCallbacks.push(() => {
+        this._destroyedPromise.then(() => {
           element.removeEventListener('loadstart', onLoadstartOrEnded);
           element.removeEventListener('ended', onLoadstartOrEnded);
         });
@@ -459,9 +458,7 @@ export default class Controller {
     this._throttledInitLookahead.cancel();
     this.lookahead?.destroy();
 
-    for (const cb of this._onDestroyCallbacks) {
-      cb();
-    }
+    this._resolveDestroyedPromise();
 
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }

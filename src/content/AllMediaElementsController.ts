@@ -127,9 +127,10 @@ export default class AllMediaElementsController {
   controller: SomeController | undefined;
   timeSavedTracker: TimeSavedTracker | undefined;
   private settings: Settings | undefined;
-  private _onDestroyCallbacks: Array<() => void> = [];
-  // Whatever is added to `_onDestroyCallbacks` doesn't need to be added to `_onDetachFromActiveElementCallbacks`, it
-  // will be called in `destroy`.
+  private _resolveDestroyedPromise!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
+  // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElementCallbacks`,
+  // it will be called in `destroy`.
   private _onDetachFromActiveElementCallbacks: Array<() => void> = [];
 
   constructor() {
@@ -147,11 +148,11 @@ export default class AllMediaElementsController {
       this.reactToSettingsNewValues(settingsChanges2NewValues(changes));
     }
     addOnSettingsChangedListener(reactToSettingsChanges);
-    this._onDestroyCallbacks.push(() => removeOnSettingsChangedListener(reactToSettingsChanges));
+    this._destroyedPromise.then(() => removeOnSettingsChangedListener(reactToSettingsChanges));
   }
   private destroy() {
     this.detachFromActiveElement();
-    this._onDestroyCallbacks.forEach(cb => cb());
+    this._resolveDestroyedPromise();
 
     if (process.env.NODE_ENV !== 'production') {
       allMediaElementsControllerActive = false;
@@ -162,7 +163,6 @@ export default class AllMediaElementsController {
     // and `controller` has been assigned.
     // Also keep in mind that it's possible to never attached to any elements at all, even if `onNewMediaElements()`
     // has been called (see that function).
-    // Same for `destroy`.
     this.controller?.destroy();
     this.controller = undefined;
     this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
@@ -273,11 +273,11 @@ export default class AllMediaElementsController {
       }
     }
     port.onMessage.addListener(listener);
-    this._onDestroyCallbacks.push(() => port.onMessage.removeListener(listener));
+    this._destroyedPromise.then(() => port.onMessage.removeListener(listener));
   }
   private _addOnConnectListener() {
     browser.runtime.onConnect.addListener(this.onConnect);
-    this._onDestroyCallbacks.push(() => browser.runtime.onConnect.removeListener(this.onConnect));
+    this._destroyedPromise.then(() => browser.runtime.onConnect.removeListener(this.onConnect));
   }
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
@@ -337,7 +337,7 @@ export default class AllMediaElementsController {
     if (this.settings.hotkeys.some(binding => binding.overrideWebsiteHotkeys)) {
       // `useCapture` is true because see `overrideWebsiteHotkeys`.
       document.addEventListener('keydown', handleKeydown, true);
-      this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydown, true));
+      this._destroyedPromise.then(() => document.removeEventListener('keydown', handleKeydown, true));
     } else {
       // Deferred because it's not top priority. But maybe it should be?
       // Yes, it would mean that the `if (overrideWebsiteHotkeys) {` inside `handleKeydown` will always
@@ -345,7 +345,7 @@ export default class AllMediaElementsController {
       const handleKeydownDeferred =
         (...args: Parameters<typeof handleKeydown>) => setTimeout(handleKeydown, undefined, ...args);
       document.addEventListener('keydown', handleKeydownDeferred, { passive: true });
-      this._onDestroyCallbacks.push(() => document.removeEventListener('keydown', handleKeydownDeferred));
+      this._destroyedPromise.then(() => document.removeEventListener('keydown', handleKeydownDeferred));
     }
     // this.hotkeyListenerAttached = true;
   }
@@ -458,7 +458,7 @@ export default class AllMediaElementsController {
       this.handledElements.add(el);
 
       el.addEventListener('play', this.ensureAttachToEventTargetElement, { passive: true });
-      this._onDestroyCallbacks.push(() => el.removeEventListener('play', this.ensureAttachToEventTargetElement));
+      this._destroyedPromise.then(() => el.removeEventListener('play', this.ensureAttachToEventTargetElement));
     }
 
     // Attach to the first new element that is not paused, even if we're already attached to another.

@@ -87,7 +87,8 @@ export default class Controller {
   // `init` finished.
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
-  _onDestroyCallbacks: Array<() => void> = [];
+  private _resolveDestroyedPromise!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
   audioContext?: AudioContext;
   _silenceDetectorNode?: SilenceDetectorNode;
   _analyzerIn?: AnalyserNode;
@@ -132,7 +133,7 @@ export default class Controller {
       playbackRate: elementPlaybackRateBeforeInitialization,
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
@@ -149,16 +150,16 @@ export default class Controller {
         volumeFilterSmoothingWindowLength,
         volumeFilterSmoothingWindowLength
       );
-      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+      this._destroyedPromise.then(() => destroyAudioWorkletNode(volumeFilter));
       return volumeFilter;
     });
     const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
       const silenceDetector = new SilenceDetectorNode(audioContext, this._getSilenceDetectorNodeDurationThreshold())
       this._silenceDetectorNode = silenceDetector;
-      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(silenceDetector));
+      this._destroyedPromise.then(() => destroyAudioWorkletNode(silenceDetector));
       // So the message handler can no longer be triggered. Yes, I know it's currently being closed anyway on any
       // AudioWorkletNode destruction a line above, but let's future-prove it.
-      this._onDestroyCallbacks.push(() => silenceDetector.port.close());
+      this._destroyedPromise.then(() => silenceDetector.port.close());
       return silenceDetector;
     });
 
@@ -175,7 +176,7 @@ export default class Controller {
           volumeFilterSmoothingWindowLength,
           volumeFilterSmoothingWindowLength
         );
-        this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(outVolumeFilter));
+        this._destroyedPromise.then(() => destroyAudioWorkletNode(outVolumeFilter));
         return outVolumeFilter;
       });
       this._analyzerOut = audioContext.createAnalyser();
@@ -197,7 +198,7 @@ export default class Controller {
         () => this.settings,
         () => this._lookahead!.delayTime.value,
       );
-      this._onDestroyCallbacks.push(() => this._stretcherAndPitch!.destroy());
+      this._destroyedPromise.then(() => this._stretcherAndPitch!.destroy());
     }
 
     // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
@@ -237,7 +238,7 @@ export default class Controller {
     }
     element.addEventListener('pause', scheduleSuspendAudioContext, { passive: true });
     element.addEventListener('play', resumeAudioContext, { passive: true });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       element.removeEventListener('pause', scheduleSuspendAudioContext);
       element.removeEventListener('play', resumeAudioContext);
       resumeAudioContext(); // In case the video is paused.
@@ -253,7 +254,7 @@ export default class Controller {
     }
     toAwait.push(volumeFilterP.then(async volumeFilter => {
       mediaElementSource.connect(volumeFilter);
-      this._onDestroyCallbacks.push(() => {
+      this._destroyedPromise.then(() => {
         // This is so the next line doesn't throw in case it is already disconnected (e.g. by some other
         // onDestroyCallback). The spec says this is fine:
         // https://webaudio.github.io/web-audio-api/#dom-audionode-connect
@@ -267,7 +268,7 @@ export default class Controller {
     }));
     toDestinationChainLastConnectedLink.connect(audioContext.destination);
 
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       mediaElementSource.disconnect();
       mediaElementSource.connect(audioContext.destination);
     });
@@ -341,14 +342,14 @@ export default class Controller {
       // Not doint this in `CloningController/Lookahead.ts` does not appear to cause a memory leak for some reason.
       // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
       // thing retaining a reference to the listener. TODO
-      this._onDestroyCallbacks.push(() => silenceDetector.port.onmessage = null);
+      this._destroyedPromise.then(() => silenceDetector.port.onmessage = null);
     }));
 
     if (isLogging(this)) {
       const logIntervalId = (setInterval as typeof window.setInterval)(() => {
         this._log!();
       }, 1);
-      this._onDestroyCallbacks.push(() => clearInterval(logIntervalId));
+      this._destroyedPromise.then(() => clearInterval(logIntervalId));
     }
 
     await Promise.all(toAwait);
@@ -371,9 +372,7 @@ export default class Controller {
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assertDev(this.isInitialized());
 
-    for (const cb of this._onDestroyCallbacks) {
-      cb();
-    }
+    this._resolveDestroyedPromise();
 
     // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }

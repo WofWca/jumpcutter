@@ -48,7 +48,8 @@ export default class Controller {
   settings: ControllerSettings;
   readonly initialized = true;
 
-  _onDestroyCallbacks: Array<() => void> = [];
+  public destroy!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this.destroy = r);
   _lastActualPlaybackRateChange: {
     time: AudioContextTime,
     value: number,
@@ -79,7 +80,7 @@ export default class Controller {
       playbackRate: elementPlaybackRateBeforeInitialization,
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       element.playbackRate = elementPlaybackRateBeforeInitialization;
       element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
     });
@@ -87,17 +88,6 @@ export default class Controller {
     this._setStateAccordingToNewSettings(this.settings);
 
     return this;
-  }
-
-  /**
-   * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved).
-   * TODO make it work when it's false?
-   */
-  async destroy(): Promise<void> {
-    for (const cb of this._onDestroyCallbacks) {
-      cb();
-    }
-    // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }
 
   /**
