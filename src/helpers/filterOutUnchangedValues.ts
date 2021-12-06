@@ -5,7 +5,8 @@ import isEqual from 'lodash/isEqual';
  * `browser.storage.onChanged` listeners in Firefox may be called with `newValue` equal to `oldValue` if you call
  * `storage.set()` with the same value. It's supposed to be used on all `browser.storage.onChanged.addListener`
  * callbacks.
- * TODO can we consider it a bug? If not, rethink the whole commit, we may improve
+ * https://bugzilla.mozilla.org/show_bug.cgi?id=1621162
+ * If this really isn't a bug, rethink the whole commit, we may improve
  * performance, at least by using something other than `_.isEqual` as it covers a lot of edge cases (like regex types,
  * which we don't use).
  * @return a shallow clone with unchanged value keys deleted.
