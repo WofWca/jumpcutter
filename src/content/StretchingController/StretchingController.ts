@@ -365,7 +365,8 @@ export default class Controller {
   }
 
   /**
-   * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved).
+   * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved),
+   * othersie it will never resolve its promise.
    * TODO make it work when it's false?
    */
   async destroy(): Promise<void> {
