@@ -267,7 +267,31 @@
       formatTimeSaved(r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually),
     ]
   }
+  function beetween(min: number, x: number, max: number): boolean {
+    return min < x && x < max;
+  }
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+  $: timeSavedPlaybackRateEquivalentsAreDifferent =
+    // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
+    // jump between being the same and being different even if you don't change soundedSpeed.
+    // Not simply doing a strict comparison (`!==`) because otherwise if you changed soundedSpeed for even
+    // a moment, it would never stop showing both numbers.
+    !beetween(
+      1 / 1.02,
+      (
+        (r?.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)
+        / (r?.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)
+      ),
+      1.02,
+    )
+    // Also need to look at this because if `soundedSpeed` was > 1 at first and then it changed to < 1, there will
+    // be a point where `wouldHaveLastedIfSpeedWasSounded` and `wouldHaveLastedIfSpeedWasIntrinsic` will become the
+    // same (although for a brief moment), despite the soundedSpeed actually never being `=== 1`.
+    || (settings && settings.soundedSpeed !== 1);
+  // TODO DRY
+  $: timeSavedOnlyOneNumberIsShown =
+    !timeSavedPlaybackRateEquivalentsAreDifferent
+    && settings?.timeSavedAveragingMethod === 'exponential';
 
   function onUseExperimentalAlgorithmInput(e: Event) {
     const newControllerType = (e.target as HTMLInputElement).checked
@@ -347,10 +371,14 @@
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
       {/if}
-      <span>/</span>
-      <span>{timeSavedPlaybackRateEquivalents[1]}</span>
-      {#if settings.timeSavedAveragingMethod !== 'exponential'}
-        <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+      <!-- Don't need to confuse the user with another number if they're equal anyway, especially they're one
+      of those who use `soundedSpeed=1` -->
+      {#if timeSavedPlaybackRateEquivalentsAreDifferent}
+        <span>/</span>
+        <span>{timeSavedPlaybackRateEquivalents[1]}</span>
+        {#if settings.timeSavedAveragingMethod !== 'exponential'}
+          <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
+        {/if}
       {/if}
 
       <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
@@ -363,22 +391,38 @@
               <span>Over the last {mmSs(settings.timeSavedAveragingWindowLength)}.</span>
             {/if}
           </p>
-          <p>Numbers' meanings (in order):</p>
+          {#if !timeSavedOnlyOneNumberIsShown}
+            <p>Numbers' meanings (in order):</p>
+          {/if}
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
-            <li>{timeSavedPlaybackRateEquivalents[0]} – how much faster the media is effectively playing compared to sounded speed</li>
+            <li
+              style={timeSavedOnlyOneNumberIsShown ? 'list-style:none;' : ''}
+            >{timeSavedPlaybackRateEquivalents[0]} – how much faster the media is effectively playing compared to sounded speed</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
               <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to just playing the video at sounded speed</li>
               <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
             {/if}
-            <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to normal (intrinsic) speed</li>
-            {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at normal (intrinsic) speed</li>
-              <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at normal (intrinsic) speed without jump cuts</li>
+            {#if timeSavedPlaybackRateEquivalentsAreDifferent}
+              <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to normal (intrinsic) speed</li>
+              {#if settings.timeSavedAveragingMethod !== 'exponential'}
+                <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at normal (intrinsic) speed</li>
+                <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at normal (intrinsic) speed without jump cuts</li>
+              {/if}
             {/if}
           </ol>
           <p
             style="margin-bottom: 0.25rem;"
-          >Equivalent time saved percentage:<br>{timeSavedComparedToSoundedSpeedPercent} / {timeSavedComparedToIntrinsicSpeedPercent} (compared to sounded / compared to normal (intrinsic)).</p>
+          >Equivalent time saved percentage:<br>
+          {timeSavedComparedToSoundedSpeedPercent}
+          {#if timeSavedPlaybackRateEquivalentsAreDifferent}
+            / {timeSavedComparedToIntrinsicSpeedPercent}
+          {/if}
+          (compared to sounded{
+          #if timeSavedPlaybackRateEquivalentsAreDifferent}
+            / compared to normal (intrinsic){
+          /if
+          }).
+          </p>
         </div>
       </div>
     </button>
