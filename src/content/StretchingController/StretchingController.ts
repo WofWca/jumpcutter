@@ -370,6 +370,11 @@ export default class Controller {
    * TODO make it work when it's false?
    */
   async destroy(): Promise<void> {
+    // `await this._initPromise` because the `init` function has side-effects (e.g. doing
+    // `elementMediaSource.disconnect()`) (which it should, because it's supposed to CONTROL the element),
+    // so the outside scipt needs to make sure that two `init` methods from two different controllers
+    // don't get executed at the same time for the same element (e.g. if we need to swtich from one controller
+    // type to another).
     await this._initPromise; // TODO would actually be better to interrupt it if it's still going.
     assertDev(this.isInitialized());
 
