@@ -57,7 +57,8 @@ export default class Lookahead {
     ends: [],
   };
 
-  _onDestroyCallbacks: Array<() => void> = [];
+  private _resolveDestroyedPromise!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
   constructor(
     private originalElement: HTMLMediaElement,
     private settings: LookaheadSettings,
@@ -66,16 +67,16 @@ export default class Lookahead {
     const clone = document.createElement('audio');
     this.clone = clone;
 
-    // Not doing this appears to cause a resource (memory and processing) leak in Chromium manifesting itself when
-    // creating new instances of Lookahead (and discarding the old ones).
-    // Seems like a browser bug. TODO?
-    // BTW, `clone.pause()` also works.
-    this._onDestroyCallbacks.push(() => clone.src = '');
-
     // TODO this probably doesn't cover all cases. Maybe it's better to just `originalElement.cloneNode(true)`?
     // TODO also need to watch for changes of `crossOrigin` (in `CloningController.ts`).
     clone.crossOrigin = originalElement.crossOrigin;
     clone.src = originalElement.currentSrc;
+
+    // Not doing this appears to cause a resource (memory and processing) leak in Chromium manifesting itself when
+    // creating new instances of Lookahead (and discarding the old ones).
+    // Seems like a browser bug. TODO?
+    // BTW, `clone.pause()` also works.
+    this._destroyedPromise.then(() => clone.src = '');
 
     if (process.env.NODE_ENV !== 'production') {
       const interval = setInterval(() => {
@@ -85,7 +86,7 @@ export default class Lookahead {
           console.error('clone.src !== originalElement.currentSrc,', '\n', cloneSrc, '\n', originalSrc);
         }
       }, 2000);
-      this._onDestroyCallbacks.push(() => clearInterval(interval));
+      this._destroyedPromise.then(() => clearInterval(interval));
     }
   }
   private async _init(): Promise<void> {
@@ -98,7 +99,7 @@ export default class Lookahead {
     const ctx = new AudioContext({
       latencyHint: 'playback',
     });
-    this._onDestroyCallbacks.push(() => ctx.close()); // Not sure if this is required, maybe it gets GCd automatically?
+    this._destroyedPromise.then(() => ctx.close()); // Not sure if this is required, maybe it gets GCd automatically?
     ctx.suspend();
     const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
 
@@ -109,14 +110,14 @@ export default class Lookahead {
     // TODO DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
       const volumeFilter = new VolumeFilterNode(ctx, smoothingWindowLenght, smoothingWindowLenght);
-      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(volumeFilter));
+      this._destroyedPromise.then(() => destroyAudioWorkletNode(volumeFilter));
       return volumeFilter;
     });
 
     const silenceDetectorDurationThreshold = this._getSilenceDetectorNodeDurationThreshold();
     const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
       const silenceDetector = new SilenceDetectorNode(ctx, silenceDetectorDurationThreshold);
-      this._onDestroyCallbacks.push(() => destroyAudioWorkletNode(silenceDetector));
+      this._destroyedPromise.then(() => destroyAudioWorkletNode(silenceDetector));
       return silenceDetector;
     });
 
@@ -185,7 +186,7 @@ export default class Lookahead {
       );
     }
     clone.addEventListener('ended', onEnded, { passive: true });
-    this._onDestroyCallbacks.push(() => clone.removeEventListener('ended', onEnded));
+    this._destroyedPromise.then(() => clone.removeEventListener('ended', onEnded));
 
     clone.playbackRate = clonePlaybackRate;
     // For better performance. TODO however I'm not sure if this can significantly affect volume readings.
@@ -217,7 +218,7 @@ export default class Lookahead {
     const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
     // TODO using `timeupdate` is pretty bug-proof, but not very efficient.
     originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
     });
 
@@ -236,7 +237,7 @@ export default class Lookahead {
     }
     clone.addEventListener('pause', suspendAudioContext, { passive: true });
     clone.addEventListener('play', resumeAudioContext, { passive: true });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       clone.removeEventListener('pause', suspendAudioContext);
       clone.removeEventListener('play', resumeAudioContext);
     });
@@ -255,7 +256,7 @@ export default class Lookahead {
     }
     originalElement.addEventListener('pause', pauseClone, { passive: true });
     originalElement.addEventListener('play', playClone, { passive: true });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       originalElement.removeEventListener('pause', pauseClone);
       originalElement.removeEventListener('play', playClone);
     });
@@ -337,8 +338,7 @@ export default class Lookahead {
   }
   public async destroy(): Promise<void> {
     await this.ensureInit();
-    for (const cb of this._onDestroyCallbacks) {
-      cb();
-    }
+
+    this._resolveDestroyedPromise();
   }
 }

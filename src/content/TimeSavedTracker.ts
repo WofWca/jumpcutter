@@ -142,7 +142,8 @@ export default class TimeSavedTracker {
   private _wouldHaveLastedIfSpeedWasSounded = 0;
   private _wouldHaveLastedIfSpeedWasIntrinsic = 0;
   private _playbackStopwatch: MediaElementPlaybackStopwatch;
-  private _onDestroyCallbacks: Array<() => void> = [];
+  public destroy!: () => void;
+  private _destroyedPromise = new Promise<void>(r => this.destroy = r);
 
   // non-null assertion because it doesn't check if they're assigned inside functions called withing the constructor.
   // TODO?
@@ -161,7 +162,7 @@ export default class TimeSavedTracker {
     this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
     addOnSettingsChangedListener(this._onSettingsChange);
     element.addEventListener('ratechange', this._onElementSpeedChange, { passive: true });
-    this._onDestroyCallbacks.push(() => {
+    this._destroyedPromise.then(() => {
       this._playbackStopwatch.destroy();
       removeOnSettingsChangedListener(this._onSettingsChange);
       element.removeEventListener('ratechange', this._onElementSpeedChange);
@@ -298,10 +299,5 @@ export default class TimeSavedTracker {
       wouldHaveLastedIfSpeedWasSounded,
       wouldHaveLastedIfSpeedWasIntrinsic,
     };
-  }
-  public destroy(): void {
-    for (const cb of this._onDestroyCallbacks) {
-      cb();
-    }
   }
 }
