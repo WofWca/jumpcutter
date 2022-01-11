@@ -291,7 +291,7 @@
         <h4>Range sliders' attributes</h4>
         <p>
           Be aware that browsers do not support playback rates above a certain limit.
-          At the time of writing it's 16 for Chromium (Chrome) and 4 for Gecko (Firefox).
+          At the time of writing it's 16 for Chromium (Chrome) and 8 (by default) for Gecko (Firefox).
         </p>
         <table>
           <thead>

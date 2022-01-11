@@ -1,6 +1,6 @@
 import browser from '@/webextensions-api';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { assertDev, MediaTime } from '@/helpers';
+import { assertDev, getGeckoLikelyMaxNonMutedPlaybackRate, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode, getRealtimeMargin } from '@/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
@@ -36,11 +36,7 @@ type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefo
 
 // TODO make it depend on `soundedSpeed` and how much silence there is and other stuff.
 const clonePlaybackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
-  // Firefox mutes media elements whose `playbackRate > 4`:
-  // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1630569#c9
-  // TODO?
-  ? 4
+  ? Math.min(5, getGeckoLikelyMaxNonMutedPlaybackRate())
   // Somewhat arbitrary.
   : 5;
 

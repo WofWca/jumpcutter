@@ -1,5 +1,5 @@
 import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings } from "./settings";
-import { clamp, assertNever, DeepReadonly, KeysOfType } from "./helpers";
+import { clamp, assertNever, DeepReadonly, KeysOfType, getGeckoLikelyMaxNonMutedPlaybackRate } from "./helpers";
 
 // I've got a feeling that this code will become obsolete sooner than it should. TODO maybe use a library?
 
@@ -153,6 +153,11 @@ export function combinationToString(combination: KeyCombination): string {
   return [...reprModifiers, combination.code].join('+');
 }
 
+// See the comment in `getAbsoluteClampedSilenceSpeed` definition on why this is different for different browsers.
+const maxSpeedClamp = BUILD_DEFINITIONS.BROWSER === 'gecko'
+  ? getGeckoLikelyMaxNonMutedPlaybackRate()
+  : 15;
+
 /**
  * If a key is pressed while typing in an input field, we don't consider this a hotkey.
  * Filter criteria is yoinked from
@@ -217,8 +222,6 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
         ? currentSettings[prevValueSettingKey]
         : arg;
     };
-    // See the comment in `getAbsoluteClampedSilenceSpeed` definition on why this is different for different browsers.
-    const maxSpeedClamp = BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 15;
     switch (binding.action) {
       // TODO DRY max and min values with values in `@/popup`. Make them adjustable even?
       //

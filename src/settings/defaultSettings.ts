@@ -2,6 +2,7 @@ import { enabledSettingDefaultValue } from './';
 import type { Settings } from './';
 import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
+import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 
 const stretchingControllerSpecificDefaults = {
   marginBefore: 0,
@@ -166,13 +167,16 @@ export const defaultSettings: Readonly<Settings> = {
   popupVolumeThresholdStep: 0.0001,
 
   popupSoundedSpeedMin: 0.25,
-  popupSoundedSpeedMax: 4, // BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4
+  popupSoundedSpeedMax: 4, // BUILD_DEFINITIONS.BROWSER === 'gecko' ? getGeckoLikelyMaxNonMutedPlaybackRate()
   popupSoundedSpeedStep: 0.25,
 
   popupSilenceSpeedRawMin: 1,
   // See the comment in `getAbsoluteClampedSilenceSpeed` definition on why `max` is different
   // for different browsers.
-  popupSilenceSpeedRawMax: BUILD_DEFINITIONS.BROWSER === 'gecko' ? 4 : 8,
+  popupSilenceSpeedRawMax: BUILD_DEFINITIONS.BROWSER === 'gecko'
+    // But if the browser gets upgraded, this will remain at 4. Doesn't matter?
+    ? Math.min(8, getGeckoLikelyMaxNonMutedPlaybackRate())
+    : 8,
   popupSilenceSpeedRawStep: 0.25,
 
   popupMarginBeforeMin: 0,
