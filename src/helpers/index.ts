@@ -27,3 +27,5 @@ export * from './assertDev';
 export * from './assertNever';
 export * from './filterOutUnchangedValues';
 export * from './speedName';
+export * from './getGeckoMajorVersion';
+export * from './getGeckoLikelyMaxNonMutedPlaybackRate';
