@@ -318,7 +318,7 @@
         type="checkbox"
         autofocus={settings.popupAutofocusEnabledInput}
       >
-      <span>Enabled</span>
+      <span>Enable</span>
     </label>
   </div>
   <!-- TODO but this is technically a button. Is this ok? -->
