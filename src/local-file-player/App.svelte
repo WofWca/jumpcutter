@@ -1,6 +1,8 @@
 <script lang="ts">
   import { tick, onMount } from 'svelte';
   // TODO get rid of svelte?
+  import { getMessage } from '@/helpers';
+
   const defaultDocumentTitle = 'Jump Cutter: local video player';
   document.title = defaultDocumentTitle;
 
@@ -101,7 +103,7 @@
       multiple
     />
     <div class="input-box-content">
-      <p style="text-align: center; margin: 1rem;">Drop one or several files here<br>or click to select</p>
+      <p style="text-align: center; margin: 1rem;">{getMessage('dropFiles')}<br>{getMessage('orClickToSelect')}</p>
     </div>
   </div>
 </div>
