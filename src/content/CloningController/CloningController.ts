@@ -327,14 +327,14 @@ export default class Controller {
         }
         element.addEventListener('playing', onPlaying, { passive: true });
         this._destroyedPromise.then(() => element.removeEventListener('playing', onPlaying));
-        const onLoadstartOrEnded = () => {
+        const onEndedOrLoadstart = () => {
           unhandledLoadstartOrEndedEvent = true;
         }
-        element.addEventListener('loadstart', onLoadstartOrEnded, { passive: true });
-        element.addEventListener('ended', onLoadstartOrEnded, { passive: true });
+        element.addEventListener('loadstart', onEndedOrLoadstart, { passive: true });
+        element.addEventListener('ended', onEndedOrLoadstart, { passive: true });
         this._destroyedPromise.then(() => {
-          element.removeEventListener('loadstart', onLoadstartOrEnded);
-          element.removeEventListener('ended', onLoadstartOrEnded);
+          element.removeEventListener('loadstart', onEndedOrLoadstart);
+          element.removeEventListener('ended', onEndedOrLoadstart);
         });
 
         const analyser = audioContext.createAnalyser();
