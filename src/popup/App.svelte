@@ -207,7 +207,7 @@
   const tippyThemeMyTippy = 'my-tippy';
   const tippyThemeMyTippyAndPreLine = tippyThemeMyTippy + ' white-space-pre-line';
 
-  let timeSavedTooltipContent: HTMLElement;
+  let timeSavedTooltipContentEl: HTMLElement;
 
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
     ? getMessage('relativeToSounded')
@@ -361,7 +361,7 @@
       class="others__item"
       style="border: none; padding: 0; background: unset; font: inherit;"
       use:tippy={{
-        content: timeSavedTooltipContent,
+        content: timeSavedTooltipContentEl,
         theme: 'my-tippy',
         hideOnClick: false,
       }}
@@ -383,7 +383,7 @@
 
       <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
       <div style="display:none">
-        <div bind:this={timeSavedTooltipContent}>
+        <div bind:this={timeSavedTooltipContentEl}>
           <p style="margin-top: 0.25rem;">
             <span>{getMessage('timeSaved')}.</span>
             {#if settings.timeSavedAveragingMethod === 'exponential'}
