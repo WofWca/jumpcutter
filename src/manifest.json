@@ -1,7 +1,7 @@
 {
   "name": "Jump Cutter",
   "version": "1.21.3",
-  "description": "Skips silent parts in videos, in real time",
+  "description": "__MSG_extensionDescription__",
   "permissions": ["storage"],
   "browser_action": {
     "default_popup": "popup/popup.html",
@@ -55,5 +55,6 @@
       "strict_min_version": "91.0a1"
     }
   },
-  "manifest_version": 2
+  "manifest_version": 2,
+  "default_locale": "en"
 }

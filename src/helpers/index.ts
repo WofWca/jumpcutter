@@ -29,3 +29,4 @@ export * from './filterOutUnchangedValues';
 export * from './speedName';
 export * from './getGeckoMajorVersion';
 export * from './getGeckoLikelyMaxNonMutedPlaybackRate';
+export * from './getMessage';

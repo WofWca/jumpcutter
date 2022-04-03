@@ -2,7 +2,7 @@
 import { createEventDispatcher } from 'svelte';
 import { Settings, ControllerKind_CLONING, ControllerKind_STRETCHING, } from '@/settings';
 import type { TelemetryMessage } from '@/content/AllMediaElementsController';
-import { assertNever } from '@/helpers';
+import { assertNever, getMessage } from '@/helpers';
 
 export let settings: Pick<Settings,
   'experimentalControllerType'
@@ -28,14 +28,15 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
     + `width: ${settings.popupChartWidthPx}px`
   }
 >
-  <span>⚠️ This media is </span>
-  <i>likely</i>
+  <!-- TODO It's pretty stupid that we have several i18n strings for this sentence. May cause issues
+  when we try to add other languages. -->
+  <span>⚠️ {getMessage('thisMedia')}</span><i>{getMessage('likely')}</i>
   <span>
-    unsupported{
+    {getMessage('unsupported')} — {
     #if settings.experimentalControllerType === ControllerKind_STRETCHING}
-      {' and could get muted if we attach to it.'}
+      {getMessage('couldGetMuted')}.
     {:else if settings.experimentalControllerType === ControllerKind_CLONING
-      }, silence skipping won't work properly.
+      }{getMessage('silenceSkippingWontWork')}.
     {:else}
       {assertNever(settings.experimentalControllerType)}
     {/if}
@@ -55,10 +56,10 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
       target="_blank"
       rel="external nofollow noreferrer noopener"
       title={latestTelemetryRecord.elementCurrentSrc}
-    >Try opening it directly</a>
+    >{getMessage('tryOpeningDirectly')}</a>
 
     <br>
-    Or
+    {getMessage('or')}
   {:else}
     <br>
   {/if}
@@ -70,12 +71,12 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
       checked={!settings.dontAttachToCrossOriginMedia}
       on:change={onDontAttachToCrossOriginMediaChange}
     />
-    Try to attach anyway
+    {getMessage('tryAttachAnyway')}
     <!-- Try -->
   </label>
   {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
     <br>
     <!-- <span>⚠️ Reload the page to umute the media.</span> -->
-    <span>⚠️ Reload the page if the media got muted.</span>
+    <span>⚠️ {getMessage('refreshIfMuted')}.</span>
   {/if}
 </section>

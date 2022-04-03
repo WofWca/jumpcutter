@@ -15,6 +15,7 @@
   import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
+  import { getMessage } from '@/helpers';
 
   let settings: Settings;
 
@@ -209,8 +210,8 @@
   let timeSavedTooltipContent: HTMLElement;
 
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
-    ? 'relative to sounded speed'
-    : 'absolute';
+    ? getMessage('relativeToSounded')
+    : getMessage('absolute');
 
   function onChartClick() {
     nonSettingsActionsPort?.postMessage([{
@@ -318,7 +319,7 @@
         type="checkbox"
         autofocus={settings.popupAutofocusEnabledInput}
       >
-      <span>Enable</span>
+      <span>{getMessage('enable')}</span>
     </label>
   </div>
   <!-- TODO but this is technically a button. Is this ok? -->
@@ -332,7 +333,7 @@
     <span
       class="others__item"
       use:tippy={{
-        content: 'Volume',
+        content: getMessage('volume'),
         theme: 'my-tippy',
       }}
     >
@@ -385,41 +386,41 @@
       <div style="display:none">
         <div bind:this={timeSavedTooltipContent}>
           <p style="margin-top: 0.25rem;">
-            <span>Time saved info.</span>
+            <span>{getMessage('timeSaved')}.</span>
             {#if settings.timeSavedAveragingMethod === 'exponential'}
               <br>
-              <span>Over the last {mmSs(settings.timeSavedAveragingWindowLength)}.</span>
+              <span>{getMessage('overTheLast', mmSs(settings.timeSavedAveragingWindowLength))}.</span>
             {/if}
           </p>
           {#if !timeSavedOnlyOneNumberIsShown}
-            <p>Numbers' meanings (in order):</p>
+            <p>{getMessage('numbersMeanings')}</p>
           {/if}
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
             <li
               style={timeSavedOnlyOneNumberIsShown ? 'list-style:none;' : ''}
-            >{timeSavedPlaybackRateEquivalents[0]} – how much faster the media is effectively playing compared to sounded speed</li>
+            >{timeSavedPlaybackRateEquivalents[0]} – {getMessage('timeSavedComparedToSounded')}</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToSoundedSpeedAbs} – time saved compared to just playing the video at sounded speed</li>
-              <li>{wouldHaveLastedIfSpeedWasSounded} – how long playback would take at sounded speed without jump cuts</li>
+              <li>{timeSavedComparedToSoundedSpeedAbs} – {getMessage('timeSavedComparedToSoundedAbs')}</li>
+              <li>{wouldHaveLastedIfSpeedWasSounded} – {getMessage('wouldHaveLastedIfSpeedWasSounded')}</li>
             {/if}
             {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-              <li>{timeSavedPlaybackRateEquivalents[1]} – how much faster the media is effectively playing compared to normal (intrinsic) speed</li>
+              <li>{timeSavedPlaybackRateEquivalents[1]} – {getMessage('timeSavedComparedToIntrinsic')}</li>
               {#if settings.timeSavedAveragingMethod !== 'exponential'}
-                <li>{timeSavedComparedToIntrinsicSpeedAbs} – time saved compared to just playing the video at normal (intrinsic) speed</li>
-                <li>{wouldHaveLastedIfSpeedWasIntrinsic} – how long playback would take at normal (intrinsic) speed without jump cuts</li>
+                <li>{timeSavedComparedToIntrinsicSpeedAbs} – {getMessage('timeSavedComparedToIntrinsicAbs')}</li>
+                <li>{wouldHaveLastedIfSpeedWasIntrinsic} – {getMessage('wouldHaveLastedIfSpeedWasIntrinsic')}</li>
               {/if}
             {/if}
           </ol>
           <p
             style="margin-bottom: 0.25rem;"
-          >Equivalent time saved percentage:<br>
+          >{getMessage('timeSavedPercentage')}<br>
           {timeSavedComparedToSoundedSpeedPercent}
           {#if timeSavedPlaybackRateEquivalentsAreDifferent}
             / {timeSavedComparedToIntrinsicSpeedPercent}
           {/if}
-          (compared to sounded{
+          ({getMessage('comparedToSounded')}{
           #if timeSavedPlaybackRateEquivalentsAreDifferent}
-            / compared to normal (intrinsic){
+            {' / '}{getMessage('comparedToIntrinsic')}{
           /if
           }).
           </p>
@@ -439,7 +440,7 @@
         {#if considerConnectionFailed}
           {#if gotAtLeastOneContentStatusResponse}
             <p>
-              <span>⚠️ Could not find a suitable media element on the page.</span>
+              <span>⚠️ {getMessage('noSuitableElement')}.</span>
               <br/><br/>
               <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
               could be useful. -->
@@ -454,7 +455,7 @@
                     settings.enabled = true;
                   }, 20);
                 }}
-              >Retry</button>
+              >{getMessage('retry')}</button>
               <!-- TODO how about don't show this button when there are no such elements on the page
               (e.g. when `settings.applyTo !== 'videoOnly'` and there are no <audio> elements) -->
               {#if settings.applyTo !== 'both'}
@@ -468,20 +469,20 @@
                       settings.enabled = true;
                     }, 100);
                   }}
-                >Also search for {settings.applyTo === 'videoOnly' ? 'audio' : 'video'} elements</button>
+                >{getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
               {/if}
             </p>
           {:else}
             <p>
-              <span>⚠️ Couldn't load the content script on this page.<br>Trying to </span>
+              <span>⚠️ {getMessage('contentScriptFail')}.<br>{getMessage('wantTo')} </span>
               <!-- svelte-ignore a11y-missing-attribute --->
               <a
                 {...openLocalFileLinkProps}
-              >open a local file</a>?
+              >{getMessage('openLocalFile')}</a>?
             </p>
           {/if}
         {:else}
-          <p>⏳ Loading...</p>
+          <p>⏳ {getMessage('loading')}...</p>
         {/if}
       {/if}
     </div>
@@ -502,7 +503,7 @@
       >
         <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
         {#await new Promise(r => setTimeout(r, 300)) then _}
-          Loading...
+          {getMessage('loading')}...
         {/await}
       </div>
     {:then { default: Chart }}
@@ -535,7 +536,7 @@
       )}
         <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
         {#await new Promise(r => setTimeout(r, 300)) then _}
-          Loading...
+          {getMessage('loading')}...
         {/await}
       {:then { default: MediaUnsupportedMessage }}
         <MediaUnsupportedMessage
@@ -548,12 +549,7 @@
   {/if}
   <label
     use:tippy={{
-      content: '- Bare minimum usability\n'
-        + '+ Allows skipping silent parts entirely instead of playing them at a faster rate\n'
-        + '- Doesn\'t work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply'
-        + ' won\'t skip silence.\n'
-        + '+ No audio distortion, delay or desync\n'
-        + '- The chart won\'t display the actual volume on silent parts (it will just show 0 instead)\n',
+      content: getMessage('useExperimentalAlgorithmTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
@@ -565,20 +561,17 @@
       type="checkbox"
       style="margin: 0 0.5rem 0 0;"
     >
-    <span>Use experimental algorithm</span>
+    <span>{getMessage('useExperimentalAlgorithm')}</span>
   </label>
   <!-- TODO async tooltip contents -->
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
-    label="Volume threshold"
+    label={getMessage('volumeThreshold')}
     {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: 'How quiet it needs to get before we speed up.'
-        + '\nOn the chart, this is the RED horizontal LINE.'
-        + ' The blue line is the current volume of the audio, so when the blue line is below the red line,'
-        +' we consider it to be silent.',
+      content: getMessage('volumeThresholdTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -586,19 +579,18 @@
     <option>1</option>
   </datalist>
   <RangeSlider
-    label="Sounded speed"
+    label={getMessage('soundedSpeed')}
     list="sounded-speed-datalist"
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
     bind:value={settings.soundedSpeed}
     useForInputParams={{
-      content: 'The speed at which we play the video when it\'s NOT silent, the "normal" speed.'
-        + '\nOn the chart, the parts with GREEN background are the parts that were played at this speed.',
+      content: getMessage('soundedSpeedTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
   <RangeSlider
-    label="Silence speed ({silenceSpeedLabelClarification})"
+    label="{getMessage('silenceSpeed')} ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SilenceSpeedRaw', settings)}
     bind:value={settings.silenceSpeedRaw}
@@ -607,58 +599,42 @@
       || controllerTypeAlwaysSounded
     }
     useForInputParams={{
-      content: 'The speed at which we play the silent parts.'
-        + '\nOn the chart, the parts with RED background are the parts that were played at this speed.'
-        + (
-          settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
-            ? ('\nNote that it is specified as a multiplier of the sounded speed, so'
-              + ' e.g. if sounded speed is 1.5 and silence speed is 2, the resulting absolute value will be 3.'
-              + ' You can change this behavior on the options page.'
-            )
-            : ''
-        )
-        + '\n⚠️ If this value is very high (> ~4) the begginnings of sentences may also start getting skipped.',
+      content: getMessage(
+        'silenceSpeedTooltip',
+        settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
+          ? getMessage('silenceSpeedTooltipRelativeNote')
+          : ''
+      ),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
   <RangeSlider
-    label="Margin before"
+    label={getMessage('marginBefore')}
     {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: 'When it\'s currently silent and then we encounter a loud part, how long before it we need to'
-        + ' slow down (switch to sounded speed).'
-        + '\nThis is mostly to ensure that you can clearly hear the very first letters when someone begins to speak.'
-        + '\nThe value is in seconds.'
-        + '\n\n⚠️ Note that non-zero values will cause audio DISTORTION when switching from silence to sounded speed'
-        + ' AND will add constant audio DELAY equivalent to the value of this setting (these drawbacks do not apply'
-        + ' if you enabled the "experimental algorithm").',
+      content: getMessage('marginBeforeTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
   <RangeSlider
-    label="Margin after"
+    label={getMessage('marginAfter')}
     {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: 'This is similar to "margin before". When it was loud and then became silent, how long we need to'
-        + ' wait before speeding up (switching to silence speed).'
-        + '\nThis is mostly to keep pauses in the speech at least to some degree so words don\'t get mushed together'
-        + ' and to ensure that you can clearly hear the very last letters in a sentence.'
-        + '\nThe value is in seconds.'
-        + '\nUnlike "margin before" this doesn\'t cause audio distortion & delay (but it\'s not to say that'
-        + ' these settings are interchangeable).',
+      content: getMessage('marginAfterTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->
     <a
+      class="capitalize-first-letter"
       {...openLocalFileLinkProps}
       style="display: inline-block; margin-top: 1rem;"
-    >Open a local file</a>
+    >{getMessage('openLocalFile')}</a>
   {/if}
 {/await}
 
@@ -715,5 +691,9 @@
     right: 0.75rem;
     text-decoration: none;
     font-size: 1.125rem;
+  }
+
+  .capitalize-first-letter::first-letter {
+    text-transform: capitalize;
   }
 </style>
