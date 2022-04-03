@@ -323,11 +323,10 @@
     </label>
   </div>
   <!-- TODO but this is technically a button. Is this ok? -->
-  <a
+  <button
     id="options-button"
-    href="javascript:void(0)"
-    on:click|preventDefault={() => browser.runtime.openOptionsPage()}
-  >⚙️</a>
+    on:click={() => browser.runtime.openOptionsPage()}
+  >⚙️</button>
   <div class="others__wrapper">
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
     <span
@@ -686,11 +685,10 @@
 
   #options-button {
     position: absolute;
-    padding: 0.25rem;
+    padding: 0;
     top: 0.75rem;
     right: 0.75rem;
-    text-decoration: none;
-    font-size: 1.125rem;
+    font-size: 1.5rem;
   }
 
   .capitalize-first-letter::first-letter {
