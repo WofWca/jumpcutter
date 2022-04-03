@@ -363,6 +363,7 @@
       use:tippy={{
         content: timeSavedTooltipContentEl,
         theme: 'my-tippy',
+        placement: 'bottom',
         hideOnClick: false,
       }}
     >
@@ -382,6 +383,7 @@
       {/if}
 
       <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
+      <!-- TODO the contents are quite big and some locales (e.g. `ru`) may not fit in the default popup size. -->
       <div style="display:none">
         <div bind:this={timeSavedTooltipContentEl}>
           <p style="margin-top: 0.25rem;">
