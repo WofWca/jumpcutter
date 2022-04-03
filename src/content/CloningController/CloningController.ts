@@ -280,7 +280,6 @@ export default class Controller {
         const reinit = () => {
           source?.disconnect();
           const newStream = captureStream();
-          assertDev(newStream);
           // Shouldn't we do something if there are no tracks?
           if (newStream.getAudioTracks().length) {
             source = audioContext.createMediaStreamSource(newStream);
