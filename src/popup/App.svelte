@@ -456,7 +456,7 @@
                     settings.enabled = true;
                   }, 20);
                 }}
-              >{getMessage('retry')}</button>
+              >🔄 {getMessage('retry')}</button>
               <!-- TODO how about don't show this button when there are no such elements on the page
               (e.g. when `settings.applyTo !== 'videoOnly'` and there are no <audio> elements) -->
               {#if settings.applyTo !== 'both'}
@@ -470,7 +470,7 @@
                       settings.enabled = true;
                     }, 100);
                   }}
-                >{getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
+                >🔍 {getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
               {/if}
             </p>
           {:else}
@@ -504,7 +504,7 @@
       >
         <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
         {#await new Promise(r => setTimeout(r, 300)) then _}
-          {getMessage('loading')}...
+          ⏳ {getMessage('loading')}...
         {/await}
       </div>
     {:then { default: Chart }}
@@ -537,7 +537,7 @@
       )}
         <!-- `await` so it doesnt get shown immediately so it doesn't flash -->
         {#await new Promise(r => setTimeout(r, 300)) then _}
-          {getMessage('loading')}...
+          ⏳ {getMessage('loading')}...
         {/await}
       {:then { default: MediaUnsupportedMessage }}
         <MediaUnsupportedMessage
@@ -562,12 +562,12 @@
       type="checkbox"
       style="margin: 0 0.5rem 0 0;"
     >
-    <span>{getMessage('useExperimentalAlgorithm')}</span>
+    <span>🧪 {getMessage('useExperimentalAlgorithm')}</span>
   </label>
   <!-- TODO async tooltip contents -->
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
-    label={getMessage('volumeThreshold')}
+    label="🔉 {getMessage('volumeThreshold')}"
     {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
     disabled={controllerTypeAlwaysSounded}
@@ -580,7 +580,7 @@
     <option>1</option>
   </datalist>
   <RangeSlider
-    label={getMessage('soundedSpeed')}
+    label="▶️ {getMessage('soundedSpeed')}"
     list="sounded-speed-datalist"
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
@@ -591,7 +591,7 @@
     }}
   />
   <RangeSlider
-    label="{getMessage('silenceSpeed')} ({silenceSpeedLabelClarification})"
+    label="⏩ {getMessage('silenceSpeed')} ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SilenceSpeedRaw', settings)}
     bind:value={settings.silenceSpeedRaw}
@@ -610,7 +610,7 @@
     }}
   />
   <RangeSlider
-    label={getMessage('marginBefore')}
+    label="⏱️⬅️ {getMessage('marginBefore')}"
     {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
     disabled={controllerTypeAlwaysSounded}
@@ -620,7 +620,7 @@
     }}
   />
   <RangeSlider
-    label={getMessage('marginAfter')}
+    label="⏱️➡️ {getMessage('marginAfter')}"
     {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
     disabled={controllerTypeAlwaysSounded}
@@ -635,7 +635,7 @@
       class="capitalize-first-letter"
       {...openLocalFileLinkProps}
       style="display: inline-block; margin-top: 1rem;"
-    >{getMessage('openLocalFile')}</a>
+    >📂 {getMessage('openLocalFile')}</a>
   {/if}
 {/await}
 
