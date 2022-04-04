@@ -3,22 +3,23 @@ import { HotkeyAction } from './HotkeyAction';
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
   // TODO check if emojis are ok with screen readers, though I think they should be.
 
-  [HotkeyAction.DECREASE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold 🔽',
-  [HotkeyAction.INCREASE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold 🔼',
-  [HotkeyAction.SET_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold =',
-  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: '🔉🎚️ Volume threshold toggle 🔄',
+  // 📉🎚️
+  [HotkeyAction.DECREASE_VOLUME_THRESHOLD]: '🔉📉 Volume threshold 🔽',
+  [HotkeyAction.INCREASE_VOLUME_THRESHOLD]: '🔉📉 Volume threshold 🔼',
+  [HotkeyAction.SET_VOLUME_THRESHOLD]: '🔉📉 Volume threshold =',
+  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: '🔉📉 Volume threshold toggle 🔄',
 
   // Maybe 📢📣💬 could also fit here.
-  [HotkeyAction.DECREASE_SOUNDED_SPEED]: '🗣️▶️ Sounded speed 🔽',
-  [HotkeyAction.INCREASE_SOUNDED_SPEED]: '🗣️▶️ Sounded speed 🔼',
-  [HotkeyAction.SET_SOUNDED_SPEED]: '🗣️▶️ Sounded speed =',
-  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: '🗣️▶️ Sounded speed toggle 🔄',
+  [HotkeyAction.DECREASE_SOUNDED_SPEED]: '▶️🗣️ Sounded speed 🔽',
+  [HotkeyAction.INCREASE_SOUNDED_SPEED]: '▶️🗣️ Sounded speed 🔼',
+  [HotkeyAction.SET_SOUNDED_SPEED]: '▶️🗣️ Sounded speed =',
+  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: '▶️🗣️ Sounded speed toggle 🔄',
 
   // 🤐 could also fit.
-  [HotkeyAction.DECREASE_SILENCE_SPEED]: '🙊⏩ Silence speed 🔽',
-  [HotkeyAction.INCREASE_SILENCE_SPEED]: '🙊⏩ Silence speed 🔼',
-  [HotkeyAction.SET_SILENCE_SPEED]: '🙊⏩ Silence speed =',
-  [HotkeyAction.TOGGLE_SILENCE_SPEED]: '🙊⏩ Silence speed toggle 🔄',
+  [HotkeyAction.DECREASE_SILENCE_SPEED]: '⏩🙊 Silence speed 🔽',
+  [HotkeyAction.INCREASE_SILENCE_SPEED]: '⏩🙊 Silence speed 🔼',
+  [HotkeyAction.SET_SILENCE_SPEED]: '⏩🙊 Silence speed =',
+  [HotkeyAction.TOGGLE_SILENCE_SPEED]: '⏩🙊 Silence speed toggle 🔄',
 
   // 📏? Couldn't find anything better.
   [HotkeyAction.DECREASE_MARGIN_BEFORE]: '⏱️⬅️ Margin before (s) 🔽',
