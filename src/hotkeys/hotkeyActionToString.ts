@@ -9,13 +9,13 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.SET_VOLUME_THRESHOLD]: '🔉📉 Volume threshold =',
   [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: '🔉📉 Volume threshold toggle 🔄',
 
-  // Maybe 📢📣💬 could also fit here.
+  // Maybe 📢📣💬, 🟩 could also fit here.
   [HotkeyAction.DECREASE_SOUNDED_SPEED]: '▶️🗣️ Sounded speed 🔽',
   [HotkeyAction.INCREASE_SOUNDED_SPEED]: '▶️🗣️ Sounded speed 🔼',
   [HotkeyAction.SET_SOUNDED_SPEED]: '▶️🗣️ Sounded speed =',
   [HotkeyAction.TOGGLE_SOUNDED_SPEED]: '▶️🗣️ Sounded speed toggle 🔄',
 
-  // 🤐 could also fit.
+  // 🤐, 🟥 could also fit.
   [HotkeyAction.DECREASE_SILENCE_SPEED]: '⏩🙊 Silence speed 🔽',
   [HotkeyAction.INCREASE_SILENCE_SPEED]: '⏩🙊 Silence speed 🔼',
   [HotkeyAction.SET_SILENCE_SPEED]: '⏩🙊 Silence speed =',
