@@ -491,6 +491,10 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
 main {
   margin: var(--main-margin);
 }
+section {
+  /* TODO padding, border, border-radius */
+  background: #8882;
+}
 .status-bar {
   position: sticky;
   bottom: 0;

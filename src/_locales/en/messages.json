@@ -1,0 +1,76 @@
+{
+  "extensionDescription": { "message": "Skips silent parts in videos, in real time" },
+  "enable": { "message": "Enable" },
+  "volume": { "message": "Volume" },
+  "timeSaved": { "message": "Time saved info" },
+  "overTheLast": {
+    "message": "Over the last $duration$",
+    "placeholders": {
+      "duration": {
+        "content": "$1",
+        "example": "15:00"
+      }
+    }
+  },
+  "numbersMeanings": { "message": "Numbers' meanings (in order):" },
+  "timeSavedComparedToSounded": { "message": "on average how much faster the video is effectively playing compared to sounded speed" },
+  "timeSavedComparedToIntrinsic": { "message": "on average how much faster the video is effectively playing compared to normal (intrinsic) speed" },
+  "timeSavedComparedToSoundedAbs": { "message": "time saved compared to just playing the video at sounded speed" },
+  "timeSavedComparedToIntrinsicAbs": { "message": "time saved compared to just playing the video at normal (intrinsic) speed" },
+  "wouldHaveLastedIfSpeedWasSounded": { "message": "how long playback would take at sounded speed WITHOUT skipping silence" },
+  "wouldHaveLastedIfSpeedWasIntrinsic": { "message": "how long playback would take at normal (intrinsic) speed WITHOUT skipping silence" },
+  "timeSavedPercentage": { "message": "Equivalent time saved percentage:" },
+  "comparedToSounded": { "message": "compared to sounded" },
+  "comparedToIntrinsic": { "message": "compared to normal (intrinsic)" },
+  "noSuitableElement": { "message": "Could not find a suitable media element on the page" },
+  "retry": { "message": "Retry" },
+  "alsoSearchFor": {
+    "message": "Also search for $type$ elements",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "audio"
+      }
+    }
+  },
+  "audio": { "message": "audio" },
+  "video": { "message": "video" },
+  "contentScriptFail": { "message": "Couldn't execute the content script on this page" },
+  "wantTo": { "message": "Trying to" },
+  "openLocalFile": { "message": "open a local file" },
+  "loading": { "message": "Loading" },
+  "useExperimentalAlgorithm": { "message": "Use experimental algorithm" },
+  "useExperimentalAlgorithmTooltip": { "message": "➖ Bare minimum usability\n➕ Allows skipping silent parts entirely instead of playing them at a faster rate\n➖ Doesn't work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply won't skip silence.\n➕ No audio distortion, delay or desync\n➖ The chart won't display the actual volume on silent parts (it will just show 0 instead)" },
+  "thisMedia": { "message": "This media is" },
+  "likely": { "message": " likely" },
+  "unsupported": { "message": "unsupported" },
+  "couldGetMuted": { "message": "it could get muted if we attach to it" },
+  "silenceSkippingWontWork": { "message": "silence skipping won't work properly" },
+  "tryOpeningDirectly": { "message": "Try opening it directly" },
+  "or": { "message": "Or" },
+  "tryAttachAnyway": { "message": "Try to attach anyway" },
+  "refreshIfMuted": { "message": "Refresh the page if the media got muted" },
+  "volumeThreshold": { "message": "Volume threshold" },
+  "volumeThresholdTooltip": { "message": "How quiet it needs to get before we speed up. \nOn the chart, this is the red 🟥 horizontal line. The blue 🟦 line is the current volume of the audio, so when the blue line is below the red line, we consider it to be silent." },
+  "soundedSpeed": { "message": "Sounded speed" },
+  "soundedSpeedTooltip": { "message": "The speed at which we play the video when it's NOT silent, the \"normal\" speed. \nOn the chart, the parts that were played at this speed have green 🟩 background." },
+  "silenceSpeed": { "message": "Silence speed" },
+  "silenceSpeedTooltip": {
+    "message": "The speed at which we play the silent parts.\nOn the chart, the parts that were played at this speed have red 🟥 background.$relativeNote$\n⚠️ If this value is very high (> ~4) the begginnings of sentences may also start getting skipped (it's like \"Margin before\" is smaller).",
+    "placeholders": {
+      "relativeNote": {
+        "content": "$1"
+      }
+    }
+  },
+  "silenceSpeedTooltipRelativeNote": { "message": "\nNote that it is specified as a multiplier of the sounded speed, so e.g. if sounded speed is 1.5 and silence speed is 2, the resulting absolute value will be 3. You can change this behavior on the options page." },
+  "relativeToSounded": { "message": "relative to sounded speed" },
+  "absolute": { "message": "absolute" },
+  "marginBefore": { "message": "Margin before" },
+  "marginBeforeTooltip": { "message": "When it's currently silent and then we encounter a loud part, how many seconds prior to it we need to slow down (switch to sounded speed).\nThis is mostly to ensure that you can clearly hear the very first letters when someone begins to speak.\n\n⚠️ Note that non-zero values will cause audio DISTORTION when switching from silence to sounded speed AND will add constant audio DELAY equivalent to the value of this setting. These drawbacks do not apply if you use the \"experimental algorithm\"." },
+  "marginAfter": { "message": "Margin after" },
+  "marginAfterTooltip": { "message": "This is similar to \"margin before\". When it was loud and then became silent, how many seconds we need to wait before speeding up (switching to silence speed).\nThis is mostly to keep pauses in the speech at least to some degree so words don't get mushed together and to ensure that you can clearly hear the very last letters in a sentence.\nUnlike \"margin before\" this doesn't cause audio distortion & delay (but it's not to say that these settings are interchangeable)." },
+
+  "dropFiles": { "message": "Drop one or several files here" },
+  "orClickToSelect": { "message": "or click to select" }
+}

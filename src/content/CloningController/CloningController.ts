@@ -237,12 +237,6 @@ export default class Controller {
       // Also keep in mind that `createMediaElementSource` and `captureStream` are not 100% interchangeable.
       // For example, for `el.volume` doesn't affect the volume for `captureStream()`.
       // TODO fall-back to `createMediaElementSource` if these are not supported?
-      //
-      // TODO if the media is CORS-restricted, this throws an error. You may say that "if it is
-      // CORS-restricted then we won't be able to use the cloning algorithm anyway". Right now you're right,
-      // but in the future we may create the clone inside an <iframe> where it's not CORS-restricted. Wait,
-      // but then it would be leaking information about the contents of the media to the other origin.
-      // Alright, let's discuss it somewhere else.
       type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
         captureStream?: () => MediaStream,
         mozCaptureStream?: () => MediaStream,
@@ -279,12 +273,22 @@ export default class Controller {
         let reinitScheduled = false;
         const reinit = () => {
           source?.disconnect();
-          const newStream = captureStream();
-          assertDev(newStream);
-          // Shouldn't we do something if there are no tracks?
-          if (newStream.getAudioTracks().length) {
-            source = audioContext.createMediaStreamSource(newStream);
-            volumeFilterP.then(filter => source.connect(filter));
+          let newStream;
+          // `try` because see the `catch` block.
+          try {
+            newStream = captureStream();
+          } catch (e) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('Couldn\'t `captureStream`, but ignoring it because maybe we\'re here because'
+                + ' `dontAttachToCrossOriginMedia` is `false` and the media is CORS-restricted', e);
+            }
+          }
+          if (newStream) {
+            // Shouldn't we do something if there are no tracks?
+            if (newStream.getAudioTracks().length) {
+              source = audioContext.createMediaStreamSource(newStream);
+              volumeFilterP.then(filter => source.connect(filter));
+            }
           }
 
           reinitScheduled = false;
@@ -327,14 +331,14 @@ export default class Controller {
         }
         element.addEventListener('playing', onPlaying, { passive: true });
         this._destroyedPromise.then(() => element.removeEventListener('playing', onPlaying));
-        const onLoadstartOrEnded = () => {
+        const onEndedOrLoadstart = () => {
           unhandledLoadstartOrEndedEvent = true;
         }
-        element.addEventListener('loadstart', onLoadstartOrEnded, { passive: true });
-        element.addEventListener('ended', onLoadstartOrEnded, { passive: true });
+        element.addEventListener('loadstart', onEndedOrLoadstart, { passive: true });
+        element.addEventListener('ended', onEndedOrLoadstart, { passive: true });
         this._destroyedPromise.then(() => {
-          element.removeEventListener('loadstart', onLoadstartOrEnded);
-          element.removeEventListener('ended', onLoadstartOrEnded);
+          element.removeEventListener('loadstart', onEndedOrLoadstart);
+          element.removeEventListener('ended', onEndedOrLoadstart);
         });
 
         const analyser = audioContext.createAnalyser();
