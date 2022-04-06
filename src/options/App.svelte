@@ -493,7 +493,7 @@ main {
 }
 section {
   /* TODO padding, border, border-radius */
-  background: #8882;
+  background: #88888814;
 }
 .status-bar {
   position: sticky;
