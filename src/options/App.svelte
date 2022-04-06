@@ -288,40 +288,42 @@
             {/each}
           </select>
         </InputFieldBase>
-        <h4>{getMessage('rangeSlidersAttributes')}</h4>
-        <p>{getMessage('rangeSlidersAttributesNote')}</p>
-        <table>
-          <thead>
-            <th>{getMessage('input')}</th>
-            {#each [
-              getMessage('min'),
-              getMessage('step'),
-              getMessage('max'),
-            ] as l}
-              <th>{l}</th>
-            {/each}
-          </thead>
-          <tbody>
-            {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
-              <tr>
-                <td>{rangeInputSettingNameCapitalized.l}</td>
-                {#each rangeInputAttrs as attr}
-                  <td>
-                    <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
-                    Or use a checkbox that sets it to "any"? -->
-                    <input
-                      style="width: 14ch"
-                      type="number"
-                      step="any"
-                      min={attr === 'Step' ? Number.MIN_VALUE : ''}
-                      bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
-                    />
-                  </td>
-                {/each}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+        <section>
+          <h4>{getMessage('rangeSlidersAttributes')}</h4>
+          <p>{getMessage('rangeSlidersAttributesNote')}</p>
+          <table>
+            <thead>
+              <th>{getMessage('input')}</th>
+              {#each [
+                getMessage('min'),
+                getMessage('step'),
+                getMessage('max'),
+              ] as l}
+                <th>{l}</th>
+              {/each}
+            </thead>
+            <tbody>
+              {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
+                <tr>
+                  <td>{rangeInputSettingNameCapitalized.l}</td>
+                  {#each rangeInputAttrs as attr}
+                    <td>
+                      <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
+                      Or use a checkbox that sets it to "any"? -->
+                      <input
+                        style="width: 14ch"
+                        type="number"
+                        step="any"
+                        min={attr === 'Step' ? Number.MIN_VALUE : ''}
+                        bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
+                      />
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </section>
 
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
           <CheckboxField
@@ -337,11 +339,13 @@
           label="🔗 {getMessage('alwaysShowOpenLocalFileLink', getMessage('openLocalFile'))}"
           bind:checked={settings.popupAlwaysShowOpenLocalFileLink}
         />
-        <h4>{getMessage('popupSpecificHotkeys')}</h4>
-        <HotkeysTable
-          bind:hotkeys={settings.popupSpecificHotkeys}
-          displayOverrideWebsiteHotkeysColumn={false}
-        />
+        <section>
+          <h4>{getMessage('popupSpecificHotkeys')}</h4>
+          <HotkeysTable
+            bind:hotkeys={settings.popupSpecificHotkeys}
+            displayOverrideWebsiteHotkeysColumn={false}
+          />
+        </section>
       </section>
       <section>
         <h3>{getMessage('timeSaved')}</h3>
@@ -492,8 +496,16 @@ main {
   margin: var(--main-margin);
 }
 section {
-  /* TODO padding, border, border-radius */
   background: #88888814;
+  padding: 0.625rem;
+  border: 1px solid gray;
+  border-radius: 0.25rem;
+}
+* ~ section {
+  margin-top: 1rem;
+}
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
 }
 .status-bar {
   position: sticky;
