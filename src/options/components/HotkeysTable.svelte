@@ -10,6 +10,7 @@
     eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, HotkeyAction, NoArgumentAction,
     allNoArgumentActions,
   } from '@/hotkeys';
+  import { getMessage } from '@/helpers';
 
   export let hotkeys: PotentiallyInvalidHotkeyBinding[];
   export let displayOverrideWebsiteHotkeysColumn: boolean;
@@ -44,11 +45,11 @@
 <div>
   <table>
     <thead>
-      <th>Action</th>
-      <th>Hotkey</th>
-      <th>Value</th>
+      <th>{getMessage('action')}</th>
+      <th>{getMessage('hotkey')}</th>
+      <th>{getMessage('value')}</th>
       {#if displayOverrideWebsiteHotkeysColumn}
-        <th>Override website hotkeys</th>
+        <th>{getMessage('overrideWebsiteHotkeys')}</th>
       {/if}
     </thead>
     <tbody>
@@ -97,7 +98,7 @@
             <button
               type="button"
               on:click={e => removeBinding(bindingInd)}
-              aria-label="Remove binding"
+              aria-label="{getMessage('removeBinding')}"
             >🗑️</button>
           </td>
         </tr>
@@ -107,6 +108,6 @@
   <button
     type="button"
     on:click={addNewBinding}
-    aria-label="Add new hotkey"
+    aria-label="{getMessage('addBinding')}"
   >➕</button>
 </div>
