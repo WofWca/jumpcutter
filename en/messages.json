@@ -72,5 +72,124 @@
   "marginAfterTooltip": { "message": "This is similar to \"margin before\". When it was loud and then became silent, how many seconds we need to wait before speeding up (switching to silence speed).\nThis is mostly to keep pauses in the speech at least to some degree so words don't get mushed together and to ensure that you can clearly hear the very last letters in a sentence.\nUnlike \"margin before\" this doesn't cause audio distortion & delay (but it's not to say that these settings are interchangeable)." },
 
   "dropFiles": { "message": "Drop one or several files here" },
-  "orClickToSelect": { "message": "or click to select" }
+  "orClickToSelect": { "message": "or click to select" },
+
+  "general": { "message": "General" },
+  "applyTo": { "message": "Apply to" },
+  "none": { "message": "None" },
+  "applyToOnly": {
+    "message": "$type$ elements only",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "video"
+      }
+    }
+  },
+  "applyToBoth": { "message": "Both video & audio elements" },
+  "silenceSpeedSpecificationMethod": { "message": "Silence speed specification method" },
+  "absoluteSilenceSpeedClarification": { "message": "(a.k.a. relative to normal (intrinsic) media speed)" },
+  "enableDesyncCorrection": { "message": "Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)" },
+  "useSeparateMarginSettingsForDifferentAlgorithms": {
+    "message": "Use different \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
+    "placeholders": {
+      "marginBeforeLabel": {
+        "content": "$1",
+        "example": "margin before"
+      },
+      "marginAfterLabel": {
+        "content": "$2",
+        "example": "margin after"
+      },
+      "useExperimentalAlgorithmLabel": {
+        "content": "$3",
+        "example": "Use experimental algorithm"
+      }
+    }
+  },
+  "hotkeys": { "message": "Hotkeys" },
+  "hotkey": { "message": "Hotkey" },
+  "enableHotkeys": { "message": "Enable hotkeys" },
+  "hotkeysNotes": {
+    "message": "Modifier keys (Ctrl, Shift, etc.) are supported.\nSeveral actions can be bound to a single key. This can be utilized to create \"profiles\".\nThe difference between \"$toggle$\" and \"=\" (a.k.a \"set\") actions is that \"$toggle$\" toggles the value between the previous value and the hotkey's argument, while \"set\" always sets it to the argument's value.\nHotkeys are also active when the popup is open.",
+    "placeholders": {
+      "toggle": {
+        "content": "$1",
+        "example": "toggle"
+      }
+    }
+  },
+  "toggle": { "message": "toggle" },
+  "rewind": { "message": "Rewind (seconds)" },
+  "advance": { "message": "Advance (seconds)" },
+  "togglePause": { "message": "Pause/unpause" },
+  "toggleMute": { "message": "Mute/unmute" },
+  "decreaseVolume": { "message": "Decrease volume (%)" },
+  "increaseVolume": { "message": "Increase volume (%)" },
+  "action": { "message": "Action" },
+  "value": { "message": "Value" },
+  "overrideWebsiteHotkeys": { "message": "Override website hotkeys" },
+  "removeBinding": { "message": "Remove binding" },
+  "addBinding": { "message": "Add new hotkey" },
+  "openPopup": { "message": "Open popup" },
+  "edit": { "message": "Edit" },
+  "popup": { "message": "Popup" },
+  "chartLengthInSeconds": { "message": "Chart length in seconds" },
+  "chartJumpPeriod": { "message": "Chart jump period (seconds). Should be <= Chart length. Set to 0 for smooth movement (no jumps)." },
+  "chartWidthPx": { "message": "Chart width (pixels)" },
+  "chartHeightPx": { "message": "Chart height (pixels)" },
+  "chartSpeed": { "message": "Chart movement speed" },
+  "chartSpeedIntrinsicTime": { "message": "Same as the video speed" },
+  "chartSpeedRealTime": { "message": "Constant (real-time)" },
+  "rangeSlidersAttributes": { "message": "Range sliders' attributes" },
+  "rangeSlidersAttributesNote": { "message": "Be aware that browsers do not support playback rates above a certain limit.\nAt the time of writing it's 16 for Chromium (Chrome) and 8 (by default) for Gecko (Firefox)." },
+  "min": { "message": "Min" },
+  "max": { "message": "Max" },
+  "step": { "message": "Step" },
+  "input": { "message": "Input" },
+  "disableHotkeysWhileInputFocused": { "message": "Disable hotkeys while an input is in focus" },
+  "autofocusEnabledInput": {
+    "message": "Autofocus the \"$enableCheckboxLabel$\" checkbox when popup opens",
+    "placeholders": {
+      "enableCheckboxLabel": {
+        "content": "$1",
+        "example": "Enable"
+      }
+    }
+  },
+  "alwaysShowOpenLocalFileLink": {
+    "message": "Show the \"$openLocalFileLabel$\" link",
+    "placeholders": {
+      "openLocalFileLabel": {
+        "content": "$1",
+        "example": "open a local file"
+      }
+    }
+  },
+  "popupSpecificHotkeys": { "message": "Popup-specific hotkeys" },
+  "timeSavedAveragingMethod": { "message": "Averaging method" },
+  "timeSavedAveragingMethodAllTime": { "message": "All-time average (no decay)" },
+  "timeSavedAveragingMethodExponential": { "message": "Only take into account the latest data (exponential decay)" },
+  "timeSavedAveragingWindowLength": { "message": "Only take into account the last N seconds of playback" },
+  "timeSavedExponentialAveragingLatestDataWeight": { "message": "Latest playback period averaging weight" },
+  "timeSavedDataWeightDecayTimeConstant": {
+    "message": "Resulting data weight half-life: $length$ seconds",
+    "placeholders": {
+      "length": {
+        "content": "$1",
+        "example": "138.83"
+      }
+    }
+  },
+  "iconBadge": { "message": "Icon badge" },
+  "badgeWhatSettingToDisplayByDefault": { "message": "What setting value to display by default" },
+  "meta": { "message": "Meta" },
+  "downloadFromSync": { "message": "Download settings from sync storage" },
+  "uploadToSync": { "message": "Upload settings to sync storage" },
+  "resetToDefaults": { "message": "Reset to defaults" },
+  "about": { "message": "About" },
+  "saving": { "message": "Saving..." },
+  "saved": { "message": "Saved" },
+  "hasErrors": { "message": "Errors found" },
+  "showErrors": { "message": "Show errors" }
 }
