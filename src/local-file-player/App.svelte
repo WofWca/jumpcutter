@@ -3,7 +3,7 @@
   // TODO get rid of svelte?
   import { getMessage } from '@/helpers';
 
-  const defaultDocumentTitle = 'Jump Cutter: local video player';
+  const defaultDocumentTitle = 'Jump Cutter: local video player'; // TODO translate?
   document.title = defaultDocumentTitle;
 
   type HTMLInputElementTypeFile = HTMLInputElement & { files: NonNullable<HTMLInputElement['files']> };
