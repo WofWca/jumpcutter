@@ -19,6 +19,10 @@ module.exports = env => {
   });
 
   return {
+    experiments: {
+      topLevelAwait: true,
+    },
+
     devtool: process.env.NODE_ENV === 'production'
       ? undefined
       // The default one ('eval') doesn't work because "'unsafe-eval' is not an allowed source of script in the following

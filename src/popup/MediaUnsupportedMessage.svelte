@@ -2,7 +2,10 @@
 import { createEventDispatcher } from 'svelte';
 import { Settings, ControllerKind_CLONING, ControllerKind_STRETCHING, } from '@/settings';
 import type { TelemetryMessage } from '@/content/AllMediaElementsController';
-import { assertNever, getMessage } from '@/helpers';
+import { assertNever, createGetMessage, getMessageNative } from '@/helpers';
+
+let getMessage = getMessageNative;
+createGetMessage().then(r => getMessage = r);
 
 export let settings: Pick<Settings,
   'experimentalControllerType'

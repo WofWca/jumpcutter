@@ -15,7 +15,10 @@
   import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
-  import { getMessage } from '@/helpers';
+  import { createGetMessage, getMessageNative } from '@/helpers';
+
+  let getMessage = getMessageNative;
+  createGetMessage('en').then(r => getMessage = r);
 
   let settings: Settings;
 
