@@ -1,6 +1,7 @@
 {
   "extensionDescription": { "message": "Skips silent parts in videos, in real time" },
   "enable": { "message": "Enable" },
+  "more": { "message": "More" },
   "volume": { "message": "Volume" },
   "timeSaved": { "message": "Time saved info" },
   "overTheLast": {
