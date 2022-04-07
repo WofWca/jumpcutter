@@ -102,7 +102,7 @@
   },
   "applyToBoth": { "message": "Both video & audio elements" },
   "silenceSpeedSpecificationMethod": { "message": "Silence speed specification method" },
-  "absoluteSilenceSpeedClarification": { "message": "(a.k.a. relative to normal (intrinsic) media speed)" },
+  "absoluteSilenceSpeedClarification": { "message": " (a.k.a. relative to normal (intrinsic) media speed)" },
   "enableDesyncCorrection": { "message": "Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)" },
   "useSeparateMarginSettingsForDifferentAlgorithms": {
     "message": "Use different \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
