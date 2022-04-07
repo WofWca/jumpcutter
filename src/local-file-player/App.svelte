@@ -1,7 +1,10 @@
 <script lang="ts">
   import { tick, onMount } from 'svelte';
   // TODO get rid of svelte?
-  import { getMessage } from '@/helpers';
+  import { createGetMessage, getMessageNative } from '@/helpers';
+
+  let getMessage = getMessageNative;
+  createGetMessage().then(r => getMessage = r);
 
   const defaultDocumentTitle = 'Jump Cutter: local video player'; // TODO translate?
   document.title = defaultDocumentTitle;

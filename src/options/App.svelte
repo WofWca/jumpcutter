@@ -5,10 +5,13 @@
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
-  import { cloneDeepJson, assertDev, assertNever, getMessage } from '@/helpers';
+  import { cloneDeepJson, assertDev, assertNever, createGetMessage, getMessageNative } from '@/helpers';
   import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
+
+  let getMessage = getMessageNative;
+  createGetMessage().then(r => getMessage = r);
 
   let unsaved = false;
   let formValid = true;

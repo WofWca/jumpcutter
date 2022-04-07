@@ -10,7 +10,10 @@
     eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, HotkeyAction, NoArgumentAction,
     allNoArgumentActions,
   } from '@/hotkeys';
-  import { getMessage } from '@/helpers';
+  import { createGetMessage, getMessageNative } from '@/helpers';
+
+  let getMessage = getMessageNative;
+  createGetMessage().then(r => getMessage = r);
 
   export let hotkeys: PotentiallyInvalidHotkeyBinding[];
   export let displayOverrideWebsiteHotkeysColumn: boolean;

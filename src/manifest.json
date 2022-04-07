@@ -26,7 +26,8 @@
   "web_accessible_resources": [
     "content/SilenceDetectorProcessor.js",
     "content/VolumeFilterProcessor.js",
-    "chunks/*.js"
+    "chunks/*.js",
+    "_locales/*/messages.json"
   ],
   "options_ui": {
     "page": "options/index.html",

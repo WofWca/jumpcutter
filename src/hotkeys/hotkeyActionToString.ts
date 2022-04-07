@@ -1,5 +1,7 @@
-import { getMessage } from '@/helpers';
+import { createGetMessage } from '@/helpers';
 import { HotkeyAction } from './HotkeyAction';
+
+const getMessage = await createGetMessage();
 
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
   // TODO check if emojis are ok with screen readers, though I think they should be.
