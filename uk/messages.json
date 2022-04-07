@@ -36,7 +36,15 @@
   "audio": { "message": "аудио" },
   "video": { "message": "видео" },
   "contentScriptFail": { "message": "Не удалось запустить контент-скрипт на данной странице" },
-  "wantTo": { "message": "Хотите" },
+  "suggestOpenLocalFile": {
+    "message": "Хотите **$openLocalFile$**?",
+    "placeholders": {
+      "openLocalFile": {
+        "content": "$1",
+        "example": "открыть локальный файл"
+      }
+    }
+  },
   "openLocalFile": { "message": "открыть локальный файл" },
   "loading": { "message": "Загрузка" },
   "useExperimentalAlgorithm": { "message": "Использовать экспериментальный алгоритм" },
