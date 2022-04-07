@@ -103,7 +103,7 @@
       multiple
     />
     <div class="input-box-content">
-      <p style="text-align: center; margin: 1rem;">{getMessage('dropFiles')}<br>{getMessage('orClickToSelect')}</p>
+      <p style="text-align: center; margin: 1rem; white-space: pre-line;">{getMessage('fileInputLabel')}</p>
     </div>
   </div>
 </div>
