@@ -37,7 +37,15 @@
   "audio": { "message": "audio" },
   "video": { "message": "video" },
   "contentScriptFail": { "message": "Couldn't execute the content script on this page" },
-  "wantTo": { "message": "Trying to" },
+  "suggestOpenLocalFile": {
+    "message": "Want to **$openLocalFile$**?",
+    "placeholders": {
+      "openLocalFile": {
+        "content": "$1",
+        "example": "open a local file"
+      }
+    }
+  },
   "openLocalFile": { "message": "open a local file" },
   "loading": { "message": "Loading" },
   "useExperimentalAlgorithm": { "message": "Use experimental algorithm" },

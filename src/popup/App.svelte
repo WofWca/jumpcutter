@@ -479,11 +479,17 @@
             </p>
           {:else}
             <p>
-              <span>⚠️ {getMessage('contentScriptFail')}.<br>{getMessage('wantTo')} </span>
-              <!-- svelte-ignore a11y-missing-attribute --->
-              <a
-                {...openLocalFileLinkProps}
-              >{getMessage('openLocalFile')}</a>?
+              ⚠️ {getMessage('contentScriptFail')}.<br>
+              {#each getMessage('suggestOpenLocalFile', getMessage('openLocalFile')).split('**') as part, i}
+                {#if i !== 1}
+                  <span>{part}</span>
+                {:else}
+                  <!-- svelte-ignore a11y-missing-attribute --->
+                  <a
+                    {...openLocalFileLinkProps}
+                  >{part}</a>
+                {/if}
+              {/each}
             </p>
           {/if}
         {:else}
