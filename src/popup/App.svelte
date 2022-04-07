@@ -326,6 +326,10 @@
   <button
     id="options-button"
     on:click={() => browser.runtime.openOptionsPage()}
+    use:tippy={{
+      content: getMessage('more'),
+      theme: 'my-tippy',
+    }}
   >⚙️</button>
   <div class="others__wrapper">
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
