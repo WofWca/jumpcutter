@@ -28,19 +28,23 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
     + `width: ${settings.popupChartWidthPx}px`
   }
 >
-  <!-- TODO It's pretty stupid that we have several i18n strings for this sentence. May cause issues
-  when we try to add other languages. -->
-  <span>⚠️ {getMessage('thisMedia')}</span><i>{getMessage('likely')}</i>
-  <span>
-    {getMessage('unsupported')} — {
-    #if settings.experimentalControllerType === ControllerKind_STRETCHING}
-      {getMessage('couldGetMuted')}.
-    {:else if settings.experimentalControllerType === ControllerKind_CLONING
-      }{getMessage('silenceSkippingWontWork')}.
+  ⚠️
+  {#each (
+    getMessage(
+      'mediaUnsupported',
+      settings.experimentalControllerType === ControllerKind_STRETCHING
+      ? getMessage('couldGetMuted')
+      : settings.experimentalControllerType === ControllerKind_CLONING
+      ? getMessage('silenceSkippingWontWork')
+      : assertNever(settings.experimentalControllerType)
+    ).split('**')
+  ) as part, i}
+    {#if i !== 1}
+      <span>{part}</span>
     {:else}
-      {assertNever(settings.experimentalControllerType)}
+      <i>{part}</i>
     {/if}
-  </span>
+  {/each}
   <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
   of `elementCurrentSrc`, but let's future-prove it. -->
   {#if latestTelemetryRecord.elementCurrentSrc}
