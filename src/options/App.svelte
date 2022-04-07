@@ -76,7 +76,7 @@
 
   const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
     { v: 'relativeToSoundedSpeed', l: `✖️ ${getMessage('relativeToSounded')}` },
-    { v: 'absolute', l: `= ${getMessage('absolute')} ${getMessage('absoluteSilenceSpeedClarification')}` },
+    { v: 'absolute', l: `= ${getMessage('absolute')}${getMessage('absoluteSilenceSpeedClarification')}` },
   ]
   const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
     { v: 'none', l: `❌ ${getMessage('none')}`, },
