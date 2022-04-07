@@ -1,7 +1,7 @@
 {
   "extensionDescription": { "message": "Проматывает тишину в видео, в реальном времени" },
   "enable": { "message": "Включить" },
-  "volume": { "message": "Громкость" },
+  "volume": { "message": "Громкость\nЭто не текущий уровень сигнала, а его усиление. Как на телевизоре." },
   "timeSaved": { "message": "Информация о сэкономленном времени" },
   "overTheLast": {
     "message": "За последние $duration$",

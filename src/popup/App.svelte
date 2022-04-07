@@ -337,7 +337,7 @@
       class="others__item"
       use:tippy={{
         content: getMessage('volume'),
-        theme: 'my-tippy',
+        theme: tippyThemeMyTippyAndPreLine,
       }}
     >
       <!-- `min-width` because the emojis have different widths, so it remains constant. -->
