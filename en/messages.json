@@ -72,8 +72,7 @@
   "marginAfter": { "message": "Margin after" },
   "marginAfterTooltip": { "message": "This is similar to \"margin before\". When it was loud and then became silent, how many seconds we need to wait before speeding up (switching to silence speed).\nThis is mostly to keep pauses in the speech at least to some degree so words don't get mushed together and to ensure that you can clearly hear the very last letters in a sentence.\nUnlike \"margin before\" this doesn't cause audio distortion & delay (but it's not to say that these settings are interchangeable)." },
 
-  "dropFiles": { "message": "Drop one or several files here" },
-  "orClickToSelect": { "message": "or click to select" },
+  "fileInputLabel": { "message": "Drop one or several files here\nor click to select" },
 
   "general": { "message": "General" },
   "applyTo": { "message": "Apply to" },
