@@ -42,9 +42,15 @@
   "loading": { "message": "Loading" },
   "useExperimentalAlgorithm": { "message": "Use experimental algorithm" },
   "useExperimentalAlgorithmTooltip": { "message": "➖ Bare minimum usability\n➕ Allows skipping silent parts entirely instead of playing them at a faster rate\n➖ Doesn't work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply won't skip silence.\n➕ No audio distortion, delay or desync\n➖ The chart won't display the actual volume on silent parts (it will just show 0 instead)" },
-  "thisMedia": { "message": "This media is" },
-  "likely": { "message": " likely" },
-  "unsupported": { "message": "unsupported" },
+  "mediaUnsupported": {
+    "message": "This media is **likely** unsupported — $consequences$.",
+    "placeholders": {
+      "consequences": {
+        "content": "$1",
+        "example": "it could get muted if we attach to it"
+      }
+    }
+  },
   "couldGetMuted": { "message": "it could get muted if we attach to it" },
   "silenceSkippingWontWork": { "message": "silence skipping won't work properly" },
   "tryOpeningDirectly": { "message": "Try opening it directly" },
