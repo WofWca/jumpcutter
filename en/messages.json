@@ -2,7 +2,7 @@
   "extensionDescription": { "message": "Skips silent parts in videos, in real time" },
   "enable": { "message": "Enable" },
   "more": { "message": "More" },
-  "volume": { "message": "Volume" },
+  "volume": { "message": "Volume\nIt's not the current loudness of the material, but its amplification multiplier, like on TV" },
   "timeSaved": { "message": "Time saved info" },
   "overTheLast": {
     "message": "Over the last $duration$",
