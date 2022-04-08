@@ -453,6 +453,12 @@
   <div style="margin: 1rem 0;">
     <a
       target="_blank"
+      href="https://hosted.weblate.org/engage/jump-cutter/{browser.i18n.getUILanguage()}/"
+    >🌐 {getMessage('helpTranslate')}</a>
+  </div>
+  <div style="margin: 1rem 0;">
+    <a
+      target="_blank"
       href="https://github.com/WofWca/jumpcutter"
     >ℹ️ {getMessage('about')}</a>
   </div>
