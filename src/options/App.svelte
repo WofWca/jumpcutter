@@ -452,7 +452,7 @@
   {/await}
   <div style="margin: 1rem 0;">
     <a
-      target="new"
+      target="_blank"
       href="https://github.com/WofWca/jumpcutter"
     >ℹ️ {getMessage('about')}</a>
   </div>
