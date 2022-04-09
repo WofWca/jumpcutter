@@ -166,7 +166,7 @@
   // can change from outside the popup while it's open is if you execute the `toggle_enabled` command (see
   // `initBrowserHotkeysListener.ts`).
   // Why debounce – because `addOnSettingsChangedListener` also reacts to settings changes from inside this
-  // script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
+  // (popup) script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
   // the `settings` object's state begins jumping between the old and new state.
   // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
   let pendingChanges: Partial<Settings> = {};
