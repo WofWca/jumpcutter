@@ -168,7 +168,7 @@
   // Why debounce – because `addOnStorageChangedListener` also reacts to settings changes from inside this
   // (popup) script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
   // the `settings` object's state begins jumping between the old and new state.
-  // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
+  // TODO it's better to fix the root cause (i.e. not to react to same-source changes).
   let pendingChanges: Partial<Settings> = {};
   const debouncedApplyPendingChanges = debounce(
     () => {
