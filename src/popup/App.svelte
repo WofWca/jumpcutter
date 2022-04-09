@@ -12,7 +12,6 @@
   import type { TelemetryMessage } from '@/content/AllMediaElementsController';
   import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
-  import debounce from 'lodash/debounce';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { getMessage } from '@/helpers';
@@ -144,10 +143,7 @@
       keydownListener = createKeydownListener(
         nonSettingsActions => nonSettingsActionsPort?.postMessage(nonSettingsActions),
         () => settings,
-        newValues => {
-          Object.assign(settings, newValues);
-          settings = settings;
-        },
+        updateSettingsLocalCopyAndStorage,
       );
     }
   })();
@@ -185,10 +181,17 @@
 
   let thisScriptRecentlyUpdatedStorage = false;
   let thisScriptRecentlyUpdatedStorageTimeoud = -1;
-  function saveSettings(_newSettings: Settings) {
-    // TODO but if there are `unhandledStorageChanges`, they will get overwritten with this `setSettings` call
-    // because `settings` includes all keys.
-    setSettings(settings);
+  let settingsKeysToSaveToStorage = new Set<keyof Settings>();
+  // `throttle` for performance, e.g. in case the user drags a slider (which makes the value change very often).
+  const throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks = throttle(() => {
+    const newValues: Partial<Settings> = {};
+    settingsKeysToSaveToStorage.forEach(key => {
+      // @ts-expect-error 2322 they're both `Settings` or `Partial<Settings>` and the key is the same.
+      newValues[key] = settings[key] as (typeof newValues)[typeof key];
+    });
+    setSettings(newValues);
+    settingsKeysToSaveToStorage.clear();
+
     thisScriptRecentlyUpdatedStorage = true;
     clearTimeout(thisScriptRecentlyUpdatedStorageTimeoud);
     // TODO would `requestIdleCallback` work? Perhaps RIC + setTimeout?
@@ -202,14 +205,19 @@
       },
       500,
     );
+  }, 50);
+  function updateSettingsLocalCopyAndStorage(newValues: Partial<Settings>) {
+    Object.assign(settings, newValues);
+    settings = settings; // Trigger Svelte's reactivity.
+    Object.keys(newValues).forEach(key => settingsKeysToSaveToStorage.add(key as keyof typeof newValues));
+    throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks();
   }
-  // `throttle` for performance, e.g. in case the user drags a slider (which makes the value change very often).
-  const throttledSaveSettings = throttle(saveSettings, 50);
-  $: onSettingsChange = settingsLoaded
-    ? throttledSaveSettings
-    : () => {};
-  $: {
-    onSettingsChange(settings);
+  function createOnInputListener(settingKey: keyof Settings) {
+    // Why is the value argument not used? Because we use `bind:value` in addition.
+    return () => {
+      settingsKeysToSaveToStorage.add(settingKey);
+      throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks();
+    };
   }
 
   function rangeInputSettingNameToAttrs(name: PopupAdjustableRangeInputsCapitalized, settings: Settings) {
@@ -316,10 +324,7 @@
       ? ControllerKind_CLONING
       : ControllerKind_STRETCHING
     const newValues = changeAlgorithmAndMaybeRelatedSettings(settings, newControllerType);
-    settings = {
-      ...settings,
-      ...newValues,
-    };
+    updateSettingsLocalCopyAndStorage(newValues);
   }
 
   $: controllerTypeAlwaysSounded = latestTelemetryRecord?.controllerType === ControllerKind_ALWAYS_SOUNDED;
@@ -331,8 +336,13 @@
 {#await settingsPromise then _}
   <div style="display: flex; justify-content: center;">
     <label class="enabled-input">
+      <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
+      DRY? With `{...myBind}` or something?
+      Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
+      Maybe it's more proper to not rely on `bind:` -->
       <input
         bind:checked={settings.enabled}
+        on:change={createOnInputListener('enabled')}
         type="checkbox"
         autofocus={settings.popupAutofocusEnabledInput}
       >
@@ -468,14 +478,10 @@
               could be useful. -->
               <button
                 on:click={async () => {
-                  settings.enabled = false;
-                  // TODO it should be better to wait for `storage.set`'s callback instead of just `setTimeout`.
-                  // TODO. No idea why, but sometimes the `enabled` setting becomes "false" after pressing this button.
-                  // TODO also this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
+                  // TODO this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
                   // ideal.
-                  setTimeout(() => {
-                    settings.enabled = true;
-                  }, 20);
+                  await setSettings({ enabled: false });
+                  setSettings({ enabled: true });
                 }}
               >🔄 {getMessage('retry')}</button>
               <!-- TODO how about don't show this button when there are no such elements on the page
@@ -483,13 +489,12 @@
               {#if settings.applyTo !== 'both'}
                 <br/><br/>
                 <button
-                  on:click={() => {
-                    settings.applyTo = 'both'
-                    settings.enabled = false;
-                    // Hacky. Same as with the "Retry" button, but at least this one disappears.
-                    setTimeout(() => {
-                      settings.enabled = true;
-                    }, 100);
+                  on:click={async () => {
+                    // TODO same issue as with "retry".
+                    settings.applyTo = 'both';
+                    settings = settings;
+                    await setSettings({ applyTo: 'both', enabled: false });
+                    setSettings({ enabled: true });
                   }}
                 >🔍 {getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
               {/if}
@@ -570,7 +575,9 @@
         <MediaUnsupportedMessage
           {latestTelemetryRecord}
           {settings}
-          on:dontAttachToCrossOriginMediaChange={({ detail }) => settings.dontAttachToCrossOriginMedia = detail}
+          on:dontAttachToCrossOriginMediaChange={({ detail }) => {
+            updateSettingsLocalCopyAndStorage({ dontAttachToCrossOriginMedia: detail });
+          }}
         />
       {/await}
     {/if}
@@ -597,6 +604,7 @@
     label="🔉 {getMessage('volumeThreshold')}"
     {...rangeInputSettingNameToAttrs('VolumeThreshold', settings)}
     bind:value={settings.volumeThreshold}
+    on:input={createOnInputListener('volumeThreshold')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
       content: getMessage('volumeThresholdTooltip'),
@@ -612,6 +620,7 @@
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SoundedSpeed', settings)}
     bind:value={settings.soundedSpeed}
+    on:input={createOnInputListener('soundedSpeed')}
     useForInputParams={{
       content: getMessage('soundedSpeedTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
@@ -622,6 +631,7 @@
     fractionalDigits={2}
     {...rangeInputSettingNameToAttrs('SilenceSpeedRaw', settings)}
     bind:value={settings.silenceSpeedRaw}
+    on:input={createOnInputListener('silenceSpeedRaw')}
     disabled={
       settings.experimentalControllerType === ControllerKind_CLONING
       || controllerTypeAlwaysSounded
@@ -640,6 +650,7 @@
     label="⏱️⬅️ {getMessage('marginBefore')}"
     {...rangeInputSettingNameToAttrs('MarginBefore', settings)}
     bind:value={settings.marginBefore}
+    on:input={createOnInputListener('marginBefore')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
       content: getMessage('marginBeforeTooltip'),
@@ -650,6 +661,7 @@
     label="⏱️➡️ {getMessage('marginAfter')}"
     {...rangeInputSettingNameToAttrs('MarginAfter', settings)}
     bind:value={settings.marginAfter}
+    on:input={createOnInputListener('marginAfter')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
       content: getMessage('marginAfterTooltip'),
