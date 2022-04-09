@@ -168,22 +168,39 @@
   // Why debounce – because `addOnStorageChangedListener` also reacts to settings changes from inside this
   // (popup) script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
   // the `settings` object's state begins jumping between the old and new state.
+  // So we mitigate this by not updating the `settings` object with changes we got from `addOnStorageChangedListener`
+  // until some time has passed since we last called `storage.set()`, to make sure that we have handled
+  // these changes in the `addOnStorageChangedListener` callback.
   // TODO it's better to fix the root cause (i.e. not to react to same-source changes).
-  let pendingChanges: Partial<Settings> = {};
-  const debouncedApplyPendingChanges = debounce(
-    () => {
-      settings = { ...settings, ...pendingChanges }
-      pendingChanges = {};
-    },
-    500,
-  )
+  let unhandledStorageChanges: Partial<Settings> | null = null;
   addOnStorageChangedListener(changes => {
-    pendingChanges = Object.assign(pendingChanges, settingsChanges2NewValues(changes));
-    debouncedApplyPendingChanges();
+    const newValues = settingsChanges2NewValues(changes);
+    if (thisScriptRecentlyUpdatedStorage) {
+      unhandledStorageChanges = { ...unhandledStorageChanges, ...newValues };
+    } else {
+      settings = { ...settings, ...newValues };
+    }
   });
 
-  function saveSettings(settings: Settings) {
+  let thisScriptRecentlyUpdatedStorage = false;
+  let thisScriptRecentlyUpdatedStorageTimeoud = -1;
+  function saveSettings(_newSettings: Settings) {
+    // TODO but if there are `unhandledStorageChanges`, they will get overwritten with this `setSettings` call
+    // because `settings` includes all keys.
     setSettings(settings);
+    thisScriptRecentlyUpdatedStorage = true;
+    clearTimeout(thisScriptRecentlyUpdatedStorageTimeoud);
+    // TODO would `requestIdleCallback` work? Perhaps RIC + setTimeout?
+    thisScriptRecentlyUpdatedStorageTimeoud = (setTimeout as typeof window.setTimeout)(
+      () => {
+        thisScriptRecentlyUpdatedStorage = false;
+        if (unhandledStorageChanges) {
+          settings = { ...settings, ...unhandledStorageChanges }
+          unhandledStorageChanges = null;
+        }
+      },
+      500,
+    );
   }
   // `throttle` for performance, e.g. in case the user drags a slider (which makes the value change very often).
   const throttledSaveSettings = throttle(saveSettings, 50);
