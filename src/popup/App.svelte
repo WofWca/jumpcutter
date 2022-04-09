@@ -178,7 +178,8 @@
     if (thisScriptRecentlyUpdatedStorage) {
       unhandledStorageChanges = { ...unhandledStorageChanges, ...newValues };
     } else {
-      settings = { ...settings, ...newValues };
+      Object.assign(settings, newValues);
+      settings = settings;
     }
   });
 
