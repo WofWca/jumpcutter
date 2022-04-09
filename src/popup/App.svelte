@@ -185,8 +185,7 @@
   function saveSettings(settings: Settings) {
     setSettings(settings);
   }
-  // Debounce, otherwise continuously adjusting "range" inputs with mouse makes it lag real bad.
-  // TODO but wot if use requestAnimationFrame instead of opinionated milliseconds?
+  // `throttle` for performance, e.g. in case the user drags a slider (which makes the value change very often).
   const throttledSaveSettings = throttle(saveSettings, 50);
   $: onSettingsChange = settingsLoaded
     ? throttledSaveSettings
