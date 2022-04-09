@@ -1,6 +1,6 @@
 import browser from '@/webextensions-api';
 import {
-  addOnSettingsChangedListener, removeOnSettingsChangedListener, MyStorageChanges, getSettings
+  addOnStorageChangedListener, removeOnStorageChangedListener, MyStorageChanges, getSettings
 } from '@/settings';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
@@ -49,10 +49,10 @@ export default async function init(): Promise<void> {
     if (changes.enabled?.newValue === false) {
       browser.runtime.onMessage.removeListener(onMessage);
       mutationObserver.disconnect();
-      removeOnSettingsChangedListener(onSettingsChanged);
+      removeOnStorageChangedListener(onSettingsChanged);
     }
   }
-  addOnSettingsChangedListener(onSettingsChanged);
+  addOnStorageChangedListener(onSettingsChanged);
 
   const { applyTo } = await settingsP;
   const tagNames: Array<'video' | 'audio'> = [];

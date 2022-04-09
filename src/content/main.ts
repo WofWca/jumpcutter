@@ -46,7 +46,7 @@ const enabledOnInitialization = await isEnabled();
 if (enabledOnInitialization) {
   importAndInit();
 }
-// Not using `addOnSettingsChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
+// Not using `addOnStorageChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
 // TODO use it when (if?) it's gone.
 (typeof browser !== 'undefined' ? browser : chrome).storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
   if (areaName !== mainStorageAreaName) {

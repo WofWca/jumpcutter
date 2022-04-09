@@ -2,7 +2,7 @@
   import browser from '@/webextensions-api';
   import { onDestroy } from 'svelte';
   import {
-    addOnSettingsChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
+    addOnStorageChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
     ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
     PopupAdjustableRangeInputsCapitalized,
     ControllerKind_ALWAYS_SOUNDED,
@@ -165,7 +165,7 @@
   // This is to react to settings changes outside the popup. I think currently the only reasonable way they
   // can change from outside the popup while it's open is if you execute the `toggle_enabled` command (see
   // `initBrowserHotkeysListener.ts`).
-  // Why debounce – because `addOnSettingsChangedListener` also reacts to settings changes from inside this
+  // Why debounce – because `addOnStorageChangedListener` also reacts to settings changes from inside this
   // (popup) script itself and sometimes when settings change rapidly, `onChanged` callback may lag behind so
   // the `settings` object's state begins jumping between the old and new state.
   // TODO it's better to fix the root cause (i.e. not to react to same-source changes.
@@ -177,7 +177,7 @@
     },
     500,
   )
-  addOnSettingsChangedListener(changes => {
+  addOnStorageChangedListener(changes => {
     pendingChanges = Object.assign(pendingChanges, settingsChanges2NewValues(changes));
     debouncedApplyPendingChanges();
   });

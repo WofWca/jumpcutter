@@ -1,7 +1,7 @@
 import browser from '@/webextensions-api';
 import {
-  Settings, getSettings, setSettings, addOnSettingsChangedListener, MyStorageChanges, ControllerKind,
-  removeOnSettingsChangedListener, settingsChanges2NewValues,
+  Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
+  removeOnStorageChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin } from '@/content/helpers';
@@ -144,11 +144,11 @@ export default class AllMediaElementsController {
 
     // Keep in mind that this listener is also responsible for the desturction of this instance in case
     // `enabled` gets changed to `false`.
-    const reactToSettingsChanges = (changes: MyStorageChanges) => {
+    const reactToStorageChanges = (changes: MyStorageChanges) => {
       this.reactToSettingsNewValues(settingsChanges2NewValues(changes));
     }
-    addOnSettingsChangedListener(reactToSettingsChanges);
-    this._destroyedPromise.then(() => removeOnSettingsChangedListener(reactToSettingsChanges));
+    addOnStorageChangedListener(reactToStorageChanges);
+    this._destroyedPromise.then(() => removeOnStorageChangedListener(reactToStorageChanges));
   }
   private destroy() {
     this.detachFromActiveElement();
@@ -423,8 +423,8 @@ export default class AllMediaElementsController {
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.settings!,
-        addOnSettingsChangedListener,
-        removeOnSettingsChangedListener,
+        addOnStorageChangedListener,
+        removeOnStorageChangedListener,
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
 
