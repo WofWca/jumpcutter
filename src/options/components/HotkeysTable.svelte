@@ -14,6 +14,7 @@
 
   export let hotkeys: PotentiallyInvalidHotkeyBinding[];
   export let displayOverrideWebsiteHotkeysColumn: boolean;
+  export let style: string = '';
 
   function addNewBinding() {
     hotkeys.push({});
@@ -42,7 +43,7 @@
   }
 </script>
 
-<div>
+<div {style}>
   <table>
     <thead>
       <th>{getMessage('action')}</th>

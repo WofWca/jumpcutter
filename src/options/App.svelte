@@ -89,12 +89,12 @@
     { v: 'exponential', l: `📉 ${getMessage('timeSavedAveragingMethodExponential')}`, },
   ];
   const popupChartSpeedOptions: Array<{ v: Settings['popupChartSpeed'], l: string }> = [
-    { v: 'intrinsicTime', l: `▶️ ${getMessage('chartSpeedIntrinsicTime')}` },
+    { v: 'intrinsicTime', l: `▶️= ${getMessage('chartSpeedIntrinsicTime')}` },
+    { v: 'soundedSpeedTime', l: `▶️➗ ${getMessage('chartSpeedSoundedSpeedTime')}` },
     { v: 'realTime', l: `🌎 ${getMessage('chartSpeedRealTime')}` },
   ];
 
   const rangeInputSettingsNamesCapitalized = [
-    // TODO DRY settings labels. Maybe when we get to implementing localization.
     { v: 'VolumeThreshold', l: `🔉🎚️ ${getMessage('volumeThreshold')}`, },
     { v: 'SoundedSpeed', l: `🗣️▶️ ${getMessage('soundedSpeed')}`, },
     { v: 'SilenceSpeedRaw', l: `🙊⏩ ${getMessage('silenceSpeed')}`, },
@@ -213,6 +213,7 @@
           <HotkeysTable
             bind:hotkeys={settings.hotkeys}
             displayOverrideWebsiteHotkeysColumn={true}
+            style="margin: 0.75rem 0;"
           >
             <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
             TODO move this comment to `manifest.json` somehow? -->
@@ -251,47 +252,51 @@
       </section>
       <section>
         <h3>{getMessage('popup')}</h3>
-        <NumberField
-          label="📈⏱️ {getMessage('chartLengthInSeconds')}"
-          bind:value={settings.popupChartLengthInSeconds}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈⏱️ {getMessage('chartJumpPeriod')}"
-          bind:value={settings.popupChartJumpPeriod}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈📏 {getMessage('chartWidthPx')}"
-          bind:value={settings.popupChartWidthPx}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈📏 {getMessage('chartHeightPx')}"
-          bind:value={settings.popupChartHeightPx}
-          required
-          min="0"
-        />
-        <InputFieldBase
-          label="📈▶️ {getMessage('chartSpeed')}"
-          let:id
-        >
-          <select
-            {id}
-            bind:value={settings.popupChartSpeed}
+        <section>
+          <h4><!-- 📈 -->{getMessage('chart')}</h4>
+          <NumberField
+            label="⏱️ {getMessage('chartLengthInSeconds')}"
+            bind:value={settings.popupChartLengthInSeconds}
+            required
+            min="0"
+          />
+          <NumberField
+            label="⏱️ {getMessage('chartJumpPeriod')}"
+            bind:value={settings.popupChartJumpPeriod}
+            required
+            min="0"
+            max="100"
+          />
+          <NumberField
+            label="📏 {getMessage('chartWidthPx')}"
+            bind:value={settings.popupChartWidthPx}
+            required
+            min="0"
+          />
+          <NumberField
+            label="📏 {getMessage('chartHeightPx')}"
+            bind:value={settings.popupChartHeightPx}
+            required
+            min="0"
+          />
+          <InputFieldBase
+            label="▶️ {getMessage('chartSpeed')}"
+            let:id
           >
-            {#each popupChartSpeedOptions as { v, l }}
-              <option value={v}>{l}</option>
-            {/each}
-          </select>
-        </InputFieldBase>
+            <select
+              {id}
+              bind:value={settings.popupChartSpeed}
+            >
+              {#each popupChartSpeedOptions as { v, l }}
+                <option value={v}>{l}</option>
+              {/each}
+            </select>
+          </InputFieldBase>
+        </section>
         <section>
           <h4>{getMessage('rangeSlidersAttributes')}</h4>
           <p>{getMessage('rangeSlidersAttributesNote')}</p>
-          <table>
+          <table style="margin: 0.75rem 0;">
             <thead>
               <th>{getMessage('input')}</th>
               {#each [
@@ -344,6 +349,7 @@
           <HotkeysTable
             bind:hotkeys={settings.popupSpecificHotkeys}
             displayOverrideWebsiteHotkeysColumn={false}
+            style="margin: 0.75rem 0;"
           />
         </section>
       </section>
@@ -381,15 +387,17 @@
           />
           <!-- TODO hh:mm:ss? -->
           <!-- TODO explain math? -->
-          <output>{
-            getMessage(
-              'timeSavedDataWeightDecayTimeConstant',
-              (getTimeSavedDataWeightDecayTimeConstant(
-                settings.timeSavedExponentialAveragingLatestDataWeight,
-                settings.timeSavedAveragingWindowLength
-              ) * Math.LN2).toPrecision(5)
-            )
-          }</output>
+          <p>
+            <output>{
+              getMessage(
+                'timeSavedDataWeightDecayTimeConstant',
+                (getTimeSavedDataWeightDecayTimeConstant(
+                  settings.timeSavedExponentialAveragingLatestDataWeight,
+                  settings.timeSavedAveragingWindowLength
+                ) * Math.LN2).toPrecision(5)
+              )
+            }</output>
+          </p>
         {/if}
       </section>
       <section>
@@ -430,6 +438,7 @@
           style="color: red;"
           on:click={onResetToDefaultsClick}
         >🔄 {getMessage('resetToDefaults')}</button>
+        <br/><br/>
         <!-- TODO: -->
         <!-- <button
           type="button"
@@ -452,7 +461,7 @@
   {/await}
   <div style="margin: 1rem 0;">
     <a
-      target="new"
+      target="_blank"
       href="https://github.com/WofWca/jumpcutter"
     >ℹ️ {getMessage('about')}</a>
   </div>
@@ -497,15 +506,13 @@ main {
 }
 section {
   background: #88888814;
-  padding: 0.625rem;
+  margin: 1rem 0;
+  padding: 0 0.625rem;
   border: 1px solid gray;
   border-radius: 0.25rem;
 }
-* ~ section {
-  margin-top: 1rem;
-}
 h1, h2, h3, h4, h5, h6 {
-  margin-top: 0;
+  margin: 0.625rem 0;
 }
 .status-bar {
   position: sticky;
