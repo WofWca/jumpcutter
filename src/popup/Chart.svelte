@@ -194,6 +194,7 @@
     ? toIntrinsicTimeMs
     : toUnixTimeMs;
 
+  let referenceTelemetry: Parameters<typeof toIntrinsicTime>[1] | undefined;
   async function initSmoothie() {
     const { SmoothieChart, TimeSeries } = await smoothieImportP;
     // TODO make all these numbers customizable.
@@ -294,7 +295,6 @@
       });
     }
 
-    let referenceTelemetry: Parameters<typeof toIntrinsicTime>[1] | undefined;
     /**
      * Why need this? Because:
      * * `latestTelemetryRecord` doesn't get updated often enough.
@@ -697,8 +697,9 @@
         volumeSeries.append(startMs + datapointTimeOffsetMs, 0);
         volumeSeries.append(endMs - datapointTimeOffsetMs, 0);
 
-        // TODO shouldn't we `setReferenceToLatest` here, because it became incorrect?
-        // It will be detected automatically when the error tolerance is exceeded though.
+        // The reference telemetry became incorrect because a seek has been performed.
+        // Otherwise the chart jumps backwards a bit periodically, if there are short seeks.
+        referenceTelemetry = latestTelemetryRecord;
       }
     }
 
