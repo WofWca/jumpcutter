@@ -31,12 +31,28 @@
   export let jumpPeriod: number;
   $: jumpPeriodMs = jumpPeriod * 1000;
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
+  export let soundedSpeed: number;
   export let telemetryUpdatePeriod: TimeDelta;
 
-  const timeProgressionSpeedIntrinsic = timeProgressionSpeed === 'intrinsicTime';
+  const timelineIsMediaIntrinsic =
+    timeProgressionSpeed === 'intrinsicTime'
+    || timeProgressionSpeed === 'soundedSpeedTime';
 
   let canvasEl: HTMLCanvasElement;
-  $: millisPerPixel = lengthSeconds * 1000 / widthPx;
+  $: stretchFactor = timeProgressionSpeed === 'soundedSpeedTime'
+    ? soundedSpeed
+    : 1;
+  // TODO technically this is not correct, because the grid and the current output marker
+  // (https://github.com/WofWca/jumpcutter/blob/5e09bf841e9c94ed5f5da03dfaea862dda269788/src/popup/Chart.svelte#L424-L455)
+  // are still drawn in media intrinsic time, not in (media intrinsic time / soundedSpeed),
+  // so it's more like changing `popupChartLengthInSeconds`, like it's not respected.
+  // TODO also `jumpPeriodMs` needs to be adjusted then, I guess.
+  $: millisPerPixel = stretchFactor * lengthSeconds * 1000 / widthPx;
+  $: {
+    if (smoothie) {
+      smoothie.options.millisPerPixel = millisPerPixel;
+    }
+  };
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
@@ -165,10 +181,10 @@
     return sToMs(toIntrinsicTime(...args));
   }
 
-  const convertTime = timeProgressionSpeedIntrinsic
+  const convertTime = timelineIsMediaIntrinsic
     ? toIntrinsicTime
     : toUnixTime;
-  const convertTimeMs = timeProgressionSpeedIntrinsic
+  const convertTimeMs = timelineIsMediaIntrinsic
     ? toIntrinsicTimeMs
     : toUnixTimeMs;
 
@@ -190,7 +206,7 @@
         disabled: true,
       },
       // This doesn't matter as we manually call `.render` anyway.
-      // nonRealtimeData: timeProgressionSpeedIntrinsic,
+      // nonRealtimeData: timelineIsMediaIntrinsic,
       minValue: 0,
       yRangeFunction() {
         if (volumeThreshold > 0) {
@@ -361,7 +377,7 @@
     let offsetAdjustment;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
-        let time = timeProgressionSpeedIntrinsic
+        let time = timelineIsMediaIntrinsic
           ? sToMs(getExpectedElementCurrentTimeDelayed(
               latestTelemetryRecord,
               referenceTelemetry,
@@ -414,7 +430,7 @@
           // happens, check out the commit that introduced this change – we were drawing this marker by smoothie's
           // means before.
           let chartEdgeTimeOffset: TimeDelta;
-          if (timeProgressionSpeedIntrinsic) {
+          if (timelineIsMediaIntrinsic) {
             const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
             const momentCurrentlyBeingOutputIntrinsicTime
               = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
@@ -556,12 +572,12 @@
       return;
     }
     const r = newTelemetryRecord;
-    const now = timeProgressionSpeedIntrinsic
+    const now = timelineIsMediaIntrinsic
       ? r.intrinsicTime
       : r.unixTime;
 
     // Not required with real-time speed, because real time alsways goes forward.
-    if (timeProgressionSpeedIntrinsic) {
+    if (timelineIsMediaIntrinsic) {
       // In case there has been a seek or something, remove the data that is in the future as it needs to be overridden.
       // If we don't do this:
       // * The volume line will look spikey
@@ -611,12 +627,12 @@
       updateSpeedSeries(r);
 
       // Otherwise it's not required.
-      if (timeProgressionSpeedIntrinsic) {
+      if (timelineIsMediaIntrinsic) {
         prevPlaybackRateChange = lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
       }
     }
 
-    if (timeProgressionSpeedIntrinsic && 'lastSilenceSkippingSeek' in r) {
+    if (timelineIsMediaIntrinsic && 'lastSilenceSkippingSeek' in r) {
       const lastSilenceSkippingSeek = r.lastSilenceSkippingSeek
       const prevSilenceSkippingSeek =
         (lastHandledTelemetryRecord && 'lastSilenceSkippingSeek' in lastHandledTelemetryRecord)
@@ -678,7 +694,7 @@
 
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
-    const timeBeforeChartStart = timeProgressionSpeedIntrinsic
+    const timeBeforeChartStart = timelineIsMediaIntrinsic
       ? 0
       // For some reason using just `0` makes the line disappear. TODO investigate?
       : Date.now() - Math.round(lengthSeconds * 1000);

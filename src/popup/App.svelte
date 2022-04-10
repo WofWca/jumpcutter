@@ -555,6 +555,7 @@
         lengthSeconds={settings.popupChartLengthInSeconds}
         jumpPeriod={settings.popupChartJumpPeriod}
         timeProgressionSpeed={settings.popupChartSpeed}
+        soundedSpeed={settings.soundedSpeed}
         on:click={onChartClick}
         {telemetryUpdatePeriod}
       />

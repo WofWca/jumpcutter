@@ -157,7 +157,7 @@ export const defaultSettings: Readonly<Settings> = {
   // TODO maybe even if `popupChartSpeed === 'intrinsicTime'` the period still should be in real time?
   // At least as an option?
   popupChartJumpPeriod: 0,
-  popupChartSpeed: 'intrinsicTime',
+  popupChartSpeed: 'soundedSpeedTime',
   popupAlwaysShowOpenLocalFileLink: true,
 
   // Remember that "step" also controls what the input does when you control it with the keyboard,
