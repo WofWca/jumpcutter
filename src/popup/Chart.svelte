@@ -52,6 +52,13 @@
     }
   };
   $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
+  let onJumpPeriodMsChange: undefined | ((prevStretchFactor: number) => void);
+  let prevStretchFactor = stretchFactor;
+  $: {
+    jumpPeriodMs;
+    onJumpPeriodMsChange?.(prevStretchFactor);
+    prevStretchFactor = stretchFactor;
+  }
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
@@ -373,24 +380,52 @@
 
     const canvasContext = canvasEl.getContext('2d')!;
 
-    let offsetAdjustment;
+    let offsetAdjustment: number | undefined;
+    function getBaseRenderTime(latestTelemetryRecord: TelemetryRecord) {
+      return timelineIsMediaIntrinsic
+        ? sToMs(getExpectedElementCurrentTimeDelayed(
+            latestTelemetryRecord,
+            referenceTelemetry,
+            setReferenceToLatest,
+          ))
+          // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
+          // was omitted.
+          || Number.MIN_SAFE_INTEGER
+        : Date.now()
+    }
+
+    const updateOffsetAdjustmentSoChartDoesntJump = (prevStretchFactor: number) => {
+      // Need to make it so that the current output remains on the same place on the chart, so it doesn't
+      // jump all over the place as you change `soundedSpeed`. For this we need the value of
+      // `(chartJumpingOffsetMs / (millisPerPixel * widthPx))` to remain the same after the change of
+      // the jump period.
+      if (!latestTelemetryRecord) {
+        return;
+      }
+      if (offsetAdjustment === undefined) {
+        // It's best to initialize it on the first frame, inside `drawAndScheduleAnother`.
+        return;
+      }
+
+      const time = getBaseRenderTime(latestTelemetryRecord);
+
+      const stretchFactorChangeMultiplier = stretchFactor / prevStretchFactor;
+      const oldJumpPeriod = jumpPeriodMs / stretchFactor * prevStretchFactor;
+      // I don't know how this works, I simply derived this by solving an equation (see the comment above).
+      // And they say you won't need math in your daily life. TODO it's best to rewrite this using logic only.
+      // Maybe it could also be simplified.
+      offsetAdjustment =
+        ((time + offsetAdjustment) % oldJumpPeriod)
+        * stretchFactorChangeMultiplier
+        - time % jumpPeriodMs;
+    }
+    onJumpPeriodMsChange = updateOffsetAdjustmentSoChartDoesntJump;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
-        let time = timelineIsMediaIntrinsic
-          ? sToMs(getExpectedElementCurrentTimeDelayed(
-              latestTelemetryRecord,
-              referenceTelemetry,
-              setReferenceToLatest,
-            ))
-            // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
-            // was omitted.
-            || Number.MIN_SAFE_INTEGER
-          : Date.now();
+        let time = getBaseRenderTime(latestTelemetryRecord);
 
         // TODO perf: do this only once instead of on each RAF.
         if (offsetAdjustment === undefined) {
-          // We don't care if `jumpPeriodMs` changes at a later point. The purpose of this is to adjust
-          // the time until the very first jump.
           offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
         }
 
