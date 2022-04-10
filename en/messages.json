@@ -301,7 +301,10 @@
 		"message": "Movement speed"
 	},
 	"chartSpeedIntrinsicTime": {
-		"message": "Same as the video speed"
+		"message": "Same as the current video speed"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Same as the current video speed with relation to sounded speed"
 	},
 	"chartSpeedRealTime": {
 		"message": "Constant (real-time)"
