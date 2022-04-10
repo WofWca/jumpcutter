@@ -213,6 +213,7 @@
           <HotkeysTable
             bind:hotkeys={settings.hotkeys}
             displayOverrideWebsiteHotkeysColumn={true}
+            style="margin: 0.75rem 0;"
           >
             <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
             TODO move this comment to `manifest.json` somehow? -->
@@ -294,7 +295,7 @@
         <section>
           <h4>{getMessage('rangeSlidersAttributes')}</h4>
           <p>{getMessage('rangeSlidersAttributesNote')}</p>
-          <table>
+          <table style="margin: 0.75rem 0;">
             <thead>
               <th>{getMessage('input')}</th>
               {#each [
@@ -347,6 +348,7 @@
           <HotkeysTable
             bind:hotkeys={settings.popupSpecificHotkeys}
             displayOverrideWebsiteHotkeysColumn={false}
+            style="margin: 0.75rem 0;"
           />
         </section>
       </section>
@@ -384,15 +386,17 @@
           />
           <!-- TODO hh:mm:ss? -->
           <!-- TODO explain math? -->
-          <output>{
-            getMessage(
-              'timeSavedDataWeightDecayTimeConstant',
-              (getTimeSavedDataWeightDecayTimeConstant(
-                settings.timeSavedExponentialAveragingLatestDataWeight,
-                settings.timeSavedAveragingWindowLength
-              ) * Math.LN2).toPrecision(5)
-            )
-          }</output>
+          <p>
+            <output>{
+              getMessage(
+                'timeSavedDataWeightDecayTimeConstant',
+                (getTimeSavedDataWeightDecayTimeConstant(
+                  settings.timeSavedExponentialAveragingLatestDataWeight,
+                  settings.timeSavedAveragingWindowLength
+                ) * Math.LN2).toPrecision(5)
+              )
+            }</output>
+          </p>
         {/if}
       </section>
       <section>
@@ -433,6 +437,7 @@
           style="color: red;"
           on:click={onResetToDefaultsClick}
         >🔄 {getMessage('resetToDefaults')}</button>
+        <br/><br/>
         <!-- TODO: -->
         <!-- <button
           type="button"
@@ -500,15 +505,13 @@ main {
 }
 section {
   background: #88888814;
-  padding: 0.625rem;
+  margin: 1rem 0;
+  padding: 0 0.625rem;
   border: 1px solid gray;
   border-radius: 0.25rem;
 }
-* ~ section {
-  margin-top: 1rem;
-}
 h1, h2, h3, h4, h5, h6 {
-  margin-top: 0;
+  margin: 0.625rem 0;
 }
 .status-bar {
   position: sticky;
