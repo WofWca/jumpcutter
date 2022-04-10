@@ -89,7 +89,8 @@
     { v: 'exponential', l: `📉 ${getMessage('timeSavedAveragingMethodExponential')}`, },
   ];
   const popupChartSpeedOptions: Array<{ v: Settings['popupChartSpeed'], l: string }> = [
-    { v: 'intrinsicTime', l: `▶️ ${getMessage('chartSpeedIntrinsicTime')}` },
+    { v: 'intrinsicTime', l: `▶️= ${getMessage('chartSpeedIntrinsicTime')}` },
+    { v: 'soundedSpeedTime', l: `▶️➗ ${getMessage('chartSpeedSoundedSpeedTime')}` },
     { v: 'realTime', l: `🌎 ${getMessage('chartSpeedRealTime')}` },
   ];
 
@@ -265,6 +266,7 @@
             bind:value={settings.popupChartJumpPeriod}
             required
             min="0"
+            max="100"
           />
           <NumberField
             label="📏 {getMessage('chartWidthPx')}"

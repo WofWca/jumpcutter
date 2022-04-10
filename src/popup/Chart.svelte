@@ -28,15 +28,37 @@
   export let widthPx: number;
   export let heightPx: number;
   export let lengthSeconds: number;
-  export let jumpPeriod: number;
-  $: jumpPeriodMs = jumpPeriod * 1000;
+  export let jumpPeriod: number; // As a percentage.
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
+  export let soundedSpeed: number;
   export let telemetryUpdatePeriod: TimeDelta;
 
-  const timeProgressionSpeedIntrinsic = timeProgressionSpeed === 'intrinsicTime';
+  const timelineIsMediaIntrinsic =
+    timeProgressionSpeed === 'intrinsicTime'
+    || timeProgressionSpeed === 'soundedSpeedTime';
 
   let canvasEl: HTMLCanvasElement;
-  $: millisPerPixel = lengthSeconds * 1000 / widthPx;
+  $: stretchFactor = timeProgressionSpeed === 'soundedSpeedTime'
+    ? soundedSpeed
+    : 1;
+  // TODO technically this is not correct, because the grid and the current output marker
+  // (https://github.com/WofWca/jumpcutter/blob/5e09bf841e9c94ed5f5da03dfaea862dda269788/src/popup/Chart.svelte#L424-L455)
+  // are still drawn in media intrinsic time, not in (media intrinsic time / soundedSpeed),
+  // so it's more like changing `popupChartLengthInSeconds`, like it's not respected.
+  $: millisPerPixel = stretchFactor * lengthSeconds * 1000 / widthPx;
+  $: {
+    if (smoothie) {
+      smoothie.options.millisPerPixel = millisPerPixel;
+    }
+  };
+  $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
+  let onJumpPeriodMsChange: undefined | ((prevStretchFactor: number) => void);
+  let prevStretchFactor = stretchFactor;
+  $: {
+    jumpPeriodMs;
+    onJumpPeriodMsChange?.(prevStretchFactor);
+    prevStretchFactor = stretchFactor;
+  }
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
@@ -165,10 +187,10 @@
     return sToMs(toIntrinsicTime(...args));
   }
 
-  const convertTime = timeProgressionSpeedIntrinsic
+  const convertTime = timelineIsMediaIntrinsic
     ? toIntrinsicTime
     : toUnixTime;
-  const convertTimeMs = timeProgressionSpeedIntrinsic
+  const convertTimeMs = timelineIsMediaIntrinsic
     ? toIntrinsicTimeMs
     : toUnixTimeMs;
 
@@ -190,7 +212,7 @@
         disabled: true,
       },
       // This doesn't matter as we manually call `.render` anyway.
-      // nonRealtimeData: timeProgressionSpeedIntrinsic,
+      // nonRealtimeData: timelineIsMediaIntrinsic,
       minValue: 0,
       yRangeFunction() {
         if (volumeThreshold > 0) {
@@ -358,24 +380,52 @@
 
     const canvasContext = canvasEl.getContext('2d')!;
 
-    let offsetAdjustment;
+    let offsetAdjustment: number | undefined;
+    function getBaseRenderTime(latestTelemetryRecord: TelemetryRecord) {
+      return timelineIsMediaIntrinsic
+        ? sToMs(getExpectedElementCurrentTimeDelayed(
+            latestTelemetryRecord,
+            referenceTelemetry,
+            setReferenceToLatest,
+          ))
+          // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
+          // was omitted.
+          || Number.MIN_SAFE_INTEGER
+        : Date.now()
+    }
+
+    const updateOffsetAdjustmentSoChartDoesntJump = (prevStretchFactor: number) => {
+      // Need to make it so that the current output remains on the same place on the chart, so it doesn't
+      // jump all over the place as you change `soundedSpeed`. For this we need the value of
+      // `(chartJumpingOffsetMs / (millisPerPixel * widthPx))` to remain the same after the change of
+      // the jump period.
+      if (!latestTelemetryRecord) {
+        return;
+      }
+      if (offsetAdjustment === undefined) {
+        // It's best to initialize it on the first frame, inside `drawAndScheduleAnother`.
+        return;
+      }
+
+      const time = getBaseRenderTime(latestTelemetryRecord);
+
+      const stretchFactorChangeMultiplier = stretchFactor / prevStretchFactor;
+      const oldJumpPeriod = jumpPeriodMs / stretchFactor * prevStretchFactor;
+      // I don't know how this works, I simply derived this by solving an equation (see the comment above).
+      // And they say you won't need math in your daily life. TODO it's best to rewrite this using logic only.
+      // Maybe it could also be simplified.
+      offsetAdjustment =
+        ((time + offsetAdjustment) % oldJumpPeriod)
+        * stretchFactorChangeMultiplier
+        - time % jumpPeriodMs;
+    }
+    onJumpPeriodMsChange = updateOffsetAdjustmentSoChartDoesntJump;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
-        let time = timeProgressionSpeedIntrinsic
-          ? sToMs(getExpectedElementCurrentTimeDelayed(
-              latestTelemetryRecord,
-              referenceTelemetry,
-              setReferenceToLatest,
-            ))
-            // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
-            // was omitted.
-            || Number.MIN_SAFE_INTEGER
-          : Date.now();
+        let time = getBaseRenderTime(latestTelemetryRecord);
 
         // TODO perf: do this only once instead of on each RAF.
         if (offsetAdjustment === undefined) {
-          // We don't care if `jumpPeriodMs` changes at a later point. The purpose of this is to adjust
-          // the time until the very first jump.
           offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
         }
 
@@ -414,7 +464,7 @@
           // happens, check out the commit that introduced this change – we were drawing this marker by smoothie's
           // means before.
           let chartEdgeTimeOffset: TimeDelta;
-          if (timeProgressionSpeedIntrinsic) {
+          if (timelineIsMediaIntrinsic) {
             const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
             const momentCurrentlyBeingOutputIntrinsicTime
               = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
@@ -556,12 +606,12 @@
       return;
     }
     const r = newTelemetryRecord;
-    const now = timeProgressionSpeedIntrinsic
+    const now = timelineIsMediaIntrinsic
       ? r.intrinsicTime
       : r.unixTime;
 
     // Not required with real-time speed, because real time alsways goes forward.
-    if (timeProgressionSpeedIntrinsic) {
+    if (timelineIsMediaIntrinsic) {
       // In case there has been a seek or something, remove the data that is in the future as it needs to be overridden.
       // If we don't do this:
       // * The volume line will look spikey
@@ -611,12 +661,12 @@
       updateSpeedSeries(r);
 
       // Otherwise it's not required.
-      if (timeProgressionSpeedIntrinsic) {
+      if (timelineIsMediaIntrinsic) {
         prevPlaybackRateChange = lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
       }
     }
 
-    if (timeProgressionSpeedIntrinsic && 'lastSilenceSkippingSeek' in r) {
+    if (timelineIsMediaIntrinsic && 'lastSilenceSkippingSeek' in r) {
       const lastSilenceSkippingSeek = r.lastSilenceSkippingSeek
       const prevSilenceSkippingSeek =
         (lastHandledTelemetryRecord && 'lastSilenceSkippingSeek' in lastHandledTelemetryRecord)
@@ -678,7 +728,7 @@
 
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
-    const timeBeforeChartStart = timeProgressionSpeedIntrinsic
+    const timeBeforeChartStart = timelineIsMediaIntrinsic
       ? 0
       // For some reason using just `0` makes the line disappear. TODO investigate?
       : Date.now() - Math.round(lengthSeconds * 1000);
