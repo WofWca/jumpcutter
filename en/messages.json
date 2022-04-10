@@ -289,7 +289,7 @@
 		"message": "Length in seconds"
 	},
 	"chartJumpPeriod": {
-		"message": "Jump period (seconds). Should be <= Chart length. Set to 0 for smooth movement (no jumps)."
+		"message": "Jump period, %. Expressed as a fraction of chart length. Set to 0 for smooth movement (no jumps)."
 	},
 	"chartWidthPx": {
 		"message": "Width (pixels)"
