@@ -10,7 +10,7 @@
   import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import type { TelemetryMessage } from '@/content/AllMediaElementsController';
-  import { HotkeyAction, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
+  import { HotkeyAction, HotkeyAction_TOGGLE_PAUSE, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
@@ -240,8 +240,7 @@
 
   function onChartClick() {
     nonSettingsActionsPort?.postMessage([{
-      // TODO replace with `action: HotkeyAction.TOGGLE_PAUSE`. Now it says that `HotkeyAction` is undefined.
-      action: 'pause_toggle' as HotkeyAction.TOGGLE_PAUSE,
+      action: HotkeyAction_TOGGLE_PAUSE,
       keyCombination: { code: 'stub', }, // TODO this is dumb.
     }]);
   }
