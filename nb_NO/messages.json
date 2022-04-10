@@ -69,14 +69,14 @@
 		"message": "Lydstyrketerskel"
 	},
 	"mediaUnsupported": {
-    "message": "Media-en er **sannsynlig** ustøttet — $consequences$.",
-    "placeholders": {
-      "consequences": {
-        "content": "$1",
-        "example": "it could get muted if we attach to it"
-      }
-    }
-  },
+		"message": "Media-en er **sannsynlig** ustøttet — $consequences$.",
+		"placeholders": {
+			"consequences": {
+				"content": "$1",
+				"example": "it could get muted if we attach to it"
+			}
+		}
+	},
 	"refreshIfMuted": {
 		"message": "Gjenoppfrisk siden hvis mediaen ble forstummet"
 	},
@@ -125,7 +125,9 @@
 			}
 		}
 	},
-  "fileInputLabel": { "message": "Slipp én eller flere filer her\neller klikk for å velge" },
+	"fileInputLabel": {
+		"message": "Slipp én eller flere filer her\neller klikk for å velge"
+	},
 	"video": {
 		"message": "video"
 	},
@@ -235,5 +237,23 @@
 	},
 	"max": {
 		"message": "Maks."
+	},
+	"chartWidthPx": {
+		"message": "Bredde (piksler)"
+	},
+	"chartHeightPx": {
+		"message": "Høyde (piksler)"
+	},
+	"chartSpeed": {
+		"message": "Bevegelseshastighet"
+	},
+	"chartSpeedRealTime": {
+		"message": "Konstant (sanntid)"
+	},
+	"more": {
+		"message": "Mer"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "Lik nåværende videohastighet"
 	}
 }
