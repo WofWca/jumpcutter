@@ -9,6 +9,7 @@
   import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
+  import isEqual from 'lodash/isEqual';
 
   let unsaved = false;
   let formValid = true;
@@ -20,16 +21,39 @@
     popupSpecificHotkeys: PotentiallyInvalidHotkeyBinding[];
   }
   let settings: PotentiallyInvalidSettings;
+  let originalSettings: Settings;
+  // Yes, calling `getSettings` in order to get two clones, because we're gonna mutate `settings`.
   const settingsPromise = getSettings();
+  const originalSettingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
+  originalSettingsPromise.then(s => originalSettings = s);
+  let initialized = false;
+  Promise.all([settingsPromise, originalSettingsPromise]).then(() => initialized = true);
   const commandsPromise = browser.commands.getAll();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
   }
+  let updatedKeys = new Set<keyof Settings>();
   function saveSettings() {
     assertDev(checkValidity(settings), 'Expected saveSettings to be called only when the form is valid');
-    setSettings(settings);
+    const updatedValues: Partial<Settings> = {};
+    // A stupid way to only write the settings that we did change. TODO just rewrite settings communication with
+    // message passing already. Or at least do it as we do in `content/App.svelte'.
+    for (const [key_, value] of Object.entries(settings)) {
+      const key = key_ as keyof typeof settings;
+      // Why can't just do `isEqual`? Because then if we did change a setting and then changed it back,
+      // only the first change would get saved.
+      if (!updatedKeys.has(key)) {
+        if (isEqual(originalSettings[key], value)) {
+          continue;
+        }
+        updatedKeys.add(key);
+      }
+      updatedValues[key] = value;
+    }
+    setSettings(updatedValues);
+    console.log(updatedValues);
     unsaved = false;
   }
   const debouncedSaveSettings = debounce(saveSettings, 50);
@@ -39,14 +63,8 @@
     settings = cloneDeepJson(defaultSettings); // This will trigger the `onSettingsChanged` listener.
   }
 
-  let watchChanges = false;
   async function onSettingsChanged() {
-    // A pretty stupid way to not trigger on changed logic until settings have been loaded. Am I even supposed to use
-    // Svelte's reactiviry like this.
-    if (!watchChanges) {
-      if (!!settings) {
-        watchChanges = true;
-      }
+    if (!initialized) {
       return;
     }
 
@@ -133,6 +151,7 @@
 
 <main>
   {#await settingsPromise then _}
+  {#if initialized}
     <form
       bind:this={formEl}
       on:submit|preventDefault={saveSettings}
@@ -458,6 +477,7 @@
         style="display: none;"
       />
     </form>
+  {/if}
   {/await}
   <div style="margin: 1rem 0;">
     <a
