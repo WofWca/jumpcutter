@@ -95,7 +95,6 @@
   ];
 
   const rangeInputSettingsNamesCapitalized = [
-    // TODO DRY settings labels. Maybe when we get to implementing localization.
     { v: 'VolumeThreshold', l: `🔉🎚️ ${getMessage('volumeThreshold')}`, },
     { v: 'SoundedSpeed', l: `🗣️▶️ ${getMessage('soundedSpeed')}`, },
     { v: 'SilenceSpeedRaw', l: `🙊⏩ ${getMessage('silenceSpeed')}`, },
