@@ -251,43 +251,46 @@
       </section>
       <section>
         <h3>{getMessage('popup')}</h3>
-        <NumberField
-          label="📈⏱️ {getMessage('chartLengthInSeconds')}"
-          bind:value={settings.popupChartLengthInSeconds}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈⏱️ {getMessage('chartJumpPeriod')}"
-          bind:value={settings.popupChartJumpPeriod}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈📏 {getMessage('chartWidthPx')}"
-          bind:value={settings.popupChartWidthPx}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈📏 {getMessage('chartHeightPx')}"
-          bind:value={settings.popupChartHeightPx}
-          required
-          min="0"
-        />
-        <InputFieldBase
-          label="📈▶️ {getMessage('chartSpeed')}"
-          let:id
-        >
-          <select
-            {id}
-            bind:value={settings.popupChartSpeed}
+        <section>
+          <h4><!-- 📈 -->{getMessage('chart')}</h4>
+          <NumberField
+            label="⏱️ {getMessage('chartLengthInSeconds')}"
+            bind:value={settings.popupChartLengthInSeconds}
+            required
+            min="0"
+          />
+          <NumberField
+            label="⏱️ {getMessage('chartJumpPeriod')}"
+            bind:value={settings.popupChartJumpPeriod}
+            required
+            min="0"
+          />
+          <NumberField
+            label="📏 {getMessage('chartWidthPx')}"
+            bind:value={settings.popupChartWidthPx}
+            required
+            min="0"
+          />
+          <NumberField
+            label="📏 {getMessage('chartHeightPx')}"
+            bind:value={settings.popupChartHeightPx}
+            required
+            min="0"
+          />
+          <InputFieldBase
+            label="▶️ {getMessage('chartSpeed')}"
+            let:id
           >
-            {#each popupChartSpeedOptions as { v, l }}
-              <option value={v}>{l}</option>
-            {/each}
-          </select>
-        </InputFieldBase>
+            <select
+              {id}
+              bind:value={settings.popupChartSpeed}
+            >
+              {#each popupChartSpeedOptions as { v, l }}
+                <option value={v}>{l}</option>
+              {/each}
+            </select>
+          </InputFieldBase>
+        </section>
         <section>
           <h4>{getMessage('rangeSlidersAttributes')}</h4>
           <p>{getMessage('rangeSlidersAttributesNote')}</p>
