@@ -153,9 +153,8 @@ export const defaultSettings: Readonly<Settings> = {
   popupChartWidthPx: 400,
   popupChartHeightPx: 75,
   popupChartLengthInSeconds: 8,
-  // TODO maybe we should express it as a fraction of `popupChartLengthInSeconds`?
   // TODO maybe even if `popupChartSpeed === 'intrinsicTime'` the period still should be in real time?
-  // At least as an option?
+  // At least as an option? But we're now expressing it as a fraction of chart length.
   popupChartJumpPeriod: 0,
   popupChartSpeed: 'soundedSpeedTime',
   popupAlwaysShowOpenLocalFileLink: true,

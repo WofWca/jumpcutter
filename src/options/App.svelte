@@ -266,6 +266,7 @@
             bind:value={settings.popupChartJumpPeriod}
             required
             min="0"
+            max="100"
           />
           <NumberField
             label="📏 {getMessage('chartWidthPx')}"

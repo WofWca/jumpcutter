@@ -28,8 +28,7 @@
   export let widthPx: number;
   export let heightPx: number;
   export let lengthSeconds: number;
-  export let jumpPeriod: number;
-  $: jumpPeriodMs = jumpPeriod * 1000;
+  export let jumpPeriod: number; // As a percentage.
   export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
   export let soundedSpeed: number;
   export let telemetryUpdatePeriod: TimeDelta;
@@ -46,13 +45,13 @@
   // (https://github.com/WofWca/jumpcutter/blob/5e09bf841e9c94ed5f5da03dfaea862dda269788/src/popup/Chart.svelte#L424-L455)
   // are still drawn in media intrinsic time, not in (media intrinsic time / soundedSpeed),
   // so it's more like changing `popupChartLengthInSeconds`, like it's not respected.
-  // TODO also `jumpPeriodMs` needs to be adjusted then, I guess.
   $: millisPerPixel = stretchFactor * lengthSeconds * 1000 / widthPx;
   $: {
     if (smoothie) {
       smoothie.options.millisPerPixel = millisPerPixel;
     }
   };
+  $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
