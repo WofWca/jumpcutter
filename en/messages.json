@@ -282,20 +282,23 @@
 	"popup": {
 		"message": "Popup"
 	},
+	"chart": {
+		"message": "Chart"
+	},
 	"chartLengthInSeconds": {
-		"message": "Chart length in seconds"
+		"message": "Length in seconds"
 	},
 	"chartJumpPeriod": {
-		"message": "Chart jump period (seconds). Should be <= Chart length. Set to 0 for smooth movement (no jumps)."
+		"message": "Jump period (seconds). Should be <= Chart length. Set to 0 for smooth movement (no jumps)."
 	},
 	"chartWidthPx": {
-		"message": "Chart width (pixels)"
+		"message": "Width (pixels)"
 	},
 	"chartHeightPx": {
-		"message": "Chart height (pixels)"
+		"message": "Height (pixels)"
 	},
 	"chartSpeed": {
-		"message": "Chart movement speed"
+		"message": "Movement speed"
 	},
 	"chartSpeedIntrinsicTime": {
 		"message": "Same as the video speed"
