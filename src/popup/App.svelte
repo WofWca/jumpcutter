@@ -353,7 +353,7 @@
     id="options-button"
     on:click={() => browser.runtime.openOptionsPage()}
     use:tippy={{
-      content: getMessage('more'),
+      content: () => getMessage('more'),
       theme: 'my-tippy',
     }}
   >⚙️</button>
@@ -362,7 +362,7 @@
     <span
       class="others__item"
       use:tippy={{
-        content: getMessage('volume'),
+        content: () => getMessage('volume'),
         theme: tippyThemeMyTippyAndPreLine,
       }}
     >
@@ -584,7 +584,7 @@
   {/if}
   <label
     use:tippy={{
-      content: getMessage('useExperimentalAlgorithmTooltip'),
+      content: () => getMessage('useExperimentalAlgorithmTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
     style="margin-top: 1rem; display: inline-flex; align-items: center;"
@@ -598,7 +598,6 @@
     >
     <span>🧪⚠️ {getMessage('useExperimentalAlgorithm')}</span>
   </label>
-  <!-- TODO async tooltip contents -->
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="🔉 {getMessage('volumeThreshold')}"
@@ -607,7 +606,7 @@
     on:input={createOnInputListener('volumeThreshold')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: getMessage('volumeThresholdTooltip'),
+      content: () => getMessage('volumeThresholdTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -622,7 +621,7 @@
     bind:value={settings.soundedSpeed}
     on:input={createOnInputListener('soundedSpeed')}
     useForInputParams={{
-      content: getMessage('soundedSpeedTooltip'),
+      content: () => getMessage('soundedSpeedTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -637,7 +636,7 @@
       || controllerTypeAlwaysSounded
     }
     useForInputParams={{
-      content: getMessage(
+      content: () => getMessage(
         'silenceSpeedTooltip',
         settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
           ? getMessage('silenceSpeedTooltipRelativeNote')
@@ -653,7 +652,7 @@
     on:input={createOnInputListener('marginBefore')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: getMessage('marginBeforeTooltip'),
+      content: () => getMessage('marginBeforeTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -664,7 +663,7 @@
     on:input={createOnInputListener('marginAfter')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: getMessage('marginAfterTooltip'),
+      content: () => getMessage('marginAfterTooltip'),
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
