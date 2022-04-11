@@ -596,7 +596,7 @@
       type="checkbox"
       style="margin: 0 0.5rem 0 0;"
     >
-    <span>🧪 {getMessage('useExperimentalAlgorithm')}</span>
+    <span>🧪⚠️ {getMessage('useExperimentalAlgorithm')}</span>
   </label>
   <!-- TODO async tooltip contents -->
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
