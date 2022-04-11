@@ -121,8 +121,8 @@ module.exports = env => {
             transform: (content) => JSON.stringify(JSON.parse(content)),
           },
           {
-            from: 'src/_locales',
-            to: '_locales',
+            context: 'src',
+            from: '_locales/*/messages.json',
             transform: (content) => JSON.stringify(JSON.parse(content)),
           },
           { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },

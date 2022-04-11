@@ -396,6 +396,9 @@
 	"about": {
 		"message": "About"
 	},
+	"helpTranslate": {
+		"message": "Help translate"
+	},
 	"saving": {
 		"message": "Saving..."
 	},
