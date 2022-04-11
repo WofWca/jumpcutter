@@ -476,7 +476,15 @@ export default class AllMediaElementsController {
     // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
     if (!this.activeMediaElement) {
       for (const el of newElements) {
-        if (el.currentTime > 0) {
+        if (
+          el.currentTime > 0
+          // It is possilble for an element to have `currentTime > 0` while having its `readyState === HAVE_NOTHING`.
+          // For example, this can happen if a website resumes playback from where the user stopped watching it on
+          // another occasion (e.g. Odysee). Or with streams. This is mostly to ensure that we don't attach to
+          // an element until its `currentSrc` is set to check if it cross-origin or not.
+          // If this happens, we'll attach to it later, on a 'play' event.
+          && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+        ) {
           this.esnureAttachToElement(el);
           break;
         }
