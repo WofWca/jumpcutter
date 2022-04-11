@@ -41,3 +41,5 @@ export const enum HotkeyAction {
   INCREASE_VOLUME = 'volume+',
   DECREASE_VOLUME = 'volume-',
 }
+
+export const HotkeyAction_TOGGLE_PAUSE = HotkeyAction.TOGGLE_PAUSE

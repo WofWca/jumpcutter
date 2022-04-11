@@ -109,7 +109,6 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
     }
   }
 
-  // TODO how about this needs to more to `syncSetSettings` or something?
   for (const key_ of Object.keys(settingsNewValues)) {
     const key = key_ as keyof typeof settingsNewValues;
     if ((togglableSettings as any).includes(key)) {

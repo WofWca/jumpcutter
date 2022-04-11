@@ -3,7 +3,7 @@
   // TODO get rid of svelte?
   import { getMessage } from '@/helpers';
 
-  const defaultDocumentTitle = 'Jump Cutter: local video player';
+  const defaultDocumentTitle = 'Jump Cutter: local video player'; // TODO translate?
   document.title = defaultDocumentTitle;
 
   type HTMLInputElementTypeFile = HTMLInputElement & { files: NonNullable<HTMLInputElement['files']> };
@@ -103,7 +103,7 @@
       multiple
     />
     <div class="input-box-content">
-      <p style="text-align: center; margin: 1rem;">{getMessage('dropFiles')}<br>{getMessage('orClickToSelect')}</p>
+      <p style="text-align: center; margin: 1rem; white-space: pre-line;">{getMessage('fileInputLabel')}</p>
     </div>
   </div>
 </div>

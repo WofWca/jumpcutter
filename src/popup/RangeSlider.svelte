@@ -28,6 +28,7 @@ TODO. -->
       {...$$restProps}
       bind:value
       use:useForInput={useForInputParams}
+      on:input
     >
     <span
       aria-hidden="true"

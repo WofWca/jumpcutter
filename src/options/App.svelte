@@ -5,10 +5,11 @@
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
-  import { cloneDeepJson, assertDev, assertNever } from '@/helpers';
+  import { cloneDeepJson, assertDev, assertNever, getMessage } from '@/helpers';
   import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
   import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
+  import isEqual from 'lodash/isEqual';
 
   let unsaved = false;
   let formValid = true;
@@ -20,16 +21,39 @@
     popupSpecificHotkeys: PotentiallyInvalidHotkeyBinding[];
   }
   let settings: PotentiallyInvalidSettings;
+  let originalSettings: Settings;
+  // Yes, calling `getSettings` in order to get two clones, because we're gonna mutate `settings`.
   const settingsPromise = getSettings();
+  const originalSettingsPromise = getSettings();
   settingsPromise.then(s => settings = s);
+  originalSettingsPromise.then(s => originalSettings = s);
+  let initialized = false;
+  Promise.all([settingsPromise, originalSettingsPromise]).then(() => initialized = true);
   const commandsPromise = browser.commands.getAll();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
   }
+  let updatedKeys = new Set<keyof Settings>();
   function saveSettings() {
     assertDev(checkValidity(settings), 'Expected saveSettings to be called only when the form is valid');
-    setSettings(settings);
+    const updatedValues: Partial<Settings> = {};
+    // A stupid way to only write the settings that we did change. TODO just rewrite settings communication with
+    // message passing already. Or at least do it as we do in `content/App.svelte'.
+    for (const [key_, value] of Object.entries(settings)) {
+      const key = key_ as keyof typeof settings;
+      // Why can't just do `isEqual`? Because then if we did change a setting and then changed it back,
+      // only the first change would get saved.
+      if (!updatedKeys.has(key)) {
+        if (isEqual(originalSettings[key], value)) {
+          continue;
+        }
+        updatedKeys.add(key);
+      }
+      updatedValues[key] = value;
+    }
+    setSettings(updatedValues);
+    console.log(updatedValues);
     unsaved = false;
   }
   const debouncedSaveSettings = debounce(saveSettings, 50);
@@ -39,14 +63,8 @@
     settings = cloneDeepJson(defaultSettings); // This will trigger the `onSettingsChanged` listener.
   }
 
-  let watchChanges = false;
   async function onSettingsChanged() {
-    // A pretty stupid way to not trigger on changed logic until settings have been loaded. Am I even supposed to use
-    // Svelte's reactiviry like this.
-    if (!watchChanges) {
-      if (!!settings) {
-        watchChanges = true;
-      }
+    if (!initialized) {
       return;
     }
 
@@ -75,31 +93,31 @@
   });
 
   const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
-    { v: 'relativeToSoundedSpeed', l: '✖️ Relative to sounded speed' },
-    { v: 'absolute', l: '= Absolute (a.k.a. relative to normal (intrinsic) media speed)' },
+    { v: 'relativeToSoundedSpeed', l: `✖️ ${getMessage('relativeToSounded')}` },
+    { v: 'absolute', l: `= ${getMessage('absolute')}${getMessage('absoluteSilenceSpeedClarification')}` },
   ]
   const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
-    { v: 'none', l: '❌ None', },
-    { v: 'soundedSpeed', l: '🗣️▶️ Sounded speed', },
-    { v: 'silenceSpeedRaw', l: '🙊⏩ Silence speed', },
-    { v: 'volumeThreshold', l: '🔉🎚️ Volume threshold', },
+    { v: 'none', l: `❌ ${getMessage('none')}`, },
+    { v: 'soundedSpeed', l: `🗣️▶️ ${getMessage('soundedSpeed')}`, },
+    { v: 'silenceSpeedRaw', l: `🙊⏩ ${getMessage('silenceSpeed')}`, },
+    { v: 'volumeThreshold', l: `🔉🎚️ ${getMessage('volumeThreshold')}`, },
   ]
   const timeSavedAveragingMethodOptions: Array<{ v: Settings['timeSavedAveragingMethod'], l : string }> = [
-    { v: 'all-time', l: '♾️ All-time average (no decay)' },
-    { v: 'exponential', l: '📉 Only take into account the latest data (exponential decay)', },
+    { v: 'all-time', l: `♾️ ${getMessage('timeSavedAveragingMethodAllTime')}` },
+    { v: 'exponential', l: `📉 ${getMessage('timeSavedAveragingMethodExponential')}`, },
   ];
   const popupChartSpeedOptions: Array<{ v: Settings['popupChartSpeed'], l: string }> = [
-    { v: 'intrinsicTime', l: '▶️ Same as the video speed'},
-    { v: 'realTime', l: '🌎 Constant (real-time)'},
+    { v: 'intrinsicTime', l: `▶️= ${getMessage('chartSpeedIntrinsicTime')}` },
+    { v: 'soundedSpeedTime', l: `▶️➗ ${getMessage('chartSpeedSoundedSpeedTime')}` },
+    { v: 'realTime', l: `🌎 ${getMessage('chartSpeedRealTime')}` },
   ];
 
   const rangeInputSettingsNamesCapitalized = [
-    // TODO DRY settings labels. Maybe when we get to implementing localization.
-    { v: 'VolumeThreshold', l: '🔉🎚️ Volume threshold', },
-    { v: 'SoundedSpeed', l: '🗣️▶️ Sounded speed', },
-    { v: 'SilenceSpeedRaw', l: '🙊⏩ Silence speed', },
-    { v: 'MarginBefore', l: '⏱️⬅️ Margin before (s)', },
-    { v: 'MarginAfter', l: '⏱️➡️ Margin after (s)', },
+    { v: 'VolumeThreshold', l: `🔉🎚️ ${getMessage('volumeThreshold')}`, },
+    { v: 'SoundedSpeed', l: `🗣️▶️ ${getMessage('soundedSpeed')}`, },
+    { v: 'SilenceSpeedRaw', l: `🙊⏩ ${getMessage('silenceSpeed')}`, },
+    { v: 'MarginBefore', l: `⏱️⬅️ ${getMessage('marginBefore')}`, },
+    { v: 'MarginAfter', l: `⏱️➡️ ${getMessage('marginAfter')}`, },
   ] as const;
   const rangeInputAttrs = ['Min', 'Step', 'Max'] as const;
 
@@ -133,14 +151,15 @@
 
 <main>
   {#await settingsPromise then _}
+  {#if initialized}
     <form
       bind:this={formEl}
       on:submit|preventDefault={saveSettings}
     >
       <section>
-        <h3>General</h3>
+        <h3>{getMessage('general')}</h3>
         <InputFieldBase
-          label="Apply to"
+          label="{getMessage('applyTo')}"
           let:id
         >
           <select
@@ -149,16 +168,16 @@
             required
           >
             {#each [
-              { v: 'videoOnly', l: '🎥 Video elements only' },
-              { v: 'audioOnly', l: '🔉 Audio elements only' },
-              { v: 'both', l: '🎥&🔉 Both video & audio elements' },
+              { v: 'videoOnly', l: `🎥 ${getMessage('applyToOnly', getMessage('video'))}` },
+              { v: 'audioOnly', l: `🔉 ${getMessage('applyToOnly', getMessage('audio'))}` },
+              { v: 'both', l: `🎥&🔉 ${getMessage('applyToBoth')}` },
             ] as { v, l }}
               <option value={v}>{l}</option>
             {/each}
           </select>
         </InputFieldBase>
         <InputFieldBase
-          label="🙊= Silence speed specification method"
+          label="🙊= {getMessage('silenceSpeedSpecificationMethod')}"
           let:id
         >
           <select
@@ -177,20 +196,23 @@
           <!-- TODO I'm afraid the part in brackets may make users think that disabling this will make all the bad things
           about the extension go away. -->
           <CheckboxField
-            label="👫 Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)"
+            label="👫 {getMessage('enableDesyncCorrection')}"
             bind:checked={settings.enableDesyncCorrection}
           />
         {/if}
         <CheckboxField
-          label={'🔄 Use different "margin before" and "margin after" for different algorithms'
-            + ' (related to the "Use experimental algorithm" setting)'}
+          label="🔄 {getMessage('useSeparateMarginSettingsForDifferentAlgorithms', [
+            getMessage('marginBefore'),
+            getMessage('marginAfter'),
+            getMessage('useExperimentalAlgorithm'),
+          ])}"
           bind:checked={settings.useSeparateMarginSettingsForDifferentAlgorithms}
         />
       </section>
       <section>
-        <h3>Hotkeys</h3>
+        <h3>{getMessage('hotkeys')}</h3>
         <CheckboxField
-          label="⌨️ Enable hotkeys"
+          label="⌨️ {getMessage('enableHotkeys')}"
           bind:checked={settings.enableHotkeys}
         />
         <!-- TODO how about we hide the table entirely? But keep in mind that it would make it possible to save
@@ -201,15 +223,16 @@
         https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects#Retrieving_a_FormData_object_from_an_HTML_form. -->
         <div style={settings.enableHotkeys ? '' : 'opacity: 0.5;'}>
           <ul>
-            <li>Modifier keys (Ctrl, Shift, etc.) are supported.</li>
-            <li>Several actions can be bound to a single key. This can be utilized to create "profiles".</li>
-            <li>The difference between "Toggle" and "=" (a.k.a "set") actions is that "toggle" toggles the value between the previous value and the hotkey's argument, while "set" always sets it to the argument's value.</li>
-            <!-- TODO do we need this here? Maybe it can be understood from inputs' labels? -->
-            <li>Hotkeys are also active when the popup is open.</li>
+            <!-- TODO do we need "Hotkeys are also active when the popup is open" here (see localization)?
+            Maybe it can be understood from inputs' labels? -->
+            {#each getMessage('hotkeysNotes', getMessage('toggle')).split('\n') as line}
+              <li>{line}</li>
+            {/each}
           </ul>
           <HotkeysTable
             bind:hotkeys={settings.hotkeys}
             displayOverrideWebsiteHotkeysColumn={true}
+            style="margin: 0.75rem 0;"
           >
             <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
             TODO move this comment to `manifest.json` somehow? -->
@@ -217,7 +240,7 @@
               {#each commands as command}
                 <tr>
                   <!-- _execute_page_action is unhandled. Though we don't use it. -->
-                  <td>{command.name === '_execute_browser_action' ? 'Open popup' : command.description}</td>
+                  <td>{command.name === '_execute_browser_action' ? getMessage('openPopup') : command.description}</td>
                   <td>
                     <input
                       disabled
@@ -233,7 +256,7 @@
                         url: editNativeShortcutsLinkUrl,
                         active: true,
                       })}
-                      aria-label="Edit"
+                      aria-label="{getMessage('edit')}"
                       style="text-decoration: none; padding: 0.125rem;"
                     >✏️</a>
                   </td>
@@ -247,108 +270,112 @@
         </div>
       </section>
       <section>
-        <h3>Popup</h3>
-        <NumberField
-          label="📈⏱️ Chart length in seconds"
-          bind:value={settings.popupChartLengthInSeconds}
-          required
-          min="0"
-        />
-        <NumberField
-          label={
-            '📈⏱️ Chart jump period (s). Should be <= Chart length.'
-            + ' Set to 0 for smooth movement (no jumps).'
-          }
-          bind:value={settings.popupChartJumpPeriod}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈📏 Chart width (px)"
-          bind:value={settings.popupChartWidthPx}
-          required
-          min="0"
-        />
-        <NumberField
-          label="📈📏 Chart height (px)"
-          bind:value={settings.popupChartHeightPx}
-          required
-          min="0"
-        />
-        <InputFieldBase
-          label="📈▶️ Chart movement speed"
-          let:id
-        >
-          <select
-            {id}
-            bind:value={settings.popupChartSpeed}
+        <h3>{getMessage('popup')}</h3>
+        <section>
+          <h4><!-- 📈 -->{getMessage('chart')}</h4>
+          <NumberField
+            label="⏱️ {getMessage('chartLengthInSeconds')}"
+            bind:value={settings.popupChartLengthInSeconds}
+            required
+            min="0"
+          />
+          <NumberField
+            label="⏱️ {getMessage('chartJumpPeriod')}"
+            bind:value={settings.popupChartJumpPeriod}
+            required
+            min="0"
+            max="100"
+          />
+          <NumberField
+            label="📏 {getMessage('chartWidthPx')}"
+            bind:value={settings.popupChartWidthPx}
+            required
+            min="0"
+          />
+          <NumberField
+            label="📏 {getMessage('chartHeightPx')}"
+            bind:value={settings.popupChartHeightPx}
+            required
+            min="0"
+          />
+          <InputFieldBase
+            label="▶️ {getMessage('chartSpeed')}"
+            let:id
           >
-            {#each popupChartSpeedOptions as { v, l }}
-              <option value={v}>{l}</option>
-            {/each}
-          </select>
-        </InputFieldBase>
-        <h4>Range sliders' attributes</h4>
-        <p>
-          Be aware that browsers do not support playback rates above a certain limit.
-          At the time of writing it's 16 for Chromium (Chrome) and 8 (by default) for Gecko (Firefox).
-        </p>
-        <table>
-          <thead>
-            <th>Input</th>
-            {#each rangeInputAttrs as attr}
-              <th>{attr}</th>
-            {/each}
-            <!-- <th>Min</th>
-            <th>Step</th>
-            <th>Max</th> -->
-          </thead>
-          <tbody>
-            {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
-              <tr>
-                <td>{rangeInputSettingNameCapitalized.l}</td>
-                {#each rangeInputAttrs as attr}
-                  <td>
-                    <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
-                    Or use a checkbox that sets it to "any"? -->
-                    <input
-                      style="width: 14ch"
-                      type="number"
-                      step="any"
-                      min={attr === 'Step' ? Number.MIN_VALUE : ''}
-                      bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
-                    />
-                  </td>
-                {/each}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+            <select
+              {id}
+              bind:value={settings.popupChartSpeed}
+            >
+              {#each popupChartSpeedOptions as { v, l }}
+                <option value={v}>{l}</option>
+              {/each}
+            </select>
+          </InputFieldBase>
+        </section>
+        <section>
+          <h4>{getMessage('rangeSlidersAttributes')}</h4>
+          <p>{getMessage('rangeSlidersAttributesNote')}</p>
+          <table style="margin: 0.75rem 0;">
+            <thead>
+              <th>{getMessage('input')}</th>
+              {#each [
+                getMessage('min'),
+                getMessage('step'),
+                getMessage('max'),
+              ] as l}
+                <th>{l}</th>
+              {/each}
+            </thead>
+            <tbody>
+              {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
+                <tr>
+                  <td>{rangeInputSettingNameCapitalized.l}</td>
+                  {#each rangeInputAttrs as attr}
+                    <td>
+                      <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
+                      Or use a checkbox that sets it to "any"? -->
+                      <input
+                        style="width: 14ch"
+                        type="number"
+                        step="any"
+                        min={attr === 'Step' ? Number.MIN_VALUE : ''}
+                        bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
+                      />
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </section>
 
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
           <CheckboxField
-            label="⌨️🚫 Disable hotkeys while an input is in focus"
+            label="⌨️🚫 {getMessage('disableHotkeysWhileInputFocused')}"
             bind:checked={settings.popupDisableHotkeysWhileInputFocused}
           />
         {/if}
         <CheckboxField
-          label='☑️ Autofocus the "enabled" checkbox when popup opens'
+          label="☑️ {getMessage('autofocusEnabledInput', getMessage('enable'))}"
           bind:checked={settings.popupAutofocusEnabledInput}
         />
         <CheckboxField
-          label='🔗 Show the "Open a local file" link'
+          label="🔗 {getMessage('alwaysShowOpenLocalFileLink', getMessage('openLocalFile'))}"
           bind:checked={settings.popupAlwaysShowOpenLocalFileLink}
         />
-        <h4>Popup-specific hotkeys</h4>
-        <HotkeysTable
-          bind:hotkeys={settings.popupSpecificHotkeys}
-          displayOverrideWebsiteHotkeysColumn={false}
-        />
+        <section>
+          <h4>{getMessage('popupSpecificHotkeys')}</h4>
+          <HotkeysTable
+            bind:hotkeys={settings.popupSpecificHotkeys}
+            displayOverrideWebsiteHotkeysColumn={false}
+            style="margin: 0.75rem 0;"
+          />
+        </section>
       </section>
       <section>
-        <h3>Time saved stats</h3>
+        <h3>{getMessage('timeSaved')}</h3>
         <InputFieldBase
-          label="⏱️🧮 Averaging method"
+          label="⏱️🧮 {getMessage('timeSavedAveragingMethod')}"
           let:id
         >
           <select
@@ -362,7 +389,7 @@
         </InputFieldBase>
         {#if settings.timeSavedAveragingMethod === 'exponential'}
           <NumberField
-            label="⏱️✂️ Only take into account the last N seconds of playback"
+            label="⏱️✂️ {getMessage('timeSavedAveragingWindowLength')}"
             bind:value={settings.timeSavedAveragingWindowLength}
             required
             min="1e-3"
@@ -371,7 +398,7 @@
           <!-- Allowing 0 and 1 because they're technically valid (but not sound though). TODO? -->
           <!-- TODO represent it in percents. -->
           <NumberField
-            label="⏱️✂️⚖️ Latest playback period averaging weight"
+            label="⏱️✂️⚖️ {getMessage('timeSavedExponentialAveragingLatestDataWeight')}"
             bind:value={settings.timeSavedExponentialAveragingLatestDataWeight}
             required
             min="1e-9"
@@ -379,18 +406,23 @@
           />
           <!-- TODO hh:mm:ss? -->
           <!-- TODO explain math? -->
-          <output>Resulting data weight half-life: {
-            (getTimeSavedDataWeightDecayTimeConstant(
-              settings.timeSavedExponentialAveragingLatestDataWeight,
-              settings.timeSavedAveragingWindowLength
-            ) * Math.LN2).toPrecision(5)
-          } seconds</output>
+          <p>
+            <output>{
+              getMessage(
+                'timeSavedDataWeightDecayTimeConstant',
+                (getTimeSavedDataWeightDecayTimeConstant(
+                  settings.timeSavedExponentialAveragingLatestDataWeight,
+                  settings.timeSavedAveragingWindowLength
+                ) * Math.LN2).toPrecision(5)
+              )
+            }</output>
+          </p>
         {/if}
       </section>
       <section>
-        <h3>Icon badge</h3>
+        <h3>{getMessage('iconBadge')}</h3>
         <InputFieldBase
-          label="What setting value to display by default"
+          label="{getMessage('badgeWhatSettingToDisplayByDefault')}"
           let:id
         >
           <select
@@ -406,25 +438,26 @@
       </section>
 
       <section>
-        <h3>Meta</h3>
+        <h3>{getMessage('meta')}</h3>
         <!-- TODO add confirmation dialogs or cancellation toasts and remove `style="color: red;"`? -->
         <button
           type="button"
           style="color: red;"
           on:click={downloadFromSync}
-        >📥 Download settings from sync storage</button>
+        >📥 {getMessage('downloadFromSync')}</button>
         <br/><br/>
         <button
           type="button"
           disabled={!formValid}
           on:click={uploadToSync}
-        >📤 Upload settings to sync storage</button>
+        >📤 {getMessage('uploadToSync')}</button>
         <br/><br/>
         <button
           type="button"
           style="color: red;"
           on:click={onResetToDefaultsClick}
-        >🔄 Reset to defaults</button>
+        >🔄 {getMessage('resetToDefaults')}</button>
+        <br/><br/>
         <!-- TODO: -->
         <!-- <button
           type="button"
@@ -444,12 +477,19 @@
         style="display: none;"
       />
     </form>
+  {/if}
   {/await}
   <div style="margin: 1rem 0;">
     <a
-      target="new"
+      target="_blank"
+      href="https://hosted.weblate.org/engage/jump-cutter/"
+    >🌐 {getMessage('helpTranslate')}</a>
+  </div>
+  <div style="margin: 1rem 0;">
+    <a
+      target="_blank"
       href="https://github.com/WofWca/jumpcutter"
-    >ℹ️ About</a>
+    >ℹ️ {getMessage('about')}</a>
   </div>
 </main>
 <!-- I've seen this design (bottom status bar) in some desktop applications (e.g. KeePassXC, if you go to settings).
@@ -466,19 +506,18 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
         users don't have to sit there and wait for this to turn to "Saved" after making changes? Or, perhaps, the
         debounce duration isn't big enough to worry and just makes it more satisfying to see it get saved so
         quickly? -->
-        <span>⏳ Saving...</span>
+        <span>⏳ {getMessage('saving')}</span>
       {:else}
         <span>
-          <span style="color: red;">⚠️ Errors found </span>
+          <span style="color: red;">⚠️ {getMessage('hasErrors')}</span>
           <button
             type="button"
             on:click={_ => formEl.reportValidity()}
-            aria-label="Show errors"
-          >Show</button>
+          >{getMessage('showErrors')}</button>
         </span>
       {/if}
     {:else}
-      <span class="saved-text">✔️ Saved</span>
+      <span class="saved-text">✔️ {getMessage('saved')}</span>
     {/if}
   </p>
 </div>
@@ -492,8 +531,14 @@ main {
   margin: var(--main-margin);
 }
 section {
-  /* TODO padding, border, border-radius */
   background: #88888814;
+  margin: 1rem 0;
+  padding: 0 0.625rem;
+  border: 1px solid gray;
+  border-radius: 0.25rem;
+}
+h1, h2, h3, h4, h5, h6 {
+  margin: 0.625rem 0;
 }
 .status-bar {
   position: sticky;

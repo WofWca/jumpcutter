@@ -113,8 +113,18 @@ module.exports = env => {
 
       new CopyPlugin({
         patterns: [
-          { context: 'src', from: 'manifest.json' },
-          { from: 'src/_locales', to: '_locales' },
+          {
+            context: 'src',
+            from: 'manifest.json',
+            // Compress JSON. Might want to switch to https://webpack.js.org/plugins/json-minimizer-webpack-plugin/
+            // later.
+            transform: (content) => JSON.stringify(JSON.parse(content)),
+          },
+          {
+            context: 'src',
+            from: '_locales/*/messages.json',
+            transform: (content) => JSON.stringify(JSON.parse(content)),
+          },
           { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
