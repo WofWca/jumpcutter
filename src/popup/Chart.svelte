@@ -381,7 +381,7 @@
     const canvasContext = canvasEl.getContext('2d')!;
 
     let offsetAdjustment: number | undefined;
-    function getBaseRenderTime(latestTelemetryRecord: TelemetryRecord) {
+    function getCurrentTime(latestTelemetryRecord: TelemetryRecord) {
       return timelineIsMediaIntrinsic
         ? sToMs(getExpectedElementCurrentTimeDelayed(
             latestTelemetryRecord,
@@ -407,7 +407,7 @@
         return;
       }
 
-      const time = getBaseRenderTime(latestTelemetryRecord);
+      const time = getCurrentTime(latestTelemetryRecord);
 
       const stretchFactorChangeMultiplier = stretchFactor / prevStretchFactor;
       const oldJumpPeriod = jumpPeriodMs / stretchFactor * prevStretchFactor;
@@ -422,7 +422,8 @@
     onJumpPeriodMsChange = updateOffsetAdjustmentSoChartDoesntJump;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
-        let time = getBaseRenderTime(latestTelemetryRecord);
+        const time = getCurrentTime(latestTelemetryRecord);
+        let timeAtChartEdge = time;
 
         // TODO perf: do this only once instead of on each RAF.
         if (offsetAdjustment === undefined) {
@@ -440,7 +441,7 @@
           // the popup opens.
           && (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
         // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
-        time += chartJumpingOffsetMs;
+        timeAtChartEdge += chartJumpingOffsetMs;
         // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
         // `time` the same as before (actually it would, but only 6 times per second).
         if (jumpPeriodMs !== 0) {
@@ -451,10 +452,10 @@
         // far beyond the canvas' bounds, `context.stroke()` would not draw the line even if the line would
         // actually cross the canvas.
         // TODO investigate, fix, then maybe remove (or don't, to support older browsers).
-        (volumeThresholdSeries as any).data[1][0] = time;
+        (volumeThresholdSeries as any).data[1][0] = timeAtChartEdge;
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
-        smoothie.render(canvasEl, time);
+        smoothie.render(canvasEl, timeAtChartEdge);
         const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         const canvasRepainted = renderTimeBefore !== renderTimeAfter; // Not true for FPS > 1000.
 
