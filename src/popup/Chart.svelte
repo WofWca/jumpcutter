@@ -425,26 +425,25 @@
         const time = getCurrentTime(latestTelemetryRecord);
         let timeAtChartEdge = time;
 
-        // TODO perf: do this only once instead of on each RAF.
-        if (offsetAdjustment === undefined) {
-          offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
-        }
-
         type SmoothieChartWithPrivateFields = SmoothieChart & {
           lastRenderTimeMillis: number,
           lastChartTimestamp: number | any,
         };
 
-        const chartJumpingOffsetMs =
-          jumpPeriodMs // Because it may be zero and `number % 0 === NaN`.
+        let chartJumpingOffsetMs = 0;
+        if (jumpPeriodMs > 0) {
+          // TODO perf: do this only once instead of on each RAF.
+          if (offsetAdjustment === undefined) {
+            offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
+          }
           // `+ offsetAdjustment` so we always start at max offset so we don't jump almost immediately after
           // the popup opens.
-          && (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
-        // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
-        timeAtChartEdge += chartJumpingOffsetMs;
-        // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
-        // `time` the same as before (actually it would, but only 6 times per second).
-        if (jumpPeriodMs !== 0) {
+          chartJumpingOffsetMs = (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
+          // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
+          timeAtChartEdge += chartJumpingOffsetMs;
+
+          // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
+          // `time` the same as before (actually it would, but only 6 times per second).
           (smoothie as SmoothieChartWithPrivateFields).lastChartTimestamp = null;
         }
 
