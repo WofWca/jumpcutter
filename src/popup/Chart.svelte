@@ -52,11 +52,11 @@
     }
   };
   $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
-  let onJumpPeriodMsChange: undefined | ((prevStretchFactor: number) => void);
+  let onJumpPeriodChange: undefined | ((prevStretchFactor: number) => void);
   let prevStretchFactor = stretchFactor;
   $: {
     jumpPeriodMs;
-    onJumpPeriodMsChange?.(prevStretchFactor);
+    onJumpPeriodChange?.(prevStretchFactor);
     prevStretchFactor = stretchFactor;
   }
 
@@ -394,7 +394,7 @@
         : Date.now()
     }
 
-    const updateOffsetAdjustmentSoChartDoesntJump = (prevStretchFactor: number) => {
+    const updateOffsetAdjustmentSoChartDoesntJumpImmediately = (prevStretchFactor: number) => {
       // Need to make it so that the current output remains on the same place on the chart, so it doesn't
       // jump all over the place as you change `soundedSpeed`. For this we need the value of
       // `(chartJumpingOffsetMs / (millisPerPixel * widthPx))` to remain the same after the change of
@@ -419,7 +419,7 @@
         * stretchFactorChangeMultiplier
         - time % jumpPeriodMs;
     }
-    onJumpPeriodMsChange = updateOffsetAdjustmentSoChartDoesntJump;
+    onJumpPeriodChange = updateOffsetAdjustmentSoChartDoesntJumpImmediately;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
         const time = getCurrentTime(latestTelemetryRecord);
