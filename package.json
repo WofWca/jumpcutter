@@ -46,6 +46,7 @@
     "copy-webpack-plugin": "^10.2.4",
     "css-loader": "^6.7.1",
     "eslint": "^8.12.0",
+    "minimize-webext-i18n-json": "^1.0.0",
     "style-loader": "^3.3.1",
     "svelte": "^3.46.6",
     "svelte-check": "^2.4.6",

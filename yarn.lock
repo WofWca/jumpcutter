@@ -1527,6 +1527,11 @@ minimist@^1.2.0, minimist@^1.2.5:
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
   integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
 
+minimize-webext-i18n-json@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/minimize-webext-i18n-json/-/minimize-webext-i18n-json-1.0.0.tgz#ccfb35e89a3576bce1d76adad6e65fb3b1e813ea"
+  integrity sha512-61FRotG7aE7R1tdExqBQWtmGL52/VoOjsSaWrJTIbgSnH7hs/QzeVKeIsytL0YCLVsrkqR8bOAOjgOy+BrpCvg==
+
 mkdirp@^0.5.1:
   version "0.5.5"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.5.tgz#d91cefd62d1436ca0f41620e251288d420099def"
