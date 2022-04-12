@@ -471,7 +471,7 @@
         {#if considerConnectionFailed}
           {#if gotAtLeastOneContentStatusResponse}
             <p>
-              <span>⚠️ {getMessage('noSuitableElement')}.</span>
+              <span>🤷‍♀️ {getMessage('noSuitableElement')}.</span>
               <br/><br/>
               <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
               could be useful. -->
