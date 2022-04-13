@@ -62,11 +62,15 @@
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
+  
+  type TimeSeriesWithPrivateFields = TimeSeries & {
+    data: Array<[time: AnyTime, value: number]>,
+  };
   let smoothie: SmoothieChart | undefined;
   let volumeSeries: TimeSeries;
   // Need two series because they're of different colors.
-  let soundedSpeedSeries: TimeSeries;
-  let silenceSpeedSeries: TimeSeries;
+  let soundedSpeedSeries: TimeSeriesWithPrivateFields;
+  let silenceSpeedSeries: TimeSeriesWithPrivateFields;
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries: TimeSeries;
@@ -245,8 +249,8 @@
     });
 
     volumeSeries = new TimeSeries();
-    soundedSpeedSeries = new TimeSeries();
-    silenceSpeedSeries = new TimeSeries();
+    soundedSpeedSeries = new TimeSeries() as TimeSeriesWithPrivateFields;
+    silenceSpeedSeries = new TimeSeries() as TimeSeriesWithPrivateFields;
     volumeThresholdSeries = new TimeSeries();
     if (PLOT_STRETCHER_DELAY) {
       stretcherDelaySeries = new TimeSeries();
@@ -425,6 +429,33 @@
         const time = getCurrentTime(latestTelemetryRecord);
         let timeAtChartEdge = time;
 
+        // Draw the last known values at least up to `currentTime`.
+        // The datapoints inserted here must then be removed after the `render()` call,
+        // because they're not "real" but extrapolated, they may actually turn out to be incorrect
+        // once we get later telemetry.
+        const extrapolatedFor = new Set<TimeSeriesWithPrivateFields>();
+        function maybeInsertExtrapolatedData(
+          series: TimeSeriesWithPrivateFields,
+          currentTime: TimeMs,
+          extrapolatedFor: Set<TimeSeriesWithPrivateFields>,
+        ) {
+          const data = series.data;
+          const lastDatapoint = data[data.length - 1];
+          // TODO how about make it so that there's always at least one datapoint? At least insert dummy datapoints.
+          if (lastDatapoint) {
+            const [lastDatapointTime, lastDatapointValue] = lastDatapoint;
+            if (lastDatapointTime < currentTime) {
+              data.push([currentTime, lastDatapointValue]);
+              extrapolatedFor.add(series);
+            }
+          }
+        }
+        function dropExtrapolatedData(series: TimeSeriesWithPrivateFields) {
+          series.data.pop();
+        }
+        maybeInsertExtrapolatedData(silenceSpeedSeries, time, extrapolatedFor);
+        maybeInsertExtrapolatedData(soundedSpeedSeries, time, extrapolatedFor);
+
         type SmoothieChartWithPrivateFields = SmoothieChart & {
           lastRenderTimeMillis: number,
           lastChartTimestamp: number | any,
@@ -451,12 +482,15 @@
         // far beyond the canvas' bounds, `context.stroke()` would not draw the line even if the line would
         // actually cross the canvas.
         // TODO investigate, fix, then maybe remove (or don't, to support older browsers).
+        // In theory this could also be rewritten with `maybeInsertExtrapolatedData`, but it's fine now.
         (volumeThresholdSeries as any).data[1][0] = timeAtChartEdge;
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, timeAtChartEdge);
         const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         const canvasRepainted = renderTimeBefore !== renderTimeAfter; // Not true for FPS > 1000.
+
+        extrapolatedFor.forEach(dropExtrapolatedData);
 
         if (canvasRepainted) {
           // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
@@ -517,16 +551,11 @@
   // Let's make it 1, because currently we measure volume by simply computing RMS of samples, and no sample can have
   // value > 1.
   const offTheChartsValue = 1;
-  // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
-  // the previous value on that time.
-  // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
-  const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
 
   function updateSpeedSeries(newTelemetryRecord: TelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
     appendToSpeedSeries(convertTimeMs(r.lastActualPlaybackRateChange.time, r, prevPlaybackRateChange), speedName);
-    appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
   function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
@@ -582,9 +611,6 @@
 
   /** An equivalent of `smoothie.prototype.dropOldData` */
   function timeSeriesDropFutureData(timeSeries: TimeSeries, newestValidTime: MediaTime) {
-    type TimeSeriesWithPrivateFields = TimeSeries & {
-      data: Array<[time: AnyTime, value: number]>,
-    };
     const data = (timeSeries as TimeSeriesWithPrivateFields).data;
     const newestValidTimeMs = newestValidTime * 1000;
     const firstInvalidInd = data.findIndex(([time]) => time > newestValidTimeMs);
@@ -636,8 +662,6 @@
         // Reasons to `updateSpeedSeries`:
         // * If you seek far back (e.g. by a chart length), the green/red background would go away and not come back
         // until there is a new speed change.
-        // * It uses `unreachableFutureMomentMs`, which gets removed on `smoothieDropFutureData`. Same with
-        // `updateSpeedSeries`.
         updateSpeedSeries(r); // TODO perf: `updateSpeedSeries` may also get called a few lines below.
         updateSmoothieVolumeThreshold();
       }
@@ -727,6 +751,8 @@
   }
   $: onNewTelemetry(latestTelemetryRecord);
 
+  // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
+  const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     const timeBeforeChartStart = timelineIsMediaIntrinsic
