@@ -28,7 +28,7 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
 ## Contribute
 
-* [🌐 Translate][weblate]
+* [🌐 Translate (on Weblate)][weblate]
 
 * [💸 Donate](#donate)
 
