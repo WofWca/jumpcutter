@@ -67,7 +67,7 @@
 
   let nonSettingsActionsPort: Omit<ReturnType<typeof browser.tabs.connect>, 'postMessage'> & {
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
-  };
+  } | undefined;
 
   let latestTelemetryRecord: TelemetryMessage | undefined;
   const telemetryUpdatePeriod = 0.02;
@@ -122,7 +122,8 @@
         disconnectP.then(() => {
           clearTimeout(telemetryTimeoutId);
           telemetryPort.disconnect();
-          nonSettingsActionsPort.disconnect();
+          nonSettingsActionsPort!.disconnect();
+          nonSettingsActionsPort = undefined;
           disconnect = undefined;
         });
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
