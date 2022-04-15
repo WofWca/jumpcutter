@@ -105,12 +105,12 @@ export const defaultSettings: Readonly<Settings> = {
     {
       keyCombination: { code: 'KeyW', },
       action: HotkeyAction.DECREASE_VOLUME_THRESHOLD,
-      actionArgument: 0.002,
+      actionArgument: 0.001,
     },
     {
       keyCombination: { code: 'KeyE', },
       action: HotkeyAction.INCREASE_VOLUME_THRESHOLD,
-      actionArgument: 0.002,
+      actionArgument: 0.001,
     },
     {
       keyCombination: { code: 'KeyQ', },
