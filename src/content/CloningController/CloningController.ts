@@ -105,6 +105,44 @@ class SeekDurationProphet {
   }
 }
 
+// TODO use this everywhere we do `_destroyedPromise.then`. Put it in a library.
+// type Instance<Destroyed extends boolean, OnDestroyFieldName extends string = 'onDestroy'> = {
+type Instance<Destroyed extends boolean> = {
+  // [P in OnDestroyFieldName]: Destroyed extends true
+  onDestroy: Destroyed extends true
+    ? undefined
+    : (() => Awaited<void>)
+}
+// type InstanceDestroyed<OnDestroyFieldName extends string = 'onDestroy'> = Instance<true, OnDestroyFieldName>;
+// type InstanceNotDestroyed<OnDestroyFieldName extends string = 'onDestroy'> = Instance<false, OnDestroyFieldName>;
+// type InstanceMaybeDestroyed<OnDestroyFieldName extends string = 'onDestroy'> =
+//   InstanceDestroyed<OnDestroyFieldName>
+//   | InstanceNotDestroyed<OnDestroyFieldName>;
+// type InstanceDestroyed = Instance<true, 'onDestroy'>;
+// type InstanceNotDestroyed = Instance<false, 'onDestroy'>;
+type InstanceDestroyed = Instance<true>;
+type InstanceNotDestroyed = Instance<false>;
+type InstanceMaybeDestroyed =
+  // InstanceDestroyed<OnDestroyFieldName>
+  // | InstanceNotDestroyed<OnDestroyFieldName>;
+  InstanceDestroyed
+  | InstanceNotDestroyed;
+// function isDestroyed<
+function isNotDestroyed<
+  // T extends { [P in OnDestroyFieldName]: (() => Awaited<void>) },
+  // T extends Instance<boolean, OnDestroyFieldName>,
+  // T extends InstanceMaybeDestroyed<OnDestroyFieldName>,
+  T extends InstanceMaybeDestroyed,
+  // OnDestroyFieldName extends string = 'onDestroy',
+  OnDestroyFieldName extends string,
+>(
+  instance: InstanceMaybeDestroyed,
+  onDestroyFieldName: OnDestroyFieldName,
+// ): instance is Instance<false, OnDestroyFieldName> {
+): instance is InstanceNotDestroyed {
+  return !!instance[onDestroyFieldName];
+}
+
 // TODO a lot of stuff is copy-pasted from StretchingController.
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
@@ -163,8 +201,21 @@ export default class Controller {
       this.timeSavedTracker = timeSavedTracker;
     }
 
-    this.seekDurationProphet = new SeekDurationProphet(element);
-    this._destroyedPromise.then(() => this.seekDurationProphet.destroy());
+    // One approach
+    // This ensures that we're not gonna initialize anything that would need destruction if `destroy` has been called.
+    if (isNotDestroyed(this)) {
+      // All the code inside the `if (isNotDestroyed(this)) {` block must be synchronous, so it's impossible to call
+      // `destroy` after we've initialized something, but before we called `this.onDestroy`.
+      // Don't TypeScript's type guards work like this? Or do they say that if it's NotDestroyed once, it's
+      // NotDestroyed forever?
+      this.seekDurationProphet = new SeekDurationProphet(element);
+      // We must remove all the usage of `this._destroyedPromise.then`
+      this.onDestroy(() => this.seekDurationProphet.destroy());
+      // this._destroyedPromise.then(() => this.seekDurationProphet.destroy());
+    }
+    // TODO but if the `init` function is async, would TypeScript still say that `this` is always NotDestroyed
+    // if we checked it just once? Because after we `await` for something, it could change, and we would need to
+    // check again, but we may forget as TypeScript could say that `onDestroy` is still defined.
 
     // We don't need a high sample rate as this context is currently only used to volume on the chart,
     // so consider setting it manually to a lower one. But I'm thinking whether it woruld actually
@@ -175,6 +226,36 @@ export default class Controller {
     this._destroyedPromise.then(() => {
       audioContext.close();
     })
+  }
+  // One approach
+  private onDestroy = (callback: () => Awaited<void>) => {
+    this._onDestroyCallbacks.psuh(callback);
+  }
+  private destroy(): Awaited<void> {
+    this.onDestroy = undefined; // So `isNotDestroyed` returns `false`, so we don't initialize any more stuff.
+    // `Promise.all` is to wait for all the stuff to get destroyed.
+    return Promise.all(
+      this._onDestroyCallbacks.map(async cb => await cb())
+    );
+  }
+
+  // Another approach.
+  // May be inconvenient to work with? Or is it the same?
+  private destroyable<T>(init: () => Awaited<T>, destroy: (initResult: T) => Awaited<void>): void {
+    if (this.destroyed) {
+      // Just don't init the stuff.
+      return;
+    }
+    const initP = init();
+    this._onDestroyCallbacks.push(async () => {
+      await destroy(await initP);
+    });
+  }
+  public destroy(): Awaited<void> {
+    // `Promise.all` is to wait for all the stuff to get destroyed.
+    return Promise.all(
+      this._onDestroyCallbacks.map(async cb => await cb())
+    );
   }
 
   isInitialized(): this is ControllerInitialized {

@@ -118,20 +118,28 @@ async function importAndCreateController<T extends ControllerKind>(
   return controller;
 }
 
+// There should be only 1 controller attached to an element.
+// However currently AllMediaElementsController acts so that there's only 1 Controller at all.
+const controllersMap = new WeakMap<HTMLMediaElement, SomeController>();
+
+// TODO dont create / use the new `AllMediaELementsController` before the old one has been destroyed.
+// Can also do this with promises. Maybe this needs to be done in `init.ts`.
+
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
   activeMediaElementSourceIsCrossOrigin: boolean | undefined;
   unhandledNewElements = new Set<HTMLMediaElement>();
   handledElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
-  controller: SomeController | undefined;
-  timeSavedTracker: TimeSavedTracker | undefined;
+  // I guess it's best to completely get rid of these fields so it's all nice and clean.
+  // controller: SomeController | undefined;
+  // timeSavedTracker: TimeSavedTracker | undefined;
   private settings: Settings | undefined;
   private _resolveDestroyedPromise!: () => void;
   private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
-  // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElementCallbacks`,
-  // it will be called in `destroy`.
-  private _onDetachFromActiveElementCallbacks: Array<() => void> = [];
+  // // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElementCallbacks`,
+  // // it will be called in `destroy`.
+  private detachFromActiveElement: (() => void) | undefined;
 
   constructor() {
     if (process.env.NODE_ENV !== 'production') {
@@ -151,7 +159,7 @@ export default class AllMediaElementsController {
     this._destroyedPromise.then(() => removeOnStorageChangedListener(reactToStorageChanges));
   }
   private destroy() {
-    this.detachFromActiveElement();
+    this.detachFromActiveElement?.();
     this._resolveDestroyedPromise();
 
     if (process.env.NODE_ENV !== 'production') {
@@ -159,6 +167,7 @@ export default class AllMediaElementsController {
     }
   }
   private detachFromActiveElement() {
+    // COmment
     // TODO It is possible to call this function before the `_onDetachFromActiveElementCallbacks` array has been filled
     // and `controller` has been assigned.
     // Also keep in mind that it's possible to never attached to any elements at all, even if `onNewMediaElements()`
@@ -166,7 +175,8 @@ export default class AllMediaElementsController {
     this.controller?.destroy();
     this.controller = undefined;
     this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
-    this._onDetachFromActiveElementCallbacks = [];
+    // this._onDetachFromActiveElementCallbacks = [];
+    this.detachFromActiveElement = undefined;
   }
 
   public broadcastStatus(): void {
@@ -195,6 +205,11 @@ export default class AllMediaElementsController {
     assertDev(this.controller);
 
     if (controllerTypeDependsOnSettings.some(key => key in newValues)) {
+      // TODO what if this happens after a new controller started initializing but before it finished?
+      // For example, if we started importing a controller of the old type.
+      // Then at this point it must be clear that we're already doing it and that we need to destroy it, then
+      // run this code.
+      // Oh, I think we need to DRY this stuff, yeah.
       const currentController = this.controller;
       const el = currentController.element;
       assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
@@ -219,6 +234,8 @@ export default class AllMediaElementsController {
         })();
       }
     } else {
+      // This will also require some work. Consider actually rewriting this so it con't return a new instance,
+      // create a new instance manually instead. that would be DRYer.
       // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
       // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
       this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
@@ -238,6 +255,9 @@ export default class AllMediaElementsController {
               throw new Error('Unsupported message type')
             }
           }
+          // TODO how about don't reference the whole controller here, but just the `getTelemetry` function.
+          // And set that function upon controller initialization.
+          // Same for timeSavedTracker?
           if (this.controller?.initialized && this.timeSavedTracker) {
             assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
             assertDev(this.activeMediaElement);
@@ -363,13 +383,15 @@ export default class AllMediaElementsController {
       this.detachFromActiveElement();
     }
     this.activeMediaElement = el;
+    let detachFromThisElement: () => void;
+    const detachFromThisElementP = new Promise<void>(r => detachFromThisElement = r);
 
-    assertDev(this._onDetachFromActiveElementCallbacks.length === 0, 'I think `_onDetachFromActiveElementCallbacks` '
-      + `should be empty here. Instead it it is ${this._onDetachFromActiveElementCallbacks.length} items long`);
+    // assertDev(this._onDetachFromActiveElementCallbacks.length === 0, 'I think `_onDetachFromActiveElementCallbacks` '
+    //   + `should be empty here. Instead it it is ${this._onDetachFromActiveElementCallbacks.length} items long`);
 
-    // Currently this is technically not required since `this.activeMediaElement` is immediately reassigned
-    // in the line above after the `detachFromActiveElement` call.
-    this._onDetachFromActiveElementCallbacks.push(() => this.activeMediaElement = undefined);
+    // // Currently this is technically not required since `this.activeMediaElement` is immediately reassigned
+    // // in the line above after the `detachFromActiveElement` call.
+    // this._onDetachFromActiveElementCallbacks.push(() => this.activeMediaElement = undefined);
 
     await this.ensureLoadSettings();
     assertDev(this.settings)
@@ -390,8 +412,11 @@ export default class AllMediaElementsController {
     // without firing the 'loadstart' event.
     // So this is reliable.
     el.addEventListener('loadstart', onMaybeSourceChange, { passive: true });
-    this._onDetachFromActiveElementCallbacks.push(() => el.removeEventListener('loadstart', onMaybeSourceChange));
+    detachFromThisElementP.then(() => el.removeEventListener('loadstart', onMaybeSourceChange));
 
+    // TODO detachController fromOldElement, and await in case the old element === new element, which could happen
+    // if a new `AllMediaElementsController` is being initialized.
+    // Wait. Beter don't handle this case, but instead ensure that the old `AllMediaElementsController` is destroyed.
     const controllerP = importAndCreateController(
       getAppropriateControllerType(this.settings, elCrossOrigin),
       () => [
@@ -401,11 +426,20 @@ export default class AllMediaElementsController {
         timeSavedTrackerPromise,
       ]
     ).then(async controller => {
-      this.controller = controller;
+      // this.controller = controller;
       await controller.init();
       // Controller destruction is done in `detachFromActiveElement`.
       return controller;
     });
+    // TODO put this inside the above block?
+    const ensureDetachControllerFromThisEl = once(async () => {
+      // TODO here we actually don't need to wait for the controller to finish initializing before calling
+      // its `destroy()` method (it's said in its comment).
+      // Also we could cancel `importAndCreateController`.
+      await (await controllerP).destroy();
+    });
+    // TODO add to the map
+    // TODO `detachFromThisElementP.then(ensureDetachControllerFromThisEl)`?
 
     let hotkeyListenerP;
     if (this.settings.enableHotkeys) {
@@ -419,14 +453,17 @@ export default class AllMediaElementsController {
         './TimeSavedTracker'
       );
       await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
-      const timeSavedTracker = this.timeSavedTracker = new TimeSavedTracker(
+      // Don't have to `await` for the possible previously attached to this element `TimeSavedTracker` to finish
+      // its destruction as it doesn't interfere with a new one.
+      const timeSavedTracker /* = this.timeSavedTracker */ = new TimeSavedTracker(
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.settings!,
         addOnStorageChangedListener,
         removeOnStorageChangedListener,
       );
-      this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
+      detachFromThisElementP.then(() => timeSavedTracker.destroy());
+      // const ensureDestroyTimeSavedTracker
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       resolveTimeSavedTrackerPromise!(timeSavedTracker);
@@ -500,6 +537,7 @@ export default class AllMediaElementsController {
    */
   public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
     newElements.forEach(el => this.unhandledNewElements.add(el));
+    // TODO cancel debounce upon destruction.
     this.debouncedHandleNewElements();
   }
 }
