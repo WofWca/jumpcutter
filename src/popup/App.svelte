@@ -152,7 +152,6 @@
   (async () => {
     await tabLoadedPromise;
     window.setTimeout(() => {
-      const connected = !!disconnect;
       if (!connected) {
         considerConnectionFailed = true;
       }
