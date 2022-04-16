@@ -97,7 +97,6 @@
         && (!elementLastActivatedAt || message.elementLastActivatedAt > elementLastActivatedAt)
       ) {
         disconnect?.();
-        const disconnectP = new Promise<void>(r => disconnect = r);
 
         const frameId = sender.frameId!;
         elementLastActivatedAt = message.elementLastActivatedAt;
@@ -119,13 +118,13 @@
 
         nonSettingsActionsPort = browser.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
 
-        disconnectP.then(() => {
+        disconnect = () => {
           clearTimeout(telemetryTimeoutId);
           telemetryPort.disconnect();
           nonSettingsActionsPort!.disconnect();
           nonSettingsActionsPort = undefined;
           disconnect = undefined;
-        });
+        }
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
       }
     };
