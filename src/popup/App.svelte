@@ -71,7 +71,6 @@
 
   let latestTelemetryRecord: TelemetryMessage | undefined;
   const telemetryUpdatePeriod = 0.02;
-  let telemetryTimeoutId: number;
   let disconnect: undefined | (() => void);
   // Well, actaully we don't currently require this, because this component gets destroyed only when the document gets
   // destroyed.
@@ -109,11 +108,12 @@
             latestTelemetryRecord = msg as TelemetryMessage;
           }
         });
-        telemetryTimeoutId = (function sendGetTelemetryAndScheduleAnother() {
+        let telemetryTimeoutId: ReturnType<typeof setTimeout>;
+        (function sendGetTelemetryAndScheduleAnother() {
           // TODO remove `as any` (will need to fix type definitions, "@types/firefox-webext-browser").
           // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#type
           telemetryPort.postMessage('getTelemetry' as any);
-          return (setTimeout as typeof window.setTimeout)(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
+          telemetryTimeoutId = setTimeout(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
         nonSettingsActionsPort = browser.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
