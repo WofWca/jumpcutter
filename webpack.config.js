@@ -7,6 +7,13 @@ const path = require('path');
 const NativeDynamicImportPlugin = require('./src/native-dynamic-import-webpack-plugin/main.js');
 const { minimizeJsonString } = require('minimize-webext-i18n-json');
 
+const includeLanguages = [
+  'en',
+  'ru',
+  'uk',
+  // TODO check the other ones and add.
+]
+
 module.exports = env => {
   if (!env.browser) {
     // TODO would be cool if we could perform `BUILD_DEFINITIONS.BROWSER` checks at runtime in development mode, so you
@@ -123,7 +130,7 @@ module.exports = env => {
           },
           {
             context: 'src',
-            from: '_locales/*/messages.json',
+            from: `_locales/(${includeLanguages.join('|')})/messages.json`,
             transform: (content) => minimizeJsonString(content, { unsafe: false }),
           },
           { context: 'src', from: '_locales/(LICENSE_NOTICES|COPYING|COPYING.LESSER|index.html)' },
