@@ -5,7 +5,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
 const NativeDynamicImportPlugin = require('./src/native-dynamic-import-webpack-plugin/main.js');
-const minimizeWebextI18nJson = require('minimize-webext-i18n-json');
+const { minimizeJsonString } = require('minimize-webext-i18n-json');
 
 module.exports = env => {
   if (!env.browser) {
@@ -124,7 +124,7 @@ module.exports = env => {
           {
             context: 'src',
             from: '_locales/*/messages.json',
-            transform: (content) => minimizeWebextI18nJson(content),
+            transform: (content) => minimizeJsonString(content, { unsafe: false }),
           },
           { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },

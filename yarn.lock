@@ -1395,10 +1395,10 @@ minimist@^1.2.0, minimist@^1.2.6:
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
   integrity sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==
 
-minimize-webext-i18n-json@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/minimize-webext-i18n-json/-/minimize-webext-i18n-json-1.0.0.tgz#ccfb35e89a3576bce1d76adad6e65fb3b1e813ea"
-  integrity sha512-61FRotG7aE7R1tdExqBQWtmGL52/VoOjsSaWrJTIbgSnH7hs/QzeVKeIsytL0YCLVsrkqR8bOAOjgOy+BrpCvg==
+minimize-webext-i18n-json@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/minimize-webext-i18n-json/-/minimize-webext-i18n-json-2.0.2.tgz#53d1a657291fcf476c75cf47b399e1b957f7e413"
+  integrity sha512-wGS0C8HHv3UKRI9AiUAnLRzuSMQAadqyA8MTtEHiHgYQgN4n5p4KSo9R2PxnxZOK1/7+N/+YXa9kyiSTCvG0Ow==
 
 mkdirp@^0.5.1:
   version "0.5.6"
