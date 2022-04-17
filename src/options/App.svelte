@@ -485,6 +485,13 @@
       href="https://hosted.weblate.org/engage/jump-cutter/"
     >🌐 {getMessage('helpTranslate')}</a>
   </div>
+  <!-- TODO make all this look better. What is this? "about" AND "license"? -->
+  <div style="margin: 1rem 0;">
+    <a
+      target="_blank"
+      href="{browser.runtime.getURL('_locales/index.html')}"
+    >⚖️ {getMessage('license')}</a>
+  </div>
   <div style="margin: 1rem 0;">
     <a
       target="_blank"

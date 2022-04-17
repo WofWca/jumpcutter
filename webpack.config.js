@@ -126,6 +126,7 @@ module.exports = env => {
             from: '_locales/*/messages.json',
             transform: (content) => minimizeJsonString(content, { unsafe: false }),
           },
+          { context: 'src', from: '_locales/(LICENSE_NOTICES|COPYING|COPYING.LESSER|index.html)' },
           { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },

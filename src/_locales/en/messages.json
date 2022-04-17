@@ -396,6 +396,9 @@
 	"about": {
 		"message": "About"
 	},
+	"license": {
+		"message": "License"
+	},
 	"helpTranslate": {
 		"message": "Help translate"
 	},
