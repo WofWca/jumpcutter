@@ -200,7 +200,7 @@
 		"message": " (a.k.a. relative to normal (intrinsic) media speed)"
 	},
 	"enableDesyncCorrection": {
-		"message": "Correction of audio-video desynchronization (causes unnoticeable stutter every minute or so)"
+		"message": "Enable correction of audio-video desynchronization (side effect: for the most part unnoticeable stutter every minute or so)"
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
 		"message": "Use separate \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
