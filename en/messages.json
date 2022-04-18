@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Skips silent parts in videos, in real time"
+		"message": "Watch lectures ~1.5x faster by fast-forwarding long pauses between sentences"
 	},
 	"enable": {
 		"message": "Enable"
@@ -191,7 +191,7 @@
 		}
 	},
 	"applyToBoth": {
-		"message": "Both video & audio elements"
+		"message": "Both video and audio elements"
 	},
 	"silenceSpeedSpecificationMethod": {
 		"message": "Silence speed specification method"
@@ -203,7 +203,7 @@
 		"message": "Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)"
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "Use different \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
+		"message": "Use separate \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
@@ -403,7 +403,7 @@
 		"message": "Help translate"
 	},
 	"saving": {
-		"message": "Saving..."
+		"message": "Saving…"
 	},
 	"saved": {
 		"message": "Saved"
