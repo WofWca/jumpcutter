@@ -93,7 +93,7 @@
 		"message": "Ou"
 	},
 	"silenceSpeedTooltip": {
-		"message": "La vitesse à laquelle on joue les parties muettes.\nSur le graphique, les parties qui ont été lues à cette vitesse ont un fond rouge 🟥.$relativeNote$.\n⚠️ Si cette valeur est très élevée (> ; ~4), les débuts de phrases peuvent aussi commencer à être sautés (c’est comme si « Marge avant » était plus petit).",
+		"message": "La vitesse à laquelle on joue les parties muettes.\nSur le graphique, les parties qui ont été lues à cette vitesse ont un fond rouge 🟥.$relativeNote$\n⚠️ Si cette valeur est très élevée (> ; ~4), les débuts de phrases peuvent aussi commencer à être sautés (c’est comme si « Marge avant » était plus petit).",
 		"placeholders": {
 			"relativeNote": {
 				"content": "$1"
