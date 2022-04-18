@@ -129,7 +129,7 @@
 		"message": "Volume threshold"
 	},
 	"volumeThresholdTooltip": {
-		"message": "How quiet it needs to get before we speed up.\nOn the chart, this is the red 🟥 horizontal line. The blue 🟦 line is the current volume of the audio, so when the blue line is below the red line, we consider it to be silent."
+		"message": "How quiet material must be before getting sped up.\nOn the chart, this is the red 🟥 horizontal line. The blue 🟦 line is the current audio volume, so when the blue line is below the red, it is considered to be silence."
 	},
 	"soundedSpeed": {
 		"message": "Sounded speed"
