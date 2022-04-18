@@ -43,7 +43,7 @@
   }
 </script>
 
-<div {style}>
+<div style={'overflow-x: auto;' + style}>
   <table>
     <thead>
       <th>{getMessage('action')}</th>
