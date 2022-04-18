@@ -219,5 +219,9 @@ export const defaultSettings: Readonly<Settings> = {
 
   badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
 
-  enableDesyncCorrection: BUILD_DEFINITIONS.BROWSER === 'chromium' ? true : false,
+  enableDesyncCorrection: BUILD_DEFINITIONS.BROWSER === 'chromium'
+    // 2025-08-01. In case I get hit by a bus. I sure hope they'll fix it by that time.
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=1231093
+    ? Date.now() < 1754006400000
+    : false,
 };
