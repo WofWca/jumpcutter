@@ -11,6 +11,8 @@ const includeLanguages = [
   'en',
   'ru',
   'uk',
+  'fr',
+  'nb_NO',
   // TODO check the other ones and add.
 ]
 
