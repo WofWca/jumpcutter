@@ -28,7 +28,7 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
 ## Contribute
 
-* [🌐 Translate](weblate)
+* [🌐 Translate (on Weblate)][weblate]
 
 * [💸 Donate](#donate)
 
@@ -57,6 +57,8 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
     ```
 
     Bundled files will appear in `./dist`.
+
+Then you can install it on the extensions management page of your browser ([Chromium](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked), [Gecko](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#installing)).
 
 ## Donate
 
