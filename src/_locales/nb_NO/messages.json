@@ -6,7 +6,7 @@
 		"message": "Skru på"
 	},
 	"volume": {
-		"message": "Lydstyrke"
+		"message": "Lydstyrke\nIkke hvor høyt materialet er gjennomsnittlig, men forsterkningsmultiplikatoren, som på TV"
 	},
 	"overTheLast": {
 		"message": "I løpet av de siste $duration$",
@@ -153,7 +153,7 @@
 		"message": "Prøv igjen"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ Kun et minimum av anvendbarhet\n➕ Tillater å hoppe over stille deler helt, istedenfor å spille dem i raskere tempo\n➖ Fungerer ikke på mange nettsider (YouTube, Vimeo). Fungerer for lokale filer. Når det ikke støttes vil ikke stillhet bli hoppet over..\n➕ Ingen lydforvrengning, forsinkelse, eller avsynkronisering.\n➖ Diagrammet vil ikke vise faktisk lydstyrke for stille deler (det vil kun vise 0 istedenfor)."
+		"message": "➖ Fungerer ikke på mange nettsider (YouTube, Vimeo). Fungerer for lokale filer. Når det ikke støttes vil ikke stillhet bli hoppet over.\n➕ Tillater å hoppe over stille deler helt, istedenfor å spille dem i raskere tempo.\n➕ Ingen lydforvrengning, forsinkelse, eller avsynkronisering.\n➖ Diagrammet vil ikke vise faktisk lydstyrke for stille deler (det vil kun vise 0 istedenfor)."
 	},
 	"volumeThresholdTooltip": {
 		"message": "Hvor stille det må være før hastigheten økes.\nPå diagrammet er dette den røde 🟥 vannrette linjen. Den blå 🟦 linjen er nåværende lydstyrke, så når den blå linjen er under den rød, oppfattes dette som stillhet."
@@ -255,5 +255,157 @@
 	},
 	"chartSpeedIntrinsicTime": {
 		"message": "Lik nåværende videohastighet"
+	},
+	"togglePause": {
+		"message": "Pause/spill"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Bruk forskjellig «$marginBeforeLabel$» og «$marginAfterLabel$» for forskjellige algoritmer (som har med «$useExperimentalAlgorithmLabel$»-innstillingen å gjøre)",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Husk at nettlesere ikke støtter avspillingstakt over en gitt grense.\nDa denne versjonen ble laget var det 16 for Chromium (Chrome) og 8 (som forvalg) for Gecko (Firefox)."
+	},
+	"uploadToSync": {
+		"message": "Last opp innstillinger til synkroniseringslagring"
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Vis «$openLocalFileLabel$»-lenken",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"downloadFromSync": {
+		"message": "Last ned innstillinger fra synkroniseringslagring"
+	},
+	"hotkeysNotes": {
+		"message": "Valgtast (Ctrl, Shift, osv.) støttes.\nFlere handlinger kan knyttes til én tast. Dette kan brukes for å lage «profiler».\nForskjellen mellom «$toggle$» og «=» (altså «sett»)-handlinger er at «$toggle» veksler verdi mellom den for forrige verdi og hurtigtastens argument, mens «sett» alltid setter den til argumentets verdi.\nHurtigtaster er også aktive når oppsprettet er åpent.",
+		"placeholders": {
+			"toggle": {
+				"content": "$1",
+				"example": "toggle"
+			}
+		}
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "Gjennomsnittsvekting for siste avspillingsperiode"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (relativt til normal (iboende) mediahastighet)"
+	},
+	"hotkeys": {
+		"message": "Hurtigtaster"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Spesifiseringsmetode for stillhetshastighet"
+	},
+	"toggle": {
+		"message": "veksle"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Overstyr nettside-hurtigtaster"
+	},
+	"removeBinding": {
+		"message": "Fjern tastaturbinding"
+	},
+	"addBinding": {
+		"message": "Legg til ny hurtigtast"
+	},
+	"chartLengthInSeconds": {
+		"message": "Lengde i sekunder"
+	},
+	"chartJumpPeriod": {
+		"message": "Hopp-periode, %. Uttrykt som en del av diagramslengde. Sett til «0» for myk bevegelse (ingen hopp)."
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Metode for innhenting av gjennomsnitt"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Totalt gjennomsnitt (uten forvitring)"
+	},
+	"rewind": {
+		"message": "Spol tilbake (sekunder)"
+	},
+	"hotkey": {
+		"message": "Hurtigtast"
+	},
+	"advance": {
+		"message": "Hopp forover (sekunder)"
+	},
+	"toggleMute": {
+		"message": "Forstum/opphev forstummelse"
+	},
+	"enableDesyncCorrection": {
+		"message": "Skru på desynkroniserings-korrigering av lyd/bilde (bieffekt: ikke merkbar rykking ca. hvert minutt)"
+	},
+	"rangeSlidersAttributes": {
+		"message": "Attributter for områdeglidebrytere"
+	},
+	"enableHotkeys": {
+		"message": "Skru på hurtigtaster"
+	},
+	"chart": {
+		"message": "Diagram"
+	},
+	"input": {
+		"message": "Inndata"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Skru av hurtigtaster når et inndatafelt er i fokus"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Samme som nåværende videohastighet, som gitt av lydmessig hastighet"
+	},
+	"autofocusEnabledInput": {
+		"message": "Fokuser på «$enableCheckboxLabel$»-avkryssningsboksen når et oppsprett åpnes",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"popupSpecificHotkeys": {
+		"message": "Hurtigtaster for oppsprett"
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Kun ta hensyn til avspilling de N siste sekundene"
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Kun ta hensyn til siste data (eksponentiell forvitring)"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Hvilken innstillingsverdi som skal vises som forvalg"
+	},
+	"iconBadge": {
+		"message": "Ikon-skilt"
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "Resulterende halveringstid for datavekt: $length$ sekunder",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
 	}
 }

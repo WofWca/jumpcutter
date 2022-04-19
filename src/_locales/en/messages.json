@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Skips silent parts in videos, in real time"
+		"message": "Watch lectures ~1.5x faster by fast-forwarding long pauses between sentences"
 	},
 	"enable": {
 		"message": "Enable"
@@ -96,7 +96,7 @@
 		"message": "Use experimental algorithm"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ Doesn't work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply won't skip silence.\n➕ Allows skipping silent parts entirely instead of playing them at a faster rate\n➕ No audio distortion, delay or desync\n➖ The chart won't display the actual volume on silent parts (it will just show 0 instead)"
+		"message": "➖ Doesn't work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply won't skip silence.\n➕ Allows skipping silent parts entirely instead of playing them at a faster rate.\n➕ No audio distortion, delay or desync.\n➖ The chart won't display the actual volume on silent parts (it will just show 0 instead)."
 	},
 	"mediaUnsupported": {
 		"message": "This media is **likely** unsupported — $consequences$.",
@@ -126,10 +126,10 @@
 		"message": "Refresh the page if the media got muted"
 	},
 	"volumeThreshold": {
-		"message": "Volume threshold"
+		"message": "Lowest speech loudness"
 	},
 	"volumeThresholdTooltip": {
-		"message": "How quiet it needs to get before we speed up.\nOn the chart, this is the red 🟥 horizontal line. The blue 🟦 line is the current volume of the audio, so when the blue line is below the red line, we consider it to be silent."
+		"message": "When the current audio volume is below this value, speed up.\nOn the chart, this is the red 🟥 horizontal line. The blue 🟦 line is the current volume, so when the blue line is below the red, it is considered to be silence."
 	},
 	"soundedSpeed": {
 		"message": "Sounded speed"
@@ -141,7 +141,7 @@
 		"message": "Silence speed"
 	},
 	"silenceSpeedTooltip": {
-		"message": "The speed at which we play the silent parts.\nOn the chart, the parts that were played at this speed have red 🟥 background.$relativeNote$\n⚠️ If this value is very high (> ~4) the begginnings of sentences may also start getting skipped (it's like \"Margin before\" is smaller).",
+		"message": "The speed at which we play the silent parts.\nOn the chart, the parts that were played at this speed have red 🟥 background.$relativeNote$\n⚠️ If this value is very high (> ~4) the beginnings of sentences may also start getting skipped (it's like \"Margin before\" is smaller).",
 		"placeholders": {
 			"relativeNote": {
 				"content": "$1"
@@ -191,7 +191,7 @@
 		}
 	},
 	"applyToBoth": {
-		"message": "Both video & audio elements"
+		"message": "Both video and audio elements"
 	},
 	"silenceSpeedSpecificationMethod": {
 		"message": "Silence speed specification method"
@@ -200,10 +200,10 @@
 		"message": " (a.k.a. relative to normal (intrinsic) media speed)"
 	},
 	"enableDesyncCorrection": {
-		"message": "Enable audio-video desynchronization correction (side effect: for the most part unnoticeable stutter every minute or so)"
+		"message": "Enable correction of audio-video desynchronization (side effect: for the most part unnoticeable stutter every minute or so)"
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "Use different \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
+		"message": "Use separate \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
@@ -403,7 +403,7 @@
 		"message": "Help translate"
 	},
 	"saving": {
-		"message": "Saving..."
+		"message": "Saving…"
 	},
 	"saved": {
 		"message": "Saved"
