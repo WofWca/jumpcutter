@@ -52,21 +52,25 @@
     }
   };
   $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
-  let onJumpPeriodMsChange: undefined | ((prevStretchFactor: number) => void);
+  let onJumpPeriodChange: undefined | ((prevStretchFactor: number) => void);
   let prevStretchFactor = stretchFactor;
   $: {
     jumpPeriodMs;
-    onJumpPeriodMsChange?.(prevStretchFactor);
+    onJumpPeriodChange?.(prevStretchFactor);
     prevStretchFactor = stretchFactor;
   }
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
+  
+  type TimeSeriesWithPrivateFields = TimeSeries & {
+    data: Array<[time: AnyTime, value: number]>,
+  };
   let smoothie: SmoothieChart | undefined;
   let volumeSeries: TimeSeries;
   // Need two series because they're of different colors.
-  let soundedSpeedSeries: TimeSeries;
-  let silenceSpeedSeries: TimeSeries;
+  let soundedSpeedSeries: TimeSeriesWithPrivateFields;
+  let silenceSpeedSeries: TimeSeriesWithPrivateFields;
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries: TimeSeries;
@@ -245,8 +249,8 @@
     });
 
     volumeSeries = new TimeSeries();
-    soundedSpeedSeries = new TimeSeries();
-    silenceSpeedSeries = new TimeSeries();
+    soundedSpeedSeries = new TimeSeries() as TimeSeriesWithPrivateFields;
+    silenceSpeedSeries = new TimeSeries() as TimeSeriesWithPrivateFields;
     volumeThresholdSeries = new TimeSeries();
     if (PLOT_STRETCHER_DELAY) {
       stretcherDelaySeries = new TimeSeries();
@@ -381,7 +385,7 @@
     const canvasContext = canvasEl.getContext('2d')!;
 
     let offsetAdjustment: number | undefined;
-    function getBaseRenderTime(latestTelemetryRecord: TelemetryRecord) {
+    function getCurrentTime(latestTelemetryRecord: TelemetryRecord) {
       return timelineIsMediaIntrinsic
         ? sToMs(getExpectedElementCurrentTimeDelayed(
             latestTelemetryRecord,
@@ -394,7 +398,7 @@
         : Date.now()
     }
 
-    const updateOffsetAdjustmentSoChartDoesntJump = (prevStretchFactor: number) => {
+    const updateOffsetAdjustmentSoChartDoesntJumpImmediately = (prevStretchFactor: number) => {
       // Need to make it so that the current output remains on the same place on the chart, so it doesn't
       // jump all over the place as you change `soundedSpeed`. For this we need the value of
       // `(chartJumpingOffsetMs / (millisPerPixel * widthPx))` to remain the same after the change of
@@ -407,7 +411,7 @@
         return;
       }
 
-      const time = getBaseRenderTime(latestTelemetryRecord);
+      const time = getCurrentTime(latestTelemetryRecord);
 
       const stretchFactorChangeMultiplier = stretchFactor / prevStretchFactor;
       const oldJumpPeriod = jumpPeriodMs / stretchFactor * prevStretchFactor;
@@ -419,31 +423,58 @@
         * stretchFactorChangeMultiplier
         - time % jumpPeriodMs;
     }
-    onJumpPeriodMsChange = updateOffsetAdjustmentSoChartDoesntJump;
+    onJumpPeriodChange = updateOffsetAdjustmentSoChartDoesntJumpImmediately;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
-        let time = getBaseRenderTime(latestTelemetryRecord);
+        const time = getCurrentTime(latestTelemetryRecord);
+        let timeAtChartEdge = time;
 
-        // TODO perf: do this only once instead of on each RAF.
-        if (offsetAdjustment === undefined) {
-          offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
+        // Draw the last known values at least up to `currentTime`.
+        // The datapoints inserted here must then be removed after the `render()` call,
+        // because they're not "real" but extrapolated, they may actually turn out to be incorrect
+        // once we get later telemetry.
+        const extrapolatedFor = new Set<TimeSeriesWithPrivateFields>();
+        function maybeInsertExtrapolatedData(
+          series: TimeSeriesWithPrivateFields,
+          currentTime: TimeMs,
+          extrapolatedFor: Set<TimeSeriesWithPrivateFields>,
+        ) {
+          const data = series.data;
+          const lastDatapoint = data[data.length - 1];
+          // TODO how about make it so that there's always at least one datapoint? At least insert dummy datapoints.
+          if (lastDatapoint) {
+            const [lastDatapointTime, lastDatapointValue] = lastDatapoint;
+            if (lastDatapointTime < currentTime) {
+              data.push([currentTime, lastDatapointValue]);
+              extrapolatedFor.add(series);
+            }
+          }
         }
+        function dropExtrapolatedData(series: TimeSeriesWithPrivateFields) {
+          series.data.pop();
+        }
+        maybeInsertExtrapolatedData(silenceSpeedSeries, time, extrapolatedFor);
+        maybeInsertExtrapolatedData(soundedSpeedSeries, time, extrapolatedFor);
 
         type SmoothieChartWithPrivateFields = SmoothieChart & {
           lastRenderTimeMillis: number,
           lastChartTimestamp: number | any,
         };
 
-        const chartJumpingOffsetMs =
-          jumpPeriodMs // Because it may be zero and `number % 0 === NaN`.
+        let chartJumpingOffsetMs = 0;
+        if (jumpPeriodMs > 0) {
+          // TODO perf: do this only once instead of on each RAF.
+          if (offsetAdjustment === undefined) {
+            offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
+          }
           // `+ offsetAdjustment` so we always start at max offset so we don't jump almost immediately after
           // the popup opens.
-          && (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
-        // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
-        time += chartJumpingOffsetMs;
-        // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
-        // `time` the same as before (actually it would, but only 6 times per second).
-        if (jumpPeriodMs !== 0) {
+          chartJumpingOffsetMs = (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
+          // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
+          timeAtChartEdge += chartJumpingOffsetMs;
+
+          // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
+          // `time` the same as before (actually it would, but only 6 times per second).
           (smoothie as SmoothieChartWithPrivateFields).lastChartTimestamp = null;
         }
 
@@ -451,12 +482,15 @@
         // far beyond the canvas' bounds, `context.stroke()` would not draw the line even if the line would
         // actually cross the canvas.
         // TODO investigate, fix, then maybe remove (or don't, to support older browsers).
-        (volumeThresholdSeries as any).data[1][0] = time;
+        // In theory this could also be rewritten with `maybeInsertExtrapolatedData`, but it's fine now.
+        (volumeThresholdSeries as any).data[1][0] = timeAtChartEdge;
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
-        smoothie.render(canvasEl, time);
+        smoothie.render(canvasEl, timeAtChartEdge);
         const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         const canvasRepainted = renderTimeBefore !== renderTimeAfter; // Not true for FPS > 1000.
+
+        extrapolatedFor.forEach(dropExtrapolatedData);
 
         if (canvasRepainted) {
           // The main algorithm may introduce a delay. This is to display what sound is currently on the output.
@@ -517,16 +551,11 @@
   // Let's make it 1, because currently we measure volume by simply computing RMS of samples, and no sample can have
   // value > 1.
   const offTheChartsValue = 1;
-  // TimeSeries.append relies on this value being constant, because calling it with the very same timestamp overrides
-  // the previous value on that time.
-  // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
-  const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
 
   function updateSpeedSeries(newTelemetryRecord: TelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
     appendToSpeedSeries(convertTimeMs(r.lastActualPlaybackRateChange.time, r, prevPlaybackRateChange), speedName);
-    appendToSpeedSeries(unreachableFutureMomentMs, speedName);
   };
 
   function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
@@ -582,9 +611,6 @@
 
   /** An equivalent of `smoothie.prototype.dropOldData` */
   function timeSeriesDropFutureData(timeSeries: TimeSeries, newestValidTime: MediaTime) {
-    type TimeSeriesWithPrivateFields = TimeSeries & {
-      data: Array<[time: AnyTime, value: number]>,
-    };
     const data = (timeSeries as TimeSeriesWithPrivateFields).data;
     const newestValidTimeMs = newestValidTime * 1000;
     const firstInvalidInd = data.findIndex(([time]) => time > newestValidTimeMs);
@@ -636,8 +662,6 @@
         // Reasons to `updateSpeedSeries`:
         // * If you seek far back (e.g. by a chart length), the green/red background would go away and not come back
         // until there is a new speed change.
-        // * It uses `unreachableFutureMomentMs`, which gets removed on `smoothieDropFutureData`. Same with
-        // `updateSpeedSeries`.
         updateSpeedSeries(r); // TODO perf: `updateSpeedSeries` may also get called a few lines below.
         updateSmoothieVolumeThreshold();
       }
@@ -727,6 +751,8 @@
   }
   $: onNewTelemetry(latestTelemetryRecord);
 
+  // By 'unreachable' we mean that it's not going to be reached within the lifetime of the component.
+  const unreachableFutureMomentMs = Number.MAX_SAFE_INTEGER;
   function updateSmoothieVolumeThreshold() {
     volumeThresholdSeries.clear();
     const timeBeforeChartStart = timelineIsMediaIntrinsic
