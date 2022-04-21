@@ -29,8 +29,8 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 ## Contribute
 
 * [🌐 Translate (on Weblate)][weblate]
-
 * [💸 Donate](#donate)
+* General feedback and questioning my decisions is appreciated
 
 ## Build
 
@@ -46,15 +46,15 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 3.
     * To build for Gecko (e.g. Firefox):
 
-    ```bash
-    yarn build:gecko
-    ```
+        ```bash
+        yarn build:gecko
+        ```
 
     * To build for Chromium (e.g. Chrome)
 
-    ```bash
-    yarn build:chromium
-    ```
+        ```bash
+        yarn build:chromium
+        ```
 
     Bundled files will appear in `./dist`.
 
@@ -63,7 +63,7 @@ Then you can install it on the extensions management page of your browser ([Chro
 ## Donate
 
 * <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
-* https://liberapay.com/WofWca
+* <https://liberapay.com/WofWca>
 
 [addons-mozilla-org]: https://addons.mozilla.org/firefox/addon/jump-cutter
 [chrome-web-store]: https://chrome.google.com/webstore/detail/jump-cutter/lmppdpldfpfdlipofacekcfleacbbncp
