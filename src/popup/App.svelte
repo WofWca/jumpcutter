@@ -472,17 +472,6 @@
           {#if gotAtLeastOneContentStatusResponse}
             <p>
               <span>🤷‍♀️ {getMessage('noSuitableElement')}.</span>
-              <br/><br/>
-              <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
-              could be useful. -->
-              <button
-                on:click={async () => {
-                  // TODO this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
-                  // ideal.
-                  await setSettings({ enabled: false });
-                  setSettings({ enabled: true });
-                }}
-              >🔄 {getMessage('retry')}</button>
               <!-- TODO how about don't show this button when there are no such elements on the page
               (e.g. when `settings.applyTo !== 'videoOnly'` and there are no <audio> elements) -->
               {#if settings.applyTo !== 'both'}
@@ -497,6 +486,17 @@
                   }}
                 >🔍 {getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
               {/if}
+              <br/><br/>
+              <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
+              could be useful. -->
+              <button
+                on:click={async () => {
+                  // TODO this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
+                  // ideal.
+                  await setSettings({ enabled: false });
+                  setSettings({ enabled: true });
+                }}
+              >🔄 {getMessage('retry')}</button>
             </p>
           {:else}
             <p>
