@@ -472,10 +472,13 @@
           {#if gotAtLeastOneContentStatusResponse}
             <p>
               <span>🤷‍♀️ {getMessage('noSuitableElement')}.</span>
+              <br/>
+              <!-- Maybe remove this button as we alredy have the "changeElementSearchCriteria" one?
+              Also it's kind of confusing, because this button also qualifies as a one that changes
+              the search criteria. -->
               <!-- TODO how about don't show this button when there are no such elements on the page
               (e.g. when `settings.applyTo !== 'videoOnly'` and there are no <audio> elements) -->
               {#if settings.applyTo !== 'both'}
-                <br/><br/>
                 <button
                   on:click={async () => {
                     // TODO same issue as with "retry".
@@ -484,9 +487,16 @@
                     await setSettings({ applyTo: 'both', enabled: false });
                     setSettings({ enabled: true });
                   }}
+                  style="margin: 0.25rem"
                 >🔍 {getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
               {/if}
-              <br/><br/>
+              <!-- How about just suggesting unmuting the element first? -->
+              <!-- TODO somehow highligth the related section after opening the options page? Or maybe it's Better
+              to replace it with those very inputs from the options page? -->
+              <button
+                on:click={() => browser.runtime.openOptionsPage()}
+                style="margin: 0.25rem"
+              >⚙️ {getMessage('changeElementSearchCriteria')}</button>
               <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
               could be useful. -->
               <button
@@ -496,6 +506,7 @@
                   await setSettings({ enabled: false });
                   setSettings({ enabled: true });
                 }}
+                style="margin: 0.25rem"
               >🔄 {getMessage('retry')}</button>
             </p>
           {:else}

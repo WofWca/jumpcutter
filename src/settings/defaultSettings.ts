@@ -49,6 +49,8 @@ export const defaultSettings: Readonly<Settings> = {
 
   applyTo: 'videoOnly',
 
+  omitMutedElements: true,
+
   dontAttachToCrossOriginMedia: true,
 
   enableHotkeys: true,

@@ -119,15 +119,27 @@ async function importAndCreateController<T extends ControllerKind>(
   return controller;
 }
 
+function isElementIneligibleBecauseMuted(el: HTMLMediaElement, settings: Pick<Settings, 'omitMutedElements'>) {
+  return settings.omitMutedElements
+    ? el.muted
+    : false;
+}
+
+// type BasicSettings = Pick<Settings, 'omitMutedElements'>;
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
   activeMediaElementSourceIsCrossOrigin: boolean | undefined;
   unhandledNewElements = new Set<HTMLMediaElement>();
   handledElements = new WeakSet<HTMLMediaElement>();
+  private handledMutedElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
   controller: SomeController | undefined;
   timeSavedTracker: TimeSavedTracker | undefined;
   private settings: Settings | undefined;
+  // This is so we don't have to load all the settings keys just for basic functionality.
+  // This is pretty stupid. Maybe it could be soumehow refactored to look less stupid.
+  private basicSettingsP: Promise<Pick<Settings, 'omitMutedElements'>>;
+  private basicSettings: Awaited<typeof this.basicSettingsP> | undefined;
   private _resolveDestroyedPromise!: () => void;
   private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
   // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElementCallbacks`,
@@ -142,6 +154,8 @@ export default class AllMediaElementsController {
       }
       allMediaElementsControllerActive = true;
     }
+
+    this.basicSettingsP = getSettings('omitMutedElements').then(s => this.basicSettings = s);
 
     // Keep in mind that this listener is also responsible for the desturction of this instance in case
     // `enabled` gets changed to `false`.
@@ -185,6 +199,11 @@ export default class AllMediaElementsController {
     }
 
     if (Object.keys(newValues).length === 0) return;
+
+    if (this.basicSettings) {
+      // This also saves keys other than `keyof typeof this.basicSettings`. Who asked tho?
+      Object.assign(this.basicSettings, newValues);
+    }
 
     if (!this.settings) {
       // The fact that the settings haven't yet been loaded means that nothing is initialized yet because
@@ -445,10 +464,33 @@ export default class AllMediaElementsController {
     this.broadcastStatus();
   }
 
-  private ensureAttachToEventTargetElement = (e: Event) => {
-    this.esnureAttachToElement(e.target as HTMLMediaElement);
+  private ensureAttachToEventTargetElementIfEligible = async (e: Event) => {
+    await this.basicSettingsP;
+    assertDev(this.basicSettings);
+
+    const el = e.target as HTMLMediaElement;
+    if (!isElementIneligibleBecauseMuted(el, this.basicSettings)) {
+      this.esnureAttachToElement(el);
+    }
   }
-  private handleNewElements() {
+  // private ensureAttachToEventTargetElementIfGotUnmutedAndIsPlayingAndOmitMutedIsTrue = async (e: Event) => {
+  private onvolumechange = async (e: Event) => {
+    const el = e.target as HTMLMediaElement;
+
+    // Do we need to check `this.muted`? Because the fact that it was on in `this.handledMutedElements` and that
+    // 'volumechange' fired must imply that.
+    const gotUnmuted = this.handledMutedElements.has(el) && !el.muted;
+    this.handledMutedElements.delete(el);
+
+    if (gotUnmuted && !el.paused) {
+      await this.basicSettingsP;
+      assertDev(this.basicSettings);
+      if (this.basicSettings.omitMutedElements) {
+        this.esnureAttachToElement(el);
+      }
+    }
+  }
+  private handleNewElements(basicSettings: Exclude<typeof this.basicSettings, undefined>) {
     const newElements = this.unhandledNewElements;
     this.unhandledNewElements = new Set();
 
@@ -458,9 +500,27 @@ export default class AllMediaElementsController {
       }
       this.handledElements.add(el);
 
-      el.addEventListener('play', this.ensureAttachToEventTargetElement, { passive: true });
-      this._destroyedPromise.then(() => el.removeEventListener('play', this.ensureAttachToEventTargetElement));
+      el.addEventListener('play', this.ensureAttachToEventTargetElementIfEligible, { passive: true });
+      this._destroyedPromise.then(() => el.removeEventListener('play', this.ensureAttachToEventTargetElementIfEligible));
+
+      if (el.muted) {
+        this.handledMutedElements.add(el);
+      }
+      el.addEventListener('volumechange', this.onvolumechange, { passive: true });
+      this._destroyedPromise.then(() => el.removeEventListener('volumechange', this.onvolumechange));
+
+      // TODO should we detach when it gets muted again? Maybe make a separate option for this?
+      // Or should we maybe move this logic to the Controller?
+
+      // TODO also react to settings changes, e.g. if `omitMutedElements` becomes false, attach to a muted one?
     }
+
+    const eligibleForAttachmentElements: HTMLMediaElement[] = [];
+    newElements.forEach(el => {
+      if (!isElementIneligibleBecauseMuted(el, basicSettings)) {
+        eligibleForAttachmentElements.push(el);
+      }
+    })
 
     // Attach to the first new element that is not paused, even if we're already attached to another.
     // The thoguht process is like this - if such an element has been inserted, it is most likely due to the user
@@ -468,7 +528,7 @@ export default class AllMediaElementsController {
     // a page with an infinite scroll with autoplaying videos).
     // It may be that the designer of the website is an asshole and inserts new media elements whenever he feels like
     // it, or I missed some other common cases. TODO think about it.
-    for (const el of newElements) {
+    for (const el of eligibleForAttachmentElements) {
       if (!el.paused) {
         this.esnureAttachToElement(el);
         break;
@@ -476,7 +536,7 @@ export default class AllMediaElementsController {
     }
     // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
     if (!this.activeMediaElement) {
-      for (const el of newElements) {
+      for (const el of eligibleForAttachmentElements) {
         if (
           el.currentTime > 0
           // It is possilble for an element to have `currentTime > 0` while having its `readyState === HAVE_NOTHING`.
@@ -484,6 +544,8 @@ export default class AllMediaElementsController {
           // another occasion (e.g. Odysee). Or with streams. This is mostly to ensure that we don't attach to
           // an element until its `currentSrc` is set to check if it cross-origin or not.
           // If this happens, we'll attach to it later, on a 'play' event.
+          // How about move this condition to `isElementIneligible` in order to also check it before
+          // every other call to `ensureAttach`.
           && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
         ) {
           this.esnureAttachToElement(el);
@@ -501,6 +563,12 @@ export default class AllMediaElementsController {
    */
   public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
     newElements.forEach(el => this.unhandledNewElements.add(el));
-    this.debouncedHandleNewElements();
+    // TODO actually we don't currently have to await for `this.basicSettingsP` if the element is not muted,
+    // so something like `isPotentiallyIneligibleForAttachment` would do in that case. It would probably
+    // unreasonably complicate the code a lot though.
+    this.basicSettingsP.then(() => {
+      assertDev(this.basicSettings);
+      this.debouncedHandleNewElements(this.basicSettings);
+    })
   }
 }
