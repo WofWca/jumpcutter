@@ -372,6 +372,15 @@ export default class AllMediaElementsController {
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
   private async esnureAttachToElement(el: HTMLMediaElement) {
+    if (process.env.NODE_ENV !== 'production') {
+      if (el.readyState < HTMLMediaElement.HAVE_METADATA) {
+        // We shouldn't be doing that because this probably means that the element has no source or is still loading
+        // so it doesn't make sense to assess whether it's CORS-restricted or whether we can use the cloning
+        // algorithm.
+        console.warn('Attaching to an element with `el.readyState < HTMLMediaElement.HAVE_METADATA`');
+      }
+    }
+
     const calledAt = Date.now();
     if (this.activeMediaElement === el) {
       // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
