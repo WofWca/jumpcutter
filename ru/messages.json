@@ -65,6 +65,9 @@
 			}
 		}
 	},
+	"changeElementSearchCriteria": {
+		"message": "Изменить критерии поиска…"
+	},
 	"audio": {
 		"message": "аудио"
 	},
