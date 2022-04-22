@@ -40,6 +40,13 @@ export interface Settings {
 
   applyTo: 'videoOnly' | 'audioOnly' | 'both',
 
+  // This is to solve the following issues:
+  // * A lot of websites (Instagram, Twitter) auto-play their media, but have them initially muted. Attaching to them
+  // makes them play at silenceSpeed, which is quite annoying.
+  // * Some media elements are not even supposed to play audio (like some fancy backgrounds on some fancy designer's
+  // website).
+  omitMutedElements: boolean,
+
   /**
    * See the comments in `getAppropriateControllerType`:
    * https://github.com/WofWca/jumpcutter/blob/f9cafdc59e042674e494482abe2f0f3dc955e695/src/content/AllMediaElementsController.ts#L67-L77

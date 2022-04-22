@@ -176,6 +176,10 @@
             {/each}
           </select>
         </InputFieldBase>
+        <CheckboxField
+          label="🔇❌ {getMessage('omitMutedElements')}"
+          bind:checked={settings.omitMutedElements}
+        />
         <InputFieldBase
           label="🙊= {getMessage('silenceSpeedSpecificationMethod')}"
           let:id

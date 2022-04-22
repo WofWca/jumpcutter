@@ -68,6 +68,9 @@
 			}
 		}
 	},
+	"changeElementSearchCriteria": {
+		"message": "Change search criteria…"
+	},
 	"audio": {
 		"message": "audio"
 	},
@@ -192,6 +195,9 @@
 	},
 	"applyToBoth": {
 		"message": "Both video & audio elements"
+	},
+	"omitMutedElements": {
+		"message": "Don't apply to muted media elements"
 	},
 	"silenceSpeedSpecificationMethod": {
 		"message": "Silence speed specification method"
