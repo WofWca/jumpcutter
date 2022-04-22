@@ -79,7 +79,7 @@ function getAppropriateControllerType(
   // header set to `document.location.origin`. But currently it's not easy to detect that. See
   // https://github.com/WebAudio/web-audio-api/issues/2453.
   // It's better to not attach to an element than to risk muting it as it's more confusing to the user.
-  return settings.dontAttachToCrossOriginMedia && elementSourceIsCrossOrigin
+  return elementSourceIsCrossOrigin && settings.dontAttachToCrossOriginMedia
     ? ControllerKind.ALWAYS_SOUNDED
     : settings.experimentalControllerType
 }
