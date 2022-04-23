@@ -225,13 +225,13 @@ export default class TimeSavedTracker {
     this._wouldHaveLastedIfSpeedWasSounded = wouldHaveLastedIfSpeedWasSounded;
     this._wouldHaveLastedIfSpeedWasIntrinsic = wouldHaveLastedIfSpeedWasIntrinsic;
   }
-  // TODO we must also take into consideration how long it took to seek (time between 'seeking' and 'seeked' events).
-  // Then it will also be useful in `StretchingController` to calculate how much time has been lost due to desync
+  // TODO It would also be useful in `StretchingController` to calculate how much time has been lost due to desync
   // correction.
-  // How about we just subtract ALL seeks' durations from time saved, and not just the ones' that were initiated by
+  // We currently accept `seekDurationRealTime` as an argument, but how about we just subtract ALL seeks' durations
+  // from time saved, and not just the ones' that were initiated by
   // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
   /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
-  public onControllerCausedSeek(seekDelta: TimeDelta): void {
+  public onControllerCausedSeek(seekDelta: TimeDelta, seekDurationRealTime: TimeDelta): void {
     // Looks like this call can be skipped if `this._averagingMethod === 'all-time'`. TODO?
     this._appendLastSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
 
@@ -239,8 +239,10 @@ export default class TimeSavedTracker {
     // time, but it can't handle its `speedDuring` argument being `=== Infinity`.
     const seekDeltaIntrinsic = seekDelta;
     const seekDeltaSounded = seekDelta / this._currentElementSpeed;
-    this._timeSavedComparedToSoundedSpeed += seekDeltaSounded;
-    this._timeSavedComparedToIntrinsicSpeed += seekDeltaIntrinsic;
+    const intrinsicTimeSaved = seekDeltaIntrinsic - seekDurationRealTime * this._currentElementSpeed;
+    const soundedTimeSaved = intrinsicTimeSaved / this._currentElementSpeed;
+    this._timeSavedComparedToSoundedSpeed += soundedTimeSaved;
+    this._timeSavedComparedToIntrinsicSpeed += intrinsicTimeSaved;
     this._wouldHaveLastedIfSpeedWasSounded += seekDeltaSounded;
     this._wouldHaveLastedIfSpeedWasIntrinsic += seekDeltaIntrinsic;
   }
