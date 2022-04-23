@@ -2,7 +2,8 @@ import browser from '@/webextensions-api';
 import Lookahead, { TimeRange } from './Lookahead';
 import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
-import { isPlaybackActive, destroyAudioWorkletNode, requestIdleCallbackPolyfill } from '@/content/helpers';
+import { isPlaybackActive, destroyAudioWorkletNode, requestIdleCallbackPolyfill,
+  maybeClosestNonNormalSpeed } from '@/content/helpers';
 import { ControllerKind } from '@/settings';
 import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
@@ -105,6 +106,8 @@ class SeekDurationProphet {
   }
 }
 
+const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
+
 // TODO a lot of stuff is copy-pasted from StretchingController.
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
@@ -130,9 +133,10 @@ export default class Controller {
   _lastActualPlaybackRateChange: {
     time: AudioContextTime,
     value: number,
-    name: SpeedName.SOUNDED,
+    // name: SpeedName.SOUNDED,
+    name: SpeedName,
   } = {
-    // Dummy values (except for `name`), will be ovewritten in `_setSpeed`.
+    // Dummy values (except for `name`), will be ovewritten in `_setSpeedAndLog`.
     name: SpeedName.SOUNDED,
     time: 0,
     value: 1,
@@ -144,6 +148,8 @@ export default class Controller {
   public timeSavedTracker?: TimeSavedTracker;
 
   seekDurationProphet: SeekDurationProphet;
+
+  _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
 
   constructor(
     element: HTMLMediaElement,
@@ -437,8 +443,36 @@ export default class Controller {
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
     const farEnoughToPerformSeek = realTimeLeftUntilDestinationWithoutSeeking > expectedSeekDuration;
-    if (farEnoughToPerformSeek) {
+    const needForceSeekForDesyncCorrection = () => {
+      let forceSeekForDesyncCorrection = false;
+      if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
+        // Desync correction is crucial for CloningController because otherwise we'll start skipping at
+        // incorrect time. Apparently it's audio that gets out of sync with `el.currentTime`, not video.
+        // TODO maybe then it even makes sense to ignore whether `enableDesyncCorrection === false`?
+  
+        // In order to save more time, we don't simply check if
+        // `this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES`.
+        // It is better to perform desync correction when `realTimeLeftUntilDestinationWithoutSeeking`
+        // is _barely_ below `expectedSeekDuration` even if `this._didNotDoDesyncCorrectionForNSpeedSwitches`
+        // did not reach `DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES` so we don't have to do it later, possibly when
+        // `realTimeLeftUntilDestinationWithoutSeeking` is super small.
+        // Yes, this means that we seek more often than `DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES`, but I believe
+        // that it's beneficial.
+        // Perhaps there is a better way to describe this.
+        const howMuchWeWantDesyncCorrection =
+          this._didNotDoDesyncCorrectionForNSpeedSwitches / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
+        const howMuchWeWantToSeek =
+          realTimeLeftUntilDestinationWithoutSeeking / (expectedSeekDuration || Number.MIN_VALUE);
+        const howMuchWeDontWantToSeek = 1 - howMuchWeWantToSeek;
+        if (howMuchWeWantDesyncCorrection >= howMuchWeDontWantToSeek) {
+          forceSeekForDesyncCorrection = true;
+        }
+      }
+      return forceSeekForDesyncCorrection;
+    }
+    if (farEnoughToPerformSeek || needForceSeekForDesyncCorrection()) {
       element.currentTime = seekTo;
+      this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
 
       // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
       // Also see the comment about seeking error above. TODO?
@@ -447,6 +481,41 @@ export default class Controller {
       this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
 
       this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
+    } else {
+      // This also happens right after we perform a seek (because 'timeupdate' gets fired). It's fine though
+      // because of `farEnoughToSpeedUp`.
+
+      // TOOD but the `silenceSpeed` input is disabled. Maybe then we could use a constant value instead of
+      // `this.settings.silenceSpeed`? Need to make sure to clamp it (`getAbsoluteClampedSilenceSpeed`).
+      // If so, don't forget to change `_setSpeedAndLog` (because it accepts `SpeedName`).
+      const newSpeed = this.settings.silenceSpeed;
+      const realTimeLeftUntilDestinationAtSilenceSpeed = seekAmount / newSpeed
+      const expectedMinimumSetTimeoutDelay = 1 / 60; // TODO determine this dynamically, as with `expectedSeekDuration`.
+      // TODO but maybe otherwise we could simply use a smaller value of silenceSpeed instead of not speeding up
+      // at all?
+      let farEnoughToSpeedUp = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
+      if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
+        const expectedTimeSavedBySpeedingUp = seekAmount / this.settings.soundedSpeed - seekAmount / newSpeed;
+        // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
+        const oneSpeedupDesyncCorrectionTimeCost =
+          expectedSeekDuration / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
+        farEnoughToSpeedUp &&= expectedTimeSavedBySpeedingUp > oneSpeedupDesyncCorrectionTimeCost;
+      }
+
+      if (farEnoughToSpeedUp) {
+        // TODO what if `realTimeLeftUntilDestinationAtSilenceSpeed` is pretty big? Need to cancel this if
+        // the user seeks to a sounded place.
+        // May be other caveats.
+
+        this._setSpeedAndLog(SpeedName.SILENCE);
+        setTimeout(
+          () => this._setSpeedAndLog(SpeedName.SOUNDED),
+          realTimeLeftUntilDestinationAtSilenceSpeed * 1000,
+        );
+        // Yes, there's actually two speed switches, but we increment it just once. Need to refactor.
+        // Same in StretchingController.
+        this._didNotDoDesyncCorrectionForNSpeedSwitches++;
+      }
     }
   }
   maybeSeekBounded = this.maybeSeek.bind(this);
@@ -497,7 +566,8 @@ export default class Controller {
   private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
     this.settings = newSettings;
     assertDev(this.isInitialized());
-    this._setSpeed();
+    // TODO do it as we do in StretchingController, not always SOUNDED? Fine for now though.
+    this._setSpeedAndLog(SpeedName.SOUNDED);
     const lookaheadSettingsChanged =
       oldSettings && (
         newSettings.volumeThreshold !== oldSettings.volumeThreshold
@@ -534,26 +604,33 @@ export default class Controller {
     return this;
   }
 
-  private _setSpeed() {
-    // Don't need to `maybeClosestNonNormalSpeed` because currently `CloningController` doesn't switch speed between
-    // silence and sounded, it performs a seek.
-    const speedVal = this.settings.soundedSpeed;
+  private _setSpeedAndLog(speedName: SpeedName) {
+    let speedVal;
+    switch (speedName) {
+      case SpeedName.SOUNDED: {
+        // Need to `maybeClosestNonNormalSpeed` because even in this algorithm we switch speeds. Not always though.
+        speedVal = maybeClosestNonNormalSpeed(this.settings.soundedSpeed, this.settings.volumeThreshold);
+        // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
+        // The most common case where `load` is called is when the current source is replaced with an ad (or
+        // the opposite, when the ad ends).
+        // It's also a good practice.
+        // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+        // TODO wait, we're not supposed to do this for when we switch to silenceSpeed, are we?
+        this.element.defaultPlaybackRate = speedVal;
+        break;
+      }
+      case SpeedName.SILENCE:
+        speedVal = maybeClosestNonNormalSpeed(this.settings.silenceSpeed, this.settings.volumeThreshold); break;
+    }
     this.element.playbackRate = speedVal;
-
-    // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
-    // The most common case where `load` is called is when the current source is replaced with an ad (or
-    // the opposite, when the ad ends).
-    // It's also a good practice.
-    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-    // TODO wait, we're not supposed to do this for when we switch to silenceSpeed, are we?
-    this.element.defaultPlaybackRate = speedVal;
-
-    const speedChangeObj = this._lastActualPlaybackRateChange;
+    const elementSpeedSwitchedAt = this.audioContext.currentTime;
+    const obj = this._lastActualPlaybackRateChange;
+    assertDev(obj);
     // Avoiding creating new objects for performance.
-    speedChangeObj.time = this.audioContext.currentTime;
-    speedChangeObj.value = speedVal;
-    // Currently the speed is always `SOUNDED`.
-    // speedChangeObj.name = SpeedName.SOUNDED;
+    obj.time = elementSpeedSwitchedAt;
+    obj.value = speedVal;
+    obj.name = speedName;
+    // return elementSpeedSwitchedAt;
   }
 
   get telemetry(): TelemetryRecord {
