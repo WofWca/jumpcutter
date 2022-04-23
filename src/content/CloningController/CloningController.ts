@@ -106,7 +106,7 @@ class SeekDurationProphet {
   }
 }
 
-const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
+const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 20;
 
 // TODO a lot of stuff is copy-pasted from StretchingController.
 export default class Controller {
