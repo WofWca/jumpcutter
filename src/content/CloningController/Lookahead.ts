@@ -1,7 +1,7 @@
 import browser from '@/webextensions-api';
 import type { Settings as ExtensionSettings } from '@/settings';
-import { assertDev, getGeckoLikelyMaxNonMutedPlaybackRate, MediaTime } from '@/helpers';
-import { destroyAudioWorkletNode, getRealtimeMargin } from '@/content/helpers';
+import { assertDev, getGeckoLikelyMaxNonMutedPlaybackRate, MediaTime, AnyTime } from '@/helpers';
+import { destroyAudioWorkletNode, getRealtimeMargin, cloneMediaElement } from '@/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
@@ -60,13 +60,14 @@ export default class Lookahead {
     private settings: LookaheadSettings,
     // public onNewSilenceRange: (start: Time, end: Time) => void,
   ) {
-    const clone = document.createElement('audio');
+  // TODO also need to watch for changes of `crossOrigin` (in `CloningController.ts`).
+    const clone = cloneMediaElement(originalElement);
     this.clone = clone;
 
-    // TODO this probably doesn't cover all cases. Maybe it's better to just `originalElement.cloneNode(true)`?
-    // TODO also need to watch for changes of `crossOrigin` (in `CloningController.ts`).
-    clone.crossOrigin = originalElement.crossOrigin;
-    clone.src = originalElement.currentSrc;
+    // // TODO this probably doesn't cover all cases. Maybe it's better to just `originalElement.cloneNode(true)`?
+    // // TODO also need to watch for changes of `crossOrigin` (in `CloningController.ts`).
+    // clone.crossOrigin = originalElement.crossOrigin;
+    // clone.src = originalElement.currentSrc;
 
     // Not doing this appears to cause a resource (memory and processing) leak in Chromium manifesting itself when
     // creating new instances of Lookahead (and discarding the old ones).

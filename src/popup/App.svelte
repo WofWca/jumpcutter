@@ -593,22 +593,31 @@
       {/await}
     {/if}
   {/if}
-  <label
-    use:tippy={{
-      content: () => getMessage('useExperimentalAlgorithmTooltip'),
-      theme: tippyThemeMyTippyAndPreLine,
-    }}
-    style="margin-top: 1rem; display: inline-flex; align-items: center;"
-  >
-    <input
-      checked={settings.experimentalControllerType === ControllerKind_CLONING}
-      on:input={onUseExperimentalAlgorithmInput}
-      disabled={controllerTypeAlwaysSounded}
-      type="checkbox"
-      style="margin: 0 0.5rem 0 0;"
+  <!-- TODO disable (hide?) the input when can't use it? -->
+  <!-- TODO if it's supported, this will appear after we get the telemetry. Add a height transition? Or place
+  a stub of the same height? -->
+  {#if latestTelemetryRecord?.canUseCloningController}
+    <label
+      use:tippy={{
+        content: () => getMessage('useExperimentalAlgorithmTooltip'),
+        theme: tippyThemeMyTippyAndPreLine,
+      }}
+      style="margin-top: 1rem; display: inline-flex; align-items: center;"
     >
-    <span>🧪⚠️ {getMessage('useExperimentalAlgorithm')}</span>
-  </label>
+      <!--  TODO So, do we make it disabled or hide it? -->
+      <input
+        checked={
+          latestTelemetryRecord?.canUseCloningController
+          && settings.experimentalControllerType === ControllerKind_CLONING
+        }
+        on:input={onUseExperimentalAlgorithmInput}
+        disabled={!latestTelemetryRecord?.canUseCloningController || controllerTypeAlwaysSounded}
+        type="checkbox"
+        style="margin: 0 0.5rem 0 0;"
+      >
+      <span>🧪⚠️ {getMessage('useExperimentalAlgorithm')}</span>
+    </label>
+  {/if}
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="🔉 {getMessage('volumeThreshold')}"
