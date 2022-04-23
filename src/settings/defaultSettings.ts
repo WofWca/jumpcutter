@@ -10,8 +10,8 @@ const stretchingControllerSpecificDefaults = {
 } as const;
 
 export const defaultSettings: Readonly<Settings> = {
-  volumeThreshold:          0.010,
-  previousVolumeThreshold:  0.010,
+  volumeThreshold:          0.005,
+  previousVolumeThreshold:  0.005,
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
   silenceSpeedRaw:         2.5,
   previousSilenceSpeedRaw: 2.5,
