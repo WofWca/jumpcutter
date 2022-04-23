@@ -545,6 +545,7 @@ export default class Controller {
     // the opposite, when the ad ends).
     // It's also a good practice.
     // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+    // TODO wait, we're not supposed to do this for when we switch to silenceSpeed, are we?
     this.element.defaultPlaybackRate = speedVal;
 
     const speedChangeObj = this._lastActualPlaybackRateChange;
