@@ -478,7 +478,9 @@ export default class Controller {
       // Also see the comment about seeking error above. TODO?
       // element.fastSeek(seekTo);
 
-      this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime);
+      // TODO it's wrong to pass only the `expectedSeekDuration` instead of the real one, but it's better
+      // than passing 0.
+      this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime, expectedSeekDuration);
 
       this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
     } else {
