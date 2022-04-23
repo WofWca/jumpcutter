@@ -331,6 +331,8 @@ export default class Controller {
             // Actually, I don't experience any inconveniences even when it's set to 1. But rewinds actually create short
             // pauses, so let's give it some bigger value.
             const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 10;
+            // Yes, we only increase the counter when switching to silenceSpeed, which makes the name incorrect.
+            // Cry about it.
             this._didNotDoDesyncCorrectionForNSpeedSwitches++;
             if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
               element.currentTime -= 1e-9;
