@@ -24,6 +24,12 @@
     settings = s;
     settingsLoaded = true;
   })
+  function assignNewSettings(newValues: Partial<Settings>) {
+    for (const [k_, v] of Object.entries(newValues)) {
+      const k = k_ as keyof typeof newValues;
+      (settings[k] as any) = v;
+    }
+  }
   async function getTab() {
     // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
     // guaranteed that there will be a tab, is it?
@@ -174,8 +180,7 @@
     if (thisScriptRecentlyUpdatedStorage) {
       unhandledStorageChanges = { ...unhandledStorageChanges, ...newValues };
     } else {
-      Object.assign(settings, newValues);
-      settings = settings;
+      assignNewSettings(newValues);
     }
   });
 
@@ -199,7 +204,7 @@
       () => {
         thisScriptRecentlyUpdatedStorage = false;
         if (unhandledStorageChanges) {
-          settings = { ...settings, ...unhandledStorageChanges }
+          assignNewSettings(unhandledStorageChanges);
           unhandledStorageChanges = null;
         }
       },
@@ -207,8 +212,7 @@
     );
   }, 50);
   function updateSettingsLocalCopyAndStorage(newValues: Partial<Settings>) {
-    Object.assign(settings, newValues);
-    settings = settings; // Trigger Svelte's reactivity.
+    assignNewSettings(newValues);
     Object.keys(newValues).forEach(key => settingsKeysToSaveToStorage.add(key as keyof typeof newValues));
     throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks();
   }
@@ -483,7 +487,6 @@
                   on:click={async () => {
                     // TODO same issue as with "retry".
                     settings.applyTo = 'both';
-                    settings = settings;
                     await setSettings({ applyTo: 'both', enabled: false });
                     setSettings({ enabled: true });
                   }}
