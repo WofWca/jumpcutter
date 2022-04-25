@@ -41,16 +41,34 @@
   $: stretchFactor = timeProgressionSpeed === 'soundedSpeedTime'
     ? soundedSpeed
     : 1;
+
   // TODO technically this is not correct, because the grid and the current output marker
   // (https://github.com/WofWca/jumpcutter/blob/5e09bf841e9c94ed5f5da03dfaea862dda269788/src/popup/Chart.svelte#L424-L455)
   // are still drawn in media intrinsic time, not in (media intrinsic time / soundedSpeed),
   // so it's more like changing `popupChartLengthInSeconds`, like it's not respected.
   $: millisPerPixel = stretchFactor * lengthSeconds * 1000 / widthPx;
-  $: {
-    if (smoothie) {
-      smoothie.options.millisPerPixel = millisPerPixel;
+  let millisPerPixelCurrValue: number | undefined;
+  let millisPerPixelPrevValue = 0;
+  let millisPerPixelLastUpdatedAt = 0;
+  function getTweenedMillisPerPixel() {
+    const millisPerPixelTweeningDuration = 50;
+    const tweeningPhase = 1 - Math.min(
+      1,
+      (Date.now() - millisPerPixelLastUpdatedAt) / millisPerPixelTweeningDuration
+    );
+    const diff = millisPerPixelCurrValue! - millisPerPixelPrevValue;
+    return millisPerPixelCurrValue! - diff * tweeningPhase;
+  }
+  function onMillisPerPixelUpdate(newVal: number) {
+    if (!millisPerPixelCurrValue) {
+      millisPerPixelCurrValue = millisPerPixel;
     }
-  };
+    millisPerPixelPrevValue = getTweenedMillisPerPixel();
+    millisPerPixelCurrValue = millisPerPixel;
+    millisPerPixelLastUpdatedAt = Date.now();
+  }
+  $: onMillisPerPixelUpdate(millisPerPixel);
+
   $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
   let onJumpPeriodChange: undefined | ((prevStretchFactor: number) => void);
   let prevStretchFactor = stretchFactor;
@@ -484,6 +502,8 @@
         // TODO investigate, fix, then maybe remove (or don't, to support older browsers).
         // In theory this could also be rewritten with `maybeInsertExtrapolatedData`, but it's fine now.
         (volumeThresholdSeries as any).data[1][0] = timeAtChartEdge;
+
+        smoothie.options.millisPerPixel = getTweenedMillisPerPixel();
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, timeAtChartEdge);
