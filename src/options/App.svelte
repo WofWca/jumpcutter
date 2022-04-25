@@ -53,7 +53,6 @@
       updatedValues[key] = value;
     }
     setSettings(updatedValues);
-    console.log(updatedValues);
     unsaved = false;
   }
   const debouncedSaveSettings = debounce(saveSettings, 50);
