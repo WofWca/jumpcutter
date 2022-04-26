@@ -471,8 +471,10 @@
   <!-- TODO transitions? -->
   <div
     style={
-      `min-width: ${settings.popupChartWidthPx}px;`
-      + `min-height: ${settings.popupChartHeightPx}px;`
+      `--popupChartWidth: ${settings.popupChartWidthPx}px;`
+      + `--popupChartHeight: ${settings.popupChartHeightPx}px;`
+      +'min-width: var(--popupChartWidth);'
+      + 'min-height: var(--popupChartHeight);'
       + 'display: flex;'
       + 'align-items: center;'
     }
@@ -557,8 +559,8 @@
     )}
       <div
         style={
-          `min-width: ${settings.popupChartWidthPx}px;`
-          + `min-height: ${settings.popupChartHeightPx}px;`
+          'min-width: var(--popupChartWidth);'
+          + 'min-height: var(--popupChartHeight);'
           // So there's less flashing when the chart gets loaded.
           // WET, see `soundedSpeedColor` in './Chart.svelte'
           + 'background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));'
