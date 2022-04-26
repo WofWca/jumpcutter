@@ -22,6 +22,7 @@ export interface Settings {
   previousMarginAfter: number,
 
   // TODO I made this purely for testing. For release we'll probably need something better.
+  // Should rename this to accordingly to the recent changes?
   experimentalControllerType: SettingsControllerKind,
   // Why do we need this? Controller algorithms are quite different and each have their advantages and disadvantages,
   // which need to be considered when choosing settings such as margin(Before|After). For example, some people may hate

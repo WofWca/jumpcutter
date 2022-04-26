@@ -1,10 +1,10 @@
 import browser from '@/webextensions-api';
 import {
   Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
-  removeOnStorageChangedListener, settingsChanges2NewValues,
+  removeOnStorageChangedListener, settingsChanges2NewValues, ControllerKind_CLONING,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
-import { isSourceCrossOrigin } from '@/content/helpers';
+import { isSourceCrossOrigin, cloneMediaElement } from '@/content/helpers';
 import type StretchingController from './StretchingController/StretchingController';
 import type CloningController from './CloningController/CloningController';
 import type AlwaysSoundedController from './AlwaysSoundedController';
@@ -27,6 +27,7 @@ export type TelemetryMessage =
     elementLikelyCorsRestricted: boolean,
     elementCurrentSrc?: string,
     createMediaElementSourceCalledForElement: boolean,
+    canUseCloningController?: boolean,
   };
 
 function executeNonSettingsActions(
@@ -59,6 +60,37 @@ type ControllerType<T extends ControllerKind> =
   : T extends ControllerKind.ALWAYS_SOUNDED ? typeof AlwaysSoundedController
   : never;
 
+// TODO For performance, instead of creating an element and discarding it, save it and pass to the CloningController.
+// Also just so it's DRY.
+// TODO wait, don't we attach to elements even if they have no source set yet? Need to check `el.readyState` perhaps.
+// Oh ok, we don't.
+// TODO move to `./helpers`?
+async function canUseCloningController(originalElement: HTMLMediaElement): Promise<boolean> {
+  // const clone = document.createElement('audio');
+  // clone.muted = true;
+  // clone.src = asdadsasddasasdads
+
+  const clone = cloneMediaElement(originalElement);
+  // clone.preload = 'metadata'; // For performance. Not sure though if this can change behavior.
+  clone.muted = true;
+  try {
+    // TODO not sure if this is the right way to check it, or the fastest. For example, see the first step
+    // of the `play()` algorithm:
+    // https://html.spec.whatwg.org/multipage/media.html#dom-media-play
+    // it can fail because it's not [allowed to play](
+    // https://html.spec.whatwg.org/multipage/media.html#allowed-to-play).
+    await clone.play();
+    return true;
+  } catch (e) {
+    return false;
+  } finally {
+    clone.pause();
+    // Is it necessary if we're dropping the element anyway? Btw I think it won't work if we'll start using
+    // `el.srcObject`.
+    clone.src = '';
+  }
+}
+
 const controllerTypeDependsOnSettings = [
   'experimentalControllerType',
   'dontAttachToCrossOriginMedia',
@@ -66,7 +98,10 @@ const controllerTypeDependsOnSettings = [
 function getAppropriateControllerType(
   settings: Pick<Settings, typeof controllerTypeDependsOnSettings[number]>,
   elementSourceIsCrossOrigin: boolean,
+  canCloneElement: boolean,
 ): ControllerKind {
+  const { experimentalControllerType: settingsType } = settings;
+
   // Analyzing audio data of a CORS-restricted media element is impossible because its
   // `MediaElementAudioSourceNode` outputs silence (see
   // https://webaudio.github.io/web-audio-api/#MediaElementAudioSourceOptions-security and
@@ -79,9 +114,23 @@ function getAppropriateControllerType(
   // header set to `document.location.origin`. But currently it's not easy to detect that. See
   // https://github.com/WebAudio/web-audio-api/issues/2453.
   // It's better to not attach to an element than to risk muting it as it's more confusing to the user.
-  return elementSourceIsCrossOrigin && settings.dontAttachToCrossOriginMedia
-    ? ControllerKind.ALWAYS_SOUNDED
-    : settings.experimentalControllerType
+  if (elementSourceIsCrossOrigin && settings.dontAttachToCrossOriginMedia) {
+    return ControllerKind.ALWAYS_SOUNDED;
+  }
+
+  // TOOD fuck. If `experimentalControllerType === ControllerKind.CLONING` it will still use
+  // settings for that controller (`useSeparateMarginSettingsForDifferentAlgorithms`). Do we get rid of plain
+  // `marginBefore` and `marginAfter` and always use "marginBefore_Cloning" and "marginBefore_Stretching"?
+  // Or do we just do the same thing as in `popup/App.svelte`, `onUseExperimentalAlgorithmInput`? when this happens?
+  // Pretty hacky.
+
+  if (settingsType === ControllerKind.CLONING && !canCloneElement) {
+    // It not be very cool if we think that we can't use the CloningController, preventing the user from
+    // using it, while we actually can. Currently I believe this can't happen. But just in case, maybe add an option
+    // like "dont use experimental controller when it appears to be unsupported"?
+    return ControllerKind.STRETCHING;
+  }
+  return settingsType;
 }
 
 async function importAndCreateController<T extends ControllerKind>(
@@ -125,10 +174,23 @@ function isElementIneligibleBecauseMuted(el: HTMLMediaElement, settings: Pick<Se
     : false;
 }
 
+type MapSet<T> = (key: Promise<T>, value: T) => void;
+type MapGet<T> = (key: Promise<T>) => T | undefined;
+type PromiseToResolvedMap = Omit<WeakMap<Promise<unknown>, unknown>, 'get' | 'set'> & {
+  // set: (key: Promise<T>, value: T) => void,
+  // set: MapSet,
+  // get: (key: Promise<T>) => T,
+  // get: MapGet,
+  set<T>(key: Promise<T>, value: T): void,
+  get<T>(key: Promise<T>): T | undefined,
+};
+const promiseToResolved = new WeakMap() as PromiseToResolvedMap;
+
 // type BasicSettings = Pick<Settings, 'omitMutedElements'>;
 export default class AllMediaElementsController {
   activeMediaElement: HTMLMediaElement | undefined;
   activeMediaElementSourceIsCrossOrigin: boolean | undefined;
+  canCloneActiveElementP: Promise<boolean> | undefined;
   unhandledNewElements = new Set<HTMLMediaElement>();
   handledElements = new WeakSet<HTMLMediaElement>();
   private handledMutedElements = new WeakSet<HTMLMediaElement>();
@@ -212,17 +274,24 @@ export default class AllMediaElementsController {
       return;
     }
     Object.assign(this.settings, newValues);
-    assertDev(this.controller);
 
     if (controllerTypeDependsOnSettings.some(key => key in newValues)) {
-      const currentController = this.controller;
-      const el = currentController.element;
-      assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
-      const newControllerType = getAppropriateControllerType(this.settings, this.activeMediaElementSourceIsCrossOrigin);
-      if (newControllerType !== (currentController.constructor as any).controllerType) {
-        const oldController = currentController;
-        this.controller = undefined;
-        (async () => {
+      (async () => {
+        assertDev(this.settings);
+        assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
+        assertDev(this.canCloneActiveElementP);
+        const canClone = await this.canCloneActiveElementP;
+        const newControllerType = getAppropriateControllerType(
+          this.settings,
+          this.activeMediaElementSourceIsCrossOrigin,
+          canClone,
+        );
+        assertDev(this.controller);
+        const currentController = this.controller;
+        const el = currentController.element;
+        if (newControllerType !== (currentController.constructor as any).controllerType) {
+          const oldController = currentController;
+          this.controller = undefined;
           await oldController.destroy();
           assertDev(this.settings);
           const controller = this.controller = await importAndCreateController(
@@ -236,11 +305,12 @@ export default class AllMediaElementsController {
           );
           controller.init();
           // Controller destruction is done in `detachFromActiveElement`.
-        })();
-      }
+        }
+      })();
     } else {
       // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
       // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
+      assertDev(this.controller);
       this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
         extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
       );
@@ -271,6 +341,9 @@ export default class AllMediaElementsController {
               elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
               // TODO check if the map lookup is too slow to do it several times per second.
               createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
+              canUseCloningController: this.canCloneActiveElementP 
+                ? promiseToResolved.get(this.canCloneActiveElementP)
+                : undefined,
             };
             port.postMessage(telemetryMessage);
           }
@@ -406,14 +479,25 @@ export default class AllMediaElementsController {
     let resolveTimeSavedTrackerPromise: (timeSavedTracker: TimeSavedTracker) => void;
     const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
 
-    const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
     const onMaybeSourceChange = () => {
       this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
+
+      // TODO don't need to do this if the preferred algorithm is not CLONING. Wait, but we still need to show the
+      // user whether it's possible to use this algorithm. Maybe do this on `requestIdleCallback` when the preferred
+      // algorithm is not CLONING?
+
+      // TODO use a WeakMap or something instead of `this`?
+      // this.canCloneActiveElement = 
+      const canCloneP = canUseCloningController(el);
+      canCloneP.then(v => promiseToResolved.set(canCloneP, v));
+      this.canCloneActiveElementP = canCloneP;
+
       // TODO perhaps we also need to re-run the controller selection code (which is inside
       // `reactToSettingsNewValues` right now)? But what if `createMediaElementSource` has already been
       // called? There isn't really a point in switching to the `ALWAYS_SOUNDED` controller in that case,
       // is there?
     };
+    onMaybeSourceChange();
     // I believe 'loadstart' might get emited even if the source didn't change (e.g. `el.load()`
     // has been called manually), but you pretty much can't change source and begin its playback
     // without firing the 'loadstart' event.
@@ -421,20 +505,40 @@ export default class AllMediaElementsController {
     el.addEventListener('loadstart', onMaybeSourceChange, { passive: true });
     this._onDetachFromActiveElementCallbacks.push(() => el.removeEventListener('loadstart', onMaybeSourceChange));
 
-    const controllerP = importAndCreateController(
-      getAppropriateControllerType(this.settings, elCrossOrigin),
-      () => [
-        el,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extensionSettings2ControllerSettings(this.settings!),
-        timeSavedTrackerPromise,
-      ]
-    ).then(async controller => {
-      this.controller = controller;
+
+    const controllerP = (async () => {
+      assertDev(this.settings);
+      assertDev(this.activeMediaElementSourceIsCrossOrigin !== undefined);
+      assertDev(this.canCloneActiveElementP);
+
+      const canClone = await this.canCloneActiveElementP;
+      const controller = this.controller = await importAndCreateController(
+        getAppropriateControllerType(this.settings, this.activeMediaElementSourceIsCrossOrigin, canClone),
+        () => [
+          el,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          extensionSettings2ControllerSettings(this.settings!),
+          timeSavedTrackerPromise,
+        ]
+      );
       await controller.init();
-      // Controller destruction is done in `detachFromActiveElement`.
       return controller;
-    });
+    })();
+
+    // const controllerP = importAndCreateController(
+    //   getAppropriateControllerType(this.settings, this.activeMediaElementSourceIsCrossOrigin),
+    //   () => [
+    //     el,
+    //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    //     extensionSettings2ControllerSettings(this.settings!),
+    //     timeSavedTrackerPromise,
+    //   ]
+    // ).then(async controller => {
+    //   this.controller = controller;
+    //   await controller.init();
+    //   // Controller destruction is done in `detachFromActiveElement`.
+    //   return controller;
+    // });
 
     let hotkeyListenerP;
     if (this.settings.enableHotkeys) {

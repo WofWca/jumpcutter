@@ -13,3 +13,4 @@ export * from './playbackDetection';
 export * from './destroyAudioWorkletNode';
 export * from './isSourceCrossOrigin';
 export * from './requestIdleCallbackPolyfill';
+export * from './cloneMediaElement';
