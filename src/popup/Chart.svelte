@@ -503,6 +503,7 @@
         // In theory this could also be rewritten with `maybeInsertExtrapolatedData`, but it's fine now.
         (volumeThresholdSeries as any).data[1][0] = timeAtChartEdge;
 
+        // TODO this is jumpy with `jumpPeriodMs > 0`
         // TODO would be cool not doing this calculaion on every frame if we're done tweening.
         smoothie.options.millisPerPixel = getTweenedMillisPerPixel();
 
