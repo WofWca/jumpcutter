@@ -19,7 +19,7 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-  body {
+  body.better-dark-border {
     /* Otherwise (at least in Chromium) the border is not enough pronounced on dark-themed websites,
     which may get fixed later. On light-themed the default is fine though. */
     border: 1px solid #585858;
