@@ -1,3 +1,6 @@
+<svelte:options
+  immutable={true}
+/>
 <script lang="ts">
   import InputFieldBase from './InputFieldBase.svelte'
 
