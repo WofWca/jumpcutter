@@ -130,11 +130,27 @@ module.exports = env => {
             // later.
             transform: (content) => JSON.stringify(JSON.parse(content)),
           },
+
           {
             context: 'src',
             from: `_locales/(${includeLanguages.join('|')})/messages.json`,
             transform: (content) => minimizeJsonString(content, { unsafe: false }),
           },
+          // Chromium apparently refuses to display the extension in 'nb_NO', if you make 'nb'
+          // the browser's UI language. Let's do this to make it satisfied, while also keeping
+          // the original 'nb_NO' directory intact for forwards-compatibility. TODO file a bug? Or
+          // is it the way it should work?
+          ...(
+            env.browser === 'chromium' && includeLanguages.includes('nb_NO')
+              ? [{
+                context: 'src',
+                from: `_locales/nb_NO/messages.json`,
+                to: `_locales/nb/messages.json`,
+                transform: (content) => minimizeJsonString(content, { unsafe: false }),
+              }]
+              : []
+          ),
+
           { context: 'src', from: '_locales/(LICENSE_NOTICES|COPYING|COPYING.LESSER|index.html)' },
           { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
           { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
