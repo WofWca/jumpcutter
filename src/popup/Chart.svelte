@@ -221,7 +221,7 @@
     const { SmoothieChart, TimeSeries } = await smoothieImportP;
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
-      millisPerPixel, // TODO make it reactive?
+      millisPerPixel, // To be adjusted dynamically
       interpolation: 'step',
       // responsive: true, ?
       grid: {
