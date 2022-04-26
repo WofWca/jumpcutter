@@ -16,6 +16,11 @@
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { getMessage } from '@/helpers';
 
+  // See ./popup.css. Would be cool to do this at build-time
+  if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
+    document.body.classList.add('better-dark-border');
+  }
+
   let settings: Settings;
 
   let settingsLoaded = false;
