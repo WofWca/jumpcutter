@@ -469,11 +469,23 @@
     </button>
   </div>
   <!-- TODO transitions? -->
+  <div
+    style={
+      `min-width: ${settings.popupChartWidthPx}px;`
+      + `min-height: ${settings.popupChartHeightPx}px;`
+      + 'display: flex;'
+      + 'align-items: center;'
+    }
+  >
+  <div
+    style={
+      "min-width: 100%;"
+      // So in Gecko it prefers to wrap instead of exceeding `settings.popupChartWidthPx`.
+      + "width: min-content;"
+    }
+  >
   {#if !connected}
-    <div
-      class="content-script-connection-info"
-      style="min-width: {settings.popupChartWidthPx}px; min-height: {settings.popupChartHeightPx}px;"
-    >
+    <div class="content-script-connection-info">
       <!-- TODO should we add an {:else} block for the case when it's disabled and put something like a
       "enable the extension" button? Redundant tho. -->
       {#if settings.enabled}
@@ -601,6 +613,8 @@
       {/await}
     {/if}
   {/if}
+  </div>
+  </div>
   <label
     use:tippy={{
       content: () => getMessage('useExperimentalAlgorithmTooltip'),
