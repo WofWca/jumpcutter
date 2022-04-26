@@ -16,6 +16,11 @@
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { getMessage } from '@/helpers';
 
+  // See ./popup.css. Would be cool to do this at build-time
+  if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
+    document.body.classList.add('better-dark-border');
+  }
+
   let settings: Settings;
 
   let settingsLoaded = false;
@@ -464,11 +469,25 @@
     </button>
   </div>
   <!-- TODO transitions? -->
+  <div
+    style={
+      `--popupChartWidth: ${settings.popupChartWidthPx}px;`
+      + `--popupChartHeight: ${settings.popupChartHeightPx}px;`
+      +'min-width: var(--popupChartWidth);'
+      + 'min-height: var(--popupChartHeight);'
+      + 'display: flex;'
+      + 'align-items: center;'
+    }
+  >
+  <div
+    style={
+      "min-width: 100%;"
+      // So in Gecko it prefers to wrap instead of exceeding `settings.popupChartWidthPx`.
+      + "width: min-content;"
+    }
+  >
   {#if !connected}
-    <div
-      class="content-script-connection-info"
-      style="min-width: {settings.popupChartWidthPx}px; min-height: {settings.popupChartHeightPx}px;"
-    >
+    <div class="content-script-connection-info">
       <!-- TODO should we add an {:else} block for the case when it's disabled and put something like a
       "enable the extension" button? Redundant tho. -->
       {#if settings.enabled}
@@ -540,8 +559,8 @@
     )}
       <div
         style={
-          `min-width: ${settings.popupChartWidthPx}px;`
-          + `min-height: ${settings.popupChartHeightPx}px;`
+          'min-width: var(--popupChartWidth);'
+          + 'min-height: var(--popupChartHeight);'
           // So there's less flashing when the chart gets loaded.
           // WET, see `soundedSpeedColor` in './Chart.svelte'
           + 'background: rgb(calc(0.7 * 255), 255, calc(0.7 * 255));'
@@ -596,6 +615,8 @@
       {/await}
     {/if}
   {/if}
+  </div>
+  </div>
   <label
     use:tippy={{
       content: () => getMessage('useExperimentalAlgorithmTooltip'),
