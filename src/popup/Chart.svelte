@@ -505,7 +505,9 @@
 
         // TODO this is jumpy with `jumpPeriodMs > 0`
         // TODO would be cool not doing this calculaion on every frame if we're done tweening.
-        smoothie.options.millisPerPixel = getTweenedMillisPerPixel();
+        // Should we rename the original `millisPerPixel` to `untweenedMillisPerPixel`?
+        const millisPerPixelTweened = getTweenedMillisPerPixel();
+        smoothie.options.millisPerPixel = millisPerPixelTweened;
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
         smoothie.render(canvasEl, timeAtChartEdge);
@@ -532,7 +534,7 @@
           } else {
             chartEdgeTimeOffset = totalOutputDelayRealTime;
           }
-          const pixelOffset = (sToMs(chartEdgeTimeOffset) + chartJumpingOffsetMs) / millisPerPixel;
+          const pixelOffset = (sToMs(chartEdgeTimeOffset) + chartJumpingOffsetMs) / millisPerPixelTweened;
           // So it's not smeared accross two pixels.
           const pixelOffsetCentered = Math.floor(pixelOffset) + 0.5;
           const x = widthPx - pixelOffsetCentered;
