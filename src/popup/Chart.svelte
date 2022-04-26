@@ -50,11 +50,10 @@
   let millisPerPixelCurrValue: number | undefined;
   let millisPerPixelPrevValue = 0;
   let millisPerPixelLastUpdatedAt = 0;
-  function getTweenedMillisPerPixel() {
-    const millisPerPixelTweeningDuration = 50;
+  function getTweenedMillisPerPixel(tweeningDuration: number = 50) {
     const tweeningPhase = 1 - Math.min(
       1,
-      (Date.now() - millisPerPixelLastUpdatedAt) / millisPerPixelTweeningDuration
+      (Date.now() - millisPerPixelLastUpdatedAt) / tweeningDuration
     );
     const diff = millisPerPixelCurrValue! - millisPerPixelPrevValue;
     return millisPerPixelCurrValue! - diff * tweeningPhase;
@@ -503,10 +502,11 @@
         // In theory this could also be rewritten with `maybeInsertExtrapolatedData`, but it's fine now.
         (volumeThresholdSeries as any).data[1][0] = timeAtChartEdge;
 
-        // TODO this is jumpy with `jumpPeriodMs > 0`
         // TODO would be cool not doing this calculaion on every frame if we're done tweening.
         // Should we rename the original `millisPerPixel` to `untweenedMillisPerPixel`?
-        const millisPerPixelTweened = getTweenedMillisPerPixel();
+        // TODO this is jumpy with `jumpPeriodMs > 0`. Need to also tween `jumpPeriodMs` because it depends on
+        // `millisPerPixel`.
+        const millisPerPixelTweened = getTweenedMillisPerPixel(jumpPeriodMs > 0 ? 0 : undefined);
         smoothie.options.millisPerPixel = millisPerPixelTweened;
 
         const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
