@@ -1,3 +1,6 @@
+<svelte:options
+  immutable={true}
+/>
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';

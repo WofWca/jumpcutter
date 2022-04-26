@@ -1,3 +1,6 @@
+<svelte:options
+  immutable={true}
+/>
 <script lang="ts">
   export let value: number;
   export let label: string;
