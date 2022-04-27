@@ -15,7 +15,7 @@ async function importAndInit() {
 // In Chromium, compared to `getSettings(`, this function does not require the whole `browser` API polyfill.
 async function isEnabled(): Promise<boolean> {
   const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
-  const p = typeof browser !== 'undefined'
+  const p = BUILD_DEFINITIONS.BROWSER === 'gecko' || (typeof browser !== 'undefined')
     ? browser.storage.local.get(keys) as Promise<Settings>
     : new Promise(r => chrome.storage.local.get(keys, r as (s: Record<string, any>) => void)) as Promise<Settings>;
   const { enabled } = await p;
