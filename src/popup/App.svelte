@@ -21,7 +21,27 @@
     document.body.classList.add('better-dark-border');
   }
 
-  let settings: Settings;
+  type RequiredSettings =
+    Pick<Settings,
+      'enabled'
+      | 'applyTo'
+      | 'popupAutofocusEnabledInput'
+      | 'enableHotkeys'
+      | 'silenceSpeedSpecificationMethod'
+      | 'timeSavedAveragingMethod'
+      | 'timeSavedAveragingWindowLength'
+      | 'popupChartWidthPx'
+      | 'popupChartHeightPx'
+      | 'popupChartSpeed'
+      | 'popupChartLengthInSeconds'
+      | 'popupChartJumpPeriod'
+      | 'dontAttachToCrossOriginMedia'
+      | 'popupAlwaysShowOpenLocalFileLink'
+    >
+    & ReturnType<Parameters<typeof createKeydownListener>[1]>
+    & Parameters<typeof changeAlgorithmAndMaybeRelatedSettings>[0]
+    & Parameters<typeof rangeInputSettingNameToAttrs>[1];
+  let settings: RequiredSettings;
 
   let settingsLoaded = false;
   let settingsPromise = getSettings();
@@ -29,7 +49,7 @@
     settings = s;
     settingsLoaded = true;
   })
-  function assignNewSettings(newValues: Partial<Settings>) {
+  function assignNewSettings(newValues: Partial<RequiredSettings>) {
     for (const [k_, v] of Object.entries(newValues)) {
       const k = k_ as keyof typeof newValues;
       (settings[k] as any) = v;
@@ -191,10 +211,10 @@
 
   let thisScriptRecentlyUpdatedStorage = false;
   let thisScriptRecentlyUpdatedStorageTimeoud = -1;
-  let settingsKeysToSaveToStorage = new Set<keyof Settings>();
+  let settingsKeysToSaveToStorage = new Set<keyof typeof settings>();
   // `throttle` for performance, e.g. in case the user drags a slider (which makes the value change very often).
   const throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks = throttle(() => {
-    const newValues: Partial<Settings> = {};
+    const newValues: Partial<typeof settings> = {};
     settingsKeysToSaveToStorage.forEach(key => {
       // @ts-expect-error 2322 they're both `Settings` or `Partial<Settings>` and the key is the same.
       newValues[key] = settings[key] as (typeof newValues)[typeof key];
@@ -216,12 +236,12 @@
       500,
     );
   }, 50);
-  function updateSettingsLocalCopyAndStorage(newValues: Partial<Settings>) {
+  function updateSettingsLocalCopyAndStorage(newValues: Partial<typeof settings>) {
     assignNewSettings(newValues);
     Object.keys(newValues).forEach(key => settingsKeysToSaveToStorage.add(key as keyof typeof newValues));
     throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks();
   }
-  function createOnInputListener(settingKey: keyof Settings) {
+  function createOnInputListener(settingKey: keyof typeof settings) {
     // Why is the value argument not used? Because we use `bind:value` in addition.
     return () => {
       settingsKeysToSaveToStorage.add(settingKey);
@@ -229,7 +249,10 @@
     };
   }
 
-  function rangeInputSettingNameToAttrs(name: PopupAdjustableRangeInputsCapitalized, settings: Settings) {
+  function rangeInputSettingNameToAttrs(
+    name: PopupAdjustableRangeInputsCapitalized,
+    settings: Pick<Settings, `popup${typeof name}${'Min' | 'Max' | 'Step'}`>
+  ) {
     // TODO DRY?
     return {
       'useForInput': tippy,

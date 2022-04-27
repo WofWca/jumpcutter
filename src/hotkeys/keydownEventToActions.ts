@@ -1,4 +1,5 @@
-import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings } from "@/settings";
+import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings,
+  CorrespondingPreviousValueSetting } from "@/settings";
 import { clamp, assertNever, KeysOfType, getGeckoLikelyMaxNonMutedPlaybackRate } from "@/helpers";
 import type { HotkeyBinding, NonSettingsAction, NonSettingsActions } from './';
 import { eventMatchesCombination } from "./eventMatchesCombination";
@@ -14,7 +15,11 @@ const maxSpeedClamp = BUILD_DEFINITIONS.BROWSER === 'gecko'
  * @returns `undefined` when no actions need to be performed (equivalent to empty `settingsNewValues`
  * & `nonSettingsActions`).
  */
-export function keydownEventToActions(e: KeyboardEvent, currentSettings: Settings, bindings?: HotkeyBinding[]): [
+export function keydownEventToActions(
+  e: KeyboardEvent,
+  currentSettings: Pick<Settings, 'hotkeys' | TogglableSettings | CorrespondingPreviousValueSetting<TogglableSettings>>,
+  bindings?: HotkeyBinding[]
+): [
   settingsNewValues: Partial<Settings>,
   nonSettingsActions: NonSettingsActions,
   overrideWebsiteHotkeys: boolean,
@@ -38,7 +43,7 @@ export function keydownEventToActions(e: KeyboardEvent, currentSettings: Setting
   // This will result in only the last binding taking effect.
   for (const binding of matchedBindings) {
     const arg = binding.actionArgument;
-    type NumberSettings = KeysOfType<Settings, number>;
+    type NumberSettings = KeysOfType<typeof currentSettings, number>;
     const updateClamped = function (settingName: NumberSettings, argMultiplier: -1 | 1, min: number, max: number) {
       const unclamped = currentSettings[settingName] + argMultiplier * arg!;
       settingsNewValues[settingName] = clamp(unclamped, min, max);

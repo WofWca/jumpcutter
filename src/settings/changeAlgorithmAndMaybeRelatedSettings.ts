@@ -1,7 +1,13 @@
 import type { Settings } from "./";
 
 export function changeAlgorithmAndMaybeRelatedSettings(
-  settings: Settings,
+  settings: Pick<Settings,
+    'algorithmSpecificSettings'
+    | 'useSeparateMarginSettingsForDifferentAlgorithms'
+    | 'experimentalControllerType'
+    | 'marginBefore'
+    | 'marginAfter'
+  >,
   newControllerType: Settings['experimentalControllerType']
 ): Partial<Settings> {
   const baseValues = {

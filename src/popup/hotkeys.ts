@@ -1,9 +1,12 @@
 import { keydownEventToActions, eventTargetIsInput, NonSettingsActions } from '@/hotkeys';
 import type { Settings } from '@/settings';
 
+type RequiredSettings =
+  & Parameters<typeof keydownEventToActions>[1]
+  & Pick<Settings, 'popupDisableHotkeysWhileInputFocused' | 'popupSpecificHotkeys'>;
 export default function createKeydownListener(
   onNonSettingsActions: (nonSettingsActions: NonSettingsActions) => void,
-  getSettings: () => Settings,
+  getSettings: () => RequiredSettings,
   onNewSettingsValues: (newValues: Partial<Settings>) => void,
 ): (e: KeyboardEvent) => void {
   const undeferred = (e: KeyboardEvent): void => {
