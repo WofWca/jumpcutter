@@ -1,2 +1,3 @@
-// import browser from '@/webextensions-api';
-export const getMessage = (typeof browser !== 'undefined' ? browser : chrome).i18n.getMessage;
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
+
+export const getMessage = browserOrChrome.i18n.getMessage;

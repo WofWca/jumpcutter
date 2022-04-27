@@ -1,5 +1,6 @@
 import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settings';
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 (async function () { // Just for top-level `await`
 
@@ -48,7 +49,7 @@ if (enabledOnInitialization) {
 }
 // Not using `addOnStorageChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
 // TODO use it when (if?) it's gone.
-(typeof browser !== 'undefined' ? browser : chrome).storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
+browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
   if (areaName !== mainStorageAreaName) {
     return;
   }
