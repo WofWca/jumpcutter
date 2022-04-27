@@ -1,5 +1,5 @@
 'use strict';
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 import { audioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
 import {
   getRealtimeMargin,

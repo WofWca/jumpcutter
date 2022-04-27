@@ -1,4 +1,4 @@
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 import {
   addOnStorageChangedListener, removeOnStorageChangedListener, MyStorageChanges, getSettings
 } from '@/settings';

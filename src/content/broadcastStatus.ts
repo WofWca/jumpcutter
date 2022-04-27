@@ -1,4 +1,4 @@
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 
 export default function broadcastStatus(status: { elementLastActivatedAt: undefined | number }): void {
   browser.runtime.sendMessage({

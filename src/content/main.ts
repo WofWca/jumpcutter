@@ -30,11 +30,11 @@ if (process.env.NODE_ENV !== 'production') {
     ),
     import(
       /* webpackExports: ['default']*/
-      '@/webextensions-api'
+      '@/webextensions-api-browser-or-chrome'
     ),
   ]).then(([
     { storage },
-    { default: browser },
+    { browserOrChrome: browser },
   ]) => {
     if (browser.storage.local !== storage) {
       console.error('Looks like you\'ve changed the default storage and `isEnabled` will not work as intended.'

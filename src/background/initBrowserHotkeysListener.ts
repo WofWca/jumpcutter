@@ -1,4 +1,4 @@
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 import { setSettings, getSettings } from '@/settings';
 
 export default function initBrowserHotkeysListener(): void {

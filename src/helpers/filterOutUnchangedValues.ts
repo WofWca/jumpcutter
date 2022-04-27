@@ -1,4 +1,3 @@
-import type browser from '@/webextensions-api';
 import isEqual from 'lodash/isEqual';
 
 /**
