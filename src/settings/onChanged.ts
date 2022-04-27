@@ -1,4 +1,4 @@
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 import { filterOutUnchangedValues } from '@/helpers';
 import { mainStorageAreaName } from './mainStorageAreaName';
 import type { MyStorageChanges } from './';

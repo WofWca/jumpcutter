@@ -1,4 +1,4 @@
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 import { addOnStorageChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
 
 function setBadge(text: string, color: string) {

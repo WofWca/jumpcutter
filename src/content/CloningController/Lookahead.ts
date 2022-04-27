@@ -1,4 +1,4 @@
-import browser from '@/webextensions-api';
+import { browserOrChrome as browser } from '@/webextensions-api-browser-or-chrome';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, getGeckoLikelyMaxNonMutedPlaybackRate, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode, getRealtimeMargin } from '@/content/helpers';
