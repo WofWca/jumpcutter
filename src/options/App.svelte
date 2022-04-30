@@ -218,13 +218,17 @@
           label="⌨️ {getMessage('enableHotkeys')}"
           bind:checked={settings.enableHotkeys}
         />
-        <!-- TODO how about we hide the table entirely? But keep in mind that it would make it possible to save
-        invalid settings as the table inputs would stop being validated. Consider replacing it with
+        <!-- Using `{#if}` instead of `display: none;` would make it possible to save invalid settings
+        as the table inputs would stop being validated. Same goes for the `popupSpecificHotkeys` table below.
+        TODO but if the user makes some inputs invalid inside a block and then makes that block hidden (by unchecking)
+        "enable hotkeys", the form would stay invalid, but you wan't be able to see what exactly is invalid.
+        It's a rare occurance though, so it's fine for now.
+        Consider replacing this with
         `<fieldset disabled={...}`. and rewriting saving logic so that `saveSettings` is called on form submit
         and new values are constructed from FormData (so disabled fields are ignored and don't have effect on the
         settings). This would require us to provide inputs with names though.
         https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects#Retrieving_a_FormData_object_from_an_HTML_form. -->
-        <div style={settings.enableHotkeys ? '' : 'opacity: 0.5;'}>
+        <div style={settings.enableHotkeys ? '' : 'display: none;'}>
           <ul>
             <!-- TODO do we need "Hotkeys are also active when the popup is open" here (see localization)?
             Maybe it can be understood from inputs' labels? -->
@@ -320,7 +324,9 @@
           <p>{getMessage('rangeSlidersAttributesNote')}</p>
           <table style="margin: 0.75rem 0;">
             <thead>
-              <th>{getMessage('input')}</th>
+              <th
+                style="min-width: 24ch;"
+              >{getMessage('input')}</th>
               {#each [
                 getMessage('min'),
                 getMessage('step'),
@@ -366,7 +372,8 @@
           label="🔗 {getMessage('alwaysShowOpenLocalFileLink', getMessage('openLocalFile'))}"
           bind:checked={settings.popupAlwaysShowOpenLocalFileLink}
         />
-        <section>
+        <!-- See the main hotkeys table above on why `display: none` instead of `{#if }`. -->
+        <section style={settings.enableHotkeys ? '' : 'display: none;'}>
           <h4>{getMessage('popupSpecificHotkeys')}</h4>
           <HotkeysTable
             bind:hotkeys={settings.popupSpecificHotkeys}
