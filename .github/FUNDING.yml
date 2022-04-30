@@ -1,4 +1,0 @@
-# `custom` field of FUNDING.yml doesn't support links like `bitcoin:fffffffff`
-custom: ["https://github.com/WofWca/jumpcutter#donate"]
-
-liberapay: WofWca
