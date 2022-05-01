@@ -69,8 +69,9 @@ function getAppropriateControllerType(
 ): ControllerKind {
   // Analyzing audio data of a CORS-restricted media element is impossible because its
   // `MediaElementAudioSourceNode` outputs silence (see
-  // https://webaudio.github.io/web-audio-api/#MediaElementAudioSourceOptions-security and
-  // https://github.com/WofWca/jumpcutter/issues/47),
+  // https://webaudio.github.io/web-audio-api/#MediaElementAudioSourceOptions-security,
+  // https://github.com/WofWca/jumpcutter/issues/47,
+  // https://html.spec.whatwg.org/multipage/media.html#security-and-privacy-considerations),
   // so it's not that we only are unable to analyze it - the user also becomes unable to hear its sound.
   // The following is to avoid that.
   //
