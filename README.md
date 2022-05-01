@@ -61,6 +61,21 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
 Then you can install it on the extensions management page of your browser ([Chromium](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked), [Gecko](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#installing)).
 
+## Privacy & security
+
+In short: it's fine.
+
+As with practically every other extension, websites you're visiting _may_ detect that you're using this (or alike) extension, and your settings for the extension, by observing:
+
+* playback rate changes of an element.
+* the fact that `createMediaElementSource` has been called for an element.
+* increased frequency of media chunk requests resulting from increased playback rate. This cannot be mitigated with disabling JavaScript.
+* the fact of requesting the same media twice, as a result of using the cloning algotihm.
+
+However I doubt that currently there are services that do specifically this. But there may be.
+
+Other than that, there are no known things concerning this.
+
 ## Donate
 
 * <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
