@@ -1,1 +1,125 @@
-{}
+{
+	"enable": {
+		"message": "activar"
+	},
+	"timeSaved": {
+		"message": "informacion de tiempo ahorrado"
+	},
+	"more": {
+		"message": "mas"
+	},
+	"overTheLast": {
+		"message": "sobre las ultimas $duration$",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"numbersMeanings": {
+		"message": "significado de numeros (en orden):"
+	},
+	"wouldHaveLastedIfSpeedWasSounded": {
+		"message": "cuanto tardaria la reproduccion del sonido SIN saltarse el silencio"
+	},
+	"timeSavedPercentage": {
+		"message": "porcentaje equivalente a tiempo guardado:"
+	},
+	"audio": {
+		"message": "audio"
+	},
+	"video": {
+		"message": "video"
+	},
+	"noSuitableElement": {
+		"message": "no se pudo encontrar un elemento multimedia en la pagina"
+	},
+	"contentScriptFail": {
+		"message": "no se pudo ejecutar el script de contenido en esta pagina"
+	},
+	"retry": {
+		"message": "reintentar"
+	},
+	"alsoSearchFor": {
+		"message": "tambien buscar para elementos de $type$",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "audio"
+			}
+		}
+	},
+	"applyToBoth": {
+		"message": "elementos de video y audio"
+	},
+	"openLocalFile": {
+		"message": "abrir archivo local"
+	},
+	"or": {
+		"message": "o"
+	},
+	"tryAttachAnyway": {
+		"message": "intentar adherirlo de todos modos"
+	},
+	"refreshIfMuted": {
+		"message": "recargar la pagina si la multimedia esta silenciada"
+	},
+	"loading": {
+		"message": "cargando"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "usar algoritmo experimental"
+	},
+	"tryOpeningDirectly": {
+		"message": "intentar abrirlo directamente"
+	},
+	"mediaUnsupported": {
+		"message": "este material es **probablemente** no soportado — $consequences$.",
+		"placeholders": {
+			"consequences": {
+				"content": "$1",
+				"example": "it could get muted if we attach to it"
+			}
+		}
+	},
+	"couldGetMuted": {
+		"message": "puede silenciarse si lo adherimos"
+	},
+	"silenceSkippingWontWork": {
+		"message": "el omitir el silencio no servira apropiadamente"
+	},
+	"general": {
+		"message": "general"
+	},
+	"omitMutedElements": {
+		"message": "no aplicar a elementos multimedia silenciados"
+	},
+	"none": {
+		"message": "nada"
+	},
+	"volume": {
+		"message": "volumen\nno es el volumen actual del material, pero es un amplificador, como en la television"
+	},
+	"suggestOpenLocalFile": {
+		"message": "quiere **$openLocalFile$**?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "cuanto tardaria la reproduccion a velocidad normal (intrinseca) SIN saltarse lo silencios"
+	},
+	"changeElementSearchCriteria": {
+		"message": "cambiar criterio de busqueda…"
+	},
+	"comparedToSounded": {
+		"message": "comparado a con sonido"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "tiempo ahorrado comparado a solo ver el video a velocidad normal (intrinseca)"
+	}
+}
