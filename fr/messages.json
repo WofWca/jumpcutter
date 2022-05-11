@@ -57,7 +57,7 @@
 		"message": "Seuil de volume"
 	},
 	"soundedSpeedTooltip": {
-		"message": "La vitesse à laquelle nous lisons la vidéo quand elle n’est PAS silencieuse, la vitesse « normale ».\nSur le graphique, les parties qui ont été jouées à cette vitesse ont un fond vert 🟩."
+		"message": "La vitesse à laquelle nous lisons la vidéo quand le son n'est PAS coupé, la vitesse « normale ».\nSur le graphique, les parties qui ont été jouées à cette vitesse ont un fond vert 🟩."
 	},
 	"silenceSpeed": {
 		"message": "Vitesse du silence"
@@ -108,5 +108,131 @@
 				"example": "audio"
 			}
 		}
+	},
+	"soundedSpeed": {
+		"message": "Vitesse avec le son"
+	},
+	"marginAfter": {
+		"message": "Marge après"
+	},
+	"openLocalFile": {
+		"message": "ouvrir un fichier local"
+	},
+	"marginBefore": {
+		"message": "Marge avant"
+	},
+	"absolute": {
+		"message": "Absolue"
+	},
+	"relativeToSounded": {
+		"message": "Relative à la vitesse avec le son"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Lorsque le volume audio actuel est inférieur à cette valeur, accélérer.\nSur le graphique, il s'agit de la ligne horizontale rouge 🟥. La ligne bleue 🟦 représente le volume courant, de sorte que lorsque la ligne bleue est inférieure à la rouge, on considère que cela correspond au silence."
+	},
+	"refreshIfMuted": {
+		"message": "Actualisez la page si le son du média est coupé"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Utiliser l'algorithme expérimental"
+	},
+	"toggleMute": {
+		"message": "Activer/Couper le son"
+	},
+	"toggle": {
+		"message": "Activer/Désactiver"
+	},
+	"addBinding": {
+		"message": "Ajouter un nouveau raccourci"
+	},
+	"edit": {
+		"message": "Modifier"
+	},
+	"suggestOpenLocalFile": {
+		"message": "Voulez-vous **$openLocalFile$** ?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"general": {
+		"message": "Général"
+	},
+	"applyToBoth": {
+		"message": "Éléments vidéo et audio"
+	},
+	"hotkeys": {
+		"message": "Raccourcis"
+	},
+	"hotkey": {
+		"message": "Raccourci"
+	},
+	"rewind": {
+		"message": "Retour arrière (en secondes)"
+	},
+	"advance": {
+		"message": "Avance rapide (en secondes)"
+	},
+	"showErrors": {
+		"message": "Afficher les erreurs"
+	},
+	"resetToDefaults": {
+		"message": "Réinitialiser les valeurs par défaut"
+	},
+	"applyTo": {
+		"message": "Appliquer à"
+	},
+	"applyToOnly": {
+		"message": "éléments $type$ uniquement",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"hasErrors": {
+		"message": "Des erreurs ont été trouvées"
+	},
+	"enableHotkeys": {
+		"message": "Activer les raccourcis"
+	},
+	"changeElementSearchCriteria": {
+		"message": "Modifier le critère de recherche…"
+	},
+	"loading": {
+		"message": "Chargement"
+	},
+	"omitMutedElements": {
+		"message": "Ne pas appliquer aux éléments de média dont le son a été coupé"
+	},
+	"decreaseVolume": {
+		"message": "Baisser le volume (en %)"
+	},
+	"increaseVolume": {
+		"message": "Augmenter le volume (en %)"
+	},
+	"action": {
+		"message": "Action"
+	},
+	"value": {
+		"message": "Valeur"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Écraser les raccourcis du site Web"
+	},
+	"removeBinding": {
+		"message": "Retirer l'association"
+	},
+	"chart": {
+		"message": "Graphique"
+	},
+	"togglePause": {
+		"message": "Mettre en pause/Lire"
+	},
+	"none": {
+		"message": "Aucun"
 	}
 }
