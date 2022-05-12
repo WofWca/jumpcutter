@@ -45,6 +45,15 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
     ```
 
 3.
+    Fill the `src/_locales` directory with localization files. Skip this step if they're alredy there. Either:
+
+    * If you're using `git`:
+
+        `git submodule update --init`
+
+    * If you don't want to use `git`, download them from the `translations` branch and put in `src/_locales` manually.
+
+4.
     * To build for Gecko (e.g. Firefox):
 
         ```bash
