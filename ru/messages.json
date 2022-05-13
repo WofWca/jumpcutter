@@ -174,5 +174,17 @@
 	},
 	"helpTranslate": {
 		"message": "Помочь с переводом"
+	},
+	"applyTo": {
+		"message": "Применять к"
+	},
+	"showErrors": {
+		"message": "Показать ошибки"
+	},
+	"hasErrors": {
+		"message": "Найдены ошибки"
+	},
+	"resetToDefaults": {
+		"message": "Сбросить настройки"
 	}
 }
