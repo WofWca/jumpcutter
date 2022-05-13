@@ -1,15 +1,15 @@
 {
 	"enable": {
-		"message": "activar"
+		"message": "Activar"
 	},
 	"timeSaved": {
-		"message": "informacion de tiempo ahorrado"
+		"message": "Informacion de tiempo ahorrado"
 	},
 	"more": {
-		"message": "mas"
+		"message": "Mas"
 	},
 	"overTheLast": {
-		"message": "sobre las ultimas $duration$",
+		"message": "Sobre las ultimas $duration$",
 		"placeholders": {
 			"duration": {
 				"content": "$1",
@@ -18,13 +18,13 @@
 		}
 	},
 	"numbersMeanings": {
-		"message": "significado de numeros (en orden):"
+		"message": "Significado de numeros (en orden):"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "cuanto tardaria la reproduccion del sonido SIN saltarse el silencio"
 	},
 	"timeSavedPercentage": {
-		"message": "porcentaje equivalente a tiempo guardado:"
+		"message": "Porcentaje equivalente a tiempo guardado:"
 	},
 	"audio": {
 		"message": "audio"
@@ -33,16 +33,16 @@
 		"message": "video"
 	},
 	"noSuitableElement": {
-		"message": "no se pudo encontrar un elemento multimedia en la pagina"
+		"message": "No se pudo encontrar un elemento multimedia en la pagina"
 	},
 	"contentScriptFail": {
-		"message": "no se pudo ejecutar el script de contenido en esta pagina"
+		"message": "No se pudo ejecutar el script de contenido en esta pagina"
 	},
 	"retry": {
-		"message": "reintentar"
+		"message": "Reintentar"
 	},
 	"alsoSearchFor": {
-		"message": "tambien buscar para elementos de $type$",
+		"message": "Tambien buscar para elementos de $type$",
 		"placeholders": {
 			"type": {
 				"content": "$1",
@@ -51,7 +51,7 @@
 		}
 	},
 	"applyToBoth": {
-		"message": "elementos de video y audio"
+		"message": "Elementos de video y audio"
 	},
 	"openLocalFile": {
 		"message": "abrir archivo local"
@@ -60,22 +60,22 @@
 		"message": "o"
 	},
 	"tryAttachAnyway": {
-		"message": "intentar adherirlo de todos modos"
+		"message": "Intentar adherirlo de todos modos"
 	},
 	"refreshIfMuted": {
-		"message": "recargar la pagina si la multimedia esta silenciada"
+		"message": "Recargar la pagina si la multimedia esta silenciada"
 	},
 	"loading": {
-		"message": "cargando"
+		"message": "Cargando"
 	},
 	"useExperimentalAlgorithm": {
-		"message": "usar algoritmo experimental"
+		"message": "Usar algoritmo experimental"
 	},
 	"tryOpeningDirectly": {
-		"message": "intentar abrirlo directamente"
+		"message": "Intentar abrirlo directamente"
 	},
 	"mediaUnsupported": {
-		"message": "este material es **probablemente** no soportado — $consequences$.",
+		"message": "Este material es **probablemente** no soportado — $consequences$.",
 		"placeholders": {
 			"consequences": {
 				"content": "$1",
@@ -90,19 +90,19 @@
 		"message": "el omitir el silencio no servira apropiadamente"
 	},
 	"general": {
-		"message": "general"
+		"message": "General"
 	},
 	"omitMutedElements": {
-		"message": "no aplicar a elementos multimedia silenciados"
+		"message": "No aplicar a elementos multimedia silenciados"
 	},
 	"none": {
-		"message": "nada"
+		"message": "Nada"
 	},
 	"volume": {
-		"message": "volumen\nno es el volumen actual del material, pero es un amplificador, como en la television"
+		"message": "Volumen\nNo es el volumen actual del material, pero es un amplificador, como en la television"
 	},
 	"suggestOpenLocalFile": {
-		"message": "quiere **$openLocalFile$**?",
+		"message": "Quiere **$openLocalFile$**?",
 		"placeholders": {
 			"openLocalFile": {
 				"content": "$1",
@@ -114,7 +114,7 @@
 		"message": "cuanto tardaria la reproduccion a velocidad normal (intrinseca) SIN saltarse lo silencios"
 	},
 	"changeElementSearchCriteria": {
-		"message": "cambiar criterio de busqueda…"
+		"message": "Cambiar criterio de busqueda…"
 	},
 	"comparedToSounded": {
 		"message": "comparado a con sonido"
