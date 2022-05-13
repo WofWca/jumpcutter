@@ -3,6 +3,7 @@ stages:
   - build
 before_script:
   - yarn install
+  - git submodule update --init
 build chromium:
   stage: build
   script:

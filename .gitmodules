@@ -1,0 +1,4 @@
+[submodule "translations"]
+	path = src/_locales
+	url = ./
+	branch = translations
