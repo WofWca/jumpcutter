@@ -30,6 +30,7 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 ## Contribute
 
 * [🌐 Translate (on Weblate)][weblate]
+* 👨‍💻 Code contributions are welcome, but I have not yet decided on the license yet, so if you don't mind submitting your changes under the [CC0](https://creativecommons.org/publicdomain/zero/1.0/) license, please do.
 * [💸 Donate](#donate)
 * General feedback and questioning my decisions is appreciated
 
