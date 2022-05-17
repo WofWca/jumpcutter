@@ -6,4 +6,4 @@ set -e
 currentVersion=$(cat src/manifest.json | grep -Po '(?<="version": ").+(?=")');
 tagName=v$currentVersion;
 git tag -s $tagName -m $tagName;
-git push gitlab master $tagName & git push origin master $tagName;
+git push --recurse-submodules=on-demand gitlab master $tagName & git push --recurse-submodules=on-demand origin master $tagName;
