@@ -121,5 +121,41 @@
 	},
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "tiempo ahorrado comparado a solo ver el video a velocidad normal (intrinseca)"
+	},
+	"soundedSpeed": {
+		"message": "Velocidad del sonido"
+	},
+	"soundedSpeedTooltip": {
+		"message": "La velocidad a la que reproducimos el video cuando actualmente NO está en silencio, la velocidad \"normal\".\nEn el gráfico, las partes que se reprodujeron a esta velocidad tienen un fondo verde 🟩 ."
+	},
+	"volumeThreshold": {
+		"message": "Volumen de voz más bajo"
+	},
+	"edit": {
+		"message": "Editar"
+	},
+	"silenceSpeed": {
+		"message": "Velocidad del silencio"
+	},
+	"relativeToSounded": {
+		"message": "relativo a la velocidad del audio/sonido"
+	},
+	"absolute": {
+		"message": "absoluto"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Cuando el volumen del audio actual esté por debajo de este valor, acelere.\nEn el gráfico, esta es la línea horizontal roja 🟥. La línea azul 🟦 es el volumen actual, por lo que cuando la línea azul está debajo de la roja, se considera silencio."
+	},
+	"marginBefore": {
+		"message": "Margen antes"
+	},
+	"marginAfter": {
+		"message": "Margen despues"
+	},
+	"fileInputLabel": {
+		"message": "Suelte uno o varios archivos aquí\no haga clic para seleccionar"
+	},
+	"resetToDefaults": {
+		"message": "Restablecer a la configuración predeterminada"
 	}
 }
