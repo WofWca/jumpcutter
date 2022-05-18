@@ -277,7 +277,7 @@
 		}
 	},
 	"rangeSlidersAttributesNote": {
-		"message": "Husk at nettlesere ikke støtter avspillingstakt over en gitt grense.\nDa denne versjonen ble laget var det 16 for Chromium (Chrome) og 8 (som forvalg) for Gecko (Firefox)."
+		"message": "Husk at nettlesere ikke støtter avspillingstakt over en gitt grense.\nDa denne versjonen ble laget var det 16 for Chromium (Chrome, Edge) og 8 (som forvalg) for Gecko (Firefox)."
 	},
 	"uploadToSync": {
 		"message": "Last opp innstillinger til synkroniseringslagring"

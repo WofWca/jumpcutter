@@ -319,7 +319,7 @@
 		"message": "Range sliders' attributes"
 	},
 	"rangeSlidersAttributesNote": {
-		"message": "Be aware that browsers do not support playback rates above a certain limit.\nAt the time of writing it's 16 for Chromium (Chrome) and 8 (by default) for Gecko (Firefox)."
+		"message": "Be aware that browsers do not support playback rates above a certain limit.\nAt the time of writing it's 16 for Chromium (Chrome, Edge) and 8 (by default) for Gecko (Firefox)."
 	},
 	"min": {
 		"message": "Min"
