@@ -62,7 +62,7 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
         yarn build:gecko
         ```
 
-    * To build for Chromium (e.g. Chrome)
+    * To build for Chromium (e.g. Chrome, Edge)
 
         ```bash
         yarn build:chromium
