@@ -8,6 +8,7 @@
 
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
 [![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
+[![Microsoft Edge Add-ons](docs/extension-store-badges/microsoft.svg)][microsoft-edge-addons]
 
 Skips silent parts in videos, in real time.
 
@@ -93,4 +94,5 @@ Other than that, there are no known things concerning this.
 
 [addons-mozilla-org]: https://addons.mozilla.org/firefox/addon/jump-cutter
 [chrome-web-store]: https://chrome.google.com/webstore/detail/jump-cutter/lmppdpldfpfdlipofacekcfleacbbncp
+[microsoft-edge-addons]: https://microsoftedge.microsoft.com/addons/detail/jlbjhoaphnkkjdafpjomedllppldjkbj
 [weblate]: https://hosted.weblate.org/engage/jump-cutter/
