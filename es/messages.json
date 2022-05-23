@@ -129,7 +129,7 @@
 		"message": "La velocidad a la que reproducimos el video cuando actualmente NO está en silencio, la velocidad \"normal\".\nEn el gráfico, las partes que se reprodujeron a esta velocidad tienen un fondo verde 🟩 ."
 	},
 	"volumeThreshold": {
-		"message": "Volumen de voz más bajo"
+		"message": "Volumen de voz mínimo"
 	},
 	"edit": {
 		"message": "Editar"
@@ -147,7 +147,7 @@
 		"message": "Cuando el volumen del audio actual esté por debajo de este valor, acelere.\nEn el gráfico, esta es la línea horizontal roja 🟥. La línea azul 🟦 es el volumen actual, por lo que cuando la línea azul está debajo de la roja, se considera silencio."
 	},
 	"marginBefore": {
-		"message": "Margen antes"
+		"message": "Margen anterior (Ataque)"
 	},
 	"marginAfter": {
 		"message": "Margen despues"
@@ -157,5 +157,8 @@
 	},
 	"resetToDefaults": {
 		"message": "Restablecer a la configuración predeterminada"
+	},
+	"extensionDescription": {
+		"message": "Mire conferencias ~1.5x más rápido al adelantar largas pausas entre oraciones"
 	}
 }
