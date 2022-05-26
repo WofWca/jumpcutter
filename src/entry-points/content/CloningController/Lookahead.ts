@@ -1,12 +1,12 @@
 import browser from '@/webextensions-api';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, getGeckoLikelyMaxNonMutedPlaybackRate, MediaTime } from '@/helpers';
-import { destroyAudioWorkletNode, getRealtimeMargin } from '@/content/helpers';
+import { destroyAudioWorkletNode, getRealtimeMargin } from '@/entry-points/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
-  from '@/content/SilenceDetector/SilenceDetectorNode';
-import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+  from '@/entry-points/content/SilenceDetector/SilenceDetectorNode';
+import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
 
 // A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,

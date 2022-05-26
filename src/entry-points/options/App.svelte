@@ -8,7 +8,9 @@
   import { cloneDeepJson, assertDev, assertNever, getMessage } from '@/helpers';
   import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
   import debounce from 'lodash/debounce';
-  import { getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant } from '@/content/TimeSavedTracker';
+  import {
+    getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant
+  } from '@/entry-points/content/TimeSavedTracker';
   import isEqual from 'lodash/isEqual';
 
   let unsaved = false;

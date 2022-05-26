@@ -4,7 +4,7 @@ import {
   removeOnStorageChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
-import { isSourceCrossOrigin } from '@/content/helpers';
+import { isSourceCrossOrigin } from '@/entry-points/content/helpers';
 import type StretchingController from './StretchingController/StretchingController';
 import type CloningController from './CloningController/CloningController';
 import type AlwaysSoundedController from './AlwaysSoundedController';
@@ -15,7 +15,7 @@ import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
-import { mediaElementSourcesMap } from '@/content/audioContext';
+import { mediaElementSourcesMap } from '@/entry-points/content/audioContext';
 
 type SomeController = StretchingController | CloningController | AlwaysSoundedController;
 

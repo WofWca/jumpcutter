@@ -74,15 +74,15 @@ module.exports = env => {
     },
 
     entry: {
-      content: './src/content/main.ts',
-      SilenceDetectorProcessor: './src/content/SilenceDetector/SilenceDetectorProcessor.ts',
-      VolumeFilterProcessor: './src/content/VolumeFilter/VolumeFilterProcessor.ts',
+      content: './src/entry-points/content/main.ts',
+      SilenceDetectorProcessor: './src/entry-points/content/SilenceDetector/SilenceDetectorProcessor.ts',
+      VolumeFilterProcessor: './src/entry-points/content/VolumeFilter/VolumeFilterProcessor.ts',
 
-      popup: './src/popup/main.ts',
-      background: './src/background/main.ts',
-      options: './src/options/main.ts',
+      popup: './src/entry-points/popup/main.ts',
+      background: './src/entry-points/background/main.ts',
+      options: './src/entry-points/options/main.ts',
 
-      'local-file-player': './src/local-file-player/main.ts',
+      'local-file-player': './src/entry-points/local-file-player/main.ts',
     },
 
     output: {
@@ -154,9 +154,9 @@ module.exports = env => {
 
           { context: 'src', from: '_locales/(LICENSE_NOTICES|COPYING|COPYING.LESSER|index.html)' },
           { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
-          { context: 'src', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
-          { context: 'src', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
-          { context: 'src', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
+          { context: 'src/entry-points', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
+          { context: 'src/entry-points', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
+          { context: 'src/entry-points', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
         ],
       }),
       new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)({

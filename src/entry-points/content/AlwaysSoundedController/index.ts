@@ -1,13 +1,13 @@
 // Technically we can replace `audioContext.currentTime` with `performance.now() / 1000`.
-import { audioContext } from '@/content/audioContext';
+import { audioContext } from '@/entry-points/content/audioContext';
 import {
   isPlaybackActive,
-} from '@/content/helpers';
+} from '@/entry-points/content/helpers';
 import type { MediaTime, AnyTime, AudioContextTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { ControllerKind } from '@/settings';
 import { SpeedName } from '@/helpers';
-import type TimeSavedTracker from '@/content/TimeSavedTracker';
+import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
 
 type Time = AnyTime;
 

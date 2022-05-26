@@ -11,7 +11,7 @@ import {
   getStretcherDelayChange,
   getRealtimeMargin,
   getStretcherSoundedDelay,
-} from '@/content/helpers';
+} from '@/entry-points/content/helpers';
 import type { StretchInfo, AudioContextTime, TimeDelta } from '@/helpers';
 import { assertDev } from '@/helpers';
 

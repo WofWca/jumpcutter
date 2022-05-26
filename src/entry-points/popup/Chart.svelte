@@ -10,11 +10,11 @@
   } from '@/helpers';
   import { Settings } from '@/settings';
   import type { TelemetryRecord as StretchingControllerTelemetryRecord }
-    from '@/content/StretchingController/StretchingController';
+    from '@/entry-points/content/StretchingController/StretchingController';
   import type { TelemetryRecord as CloningControllerTelemetryRecord }
-    from '@/content/CloningController/CloningController';
+    from '@/entry-points/content/CloningController/CloningController';
   import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
-    from '@/content/AlwaysSoundedController';
+    from '@/entry-points/content/AlwaysSoundedController';
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.

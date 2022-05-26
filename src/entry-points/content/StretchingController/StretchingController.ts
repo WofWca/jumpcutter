@@ -1,6 +1,6 @@
 'use strict';
 import browser from '@/webextensions-api';
-import { audioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
+import { audioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/entry-points/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
@@ -9,16 +9,16 @@ import {
   maybeClosestNonNormalSpeed,
   destroyAudioWorkletNode,
   isPlaybackActive,
-} from '@/content/helpers';
+} from '@/entry-points/content/helpers';
 import type { StretchInfo, AudioContextTime, UnixTime, TimeDelta, MediaTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { ControllerKind } from '@/settings';
 import type StretcherAndPitchCorrectorNode from './StretcherAndPitchCorrectorNode';
 import { assertDev, SpeedName } from '@/helpers';
 import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
-  from '@/content/SilenceDetector/SilenceDetectorNode';
-import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
-import type TimeSavedTracker from '@/content/TimeSavedTracker';
+  from '@/entry-points/content/SilenceDetector/SilenceDetectorNode';
+import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
+import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate

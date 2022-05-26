@@ -1,7 +1,7 @@
 <script lang="ts">
 import { createEventDispatcher } from 'svelte';
 import { Settings, ControllerKind_CLONING, ControllerKind_STRETCHING, } from '@/settings';
-import type { TelemetryMessage } from '@/content/AllMediaElementsController';
+import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
 import { assertNever, getMessage } from '@/helpers';
 
 export let settings: Pick<Settings,

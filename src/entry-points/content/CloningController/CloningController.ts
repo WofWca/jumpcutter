@@ -3,14 +3,17 @@ import Lookahead, { TimeRange } from './Lookahead';
 import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
 import { isPlaybackActive, destroyAudioWorkletNode, requestIdleCallbackPolyfill,
-  maybeClosestNonNormalSpeed } from '@/content/helpers';
+  maybeClosestNonNormalSpeed } from '@/entry-points/content/helpers';
 import { ControllerKind } from '@/settings';
 import type { Settings as ExtensionSettings } from '@/settings';
 import throttle from 'lodash/throttle';
-import type TimeSavedTracker from '@/content/TimeSavedTracker';
-import VolumeFilterNode from '@/content/VolumeFilter/VolumeFilterNode';
+import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
+import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
-import { audioContext as commonAudioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/content/audioContext';
+import {
+  audioContext as commonAudioContext,
+  getOrCreateMediaElementSourceAndUpdateMap
+} from '@/entry-points/content/audioContext';
 
 type Time = AnyTime;
 

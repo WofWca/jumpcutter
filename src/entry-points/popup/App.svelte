@@ -9,7 +9,7 @@
   } from '@/settings';
   import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
-  import type { TelemetryMessage } from '@/content/AllMediaElementsController';
+  import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
   import { HotkeyAction, HotkeyAction_TOGGLE_PAUSE, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
