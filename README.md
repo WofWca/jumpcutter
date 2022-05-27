@@ -31,7 +31,7 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 ## Contribute
 
 * [🌐 Translate (on Weblate)][weblate]
-* 👨‍💻 Code contributions are welcome, but I have not decided on the license yet, so if you don't mind submitting your changes under the [CC0](https://creativecommons.org/publicdomain/zero/1.0/) license, please do. Feel free to contact me.
+* 👨‍💻 Code. Feel free to contact me.
 * [💸 Donate](#donate)
 * General feedback and questioning my decisions is appreciated
 
@@ -91,6 +91,12 @@ Other than that, there are no known things concerning this.
 
 * <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
 * <https://liberapay.com/WofWca>
+
+<br>
+<br>
+<br>
+
+[![AGPLv3 Logo](docs/agplv3-with-text-162x68.png)](./COPYING)
 
 [addons-mozilla-org]: https://addons.mozilla.org/firefox/addon/jump-cutter
 [chrome-web-store]: https://chrome.google.com/webstore/detail/jump-cutter/lmppdpldfpfdlipofacekcfleacbbncp
