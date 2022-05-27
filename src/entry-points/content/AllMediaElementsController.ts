@@ -9,7 +9,7 @@ import type StretchingController from './StretchingController/StretchingControll
 import type CloningController from './CloningController/CloningController';
 import type AlwaysSoundedController from './AlwaysSoundedController';
 import type TimeSavedTracker from './TimeSavedTracker';
-import extensionSettings2ControllerSettings from './extensionSettings2ControllerSettings';
+import extensionSettings2ControllerSettings from './helpers/extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
 import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
