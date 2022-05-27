@@ -1,4 +1,24 @@
 /**
+ * @license
+ * Copyright (C) 2021, 2022  WofWca <wofwca@protonmail.com>
+ *
+ * This file is part of Jump Cutter Browser Extension.
+ *
+ * Jump Cutter Browser Extension is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Jump Cutter Browser Extension is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/**
  * Browsers (at least at the time of writing, at least Gecko and Chromium) use different audio data pipelines for normal
  * (1.0) and non-normal speeds, and switching between them causes an audio glitch:
  * https://github.com/chromium/chromium/blob/8af9895458f5ac16b2059ca8a336da6367188409/media/renderers/audio_renderer_impl.h#L16-L17
