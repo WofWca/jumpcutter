@@ -494,7 +494,7 @@
   <div style="margin: 1rem 0;">
     <a
       target="_blank"
-      href="{browser.runtime.getURL('_locales/index.html')}"
+      href="{browser.runtime.getURL('/license.html')}"
     >⚖️ {getMessage('license')}</a>
   </div>
   <div style="margin: 1rem 0;">
