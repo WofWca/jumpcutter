@@ -85,7 +85,7 @@ As with practically every other extension, websites you're visiting _may_ detect
 
 However I doubt that currently there are services that do specifically this. But there may be.
 
-Other than that, there are no known things concerning this.
+Other than that, there are no known things concerning this. It doesn't interact with third parties or try to do other creepy stuff.
 
 ## Donate
 
