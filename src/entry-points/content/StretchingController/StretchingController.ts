@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * @license
  * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
