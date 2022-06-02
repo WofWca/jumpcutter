@@ -507,12 +507,14 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     <a
       target="_blank"
       href="https://hosted.weblate.org/engage/jump-cutter/"
+      rel="extenral noopener noreferrer"
     >🌐 {getMessage('helpTranslate')}</a>
   </div>
   <div style="margin: 1rem 0;">
     <a
       target="_blank"
       href="https://antiwarcommittee.info/en/sunrise/#help"
+      rel="extenral noopener noreferrer"
     >💸 {getMessage('donate')}</a>
   </div>
   <!-- TODO make all this look better. What is this? "about" AND "license"? -->
@@ -526,6 +528,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     <a
       target="_blank"
       href="https://github.com/WofWca/jumpcutter"
+      rel="extenral noopener noreferrer"
     >ℹ️ {getMessage('about')}</a>
   </div>
 </main>
