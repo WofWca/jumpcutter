@@ -163,5 +163,8 @@
 	},
 	"timeSavedComparedToSounded": {
 		"message": "en promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
+	},
+	"donate": {
+		"message": "Donar"
 	}
 }

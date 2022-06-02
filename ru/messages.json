@@ -175,6 +175,9 @@
 	"helpTranslate": {
 		"message": "Помочь с переводом"
 	},
+	"donate": {
+		"message": "Пожертвовать"
+	},
 	"applyTo": {
 		"message": "Применять к"
 	},

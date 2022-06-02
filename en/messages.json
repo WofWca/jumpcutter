@@ -408,6 +408,9 @@
 	"helpTranslate": {
 		"message": "Help translate"
 	},
+	"donate": {
+		"message": "Donate"
+	},
 	"saving": {
 		"message": "Saving…"
 	},

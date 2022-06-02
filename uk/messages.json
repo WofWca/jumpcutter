@@ -171,5 +171,8 @@
 	},
 	"helpTranslate": {
 		"message": "Допомогти з перекладом"
+	},
+	"donate": {
+		"message": "Пожертвувати"
 	}
 }
