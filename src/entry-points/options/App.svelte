@@ -509,6 +509,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       href="https://hosted.weblate.org/engage/jump-cutter/"
     >🌐 {getMessage('helpTranslate')}</a>
   </div>
+  <div style="margin: 1rem 0;">
+    <a
+      target="_blank"
+      href="https://antiwarcommittee.info/en/sunrise/#help"
+    >💸 {getMessage('donate')}</a>
+  </div>
   <!-- TODO make all this look better. What is this? "about" AND "license"? -->
   <div style="margin: 1rem 0;">
     <a
