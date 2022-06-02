@@ -160,5 +160,8 @@
 	},
 	"extensionDescription": {
 		"message": "Mire conferencias ~1.5x más rápido al adelantar largas pausas entre oraciones"
+	},
+	"timeSavedComparedToSounded": {
+		"message": "en promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
 	}
 }
