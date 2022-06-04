@@ -1,1 +1,11 @@
-{}
+{
+	"extensionDescription": {
+		"message": "Assista palestras ~1.5x com mais rápidez avançando pausas entre as frases"
+	},
+	"volumeThreshold": {
+		"message": "Volume de fala (mais baixo)"
+	},
+	"soundedSpeed": {
+		"message": "Velocidade do som"
+	}
+}
