@@ -411,6 +411,9 @@
 	"donate": {
 		"message": "Donate"
 	},
+	"runSnowflakeBridge": {
+		"message": "Help others circumvent censorship by simply installing an extension"
+	},
 	"saving": {
 		"message": "Saving…"
 	},

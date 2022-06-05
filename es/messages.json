@@ -166,5 +166,8 @@
 	},
 	"donate": {
 		"message": "Donar"
+	},
+	"runSnowflakeBridge": {
+		"message": "Ayuda a otros a eludir la censura simplemente instalando una extensión"
 	}
 }
