@@ -167,6 +167,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     browser.storage.sync.clear();
     browser.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
   }
+
+  const snowflakeExtensionUrl = BUILD_DEFINITIONS.BROWSER === 'gecko'
+    ? 'https://addons.mozilla.org/firefox/addon/torproject-snowflake/'
+    : 'https://chrome.google.com/webstore/detail/snowflake/mafpmfcccpbjnhfhjnllmmalhifmlcie';
 </script>
 
 <main>
@@ -516,6 +520,17 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       href="https://antiwarcommittee.info/en/sunrise/#help"
       rel="extenral noopener noreferrer"
     >💸 {getMessage('donate')}</a>
+  </div>
+  <!-- Maybe it makes sense to hide the link in places where Tor is censored, but we don't have a good way
+  to detect it. `i18n.getUILanguage()` is an option, but there may be people speaking the country's language
+  but living somewhere else (e.g. immigrants), and they're expected to be more eager to follow such advice. -->
+  <div style="margin: 1rem 0;">
+    <!-- 🤝🌐💕🧅🖇🦮 -->
+    <a
+      target="_blank"
+      href={snowflakeExtensionUrl}
+      rel="extenral noopener noreferrer"
+    >🤝 {getMessage('runSnowflakeBridge')}</a>
   </div>
   <!-- TODO make all this look better. What is this? "about" AND "license"? -->
   <div style="margin: 1rem 0;">
