@@ -81,6 +81,9 @@ module.exports = env => {
             loader: 'svelte-loader',
             options: {
               preprocess: require('svelte-preprocess')(),
+              compilerOptions: {
+                dev: process.env.NODE_ENV !== 'production',
+              },
               // TODO `emitCss: true`, `ExtractTextPlugin`?
               // https://github.com/sveltejs/svelte-loader#usage
               hotReload: process.env.NODE_ENV !== 'production',
