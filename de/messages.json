@@ -1,1 +1,56 @@
-{}
+{
+	"extensionDescription": {
+		"message": "Schaue Vorlesungen ~1,5x schneller an, indem lange Pausen zwischen Sätzen vorgespult werden"
+	},
+	"enable": {
+		"message": "Aktivieren"
+	},
+	"noSuitableElement": {
+		"message": "Es konnte kein passendes Medienelement auf der Seite gefunden werden"
+	},
+	"timeSaved": {
+		"message": "Informationen zur Zeitersparnis"
+	},
+	"overTheLast": {
+		"message": "In den letzten $duration$",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"numbersMeanings": {
+		"message": "Zahlen' Bedeutungen (in Reihenfolge):"
+	},
+	"volumeThreshold": {
+		"message": "Geringste Sprachlautstärke"
+	},
+	"soundedSpeed": {
+		"message": "Ton Geschwindigkeit"
+	},
+	"silenceSpeed": {
+		"message": "Stille Geschwindigkeit"
+	},
+	"contentScriptFail": {
+		"message": "Das Inhaltsskript konnte auf dieser Seite nicht ausgeführt werden"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Experimentellen Algorithmus verwenden"
+	},
+	"openLocalFile": {
+		"message": "eine lokale Datei öffnen"
+	},
+	"fileInputLabel": {
+		"message": "Eine oder mehrere Dateien hier ablegen\noder klicken Sie zur Auswahl"
+	},
+	"relativeToSounded": {
+		"message": "relativ zur Ton Geschwindigkeit"
+	},
+	"absolute": {
+		"message": "absolut"
+	},
+	"resetToDefaults": {
+		"message": "Auf Standardwerte zurücksetzen"
+	}
+}
