@@ -1,1 +1,430 @@
-{}
+{
+	"extensionDescription": {
+		"message": "Cümleler arasındaki uzun duraksamaları ileri sararak ~ 1,5 kat daha hızlı izleyin."
+	},
+	"enable": {
+		"message": "Aktif"
+	},
+	"more": {
+		"message": "Daha fazla"
+	},
+	"volume": {
+		"message": "Ses\nBu, malzemenin mevcut ses yüksekliği değil, TV'deki gibi amplifikasyon çarpanıdır."
+	},
+	"timeSaved": {
+		"message": "Zaman tasarufu bilgisi"
+	},
+	"overTheLast": {
+		"message": "Son $duration$ içinde",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"numbersMeanings": {
+		"message": "Sayıların anlamları (sırasıyla):"
+	},
+	"timeSavedComparedToSounded": {
+		"message": "Videonun ses hızına kıyasla ortalama olarak ne kadar hızlı oynatıldığı"
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "Ortalama olarak, videonun normal (gerçek) hıza kıyasla etkin bir şekilde ne kadar hızlı oynatıldığı"
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "Videoyu sadece ses hızında oynatmaya kıyasla kazanılan zaman"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "Videoyu normal (gerçek) hızda oynatmaya kıyasla kazanılan zaman"
+	},
+	"wouldHaveLastedIfSpeedWasSounded": {
+		"message": "Sessizliği ATLAMADAN ses hızında oynatma ne kadar sürer"
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "Sessizliği ATLAMADAN normal (gerçek) hızda oynatma ne kadar sürer"
+	},
+	"timeSavedPercentage": {
+		"message": "Eşdeğer zaman tasarrufu yüzdesi:"
+	},
+	"comparedToSounded": {
+		"message": "Ses ile karşılaştırıldığında"
+	},
+	"comparedToIntrinsic": {
+		"message": "Normale kıyasla (gerçek)"
+	},
+	"noSuitableElement": {
+		"message": "Sayfada uygun bir medya öğesi bulunamadı"
+	},
+	"retry": {
+		"message": "Tekrar"
+	},
+	"alsoSearchFor": {
+		"message": "Ayrıca $type$ öğelerini arayın",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "ses"
+			}
+		}
+	},
+	"changeElementSearchCriteria": {
+		"message": "Arama kriterlerini değiştir…"
+	},
+	"audio": {
+		"message": "ses"
+	},
+	"video": {
+		"message": "video"
+	},
+	"contentScriptFail": {
+		"message": "Bu sayfadaki içerik komut dosyası yürütülemedi"
+	},
+	"suggestOpenLocalFile": {
+		"message": "**$openLocalFile$**?mak mı istiyorsunuz?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "Yerel bir dosya aç"
+			}
+		}
+	},
+	"openLocalFile": {
+		"message": "Yerel bir dosya aç"
+	},
+	"loading": {
+		"message": "Yükleniyor"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Deneysel algoritmayı kullan"
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➖ Birçok web sitesinde çalışmıyor (YouTube, Vimeo). Yerel dosyalar için çalışır. Desteklenmediğinde, sessizliği atlamaz.\n➕ Sessiz bölümleri daha hızlı oynatmak yerine tamamen atlamanıza olanak tanır.\n➕ Ses bozulması, gecikme veya uyumsuzluk olmaz.\n➖ Grafik sessiz bölümlerdeki gerçek sesi göstermez (bunun yerine sadece 0 gösterecektir)."
+	},
+	"mediaUnsupported": {
+		"message": "Bu medya **neredeyse** desteklenmiyor. — $consequences$.",
+		"placeholders": {
+			"consequences": {
+				"content": "$1",
+				"example": "eğer ona eklersek sesi kapatabilir."
+			}
+		}
+	},
+	"couldGetMuted": {
+		"message": "eğer ona eklersek sesi kapatabilir"
+	},
+	"silenceSkippingWontWork": {
+		"message": "sessiz atlama düzgün çalışmayacak"
+	},
+	"tryOpeningDirectly": {
+		"message": "Direkt açmayı dene"
+	},
+	"or": {
+		"message": "Ya da"
+	},
+	"tryAttachAnyway": {
+		"message": "Yine de eklemeyi dene"
+	},
+	"refreshIfMuted": {
+		"message": "Medyanın sesi kapatılırsa sayfayı yenileyin"
+	},
+	"volumeThreshold": {
+		"message": "En düşük konuşma yüksekliği"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Mevcut ses seviyesi bu değerin altına düştüğünde, hızlandır.\nGrafikte, bu kırmızı 🟥 yatay çizgidir. Mavi 🟦 çizgi mevcut ses seviyesidir, bu nedenle mavi çizgi kırmızının altında olduğunda sessizlik olarak kabul edilir."
+	},
+	"soundedSpeed": {
+		"message": "Sounded speed"
+	},
+	"soundedSpeedTooltip": {
+		"message": "Şu anda sessiz DEĞİLSE videoyu oynatma hızımız, \"normal\" hızdır.\nGrafikte bu hızda çalınan parçalar yeşil 🟩 arka plana sahiptir."
+	},
+	"silenceSpeed": {
+		"message": "Sessizlik hızı"
+	},
+	"silenceSpeedTooltip": {
+		"message": "Sessiz kısımları oynatma hızı.\nGrafikte, bu hızda çalınan parçalar kırmızı 🟥 arka plana sahiptir.$relativeNote$\n⚠️ Bu değer çok yüksekse (> ~4) cümlelerin başlangıcı da atlanmaya başlayabilir (\"Önceki kenar boşluğu\" daha küçük gibi).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nSesli hızın bir çarpanı olarak belirtildiğine dikkat edin, bu nedenle örn. sesli hız 1.5 ve sessizlik hızı 2 ise, elde edilen mutlak değer 3 olacaktır. Bu davranışı seçenekler sayfasından değiştirebilirsiniz."
+	},
+	"relativeToSounded": {
+		"message": "ses hızına göre"
+	},
+	"absolute": {
+		"message": "mutlak"
+	},
+	"marginBefore": {
+		"message": "Önceki pay"
+	},
+	"marginBeforeTooltip": {
+		"message": "Şu anda sessizken ve ardından gürültülü bir bölümle karşılaştığımızda, ondan kaç saniye önce yavaşlamamız gerekiyor (ses hızını seçiyoruz).\nBu çoğunlukla, biri konuşmaya başladığında ilk harfleri net bir şekilde duyabilmenizi sağlamak içindir.\n\n⚠️Sıfır dışındaki değerlerin sessizlikten sesli hıza geçerken ses BOZULMASINA neden olacağını VE bu ayarın değerine eşdeğer sabit ses GECİKME ekleyecektir. Eğer \"deneysel algoritma\" kullanıyorsanız bu dezavantajlar geçerli değildir."
+	},
+	"marginAfter": {
+		"message": "Sonraki pay"
+	},
+	"marginAfterTooltip": {
+		"message": "Bu, \"önceki pay\"ına benzer. Sesli olup sonra sessizleştiğinde hızlanma (sessiz hıza geçme) için kaç saniye beklememiz gerekiyor.\nBu çoğunlukla, sözcüklerin birbirine karışmaması için konuşmada en azından bir dereceye kadar duraklamalar yapmak ve bir cümledeki son harfleri net bir şekilde duyabilmenizi sağlamak içindir.\n\"Önceki pay\"ın aksine bu, ses bozulmasına ve gecikmesine neden olmaz (ancak bu, bu ayarların birbirinin yerine geçebileceği anlamına gelmez)."
+	},
+	"fileInputLabel": {
+		"message": "Bir veya birkaç dosyayı buraya bırakın veya seçmek için tıklayın"
+	},
+	"general": {
+		"message": "Genel"
+	},
+	"applyTo": {
+		"message": "Başvur"
+	},
+	"none": {
+		"message": "Yok"
+	},
+	"applyToOnly": {
+		"message": "yalnızca $type$ öğeleri",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"applyToBoth": {
+		"message": "Hem video hem de ses öğeleri"
+	},
+	"omitMutedElements": {
+		"message": "Sesi kapatılmış medya öğelerine uygulama"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Sessiz hız belirleme yöntemi"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (diğer adıyla normal (iç) ortam hızına göre)"
+	},
+	"enableDesyncCorrection": {
+		"message": "Ses-video senkronizasyonunun düzeltilmesini etkinleştirin (yan etki: çoğunlukla her dakika ya da daha fazla fark edilmeyen kekemelik)"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Farklı algoritmalar için ayrı \"$marginBeforeLabel$\" ve \"$marginAfterLabel$\" kullanın (\"$useExperimentalAlgorithmLabel$\" ayarıyla ilgili)",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "önceki pay"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "sonraki pay"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Deneysel algoritmayı kullan"
+			}
+		}
+	},
+	"hotkeys": {
+		"message": "Kısayol tuşları"
+	},
+	"hotkey": {
+		"message": "Kısayol tuşu"
+	},
+	"enableHotkeys": {
+		"message": "Kısayol tuşlarını etkinleştir"
+	},
+	"hotkeysNotes": {
+		"message": "Değiştirici tuşlar (Ctrl, Shift, vb.) desteklenir.\nBirkaç eylem tek bir tuşa bağlanabilir. Bu, \"profiller\" oluşturmak için kullanılabilir..\n\"$toggle$\" ve \"=\" (a.k.a \"uygula\") eylemleri arasındaki fark, \"$toggle$\" öğesinin önceki değer ile kısayol tuşunun bağımsız değişkeni arasında geçiş yapması, \"uygula \" onu her zaman bağımsız değişkenin değerine ayarlar.\nKısayol tuşları, açılır pencere açıkken de etkindir.",
+		"placeholders": {
+			"toggle": {
+				"content": "$1",
+				"example": "geçiş"
+			}
+		}
+	},
+	"toggle": {
+		"message": "geçiş"
+	},
+	"rewind": {
+		"message": "Geri sarma (saniye)"
+	},
+	"advance": {
+		"message": "İleri sarma (saniye)"
+	},
+	"togglePause": {
+		"message": "Durdur/Başlat"
+	},
+	"toggleMute": {
+		"message": "Sesli/sessiz"
+	},
+	"decreaseVolume": {
+		"message": "Sesi azalt (%)"
+	},
+	"increaseVolume": {
+		"message": "Sesi arttır (%)"
+	},
+	"action": {
+		"message": "Aksiyon"
+	},
+	"value": {
+		"message": "Değer"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Web sitesi kısayol tuşlarını geçersiz kıl"
+	},
+	"removeBinding": {
+		"message": "Bağlamayı kaldır"
+	},
+	"addBinding": {
+		"message": "Yeni kısayol tuşu ekle"
+	},
+	"openPopup": {
+		"message": "Açılır pencereyi aç"
+	},
+	"edit": {
+		"message": "Düzenle"
+	},
+	"popup": {
+		"message": "Açılır pencere"
+	},
+	"chart": {
+		"message": "Çizelge"
+	},
+	"chartLengthInSeconds": {
+		"message": "Saniye cinsinden uzunluk"
+	},
+	"chartJumpPeriod": {
+		"message": "Atlama periyodu, %. Grafik uzunluğunun bir kesri olarak ifade edilir. Düzgün hareket için 0'a ayarlayın (atlama yok)."
+	},
+	"chartWidthPx": {
+		"message": "Genişlik (piksel)"
+	},
+	"chartHeightPx": {
+		"message": "Yükleklik (piksel)"
+	},
+	"chartSpeed": {
+		"message": "Hareket hızı"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "Geçerli video hızıyla aynı"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Ses hızına göre mevcut video hızı ile aynı"
+	},
+	"chartSpeedRealTime": {
+		"message": "Sabit (gerçek zamanlı)"
+	},
+	"rangeSlidersAttributes": {
+		"message": "Aralık kaydırıcılarının özellikleri"
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Tarayıcıların belirli bir sınırın üzerindeki oynatma hızlarını desteklemediğini unutmayın.\nYazma sırasında Chromium (Chrome, Edge) için 16 ve Gecko (Firefox) için 8'dir (varsayılan olarak)."
+	},
+	"min": {
+		"message": "Mimimum"
+	},
+	"max": {
+		"message": "Maksimum"
+	},
+	"step": {
+		"message": "Basamak"
+	},
+	"input": {
+		"message": "Giriş"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Bir giriş odaktayken kısayol tuşlarını devre dışı bırakın"
+	},
+	"autofocusEnabledInput": {
+		"message": "Açılır pencere açıldığında \"$enableCheckboxLabel$\" onay kutusunu otomatik odakla",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Aktif"
+			}
+		}
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "\"$openLocalFileLabel$\" bağlantısını göster",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "yerel bir dosyayı aç"
+			}
+		}
+	},
+	"popupSpecificHotkeys": {
+		"message": "Açılır pencereye özel kısayol tuşları"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Ortalama alma yöntemi"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Tüm zamanların ortalaması (bozulma yok)"
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Yalnızca en son verileri dikkate alın (üstel bozulma)"
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Yalnızca oynatmanın son N saniyesini dikkate alın"
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "En son yeniden oynatma süresi ortalama ağırlığı"
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "Elde edilen veri ağırlığı yarı ömrü: $length$ saniye",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
+	},
+	"iconBadge": {
+		"message": "Simge işareti"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Varsayılan olarak görüntülenecek ayar değeri"
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"downloadFromSync": {
+		"message": "Ayarları eşitleme deposundan indirin"
+	},
+	"uploadToSync": {
+		"message": "Depolamayı senkronize etmek için ayarları yükleyin"
+	},
+	"resetToDefaults": {
+		"message": "Varsayılana sıfırlas"
+	},
+	"about": {
+		"message": "Hakkında"
+	},
+	"license": {
+		"message": "Lisans"
+	},
+	"helpTranslate": {
+		"message": "Çeviriye yardım et"
+	},
+	"donate": {
+		"message": "Bağış"
+	},
+	"runSnowflakeBridge": {
+		"message": "Yalnızca bir uzantı yükleyerek başkalarının sansürü aşmasına yardımcı olun"
+	},
+	"saving": {
+		"message": "Kaydediliyor..."
+	},
+	"saved": {
+		"message": "Kaydedildi"
+	},
+	"hasErrors": {
+		"message": "Hata bulundu"
+	},
+	"showErrors": {
+		"message": "Hataları göster"
+	}
+}
+
