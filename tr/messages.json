@@ -81,7 +81,7 @@
 		"message": "Bu sayfadaki içerik komut dosyası yürütülemedi"
 	},
 	"suggestOpenLocalFile": {
-		"message": "**$openLocalFile$**?mak mı istiyorsunuz?",
+		"message": "**$openLocalFile$**mak mı istiyorsunuz?",
 		"placeholders": {
 			"openLocalFile": {
 				"content": "$1",
@@ -135,7 +135,7 @@
 		"message": "Mevcut ses seviyesi bu değerin altına düştüğünde, hızlandır.\nGrafikte, bu kırmızı 🟥 yatay çizgidir. Mavi 🟦 çizgi mevcut ses seviyesidir, bu nedenle mavi çizgi kırmızının altında olduğunda sessizlik olarak kabul edilir."
 	},
 	"soundedSpeed": {
-		"message": "Sounded speed"
+		"message": "Ses hızı"
 	},
 	"soundedSpeedTooltip": {
 		"message": "Şu anda sessiz DEĞİLSE videoyu oynatma hızımız, \"normal\" hızdır.\nGrafikte bu hızda çalınan parçalar yeşil 🟩 arka plana sahiptir."
