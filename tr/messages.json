@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Cümleler arasındaki uzun duraksamaları ileri sararak ~ 1,5 kat daha hızlı izleyin."
+		"message": "Cümleler arasındaki uzun duraksamaları ileri sararak ~ 1,5 kat daha hızlı izleyin"
 	},
 	"enable": {
 		"message": "Aktif"
@@ -415,7 +415,7 @@
 		"message": "Yalnızca bir uzantı yükleyerek başkalarının sansürü aşmasına yardımcı olun"
 	},
 	"saving": {
-		"message": "Kaydediliyor..."
+		"message": "Kaydediliyor…"
 	},
 	"saved": {
 		"message": "Kaydedildi"
@@ -427,4 +427,3 @@
 		"message": "Hataları göster"
 	}
 }
-
