@@ -1,1 +1,429 @@
-{}
+{
+	"enable": {
+		"message": "Aktiviraj"
+	},
+	"numbersMeanings": {
+		"message": "Značenje brojeva (redoslijedom):"
+	},
+	"comparedToIntrinsic": {
+		"message": "u usporedbi s normalnom (nepromijenjenom)"
+	},
+	"loading": {
+		"message": "Učitavanje"
+	},
+	"couldGetMuted": {
+		"message": "možda će se isključiti zvuk ako ga priložimo"
+	},
+	"tryAttachAnyway": {
+		"message": "Pokušaj svejedno priložiti"
+	},
+	"refreshIfMuted": {
+		"message": "Osvježi stranicu ako se zvuk medija isključio"
+	},
+	"soundedSpeed": {
+		"message": "Normalna brzina"
+	},
+	"silenceSpeed": {
+		"message": "Brzina pri tišini"
+	},
+	"relativeToSounded": {
+		"message": "relativno u odnosu na normalnu brzinu"
+	},
+	"marginAfter": {
+		"message": "Vrijeme nakon"
+	},
+	"applyToBoth": {
+		"message": "video i audio elemente"
+	},
+	"hotkeys": {
+		"message": "Tipkovni prečaci"
+	},
+	"hotkey": {
+		"message": "Tipkovni prečac"
+	},
+	"action": {
+		"message": "Radnja"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Zanemari tipkovne prečace web-stranice"
+	},
+	"edit": {
+		"message": "Uredi"
+	},
+	"popup": {
+		"message": "Skočni prozor"
+	},
+	"chart": {
+		"message": "Grafikon"
+	},
+	"chartWidthPx": {
+		"message": "Širina (u pikselima)"
+	},
+	"popupSpecificHotkeys": {
+		"message": "Tipkovni prečaci za skočne prozore"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Metoda za izračunavanje prosjeka"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Ukupni prosjek (bez vremenskih utjecaja)"
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Uzmi u obzir samo zadnje podatke (eksponencijalni vremenski utjecaji)"
+	},
+	"iconBadge": {
+		"message": "Značka ikone"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Koju vrijednost postavke standarno prikazati"
+	},
+	"about": {
+		"message": "Informacije"
+	},
+	"volumeThreshold": {
+		"message": "Najniža glasnoća govora"
+	},
+	"autofocusEnabledInput": {
+		"message": "Automatski postavi potvrdni okvir „$enableCheckboxLabel$” aktivnim kad se otvori skočni prozor",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"audio": {
+		"message": "audio"
+	},
+	"retry": {
+		"message": "Pokušaj ponovo"
+	},
+	"alsoSearchFor": {
+		"message": "Također traži $type$ elemente",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "audio"
+			}
+		}
+	},
+	"video": {
+		"message": "video"
+	},
+	"contentScriptFail": {
+		"message": "Nije bilo moguće izvršiti naredbenu datoteku sadržaja na ovoj stranici"
+	},
+	"suggestOpenLocalFile": {
+		"message": "Želiš li **$openLocalFile$**?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Koristi eksperimentalni algoritam"
+	},
+	"mediaUnsupported": {
+		"message": "Ovaj medij **vjerojatno** nije podržan – $consequences$.",
+		"placeholders": {
+			"consequences": {
+				"content": "$1",
+				"example": "it could get muted if we attach to it"
+			}
+		}
+	},
+	"openLocalFile": {
+		"message": "otvoriti lokalnu datoteku"
+	},
+	"silenceSkippingWontWork": {
+		"message": "preskakanje tišine neće ispravno raditi"
+	},
+	"tryOpeningDirectly": {
+		"message": "Pokušaj izravno otvoriti"
+	},
+	"or": {
+		"message": "Ili"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Kad je trenutačna glasnoća ispod ove vrijednosti, ubrzaj.\nNa grafikonu je ovo crvena 🟥 vodoravna crta. Plava 🟦 crta je trenutačna glasnoća, stoga se plava linija ispod crvene boje smatra tišinom."
+	},
+	"soundedSpeedTooltip": {
+		"message": "Brzina kojom se reproducira video kada trenutačno NIJE bez zvuka, „normalna” brzina.\nNa grafikonu, dijelovi koji su reproducirani ovom brzinom imaju zelenu 🟩 pozadinu."
+	},
+	"silenceSpeedTooltip": {
+		"message": "Brzina kojom se reproduciraju dijelovi bez zvuka.\nNa grafikonu, dijelovi koji su reproducirani ovom brzinom imaju crvenu 🟥 pozadinu. $relativeNote$\n⚠️ Ako je ova vrijednost vrlo visoka (> ~ 4), počeci rečenica se također mogu početi preskakati (to je kao da je „Vrijeme prije” manja).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nOvo se određuje kao množitelj normalne brzine. Npr. ako je normalna brzina 1,5, a brzina pri tišini 2, rezultirajuća apsolutna vrijednost bit će 3. Ovo se može promijeniti na stranici opcija."
+	},
+	"marginBefore": {
+		"message": "Vrijeme prije"
+	},
+	"marginBeforeTooltip": {
+		"message": "Kad je trenutačno tišina, a zatim naiđemo na glasan dio, koliko sekundi prije njega treba usporiti reprodukciju (prebaciti na normalnu brzinu).\nTo se uglavnom korsti kako bi korisnik jasno čuo prva slova kad netko počne govoriti.\n\n⚠️ Napomena: Vrijednosti koje nisu nula, prouzročit će DISTORZIJE zvuka prilikom prelaska iz brzine pri tišini u normalnu brzinu i dodat će stalno KAŠNJENJE zvuka ekvivalentno vrijednošću ove postavke. Ovi se nedostaci ne primjenjuju ako se koristi „eksperimentalni algoritam”."
+	},
+	"marginAfterTooltip": {
+		"message": "Ovo je slično opciji „Vrijeme prije”. Kad je bilo glasno, a zatim utihne, koliko sekundi treba čekati prije ubrzavanja (prelazak na brzinu pri tišini).\nTo se uglavnom koristi kako bi se u određenoj mjeri koristila stanka da se riječi ne pomiješaju i da se osigura, da jasno možeš čuti zadnja slova u rečenici.\nZa razliku od opcije „Vrijeme prije”, to ne pruzročuje distorziju i odgađanje zvuka (ali ne znači da su ove postavke zamjenjive)."
+	},
+	"fileInputLabel": {
+		"message": "Ispusti jednu ili više datoteka ovdje\nili pritisni za biranje"
+	},
+	"applyTo": {
+		"message": "Primijeni na"
+	},
+	"none": {
+		"message": "Ništa"
+	},
+	"applyToOnly": {
+		"message": "samo $type$ elemente",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"omitMutedElements": {
+		"message": "Nemoj primjeniti na elemente medija bez zvuka"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Metoda specifikacije brzine pri tišini"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (relativno u odnosu na normalnu (nepromijenjenu) brzinu medija)"
+	},
+	"enableDesyncCorrection": {
+		"message": "Aktiviraj ispravljanje audio-video desinkronizacije (nuspojava: uglavnom neprimjetna nepravilnost otprilike svake minute)"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Koristi zasebno „$marginBeforeLabel$” i „$marginAfterLabel$” za različite algoritme (povezano s postavkom „$useExperimentalAlgorithmLabel$”)",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"enableHotkeys": {
+		"message": "Aktiviraj tipkovne prečace"
+	},
+	"hotkeysNotes": {
+		"message": "Podržane su tipke modifikatora (Ctrl, Shift, itd.).\nNekoliko radnji se mogu povezati na jedan tipku. To se može koristiti za stvaranje „profila”.\nRazlika između „$toggle$” i „=” („postava”) radnji je u tome, što „$toggle$” mijenja vrijednost između prethodne vrijednosti i argumenta tipkovnog prečaca, dok ga „postava” uvijek postavlja na vrijednost argumenta.\nTipkovni prečaci su također aktivni kad je skočni prozor otvoren.",
+		"placeholders": {
+			"toggle": {
+				"content": "$1",
+				"example": "toggle"
+			}
+		}
+	},
+	"toggle": {
+		"message": "uključi/isključi"
+	},
+	"rewind": {
+		"message": "Premotaj natrag (sekunde)"
+	},
+	"advance": {
+		"message": "Premotaj naprijed (sekunde)"
+	},
+	"togglePause": {
+		"message": "Zaustavi/nastavi"
+	},
+	"toggleMute": {
+		"message": "Isključi/uključi zvuk"
+	},
+	"decreaseVolume": {
+		"message": "Smanji glasnoću (%)"
+	},
+	"increaseVolume": {
+		"message": "Pojačaj glasnoću (%)"
+	},
+	"addBinding": {
+		"message": "Dodaj nov tipkovni prečac"
+	},
+	"value": {
+		"message": "Vrijednost"
+	},
+	"removeBinding": {
+		"message": "Ukloni vezu"
+	},
+	"openPopup": {
+		"message": "Otvori skočni prozor"
+	},
+	"chartLengthInSeconds": {
+		"message": "Duljina u sekundama"
+	},
+	"chartJumpPeriod": {
+		"message": "Vrijeme skoka, %. Izražen kao dio duljine grafikona. Postavi na 0 za neisprekidano kretanje (bez skokova)."
+	},
+	"chartHeightPx": {
+		"message": "Visina (u pikselima)"
+	},
+	"chartSpeed": {
+		"message": "Brzina kretanja"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "Ista kao brzina trenutačnog videa"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Ista kao brzina trenutačnog videa u odnosu na normalnu brzinu"
+	},
+	"chartSpeedRealTime": {
+		"message": "Konstatna (stvarno vrijeme)"
+	},
+	"rangeSlidersAttributes": {
+		"message": "Atributi klizača raspona"
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Napomena: Preglednici ne podržavaju brzine reprodukcije iznad određene granice.\nU trenutku pisanja to je 16 za Chromium (Chrome, Edge) i 8 (standradno) za Gecko (Firefox)."
+	},
+	"min": {
+		"message": "Min."
+	},
+	"max": {
+		"message": "Maks."
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Pokaži poveznicu „$openLocalFileLabel$”",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Uzmi u obzir samo zadnjih N sekundi reprodukcije"
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "Faktor za izračunavanje vremenskog prosjeka zadnje reprodukcije"
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "Rezultirajuće trajanje podataka: $length$ s",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"downloadFromSync": {
+		"message": "Preuzmi postavke iz spremišta sinkronizacije"
+	},
+	"uploadToSync": {
+		"message": "Prenesi postavke u spremište sinkronizacije"
+	},
+	"resetToDefaults": {
+		"message": "Vrati standardne vrijednosti"
+	},
+	"donate": {
+		"message": "Doniraj"
+	},
+	"saved": {
+		"message": "Spremljeno"
+	},
+	"extensionDescription": {
+		"message": "Gledaj predavanja ca. 1,5 puta brže pomoću brzog preskakanja dugih stanki između rečenica"
+	},
+	"more": {
+		"message": "Više"
+	},
+	"volume": {
+		"message": "Glasnoća\nNije trenutačna glasnoća medija, već pojačanje glasnoće kao na TV-u"
+	},
+	"timeSaved": {
+		"message": "Ušteđeno vrijeme"
+	},
+	"timeSavedComparedToSounded": {
+		"message": "u prosjeku koliko brže se video stvarno reproducira u usporedbi s normalnom brzinom"
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "u prosjeku koliko brže se video stvarno reproducira u usporedbi s normalnom (nepromijenjenom) brzinom"
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "ušteđeno vrijeme u usporedbi s reprodukcijom videa s normalnom brzinom"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "ušteđeno vrijeme u usporedbi s reprodukcijom videa normalnom (nepromijenjenom) brzinom"
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "koliko bi dugo trajala reprodukcija normalnom (nepromijenjenom) brzinom BEZ preskakanja tišine"
+	},
+	"timeSavedPercentage": {
+		"message": "Ekvivalentni postotak ušteđenog vremena:"
+	},
+	"comparedToSounded": {
+		"message": "u usporedbi s normalnom"
+	},
+	"wouldHaveLastedIfSpeedWasSounded": {
+		"message": "koliko bi dugo trajala reprodukcija normalnom brzinom BEZ preskakanja tišine"
+	},
+	"noSuitableElement": {
+		"message": "Nije bilo moguće pronaći odgovarajući medijski element na stranici"
+	},
+	"absolute": {
+		"message": "apsolutna"
+	},
+	"changeElementSearchCriteria": {
+		"message": "Promijeni kriterije pretrage …"
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➖ Ne radi na mnogim web-stranicama (YouTube, Vimeo). Radi za lokalne datoteke. Kad nije podržan, jednostavno neće preskočiti tišinu.\n➕ Omogućuje preskakanje dijelova bez zvuka u potpunosti, umjesto da se reproduciraju brže.\n➕ Bez distorzije zvuka, kašnjenja ili desinkronizaije.\n➖ Grafikon neće prikazati stvarnu glasnoću dijelovima bez zvuka (umjesto toga će prikazati 0)."
+	},
+	"general": {
+		"message": "Opće"
+	},
+	"license": {
+		"message": "Licenca"
+	},
+	"helpTranslate": {
+		"message": "Pomogni prevoditi"
+	},
+	"step": {
+		"message": "Korak"
+	},
+	"input": {
+		"message": "Unos"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Deaktiviraj prečace dok je polje unosa aktivno"
+	},
+	"saving": {
+		"message": "Spremanje …"
+	},
+	"hasErrors": {
+		"message": "Pronađene su greške"
+	},
+	"showErrors": {
+		"message": "Prikaži greške"
+	},
+	"overTheLast": {
+		"message": "U zadnjih $duration$",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"runSnowflakeBridge": {
+		"message": "Pomogni drugima zaobići cenzuru jednostavnim instaliranjem jednog proširenja"
+	}
+}
