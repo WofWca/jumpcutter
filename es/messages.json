@@ -168,6 +168,24 @@
 		"message": "Donar"
 	},
 	"runSnowflakeBridge": {
-		"message": "Ayuda a otros a eludir la censura simplemente instalando una extensión"
+		"message": "Ayuda a otros a evitar la censura simplemente instalando una extensión"
+	},
+	"min": {
+		"message": "Minimo"
+	},
+	"max": {
+		"message": "Maximo"
+	},
+	"license": {
+		"message": "Licencia"
+	},
+	"helpTranslate": {
+		"message": "Ayuda a traducir"
+	},
+	"saved": {
+		"message": "Guardado"
+	},
+	"saving": {
+		"message": "Guardando…"
 	}
 }
