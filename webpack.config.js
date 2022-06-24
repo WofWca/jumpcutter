@@ -38,6 +38,7 @@ const includeLanguages = [
   'pt_BR',
   'de',
   'tr',
+  'hr',
   // TODO check the other ones and add.
 ]
 
