@@ -21,8 +21,9 @@
 import { closestNonNormalSpeed } from './closestNonNormalSpeed';
 
 /**
+ * Acts as {@link closestNonNormalSpeed} except when `volumeThreshold === 0` (which means that
+ * we'll never switch to the `silenceSpeed`).
  * For performance, so the browser's internal pitch shifting algorithm doesn't consume processing time.
- * `volumeThreshold === 0` currently means that we'll never switch to the `silenceSpeed`.
  */
 export function maybeClosestNonNormalSpeed(speed: number, volumeThreshold: number): number {
   return volumeThreshold === 0
