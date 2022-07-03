@@ -139,7 +139,7 @@ export default class Controller {
   /**
    * @returns elementSpeedSwitchedAt
    */
-  private _setSpeedAndLog(speedName: SpeedName) {
+  private _setSpeedAndLog(speedName: SpeedName.SOUNDED) {
     const speedVal = this.settings.soundedSpeed;
     // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
     // The most common case where `load` is called is when the current source is replaced with an ad (or
