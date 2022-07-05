@@ -25,6 +25,7 @@ declare module 'webextension-polyfill' {
 }
 declare const BUILD_DEFINITIONS: {
   BROWSER: 'chromium' | 'gecko',
+  BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG: boolean,
 }
 declare module '{WEBEXTENSIONS_API_PATH}' {
   export = browser;

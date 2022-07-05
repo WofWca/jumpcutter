@@ -52,6 +52,7 @@ module.exports = env => {
   }
   const definePlugin = new webpack.DefinePlugin({
     'BUILD_DEFINITIONS.BROWSER': JSON.stringify(env.browser),
+    'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG': JSON.stringify(env.browser === 'chromium'),
   });
 
   return {

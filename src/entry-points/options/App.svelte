@@ -218,7 +218,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             {/each}
           </select>
         </InputFieldBase>
-        {#if BUILD_DEFINITIONS.BROWSER === 'chromium'}
+        {#if BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG}
           <!-- TODO should we state that the desync problem is not present in Gecko, for the people who are using the
           both versions? -->
           <!-- TODO I'm afraid the part in brackets may make users think that disabling this will make all the bad things

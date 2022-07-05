@@ -468,7 +468,7 @@ export default class Controller {
     const farEnoughToPerformSeek = realTimeLeftUntilDestinationWithoutSeeking > expectedSeekDuration;
     const needForceSeekForDesyncCorrection = () => {
       let forceSeekForDesyncCorrection = false;
-      if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
+      if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         // Desync correction is crucial for CloningController because otherwise we'll start skipping at
         // incorrect time. Apparently it's audio that gets out of sync with `el.currentTime`, not video.
         // TODO maybe then it even makes sense to ignore whether `enableDesyncCorrection === false`?
@@ -519,7 +519,7 @@ export default class Controller {
       // TODO but maybe otherwise we could simply use a smaller value of silenceSpeed instead of not speeding up
       // at all?
       let farEnoughToSpeedUp = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
-      if (BUILD_DEFINITIONS.BROWSER === 'chromium' && this.settings.enableDesyncCorrection) {
+      if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         const expectedTimeSavedBySpeedingUp = seekAmount / this.settings.soundedSpeed - seekAmount / newSpeed;
         // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
         const oneSpeedupDesyncCorrectionTimeCost =
