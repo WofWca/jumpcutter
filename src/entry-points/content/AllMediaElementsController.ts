@@ -507,8 +507,10 @@ export default class AllMediaElementsController {
   private onvolumechange = async (e: Event) => {
     const el = e.target as HTMLMediaElement;
 
-    // Do we need to check `this.muted`? Because the fact that it was on in `this.handledMutedElements` and that
-    // 'volumechange' fired must imply that.
+    // I think the fact that the element was muted when we attached the 'volumechange' listener and the
+    // listener got invoked doesn't necessarily mean that it's now not muted, because it may get
+    // unmuted and then muted again in the same event loop cycle, so we need to check `el.muted`
+    // in addition to `handledMutedElements.has(el)`.
     const gotUnmuted = this.handledMutedElements.has(el) && !el.muted;
     this.handledMutedElements.delete(el);
 
