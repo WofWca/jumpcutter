@@ -34,7 +34,7 @@ export function addOnStorageChangedListener(listener: MyOnChangedListener): void
   const actualListener: NativeOnChangedListener = (changes, areaName) => {
     if (areaName !== mainStorageAreaName) return;
 
-    if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
+    if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT) {
       changes = filterOutUnchangedValues(changes);
       if (Object.keys(changes).length === 0) {
         return;
