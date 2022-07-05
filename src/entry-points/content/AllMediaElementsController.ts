@@ -351,6 +351,8 @@ export default class AllMediaElementsController {
       // Nothing critical, but not great for performance.
       // How about we only update the`settings` object synchronously (so sequential changes can be made, as
       // `keydownEventToActions` depends on it), but do not take any action until the onChanged event fires?
+      // Better yet, rewrite settings changes with messages API already so the script that made the change doesn't
+      // have to react to its own settings changes because it doesn't receive its own settings update message.
       this.reactToSettingsNewValues(settingsNewValues);
       setSettings(settingsNewValues);
 
