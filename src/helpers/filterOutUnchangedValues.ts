@@ -31,7 +31,7 @@ import isEqual from 'lodash/isEqual';
  * which we don't use).
  * @return a shallow clone with unchanged value keys deleted.
  */
- export function filterOutUnchangedValues(
+export function filterOutUnchangedValues(
   changes: Record<string, browser.storage.StorageChange>
 ): Record<string, browser.storage.StorageChange> {
   if (process.env.NODE_ENV !== 'production') {
