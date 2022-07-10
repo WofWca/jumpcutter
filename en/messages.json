@@ -199,6 +199,9 @@
 	"omitMutedElements": {
 		"message": "Don't apply to muted media elements"
 	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "I want to control playback rate (sounded speed) by means other than this extension alone. This will update sounded speed whenever playback rate gets changed."
+	},
 	"silenceSpeedSpecificationMethod": {
 		"message": "Silence speed specification method"
 	},
