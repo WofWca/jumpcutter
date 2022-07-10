@@ -204,6 +204,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           label="🔇❌ {getMessage('omitMutedElements')}"
           bind:checked={settings.omitMutedElements}
         />
+        <CheckboxField
+          label="▶️👀 {getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}"
+          bind:checked={settings.updateSoundedSpeedWheneverItChangesOnWebsite}
+        />
         <InputFieldBase
           label="🙊= {getMessage('silenceSpeedSpecificationMethod')}"
           let:id

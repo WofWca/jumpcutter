@@ -28,6 +28,10 @@ import type { Settings as ExtensionSettings } from '@/settings';
 import { ControllerKind } from '@/settings';
 import { SpeedName } from '@/helpers';
 import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
+import {
+  setPlaybackRateAndDoRelatedStuff,
+  setDefaultPlaybackRateAndDoRelatedStuff,
+} from '../playbackRateChangeTracking';
 
 type Time = AnyTime;
 
@@ -101,8 +105,8 @@ export default class Controller {
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
     this._destroyedPromise.then(() => {
-      element.playbackRate = elementPlaybackRateBeforeInitialization;
-      element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
+      setPlaybackRateAndDoRelatedStuff(element, elementPlaybackRateBeforeInitialization);
+      setDefaultPlaybackRateAndDoRelatedStuff(element, elementDefaultPlaybackRateBeforeInitialization);
     });
 
     this._setStateAccordingToNewSettings(this.settings);
@@ -146,8 +150,8 @@ export default class Controller {
     // the opposite, when the ad ends).
     // It's also a good practice.
     // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-    this.element.defaultPlaybackRate = speedVal;
-    this.element.playbackRate = speedVal;
+    setDefaultPlaybackRateAndDoRelatedStuff(this.element, speedVal);
+    setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
 
     const elementSpeedSwitchedAt = audioContext.currentTime;
     const obj = this._lastActualPlaybackRateChange;

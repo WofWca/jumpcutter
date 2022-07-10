@@ -34,6 +34,10 @@ import {
   audioContext as commonAudioContext,
   getOrCreateMediaElementSourceAndUpdateMap
 } from '@/entry-points/content/audioContext';
+import {
+  setPlaybackRateAndDoRelatedStuff,
+  setDefaultPlaybackRateAndDoRelatedStuff,
+} from '../playbackRateChangeTracking';
 
 type Time = AnyTime;
 
@@ -220,8 +224,8 @@ export default class Controller {
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
     this._destroyedPromise.then(() => {
-      element.playbackRate = elementPlaybackRateBeforeInitialization;
-      element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
+      setPlaybackRateAndDoRelatedStuff(element, elementPlaybackRateBeforeInitialization);
+      setDefaultPlaybackRateAndDoRelatedStuff(element, elementDefaultPlaybackRateBeforeInitialization);
     });
 
     toAwait.push(this.lookahead!.ensureInit().then(() => {
@@ -640,13 +644,13 @@ export default class Controller {
         // the opposite, when the ad ends).
         // It's also a good practice.
         // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-        this.element.defaultPlaybackRate = speedVal;
+        setDefaultPlaybackRateAndDoRelatedStuff(this.element, speedVal);
         break;
       }
       case SpeedName.SILENCE:
         speedVal = maybeClosestNonNormalSpeed(this.settings.silenceSpeed, this.settings.volumeThreshold); break;
     }
-    this.element.playbackRate = speedVal;
+    setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
     const elementSpeedSwitchedAt = this.audioContext.currentTime;
     const obj = this._lastActualPlaybackRateChange;
     assertDev(obj);

@@ -246,4 +246,6 @@ export const defaultSettings: Readonly<Settings> = {
     // https://bugs.chromium.org/p/chromium/issues/detail?id=1231093
     ? Date.now() < 1754006400000
     : false,
+
+  updateSoundedSpeedWheneverItChangesOnWebsite: true,
 };

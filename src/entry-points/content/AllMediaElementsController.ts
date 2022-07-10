@@ -36,6 +36,7 @@ import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 import { mediaElementSourcesMap } from '@/entry-points/content/audioContext';
+import { mayRatechangeEventBeCausedByUs } from './playbackRateChangeTracking';
 
 type SomeController = StretchingController | CloningController | AlwaysSoundedController;
 
@@ -483,6 +484,42 @@ export default class AllMediaElementsController {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       resolveTimeSavedTrackerPromise!(timeSavedTracker);
     })();
+
+    {
+      // Listen to playback rate changes and maybe update `settings.soundedSpeed`.
+      // I think that this should only apply to elements whose playbackRate this extension is controlling.
+      // Which it is now.
+
+      // Keep in mind that several events may be fired in the same event cycle. And, for example,
+      // if you do `el.playbackRate = 2; el.playbackRate = 3;`, two events will fire, but `el.playbackRate`
+      // will be `3`.
+      // Also keep in mind that changing `defaultPlaybackRate` also fires the 'ratechange' event.
+
+      // Video Speed Controller extension does this too, but that code is not really of use to us
+      // because we also switch to silenceSpeed, in which case we must not update soundedSpeed.
+      // https://github.com/igrigorik/videospeed/blob/caacb45d614db312cf565e5f92e09a14e52ccf62/inject.js#L467-L493
+      const ratechangeListener = (event: Event) => {
+        if (!this.settings!.updateSoundedSpeedWheneverItChangesOnWebsite) {
+          return;
+        }
+        // It may be because we made it switch to silenceSpeed, or other stuff.
+        if (mayRatechangeEventBeCausedByUs(event)) {
+          return;
+        }
+        const el_ = event.target as HTMLMediaElement;
+        // TODO but if it is `defaultPlaybackRate` change that caused this event, we still do this.
+        // Although it's not that common.
+        const settingsNewValues = { soundedSpeed: el_.playbackRate };
+        this.reactToSettingsNewValues(settingsNewValues);
+        setSettings(settingsNewValues);
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Updating soundedSpeed because apparently playbackRate was changed by'
+            + ' something other that this extension.');
+        }
+      };
+      el.addEventListener('ratechange', ratechangeListener, { passive: true });
+      this._onDetachFromActiveElementCallbacks.push(() => el.removeEventListener('ratechange', ratechangeListener));
+    }
 
     await controllerP;
     hotkeyListenerP && await hotkeyListenerP;

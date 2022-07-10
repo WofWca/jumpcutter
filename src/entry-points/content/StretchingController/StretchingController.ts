@@ -38,6 +38,10 @@ import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/entry-points/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
 import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
+import {
+  setPlaybackRateAndDoRelatedStuff,
+  setDefaultPlaybackRateAndDoRelatedStuff,
+} from '../playbackRateChangeTracking';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -153,8 +157,8 @@ export default class Controller {
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
     this._destroyedPromise.then(() => {
-      element.playbackRate = elementPlaybackRateBeforeInitialization;
-      element.defaultPlaybackRate = elementDefaultPlaybackRateBeforeInitialization;
+      setPlaybackRateAndDoRelatedStuff(element, elementPlaybackRateBeforeInitialization);
+      setDefaultPlaybackRateAndDoRelatedStuff(element, elementDefaultPlaybackRateBeforeInitialization);
     });
 
     this.audioContext = audioContext;
@@ -490,13 +494,13 @@ export default class Controller {
         // the opposite, when the ad ends).
         // It's also a good practice.
         // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-        this.element.defaultPlaybackRate = speedVal;
+        setDefaultPlaybackRateAndDoRelatedStuff(this.element, speedVal);
         break;
       }
       case SpeedName.SILENCE:
         speedVal = maybeClosestNonNormalSpeed(this.settings.silenceSpeed, this.settings.volumeThreshold); break;
     }
-    this.element.playbackRate = speedVal;
+    setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
     const elementSpeedSwitchedAt = this.audioContext!.currentTime;
     const obj = this._lastActualPlaybackRateChange;
     assertDev(obj);
