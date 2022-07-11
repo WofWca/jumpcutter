@@ -1,1 +1,8 @@
-{}
+{
+	"volumeThreshold": {
+		"message": "Najniższa głośność mowy"
+	},
+	"extensionDescription": {
+		"message": "Oglądaj wykłady ~1,5x szybciej dzięki szybkiemu przewijaniu długich przerw miedzy zdaniami"
+	}
+}
