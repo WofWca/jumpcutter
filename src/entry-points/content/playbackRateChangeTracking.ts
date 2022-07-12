@@ -42,13 +42,20 @@ function rememberChangeAndForgetAfterEventListenersWereExecuted(
     array = maybeExistingArray;
     maybeExistingArray.push(newVal);
   }
-  // A signle setTimeout may be enough, but let's play it safe.
-  setTimeout(() => setTimeout(() => {
-    array.splice(
-      array.findIndex(storedVal => storedVal === newVal),
-      1,
-    )
-  }));
+  el.addEventListener(
+    'ratechange',
+    () => {
+      // There may be multiple events in the same event cycle, so setTimeout to wait until they
+      // all invoked their listeners.
+      setTimeout(() => {
+        array.splice(
+          array.findIndex(storedVal => storedVal === newVal),
+          1,
+        )
+      })
+    },
+    { once: true, passive: true }
+  );
   // You may ask why don't we use `event.timeStamp` and `performance.now()` to record the changes
   // caused by us. That's because of reduced time precision:
   // https://developer.mozilla.org/en-US/docs/Web/API/Event/timeStamp#reduced_time_precision
