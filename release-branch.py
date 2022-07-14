@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Ok, we've actually stopped doing branches and started commiting to `master` directly
+# so I guess we only need a version bump commit now
+
 import sys
 import os
 import json
