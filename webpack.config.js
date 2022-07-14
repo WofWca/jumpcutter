@@ -21,26 +21,12 @@
 /* eslint-env node */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const webpack = require('webpack');
+const fs = require('fs/promises');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
 const NativeDynamicImportPlugin = require('./src/native-dynamic-import-webpack-plugin/main.js');
 const { minimizeJsonString: minimizeI18nMessagedJsonString } = require('minimize-webext-i18n-json');
-
-const includeLanguages = [
-  'en',
-  'ru',
-  'uk',
-  'fr',
-  'nb_NO',
-  'es',
-  'sv',
-  'pt_BR',
-  'de',
-  'tr',
-  'hr',
-  // TODO improvement: check the other ones and add.
-]
 
 module.exports = env => {
   if (!env.browser) {
@@ -165,7 +151,16 @@ module.exports = env => {
 
           {
             context: 'src',
-            from: `_locales/(${includeLanguages.join('|')})/messages.json`,
+            from: `_locales/*/messages.json`,
+            // Filter out locales with empty `messages.json` files
+            filter: async (resourcePath) => {
+              const content = await fs.readFile(resourcePath, { encoding: 'utf-8' });
+              const obj = JSON.parse(content);
+              if (Object.keys(obj).length === 0) {
+                return false;
+              }
+              return true;
+            },
             transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
           },
           // Chromium apparently refuses to display the extension in 'nb_NO', if you make 'nb'
@@ -173,7 +168,7 @@ module.exports = env => {
           // the original 'nb_NO' directory intact for forwards-compatibility. TODO file a bug? Or
           // is it the way it should work?
           ...(
-            env.browser === 'chromium' && includeLanguages.includes('nb_NO')
+            env.browser === 'chromium'
               ? [{
                 context: 'src',
                 from: `_locales/nb_NO/messages.json`,
