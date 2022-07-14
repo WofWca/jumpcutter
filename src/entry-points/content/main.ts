@@ -42,7 +42,7 @@ async function isEnabled(): Promise<boolean> {
   return enabled;
 }
 
-if (process.env.NODE_ENV !== 'production') {
+if (IS_DEV_MODE) {
   Promise.all([
     import(
       /* webpackExports: ['storage']*/

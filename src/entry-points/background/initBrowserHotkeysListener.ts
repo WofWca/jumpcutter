@@ -31,7 +31,7 @@ export default function initBrowserHotkeysListener(): void {
         break;
       }
       default: {
-        if (process.env.NODE_ENV !== 'production') {
+        if (IS_DEV_MODE) {
           console.error('Unrecognized command', command);
         }
       }

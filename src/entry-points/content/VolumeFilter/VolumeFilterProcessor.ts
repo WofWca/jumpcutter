@@ -52,7 +52,7 @@ class SingleChannelRingBuffer extends Float32Array {
    * @param depth how many elements have been pushed after the one that we want to get.
    */
   getReverse(depth: number) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (depth >= this.length) {
         throw new RangeError();
       }
@@ -94,7 +94,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
     const smoothingWindowLength = parameters.smoothingWindowLength[0];
     const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (
         smoothingWindowLengthSamples !== windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength)
         && !devErrorShown
@@ -113,7 +113,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
     const numChannels = input.length;
     const numSamples = input[0].length;
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (numSamples !== SAMPLES_PER_QUANTUM) {
         throw new Error('Splish-splash. Your assumptions about quantum length are trash');
       }

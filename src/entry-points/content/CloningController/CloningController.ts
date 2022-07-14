@@ -311,7 +311,7 @@ export default class Controller {
           try {
             newStream = captureStream();
           } catch (e) {
-            if (process.env.NODE_ENV !== 'production') {
+            if (IS_DEV_MODE) {
               console.warn('Couldn\'t `captureStream`, but ignoring it because maybe we\'re here because'
                 + ' `dontAttachToCrossOriginMedia` is `false` and the media is CORS-restricted', e);
             }
@@ -455,7 +455,7 @@ export default class Controller {
     const seekAmount = seekTo - currentTime;
     const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (expectedSeekDuration < 0.010) {
         console.warn(
           '`expectedSeekDuration` got lower than 0.010, but we ignore silence ranges that are shorter than this.'

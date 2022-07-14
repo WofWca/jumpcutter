@@ -112,7 +112,7 @@ export function keydownEventToActions(
       case HotkeyAction.SET_MARGIN_AFTER: settingsNewValues.marginAfter = arg; break;
       case HotkeyAction.TOGGLE_MARGIN_AFTER: toggleSettingValue('marginAfter'); break;
       default: {
-        if (process.env.NODE_ENV !== 'production') {
+        if (IS_DEV_MODE) {
           if (
             HotkeyAction.ADVANCE !== binding.action
             && HotkeyAction.REWIND !== binding.action

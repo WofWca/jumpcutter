@@ -51,7 +51,7 @@ const MAX_MARGIN_BEFORE_INTRINSIC_TIME = 0.5;
 const MIN_SPEED = 0.25;
 const MAX_MARGIN_BEFORE_REAL_TIME = MAX_MARGIN_BEFORE_INTRINSIC_TIME / MIN_SPEED;
 
-const logging = process.env.NODE_ENV !== 'production' && false;
+const logging = IS_DEV_MODE && false;
 
 type ControllerInitialized =
   Controller

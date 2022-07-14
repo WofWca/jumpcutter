@@ -37,7 +37,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
-  const PLOT_STRETCHER_DELAY = process.env.NODE_ENV !== 'production' && true;
+  const PLOT_STRETCHER_DELAY = IS_DEV_MODE && true;
 
   type TelemetryRecord =
     StretchingControllerTelemetryRecord
@@ -167,7 +167,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     const lastSpeedChange = telemetryRecord.lastActualPlaybackRateChange;
     let intrinsicTimeDelta: TimeDelta = 0;
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (prevSpeedChange && (prevSpeedChange.time >= lastSpeedChange.time)) {
         // However this check doesn't catch whether it was _immediately_ before, only if it's just _before_.
         console.error('`prevSpeedChange` must be the speed change that was immediately before'
@@ -583,7 +583,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
     silenceSpeedSeries.append(timeMs, speedName === SpeedName_SILENCE ? offTheChartsValue : 0);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (latestTelemetryRecord && (latestTelemetryRecord.inputVolume > offTheChartsValue)) {
         console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
           + ' background, but now it has been exceeded by inutVolume value');

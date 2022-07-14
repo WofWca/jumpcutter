@@ -19,7 +19,7 @@
  */
 
 export function assertDev(condition: unknown, msg?: unknown): asserts condition {
-  if (process.env.NODE_ENV !== 'production') {
+  if (IS_DEV_MODE) {
     if (!condition) {
       console.error(msg);
     }

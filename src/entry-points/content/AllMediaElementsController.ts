@@ -169,7 +169,7 @@ export default class AllMediaElementsController {
   private _onDetachFromActiveElementCallbacks: Array<() => void> = [];
 
   constructor() {
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (allMediaElementsControllerActive) {
         console.error("AllMediaElementsController is supposed to be a singletone, but it another was created while "
           + "one has not been destroyed");
@@ -191,7 +191,7 @@ export default class AllMediaElementsController {
     this.detachFromActiveElement();
     this._resolveDestroyedPromise();
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       allMediaElementsControllerActive = false;
     }
   }
@@ -275,7 +275,7 @@ export default class AllMediaElementsController {
     switch (port.name) {
       case 'telemetry': {
         listener = (msg: unknown) => {
-          if (process.env.NODE_ENV !== 'production') {
+          if (IS_DEV_MODE) {
             if (msg !== 'getTelemetry') {
               throw new Error('Unsupported message type')
             }
@@ -308,7 +308,7 @@ export default class AllMediaElementsController {
         break;
       }
       default: {
-        if (process.env.NODE_ENV !== 'production') {
+        if (IS_DEV_MODE) {
           throw new Error(`Unrecognized port name "${port.name}"`);
         }
         return;
@@ -396,7 +396,7 @@ export default class AllMediaElementsController {
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
   private async esnureAttachToElement(el: HTMLMediaElement) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (el.readyState < HTMLMediaElement.HAVE_METADATA) {
         // We shouldn't be doing that because this probably means that the element has no source or is still loading
         // so it doesn't make sense to assess whether it's CORS-restricted or whether we can use the cloning
@@ -512,7 +512,7 @@ export default class AllMediaElementsController {
         const settingsNewValues = { soundedSpeed: el_.playbackRate };
         this.reactToSettingsNewValues(settingsNewValues);
         setSettings(settingsNewValues);
-        if (process.env.NODE_ENV !== 'production') {
+        if (IS_DEV_MODE) {
           console.warn('Updating soundedSpeed because apparently playbackRate was changed by'
             + ' something other that this extension.');
         }

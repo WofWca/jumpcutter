@@ -2,7 +2,7 @@
  * @return `undefined` in case parsing failed (which most likely means that the version is super-duper new).
  */
 export function getGeckoMajorVersion(): number | undefined {
-  if (process.env.NODE_ENV !== 'production') {
+  if (IS_DEV_MODE) {
     if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
       console.warn('`parseGeckoVersion` should not be used in non-gecko builds.');
     }

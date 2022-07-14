@@ -49,7 +49,7 @@ export function addOnStorageChangedListener(listener: MyOnChangedListener): void
 export function removeOnStorageChangedListener(listener: MyOnChangedListener): void {
   const actualListener = srcListenerToWrapperListener.get(listener);
   if (!actualListener) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       console.warn('Did not remove listener because it\'s already not attached');
     }
     return;

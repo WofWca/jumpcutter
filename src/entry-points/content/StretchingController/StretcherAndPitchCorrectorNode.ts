@@ -271,7 +271,7 @@ export default class StretcherAndPitchCorrectorNode {
   }
 
   private setOutputPitchAt(pitchSetting: PitchSetting, time: AudioContextTime, oldPitchSetting: PitchSetting) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       if (pitchSetting === oldPitchSetting) {
         console.warn(`New pitchSetting is the same as oldPitchSetting: ${pitchSetting}`);
       }
@@ -296,7 +296,7 @@ export default class StretcherAndPitchCorrectorNode {
     fromNode.gain.linearRampToValueAtTime(0, crossFadeEnd);
     toNode.gain.linearRampToValueAtTime(1, crossFadeEnd);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       const lateBy = this.context.currentTime - crossFadeStart;
       if (lateBy >= 0) {
         console.error('crossFadeStart late by', lateBy)
@@ -348,7 +348,7 @@ export default class StretcherAndPitchCorrectorNode {
       speedupOrSlowdown,
     };
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       const lateBy = this.context.currentTime - startTime;
       if (lateBy >= 0) {
         console.error('stretch startTime late by', lateBy);
@@ -378,7 +378,7 @@ export default class StretcherAndPitchCorrectorNode {
     }
     this.setOutputPitchAt(PitchSetting.NORMAL, interruptAtTime, this.lastScheduledStretch.speedupOrSlowdown);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       const lateBy = this.context.currentTime - interruptAtTime;
       if (lateBy >= 0) {
         console.error('interruptAtTime late by', lateBy)
@@ -414,7 +414,7 @@ export default class StretcherAndPitchCorrectorNode {
       node.dispose();
     }
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       Object.values(this).forEach(propertyVal => {
         if (propertyVal instanceof ToneAudioNode && !(toneAudioNodes as ToneAudioNode[]).includes(propertyVal)) {
           console.warn('Undisposed ToneAudioNode found. Expected all to be disposed upon `destroy()` call');

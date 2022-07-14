@@ -53,7 +53,7 @@ class Stopwatch {
   }
   pause(): void {
     if (this._pausedAtMs) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (IS_DEV_MODE) {
         console.warn('Stopwatch is already paused');
       }
 
@@ -63,7 +63,7 @@ class Stopwatch {
   }
   resume(): void {
     if (!this._pausedAtMs) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (IS_DEV_MODE) {
         console.warn('Stopwatch is already unpaused');
       }
 
@@ -132,7 +132,7 @@ function getSnippetTimeSavedInfo(
   // `wouldHaveLastedIfSpeedWasIntrinsic - snippetRealtimeDuration` in a float-error-friendly form.
   const timeSavedComparedToIntrinsicSpeed = snippetRealtimeDuration * (speedDuringComparedToIntrinsic - 1);
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (IS_DEV_MODE) {
     if (timeSavedComparedToSoundedSpeed < 0) {
       console.warn("timeSavedComparedToSoundedSpeed < 0: ", timeSavedComparedToSoundedSpeed);
     }

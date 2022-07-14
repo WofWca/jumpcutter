@@ -37,6 +37,7 @@ module.exports = env => {
     throw new Error('You must define the `browser` environment variable (`--env browser=chromium`');
   }
   const definePlugin = new webpack.DefinePlugin({
+    'IS_DEV_MODE': JSON.stringify(process.env.NODE_ENV !== 'production'),
     'BUILD_DEFINITIONS.BROWSER': JSON.stringify(env.browser),
     'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG': JSON.stringify(env.browser === 'chromium'),
     'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT':

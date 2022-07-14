@@ -51,7 +51,7 @@ export default async function init(): Promise<void> {
     // page it is run as the page script, so this listener will catch all messages sent with
     // `browser.runtime.sendMessage`, including other `broadcastStatus`.
     if (message !== 'checkContentStatus') { // TODO DRY.
-      if (process.env.NODE_ENV !== 'production') {
+      if (IS_DEV_MODE) {
         const extensionPage = document.location.href.startsWith(browser.runtime.getURL(''));
         const thisIsLocalFilePlayer = extensionPage;
         if (!thisIsLocalFilePlayer) {

@@ -29,7 +29,7 @@ import migrateFrom1_18_3 from "./migrateFrom1_18_3";
 import migrateFrom1_22_1 from "./migrateFrom1_22_1";
 
 function compareVersions(a: string, b: string) {
-  if (process.env.NODE_ENV !== 'production') {
+  if (IS_DEV_MODE) {
     for (const ver of [a, b]) {
       // From https://semver.org/spec/v2.0.0.html
       if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(ver)) {

@@ -19,7 +19,7 @@
  */
 
 export function assertNever(arg: never): never {
-  if (process.env.NODE_ENV !== 'production') {
+  if (IS_DEV_MODE) {
     throw new Error(`Value was not expected to be "${arg}"`);
   } else {
     throw new Error();

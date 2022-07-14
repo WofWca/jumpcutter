@@ -94,7 +94,7 @@ export default class Lookahead {
     // BTW, `clone.pause()` also works.
     this._destroyedPromise.then(() => clone.src = '');
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (IS_DEV_MODE) {
       const interval = setInterval(() => {
         const cloneSrc = clone.src;
         const originalSrc = originalElement.currentSrc;
@@ -337,7 +337,7 @@ export default class Lookahead {
     // But even if it were to get lower, if we don't encounter silence ranges of such duration too often,
     // we don't loose too much time not skipping them anyway.
     if (silenceDuration < 0.010) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (IS_DEV_MODE) {
         if (silenceDuration <= 0) {
           if (silenceDuration < -0.050) {
             console.error('Huge negative silence duration', silenceDuration);
