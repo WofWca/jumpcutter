@@ -25,7 +25,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
 const NativeDynamicImportPlugin = require('./src/native-dynamic-import-webpack-plugin/main.js');
-const { minimizeJsonString } = require('minimize-webext-i18n-json');
+const { minimizeJsonString: minimizeI18nMessagedJsonString } = require('minimize-webext-i18n-json');
 
 const includeLanguages = [
   'en',
@@ -166,7 +166,7 @@ module.exports = env => {
           {
             context: 'src',
             from: `_locales/(${includeLanguages.join('|')})/messages.json`,
-            transform: (content) => minimizeJsonString(content, { unsafe: false }),
+            transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
           },
           // Chromium apparently refuses to display the extension in 'nb_NO', if you make 'nb'
           // the browser's UI language. Let's do this to make it satisfied, while also keeping
@@ -178,7 +178,7 @@ module.exports = env => {
                 context: 'src',
                 from: `_locales/nb_NO/messages.json`,
                 to: `_locales/nb/messages.json`,
-                transform: (content) => minimizeJsonString(content, { unsafe: false }),
+                transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
               }]
               : []
           ),
