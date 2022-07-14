@@ -39,12 +39,12 @@ const includeLanguages = [
   'de',
   'tr',
   'hr',
-  // TODO check the other ones and add.
+  // TODO improvement: check the other ones and add.
 ]
 
 module.exports = env => {
   if (!env.browser) {
-    // TODO would be cool if we could perform `BUILD_DEFINITIONS.BROWSER` checks at runtime in development mode, so you
+    // TODO chore: would be cool if we could perform `BUILD_DEFINITIONS.BROWSER` checks at runtime in development mode, so you
     // don't have run a different command to test something in a different browser.
     // For example, we could define `BUILD_DEFINITIONS.BROWSER`  as some  browser detection code instead of
     // `JSON.stringify(env.browser)`.
@@ -91,7 +91,7 @@ module.exports = env => {
               compilerOptions: {
                 dev: process.env.NODE_ENV !== 'production',
               },
-              // TODO `emitCss: true`, `ExtractTextPlugin`?
+              // TODO perf: `emitCss: true`, `ExtractTextPlugin`?
               // https://github.com/sveltejs/svelte-loader#usage
               hotReload: process.env.NODE_ENV !== 'production',
             },
@@ -147,7 +147,7 @@ module.exports = env => {
         },
       ),
       // This is so dynamic import works in content scripts (but it affects all scripts).
-      // TODO replace with `output.environment.dynamicImport = true` (which will act as
+      // TODO refactor: replace with `output.environment.dynamicImport = true` (which will act as
       // `output.chunkLoading = 'import'`). But doing `browser.runtime.getURL()` (in
       // src/native-dynamic-import-webpack-plugin/LoadScriptRuntimeModule.js:19) appears to still be required.
       // Maybe we can somehow utilize Webpack's `publicPath` option to solve this?

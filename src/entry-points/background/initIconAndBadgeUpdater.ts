@@ -33,13 +33,13 @@ function settingToBadgeParams<T extends SupportedSettings>(
 ): Parameters<typeof setBadge>
 {
   switch (settingName) {
-    // TODO DRY colors? Though here they're darker anyway, to account for the white text.
-    // TODO Also DRY `toFixed` precision, to match the popup?
+    // TODO refactor: DRY colors? Though here they're darker anyway, to account for the white text.
+    // TODO refactor: Also DRY `toFixed` precision, to match the popup?
     case 'soundedSpeed': return [value.toFixed(2), '#0d0'];
     case 'silenceSpeedRaw': return [value.toFixed(2), '#d00'];
     // I guess it's better when it's blue and not red, so it's not confused with `silenceSpeed`.
     case 'volumeThreshold': return [value.toFixed(4), '#00d'];
-    // TODO any better ideas for background colors for these two?
+    // TODO improvement: any better ideas for background colors for these two?
     case 'marginBefore': return [value.toFixed(3), '#333'];
     case 'marginAfter': return [value.toFixed(3), '#333'];
     // default: assertNever(settingName); Does not work because of the generic type. TODO
@@ -58,7 +58,7 @@ let setBadgeToDefaultTimeout = -1;
 function temporarelySetBadge(text: string, color: string, settings: Settings) {
   setBadge(text, color);
   clearTimeout(setBadgeToDefaultTimeout);
-  // TODO customizable timeout duration
+  // TODO improvement: customizable timeout duration
   setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(setBadgeToDefault, 1500, settings);
 }
 
@@ -73,7 +73,7 @@ export default async function initIconUpdater(): Promise<void> {
       Object.assign(settings, settingsChanges2NewValues(changes));
     }
     let path = 'icons/';
-    // TODO these image files are just copy-pasted, with only class name being different. DRY.
+    // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
     if (!settings.enabled) {
       path += 'icon-disabled.svg'
     } else if (settings.volumeThreshold === 0) {
@@ -81,14 +81,14 @@ export default async function initIconUpdater(): Promise<void> {
     } else {
       path += 'icon.svg';
     }
-    // Apparently it doesn't perform this check internally. TODO.
+    // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
     if (currentIconPath !== path) {
       browser.browserAction.setIcon({ path });
       currentIconPath = path;
     }
 
     if (changes) {
-      // TODO also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
+      // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
       const orderedSetingsNames =
         ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
       for (const settingName of orderedSetingsNames) {
@@ -98,7 +98,7 @@ export default async function initIconUpdater(): Promise<void> {
           break;
         }
       }
-      // TODO it would be cooler if we wrote the badge's dependencies more declaratively.
+      // TODO refactor: it would be cooler if we wrote the badge's dependencies more declaratively.
       if (changes.badgeWhatSettingToDisplayByDefault || changes.enabled) {
         setBadgeToDefault(settings);
       }

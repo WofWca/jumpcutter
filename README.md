@@ -16,7 +16,7 @@ Can be useful for watching lectures and other unedited videos.
 
 Demo:
 
-<!-- TODO put the file in the repo so it's set in stone? -->
+<!-- TODO refactor: put the file in the repo so it's set in stone? -->
 <!-- The source video:
 https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-034-artificial-intelligence-fall-2010/lecture-videos/lecture-16-learning-support-vector-machines/
 (or https://youtu.be/_PwhiWxHK8o).

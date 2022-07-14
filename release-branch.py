@@ -3,7 +3,7 @@ import sys
 import os
 import json
 
-# TODO add scripts to
+# TODO chore: add scripts to
 # * Merge the release branch, create a tag
 # * `yarn install`, build, publish to Chrome Web Store, Mozilla, etc.
 

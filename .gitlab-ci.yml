@@ -25,11 +25,11 @@ before_script:
 build chromium:
   stage: build
   script:
-    # TODO how about include reports? IDK how tho.
+    # TODO chore: how about include reports? IDK how tho.
     # https://docs.gitlab.com/ee/ci/pipelines/job_artifacts.html#artifactsreports
     - yarn build:chromium --env noreport
   artifacts:
-    # TODO when https://gitlab.com/gitlab-org/gitlab-runner/-/issues/1057 is merged, specify `cwd: dist`
+    # TODO chore: when https://gitlab.com/gitlab-org/gitlab-runner/-/issues/1057 is merged, specify `cwd: dist`
     # so Mozilla Add-ons Store accepts the archieve.
     paths:
       - dist/
@@ -37,7 +37,7 @@ build chromium:
   timeout: 10 minutes
 build gecko:
   stage: build
-  # TODO DRY with `build chromium`? YAML anchors?
+  # TODO refactor: DRY with `build chromium`? YAML anchors?
   script:
     - yarn build:gecko --env noreport
   artifacts:
