@@ -29,7 +29,7 @@ const recentDefaultPlaybackRateChangesCausedByUs = new WeakMap<HTMLMediaElement,
 /**
  * Care to perform the `el.(default)playbackRate` assignment AFTER calling this because of
  * `el.addEventListener('ratechange'`. Well, it currently works either way, but IDK, browser
- * behavior may change.
+ * behavior may change. Wrapping it in `queueMicrotask` also works (at least for now).
  */
 function rememberChangeAndForgetAfterEventListenersWereExecuted(
   recentChangesMap:
@@ -82,11 +82,13 @@ export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: n
   // https://github.com/WofWca/jumpcutter/blob/8b964227b8522631a56e00e34e9b414e0ad63d36/src/entry-points/content/playbackRateChangeTracking.ts#L45-L58
   // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:event-media-ratechange
   if (el.playbackRate !== newVal) {
-    rememberChangeAndForgetAfterEventListenersWereExecuted(
+    // Using a microtask because for our extension (at least for StretchingController (because it doesn't
+    // use any lookahead)) it is critical to be as fast as possible when changing `playbackRate`.
+    queueMicrotask(() => rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentPlaybackRateChangesCausedByUs,
       el,
       newVal,
-    );
+    ));
     el.playbackRate = newVal;
   }
 }
@@ -95,11 +97,11 @@ export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: n
  */
 export function setDefaultPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: number) {
   if (el.defaultPlaybackRate !== newVal) {
-    rememberChangeAndForgetAfterEventListenersWereExecuted(
+    queueMicrotask(() => rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentDefaultPlaybackRateChangesCausedByUs,
       el,
       newVal,
-    );
+    ));
     el.defaultPlaybackRate = newVal;
   }
 }
