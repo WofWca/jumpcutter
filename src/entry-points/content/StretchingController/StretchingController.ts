@@ -332,7 +332,12 @@ export default class Controller {
         const [silenceStartOrEnd] = data;
         let elementSpeedSwitchedAt: AudioContextTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
+          // Keep in mind that we need to do `el.playbackRate =` as fast as possible here in order to not
+          // skip over the start of the sentence.
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SOUNDED);
+          // But we're not really in a hurry to perform `onSilenceEnd` or `onSilenceStart` because there's
+          // a lookahead delay so the sound doesn't get output immediately.
+          // https://github.com/WofWca/jumpcutter/blob/81b4e507b68d9f7c50e90161326edc65038ae28c/src/entry-points/content/StretchingController/StretcherAndPitchCorrectorNode.ts#L157
           this._stretcherAndPitch?.onSilenceEnd(elementSpeedSwitchedAt);
         } else {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SILENCE);
