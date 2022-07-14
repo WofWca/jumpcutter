@@ -26,6 +26,11 @@ const recentPlaybackRateChangesCausedByUs = new WeakMap<HTMLMediaElement, number
 /** @see {@link recentPlaybackRateChangesCausedByUs} */
 const recentDefaultPlaybackRateChangesCausedByUs = new WeakMap<HTMLMediaElement, number[]>();
 
+/**
+ * Care to perform the `el.(default)playbackRate` assignment AFTER calling this because of
+ * `el.addEventListener('ratechange'`. Well, it currently works either way, but IDK, browser
+ * behavior may change.
+ */
 function rememberChangeAndForgetAfterEventListenersWereExecuted(
   recentChangesMap:
     typeof recentPlaybackRateChangesCausedByUs
@@ -77,12 +82,12 @@ export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: n
   // https://github.com/WofWca/jumpcutter/blob/8b964227b8522631a56e00e34e9b414e0ad63d36/src/entry-points/content/playbackRateChangeTracking.ts#L45-L58
   // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:event-media-ratechange
   if (el.playbackRate !== newVal) {
-    el.playbackRate = newVal;
     rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentPlaybackRateChangesCausedByUs,
       el,
       newVal,
     );
+    el.playbackRate = newVal;
   }
 }
 /**
@@ -90,12 +95,12 @@ export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: n
  */
 export function setDefaultPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: number) {
   if (el.defaultPlaybackRate !== newVal) {
-    el.defaultPlaybackRate = newVal;
     rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentDefaultPlaybackRateChangesCausedByUs,
       el,
       newVal,
     );
+    el.defaultPlaybackRate = newVal;
   }
 }
 
