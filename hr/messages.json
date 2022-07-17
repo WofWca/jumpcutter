@@ -425,5 +425,8 @@
 	},
 	"runSnowflakeBridge": {
 		"message": "Pomogni drugima zaobići cenzuru jednostavnim instaliranjem jednog proširenja"
+	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "Želim kontrolirati brzinu reprodukcije (normalnu brzinu) drugim sredstvima osim samo ovim proširenjem. To će aktualizirati normalnu brzinu kad god se promijeni brzina reprodukcije."
 	}
 }
