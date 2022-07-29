@@ -495,6 +495,10 @@ export default class AllMediaElementsController {
       // will be `3`.
       // Also keep in mind that changing `defaultPlaybackRate` also fires the 'ratechange' event.
 
+      // Also keep in mind that when media element load algorithm is executed, it does
+      // `el.playbackRate = el.defaultPlaybackRate`.
+      // https://html.spec.whatwg.org/multipage/media.html#media-element-load-algorithm
+
       // Video Speed Controller extension does this too, but that code is not really of use to us
       // because we also switch to silenceSpeed, in which case we must not update soundedSpeed.
       // https://github.com/igrigorik/videospeed/blob/caacb45d614db312cf565e5f92e09a14e52ccf62/inject.js#L467-L493
