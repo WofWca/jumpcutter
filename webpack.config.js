@@ -166,16 +166,26 @@ module.exports = env => {
           },
           // Chromium apparently refuses to display the extension in 'nb_NO', if you make 'nb'
           // the browser's UI language. Let's do this to make it satisfied, while also keeping
-          // the original 'nb_NO' directory intact for forwards-compatibility. TODO file a bug? Or
-          // is it the way it should work?
+          // the original 'nb_NO' directory intact for forwards-compatibility.
+          // https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support
+          // TODO file a bug? Or is it the way it should work?
           ...(
             env.browser === 'chromium'
-              ? [{
-                context: 'src',
-                from: `_locales/nb_NO/messages.json`,
-                to: `_locales/nb/messages.json`,
-                transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
-              }]
+              ? [
+                {
+                  context: 'src',
+                  from: `_locales/nb_NO/messages.json`,
+                  to: `_locales/nb/messages.json`,
+                  transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
+                },
+                // And same for Chinese. It won't recognize `zh_Hans` and only accepts `zh` or `zh_CN` (or `zh_TW`).
+                {
+                  context: 'src',
+                  from: `_locales/zh_Hans/messages.json`,
+                  to: `_locales/zh_CN/messages.json`,
+                  transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
+                },
+              ]
               : []
           ),
 
