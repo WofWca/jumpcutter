@@ -499,6 +499,15 @@ export default class AllMediaElementsController {
       // `el.playbackRate = el.defaultPlaybackRate`.
       // https://html.spec.whatwg.org/multipage/media.html#media-element-load-algorithm
 
+      // TODO improvement: hey, how about we watch `defaultPlaybackRate` instead of `playbackRate`?
+      // While it may make more, sense, unfortunately it's rare that websites ever use `defaultPlaybackRate`.
+      // Even YouTube doesn't update it. Make it an option at least? And should we maybe reach out to
+      // these services / other extensions' developers to encourage them to update `defaultPlaybackRate`?
+
+      // TODO improvement: how about we check if it's currently silence, therefore we should
+      // be more careful with updating soundedSpeed, because some websites/extensions could
+      // just be doing `el.playbackRate += increment`;
+
       // Video Speed Controller extension does this too, but that code is not really of use to us
       // because we also switch to silenceSpeed, in which case we must not update soundedSpeed.
       // https://github.com/igrigorik/videospeed/blob/caacb45d614db312cf565e5f92e09a14e52ccf62/inject.js#L467-L493
