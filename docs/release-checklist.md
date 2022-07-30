@@ -12,7 +12,7 @@
 
     * Microsoft Edge Addons
 
-      Same as for Mozilla Add-ons + copy the icon for all languages.
+      Same as for Mozilla Add-ons + copy the icon and the promotional image for all languages.
 
     * Other
 
