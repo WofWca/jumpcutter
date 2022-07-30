@@ -502,7 +502,11 @@ export default class AllMediaElementsController {
       // Video Speed Controller extension does this too, but that code is not really of use to us
       // because we also switch to silenceSpeed, in which case we must not update soundedSpeed.
       // https://github.com/igrigorik/videospeed/blob/caacb45d614db312cf565e5f92e09a14e52ccf62/inject.js#L467-L493
+      let prevPlaybackRate_ = el.playbackRate;
       const ratechangeListener = (event: Event) => {
+        const el_ = event.target as HTMLMediaElement;
+        const prevPlaybackRate = prevPlaybackRate_;
+        prevPlaybackRate_ = el_.playbackRate;
         if (!this.settings!.updateSoundedSpeedWheneverItChangesOnWebsite) {
           return;
         }
@@ -510,9 +514,27 @@ export default class AllMediaElementsController {
         if (mayRatechangeEventBeCausedByUs(event)) {
           return;
         }
-        const el_ = event.target as HTMLMediaElement;
-        // TODO but if it is `defaultPlaybackRate` change that caused this event, we still do this.
-        // Although it's not that common.
+        /*
+        This can happen e.g. like this
+        ```
+        const old = el.playbackRate;
+        el.playbackRate = 42;
+        el.playbackRate = old;
+        ```
+        so, think of it as as if `el.playbackRate = el.playbackRate` would cause the event to fire
+        (which it doesn't, but like if it did).
+        If the video is at silenceSpeed at the moment it is done, we would otherwise (without this check)
+        set soundedSpeed to the current playbackRate, which would not be good.
+        In fact this is what happens on YouTube when you change video quality.
+        Also this can happen if only `el.defaultPlaybackRate` was changed.
+        See https://github.com/WofWca/jumpcutter/issues/95
+        This check also causes us to ignore 'ratechange' events that were fired on the same 
+        TODO maybe we also need to wait for the next event cycle (or two) to see if
+        playbackRate got changed back?
+        */
+        if (prevPlaybackRate === el_.playbackRate) {
+          return;
+        }
         const settingsNewValues = { soundedSpeed: el_.playbackRate };
         this.reactToSettingsNewValues(settingsNewValues);
         setSettings(settingsNewValues);
