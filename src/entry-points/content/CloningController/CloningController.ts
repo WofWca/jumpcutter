@@ -135,6 +135,8 @@ class SeekDurationProphet {
 
 const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 20;
 
+const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
+
 // TODO a lot of stuff is copy-pasted from StretchingController.
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
@@ -595,6 +597,20 @@ export default class Controller {
   private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
     this.settings = newSettings;
     assertDev(this.isInitialized());
+
+    // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
+    // The most common case where `load` is called is when the current source is replaced with an ad (or
+    // the opposite, when the ad ends).
+    // It's also a good practice.
+    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+    setDefaultPlaybackRateAndDoRelatedStuff(
+      this.element,
+      getActualPlaybackRateForSpeed(
+        this.settings.soundedSpeed,
+        this.settings.volumeThreshold
+      )
+    );
+
     // TODO do it as we do in StretchingController, not always SOUNDED? Fine for now though.
     this._setSpeedAndLog(SpeedName.SOUNDED);
     const lookaheadSettingsChanged =
@@ -634,24 +650,28 @@ export default class Controller {
   }
 
   private _setSpeedAndLog(speedName: SpeedName) {
-    let speedVal;
-    switch (speedName) {
-      case SpeedName.SOUNDED: {
-        // Need to `maybeClosestNonNormalSpeed` because even in this algorithm we switch speeds. Not always though.
-        speedVal = maybeClosestNonNormalSpeed(this.settings.soundedSpeed, this.settings.volumeThreshold);
-        // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
-        // The most common case where `load` is called is when the current source is replaced with an ad (or
-        // the opposite, when the ad ends).
-        // It's also a good practice.
-        // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-        setDefaultPlaybackRateAndDoRelatedStuff(this.element, speedVal);
-        break;
-      }
-      case SpeedName.SILENCE:
-        speedVal = maybeClosestNonNormalSpeed(this.settings.silenceSpeed, this.settings.volumeThreshold); break;
-    }
+    // Need to `maybeClosestNonNormalSpeed` because even in this algorithm we switch speeds. Not always though.
+    const speedVal = getActualPlaybackRateForSpeed(
+      speedName === SpeedName.SOUNDED
+        ? this.settings.soundedSpeed
+        : this.settings.silenceSpeed,
+      this.settings.volumeThreshold
+    );
     setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
     const elementSpeedSwitchedAt = this.audioContext.currentTime;
+
+    if (IS_DEV_MODE) {
+      if (speedName === SpeedName.SOUNDED) {
+        assertDev(
+          this.element.playbackRate === this.element.defaultPlaybackRate,
+          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:`
+          + ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}`
+          + 'Perhaps `defaultPlaybackRate` was updated outside of this extension'
+          + ', or you forgot to update it yourself. It\'s not a major problem, just a heads-up'
+        );
+      }
+    }
+
     const obj = this._lastActualPlaybackRateChange;
     assertDev(obj);
     // Avoiding creating new objects for performance.

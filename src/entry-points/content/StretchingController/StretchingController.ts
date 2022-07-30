@@ -94,6 +94,8 @@ function isStretcherEnabled(settings: ControllerSettings) {
   return settings.marginBefore > 0;
 }
 
+const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
+
 export default class Controller {
   static controllerType = ControllerKind.STRETCHING;
 
@@ -432,6 +434,20 @@ export default class Controller {
   private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
     this.settings = newSettings;
     assertDev(this.isInitialized());
+
+    // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
+    // The most common case where `load` is called is when the current source is replaced with an ad (or
+    // the opposite, when the ad ends).
+    // It's also a good practice.
+    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+    setDefaultPlaybackRateAndDoRelatedStuff(
+      this.element,
+      getActualPlaybackRateForSpeed(
+        this.settings.soundedSpeed,
+        this.settings.volumeThreshold
+      )
+    );
+
     if (!oldSettings) {
       this._lastActualPlaybackRateChange = {
         // Dummy values, will be ovewritten immediately in `_setSpeedAndLog`.
@@ -494,23 +510,27 @@ export default class Controller {
    * @returns elementSpeedSwitchedAt
    */
   private _setSpeedAndLog(speedName: SpeedName): AudioContextTime {
-    let speedVal;
-    switch (speedName) {
-      case SpeedName.SOUNDED: {
-        speedVal = maybeClosestNonNormalSpeed(this.settings.soundedSpeed, this.settings.volumeThreshold);
-        // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
-        // The most common case where `load` is called is when the current source is replaced with an ad (or
-        // the opposite, when the ad ends).
-        // It's also a good practice.
-        // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-        setDefaultPlaybackRateAndDoRelatedStuff(this.element, speedVal);
-        break;
-      }
-      case SpeedName.SILENCE:
-        speedVal = maybeClosestNonNormalSpeed(this.settings.silenceSpeed, this.settings.volumeThreshold); break;
-    }
+    const speedVal = getActualPlaybackRateForSpeed(
+      speedName === SpeedName.SOUNDED
+        ? this.settings.soundedSpeed
+        : this.settings.silenceSpeed,
+      this.settings.volumeThreshold
+    );
     setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
     const elementSpeedSwitchedAt = this.audioContext!.currentTime;
+
+    if (IS_DEV_MODE) {
+      if (speedName === SpeedName.SOUNDED) {
+        assertDev(
+          this.element.playbackRate === this.element.defaultPlaybackRate,
+          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:`
+          + ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}`
+          + 'Perhaps `defaultPlaybackRate` was updated outside of this extension'
+          + ', or you forgot to update it yourself. It\'s not a major problem, just a heads-up'
+        );
+      }
+    }
+
     const obj = this._lastActualPlaybackRateChange;
     assertDev(obj);
     // Avoiding creating new objects for performance.

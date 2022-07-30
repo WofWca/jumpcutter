@@ -23,6 +23,7 @@ import { audioContext } from '@/entry-points/content/audioContext';
 import {
   isPlaybackActive,
 } from '@/entry-points/content/helpers';
+import { assertDev } from '@/helpers';
 import type { MediaTime, AnyTime, AudioContextTime } from '@/helpers';
 import type { Settings as ExtensionSettings } from '@/settings';
 import { ControllerKind } from '@/settings';
@@ -125,6 +126,17 @@ export default class Controller {
    */
   private _setStateAccordingToNewSettings(newSettings: ControllerSettings) {
     this.settings = newSettings;
+
+    // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
+    // The most common case where `load` is called is when the current source is replaced with an ad (or
+    // the opposite, when the ad ends).
+    // It's also a good practice.
+    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
+    setDefaultPlaybackRateAndDoRelatedStuff(
+      this.element,
+      this.settings.soundedSpeed,
+    );
+
     this._setSpeedAndLog(SpeedName.SOUNDED);
   }
 
@@ -145,15 +157,21 @@ export default class Controller {
    */
   private _setSpeedAndLog(speedName: SpeedName.SOUNDED) {
     const speedVal = this.settings.soundedSpeed;
-    // https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource:dom-media-defaultplaybackrate
-    // The most common case where `load` is called is when the current source is replaced with an ad (or
-    // the opposite, when the ad ends).
-    // It's also a good practice.
-    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-    setDefaultPlaybackRateAndDoRelatedStuff(this.element, speedVal);
     setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
-
     const elementSpeedSwitchedAt = audioContext.currentTime;
+
+    if (IS_DEV_MODE) {
+      if (speedName === SpeedName.SOUNDED) {
+        assertDev(
+          this.element.playbackRate === this.element.defaultPlaybackRate,
+          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:`
+          + ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}`
+          + 'Perhaps `defaultPlaybackRate` was updated outside of this extension'
+          + ', or you forgot to update it yourself. It\'s not a major problem, just a heads-up'
+        );
+      }
+    }
+
     const obj = this._lastActualPlaybackRateChange;
     // Avoiding creating new objects for performance.
     obj.time = elementSpeedSwitchedAt;
