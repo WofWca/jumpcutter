@@ -62,7 +62,7 @@ function temporarelySetBadge(text: string, color: string, settings: Settings) {
   setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(setBadgeToDefault, 1500, settings);
 }
 
-export default async function initIconUpdater(): Promise<void> {
+export default async function initIconAndBadgeUpdater(): Promise<void> {
   const settings = await getSettings();
   let currentIconPath: string | undefined = undefined;
   /**
