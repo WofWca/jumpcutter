@@ -28,31 +28,31 @@ export const hotkeyActionToString: Record<HotkeyAction, string> = {
   [HotkeyAction.DECREASE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} 🔽`,
   [HotkeyAction.INCREASE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} 🔼`,
   [HotkeyAction.SET_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} =`,
-  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} ${getMessage('toggle')} 🔄`,
+  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} ${getMessage('switch')} 🔄`,
 
   // Maybe 📢📣💬, 🟩 could also fit here.
   [HotkeyAction.DECREASE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} 🔽`,
   [HotkeyAction.INCREASE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} 🔼`,
   [HotkeyAction.SET_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} =`,
-  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} ${getMessage('toggle')} 🔄`,
+  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} ${getMessage('switch')} 🔄`,
 
   // 🤐, 🟥 could also fit.
   [HotkeyAction.DECREASE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} 🔽`,
   [HotkeyAction.INCREASE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} 🔼`,
   [HotkeyAction.SET_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} =`,
-  [HotkeyAction.TOGGLE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} ${getMessage('toggle')} 🔄`,
+  [HotkeyAction.TOGGLE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} ${getMessage('switch')} 🔄`,
 
   // TODO should we specify here that the values are in seconds?
   // 📏? Couldn't find anything better.
   [HotkeyAction.DECREASE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} 🔽`,
   [HotkeyAction.INCREASE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} 🔼`,
   [HotkeyAction.SET_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} =`,
-  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} ${getMessage('toggle')} 🔄`,
+  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} ${getMessage('switch')} 🔄`,
 
   [HotkeyAction.DECREASE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} 🔽`,
   [HotkeyAction.INCREASE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} 🔼`,
   [HotkeyAction.SET_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} =`,
-  [HotkeyAction.TOGGLE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} ${getMessage('toggle')} 🔄`,
+  [HotkeyAction.TOGGLE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} ${getMessage('switch')} 🔄`,
 
   [HotkeyAction.REWIND]: `⬅️ ${getMessage('rewind')}`,
   [HotkeyAction.ADVANCE]: `➡️ ${getMessage('advance')}`,

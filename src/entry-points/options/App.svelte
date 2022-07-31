@@ -257,7 +257,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <ul>
             <!-- TODO do we need "Hotkeys are also active when the popup is open" here (see localization)?
             Maybe it can be understood from inputs' labels? -->
-            {#each getMessage('hotkeysNotes', getMessage('toggle')).split('\n') as line}
+            {#each getMessage('hotkeysNotes', getMessage('switch')).split('\n') as line}
               <li>{line}</li>
             {/each}
           </ul>
