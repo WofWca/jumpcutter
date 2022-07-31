@@ -39,7 +39,7 @@
       }
     },
     "toggle_enabled": {
-      "description": "Toggle extension",
+      "description": "__MSG_toggleExtension__",
       "suggested_key": {
         "default": "Alt+Shift+X"
       }
