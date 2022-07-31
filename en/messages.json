@@ -5,6 +5,9 @@
 	"enable": {
 		"message": "Enable"
 	},
+	"toggleExtension": {
+		"message": "Toggle extension"
+	},
 	"more": {
 		"message": "More"
 	},

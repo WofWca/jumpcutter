@@ -2,6 +2,9 @@
 	"enable": {
 		"message": "Activer"
 	},
+	"toggleExtension": {
+		"message": "Activer/Désactiver"
+	},
 	"timeSaved": {
 		"message": "Infos sur le temps gagné"
 	},
