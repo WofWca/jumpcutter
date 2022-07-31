@@ -295,7 +295,7 @@
 		"message": "Last ned innstillinger fra synkroniseringslagring"
 	},
 	"hotkeysNotes": {
-		"message": "Valgtast (Ctrl, Shift, osv.) støttes.\nFlere handlinger kan knyttes til én tast. Dette kan brukes for å lage «profiler».\nForskjellen mellom «$toggle$» og «=» (altså «sett»)-handlinger er at «$toggle» veksler verdi mellom den for forrige verdi og hurtigtastens argument, mens «sett» alltid setter den til argumentets verdi.\nHurtigtaster er også aktive når oppsprettet er åpent.",
+		"message": "Valgtast (Ctrl, Shift, osv.) støttes.\nFlere handlinger kan knyttes til én tast. Dette kan brukes for å lage «profiler».\nForskjellen mellom «$toggle$» og «=» (altså «sett»)-handlinger er at «$toggle$» veksler verdi mellom den for forrige verdi og hurtigtastens argument, mens «sett» alltid setter den til argumentets verdi.\nHurtigtaster er også aktive når oppsprettet er åpent.",
 		"placeholders": {
 			"toggle": {
 				"content": "$1",
