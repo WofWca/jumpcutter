@@ -241,16 +241,16 @@
 		"message": "Enable hotkeys"
 	},
 	"hotkeysNotes": {
-		"message": "Modifier keys (Ctrl, Shift, etc.) are supported.\nSeveral actions can be bound to a single key. This can be utilized to create \"profiles\".\nThe difference between \"$toggle$\" and \"=\" (a.k.a \"set\") actions is that \"$toggle$\" toggles the value between the previous value and the hotkey's argument, while \"set\" always sets it to the argument's value.\nHotkeys are also active when the popup is open.",
+		"message": "Modifier keys (Ctrl, Shift, etc.) are supported.\nSeveral actions can be bound to a single key. This can be utilized to create \"profiles\".\nThe difference between \"$switch$\" and \"=\" (a.k.a \"set\") actions is that \"$switch$\" toggles the value between the previous value and the hotkey's argument, while \"set\" always sets it to the argument's value.\nHotkeys are also active when the popup is open.",
 		"placeholders": {
-			"toggle": {
+			"switch": {
 				"content": "$1",
-				"example": "toggle"
+				"example": "switch"
 			}
 		}
 	},
-	"toggle": {
-		"message": "toggle"
+	"switch": {
+		"message": "switch"
 	},
 	"rewind": {
 		"message": "Rewind (seconds)"

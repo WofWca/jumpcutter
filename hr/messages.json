@@ -223,15 +223,15 @@
 		"message": "Aktiviraj tipkovne prečace"
 	},
 	"hotkeysNotes": {
-		"message": "Podržane su tipke modifikatora (Ctrl, Shift, itd.).\nNekoliko radnji se mogu povezati na jedan tipku. To se može koristiti za stvaranje „profila”.\nRazlika između „$toggle$” i „=” („postava”) radnji je u tome, što „$toggle$” mijenja vrijednost između prethodne vrijednosti i argumenta tipkovnog prečaca, dok ga „postava” uvijek postavlja na vrijednost argumenta.\nTipkovni prečaci su također aktivni kad je skočni prozor otvoren.",
+		"message": "Podržane su tipke modifikatora (Ctrl, Shift, itd.).\nNekoliko radnji se mogu povezati na jedan tipku. To se može koristiti za stvaranje „profila”.\nRazlika između „$switch$” i „=” („postava”) radnji je u tome, što „$switch$” mijenja vrijednost između prethodne vrijednosti i argumenta tipkovnog prečaca, dok ga „postava” uvijek postavlja na vrijednost argumenta.\nTipkovni prečaci su također aktivni kad je skočni prozor otvoren.",
 		"placeholders": {
-			"toggle": {
+			"switch": {
 				"content": "$1",
-				"example": "toggle"
+				"example": "switch"
 			}
 		}
 	},
-	"toggle": {
+	"switch": {
 		"message": "uključi/isključi"
 	},
 	"rewind": {

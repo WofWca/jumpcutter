@@ -74,7 +74,7 @@
 	"hotkey": {
 		"message": "快捷键"
 	},
-	"toggle": {
+	"switch": {
 		"message": "激活/禁用"
 	},
 	"advance": {
@@ -406,11 +406,11 @@
 		"message": "捐助"
 	},
 	"hotkeysNotes": {
-		"message": "支持组合键（Ctrl、Shift等）。\n可以将多个操作绑定到单个键，用来创建“配置文件”。\n“$toggle$”和“=”（也称为“设置”）操作之间的区别在于，“$toggle$”切换前一个值和快捷键的参数之间的值，而“设置”总是将其设置为参数的值。\n当弹出窗口打开时，快捷键也处于活动状态。",
+		"message": "支持组合键（Ctrl、Shift等）。\n可以将多个操作绑定到单个键，用来创建“配置文件”。\n“$switch$”和“=”（也称为“设置”）操作之间的区别在于，“$switch$”切换前一个值和快捷键的参数之间的值，而“设置”总是将其设置为参数的值。\n当弹出窗口打开时，快捷键也处于活动状态。",
 		"placeholders": {
-			"toggle": {
+			"switch": {
 				"content": "$1",
-				"example": "toggle"
+				"example": "switch"
 			}
 		}
 	},

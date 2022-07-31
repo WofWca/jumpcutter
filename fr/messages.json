@@ -142,7 +142,7 @@
 	"toggleMute": {
 		"message": "Activer/Couper le son"
 	},
-	"toggle": {
+	"switch": {
 		"message": "Activer/Désactiver"
 	},
 	"addBinding": {

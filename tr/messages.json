@@ -235,15 +235,15 @@
 		"message": "Kısayol tuşlarını etkinleştir"
 	},
 	"hotkeysNotes": {
-		"message": "Değiştirici tuşlar (Ctrl, Shift, vb.) desteklenir.\nBirkaç eylem tek bir tuşa bağlanabilir. Bu, \"profiller\" oluşturmak için kullanılabilir..\n\"$toggle$\" ve \"=\" (a.k.a \"uygula\") eylemleri arasındaki fark, \"$toggle$\" öğesinin önceki değer ile kısayol tuşunun bağımsız değişkeni arasında geçiş yapması, \"uygula \" onu her zaman bağımsız değişkenin değerine ayarlar.\nKısayol tuşları, açılır pencere açıkken de etkindir.",
+		"message": "Değiştirici tuşlar (Ctrl, Shift, vb.) desteklenir.\nBirkaç eylem tek bir tuşa bağlanabilir. Bu, \"profiller\" oluşturmak için kullanılabilir..\n\"$switch$\" ve \"=\" (a.k.a \"uygula\") eylemleri arasındaki fark, \"$switch$\" öğesinin önceki değer ile kısayol tuşunun bağımsız değişkeni arasında geçiş yapması, \"uygula \" onu her zaman bağımsız değişkenin değerine ayarlar.\nKısayol tuşları, açılır pencere açıkken de etkindir.",
 		"placeholders": {
-			"toggle": {
+			"switch": {
 				"content": "$1",
 				"example": "geçiş"
 			}
 		}
 	},
-	"toggle": {
+	"switch": {
 		"message": "geçiş"
 	},
 	"rewind": {
