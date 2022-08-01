@@ -131,7 +131,7 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
       // As long as we use a rectangular window, we can just subtract the value of the sample that leaves the window and
       // add the value of the sample that enters it.
       // TODO I believe floating point error may snowball here over time? Better compute it from scratch on each cycle,
-      // like a normal person.
+      // like a normal person. Or maybe we could simply periodically (like every 10 minutes) reset it or something?
       // TODO handle the case when smoothingWindowLength is shorter than `SAMPLES_PER_QUANTUM`.
       const lastWindowSampleSquare =
         this._sampleSquaresRingBuffer.getReverse((smoothingWindowLengthSamples - 1));

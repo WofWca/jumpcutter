@@ -64,6 +64,7 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
     const volumeThreshold = parameters.volumeThreshold[0];
     const input = inputs[0];
+    // TODO perf: can we stop checking this every time after we get an input connected?
     if (input.length === 0) {
       if (!assumeSoundedWhenUnknown) {
         throw new Error('The below code assumes video parts to be sounded when it is unknown');
@@ -83,6 +84,8 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         }
       }
       if (loudSampleFound) {
+        // TODO refactor: it is not quite corrent to use `currentTime` the time must actually depend on `sampleI`.
+        // This gives an error of up to 128/44100=2.9ms. Consider using `currentFrame` and `sampleRate` instead.
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);

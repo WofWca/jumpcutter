@@ -516,6 +516,8 @@ export default class AllMediaElementsController {
         const el_ = event.target as HTMLMediaElement;
         const prevPlaybackRate = prevPlaybackRate_;
         prevPlaybackRate_ = el_.playbackRate;
+        // TODO perf: we could not attach the listener at all if this is disabled, and then attach it when
+        // this gets changed, this would keep the reactivity.
         if (!this.settings!.updateSoundedSpeedWheneverItChangesOnWebsite) {
           return;
         }
