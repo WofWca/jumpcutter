@@ -75,7 +75,7 @@
 		"message": "快捷键"
 	},
 	"switch": {
-		"message": "激活/禁用"
+		"message": "切换"
 	},
 	"advance": {
 		"message": "快进（秒）"
@@ -428,5 +428,8 @@
 	},
 	"runSnowflakeBridge": {
 		"message": "通过简单地安装扩展来帮助其他人绕过审查"
+	},
+	"toggleExtension": {
+		"message": "开启/关闭本插件"
 	}
 }
