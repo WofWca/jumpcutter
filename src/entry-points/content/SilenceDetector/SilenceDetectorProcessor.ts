@@ -24,6 +24,8 @@ import type { AudioContextTime } from "@/helpers";
 
 const assumeSoundedWhenUnknown = true;
 
+let devErrorShown = false;
+
 /**
  * Takes volume data (e.g. from `VolumeFilter`) as input. Sends `SILENCE_START` when there has been silence for the
  * last `durationThreshold`, or `SILENCE_END` when a single sample above `volumeThreshold` is found.
@@ -72,18 +74,23 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
       this._lastLoudSampleTime = currentTime;
       return this.keepAlive;
     }
-    const numChannels = input.length;
+
+    if (IS_DEV_MODE) {
+      const numChannels = input.length;
+      if (numChannels !== 1 && !devErrorShown) {
+        // See `VolumeFilterProcessor`. It funnels all the channels into a single one.
+        // If it's no longer the case, revert the commit that introduced this check.
+        console.error('SilenceDetectorProcessor assumes that there\'s only one channel on its input');
+        devErrorShown = true;
+      }
+    }
+
+    const channel = input[0];
     const numSamples = input[0].length;
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
-      let loudSampleFound = false;
-      for (let channelI = 0; channelI < numChannels; channelI++) {
-        const sample = input[channelI][sampleI];
-        if (sample >= volumeThreshold) {
-          loudSampleFound = true;
-          break;
-        }
-      }
-      if (loudSampleFound) {
+      const sample = channel[sampleI];
+      const sampleIsLoud = sample >= volumeThreshold;
+      if (sampleIsLoud) {
         // TODO refactor: it is not quite corrent to use `currentTime` the time must actually depend on `sampleI`.
         // This gives an error of up to 128/44100=2.9ms. Consider using `currentFrame` and `sampleRate` instead.
         this._lastLoudSampleTime = currentTime;
