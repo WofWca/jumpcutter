@@ -376,6 +376,11 @@ export default class Controller {
           }
         }
 
+        // The delay between a message getting sent from `AudioWorkletProcessor` and
+        // it getting received here, on the main thread, seems to be the bottleneck.
+        // It takes from 0.005s to 0.020s (equal to an event cycle, right?), so I don't
+        // think optimizing anything other than this sent-to-received delay is worth the effort.
+        // I wish we could change `el.playbackRate` directly from `AudioWorkletProcessor`.
         if (IS_DEV_MODE) {
           const messageSentAt = data[1];
           const delayS = elementSpeedSwitchedAt - messageSentAt;
