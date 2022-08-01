@@ -339,7 +339,7 @@ export default class Controller {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SOUNDED);
           // But we're not really in a hurry to perform `onSilenceEnd` or `onSilenceStart` because there's
           // a lookahead delay so the sound doesn't get output immediately.
-          // https://github.com/WofWca/jumpcutter/blob/81b4e507b68d9f7c50e90161326edc65038ae28c/src/entry-points/content/StretchingController/StretcherAndPitchCorrectorNode.ts#L157
+          // https://github.com/WofWca/jumpcutter/blob/81b4e507b68d9f7c50e90161326edc65038ae28c/src/entry-points/content/helpers/getOptimalLookaheadDelay.ts#L30-L37
           // TODO improvement: unlikely, but maybe putting everything that follows `el.playbackRate =`
           // in a `setTimeout / queueMicrotask` could make the browser actually switch the speed faster?
           // Or is it always performed synchronously?
