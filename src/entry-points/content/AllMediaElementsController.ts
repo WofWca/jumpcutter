@@ -539,7 +539,8 @@ export default class AllMediaElementsController {
         In fact this is what happens on YouTube when you change video quality.
         Also this can happen if only `el.defaultPlaybackRate` was changed.
         See https://github.com/WofWca/jumpcutter/issues/95
-        This check also causes us to ignore 'ratechange' events that were fired on the same 
+        This check also causes us to ignore 'ratechange' events that were fired on the same
+        event cycle
         TODO maybe we also need to wait for the next event cycle (or two) to see if
         playbackRate got changed back?
         */
