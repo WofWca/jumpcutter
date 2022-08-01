@@ -375,6 +375,14 @@ export default class Controller {
             }
           }
         }
+
+        if (IS_DEV_MODE) {
+          const messageSentAt = data[1];
+          const delayS = elementSpeedSwitchedAt - messageSentAt;
+          if (delayS > 0.03) {
+            console.warn(`elementSpeedSwitchedAt - messageSentAt === ${delayS}s`);
+          }
+        }
       }
       // IDK why, but not doing this causes a pretty solid memory leak when you enable-disable the extension
       // (like 200 kB per toggle).
