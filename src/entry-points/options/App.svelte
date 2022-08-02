@@ -182,6 +182,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     >
       <section>
         <h3>{getMessage('general')}</h3>
+        <CheckboxField
+          label="▶️👀 {getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}"
+          bind:checked={settings.updateSoundedSpeedWheneverItChangesOnWebsite}
+        />
         <InputFieldBase
           label="{getMessage('applyTo')}"
           let:id
@@ -203,10 +207,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         <CheckboxField
           label="🔇❌ {getMessage('omitMutedElements')}"
           bind:checked={settings.omitMutedElements}
-        />
-        <CheckboxField
-          label="▶️👀 {getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}"
-          bind:checked={settings.updateSoundedSpeedWheneverItChangesOnWebsite}
         />
         <InputFieldBase
           label="🙊= {getMessage('silenceSpeedSpecificationMethod')}"
