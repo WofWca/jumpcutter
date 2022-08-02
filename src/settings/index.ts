@@ -131,7 +131,7 @@ export interface Settings {
   // but it's a headache. Let's just wait until it's fixed everywhere. Or maybe TODO this later.
   enableDesyncCorrection: boolean,
 
-  updateSoundedSpeedWheneverItChangesOnWebsite: boolean,
+  onPlaybackRateChangeFromOtherScripts: 'prevent' | 'updateSoundedSpeed' | 'doNothing',
 
   __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
 }

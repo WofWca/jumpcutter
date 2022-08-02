@@ -247,5 +247,5 @@ export const defaultSettings: Readonly<Settings> = {
     ? Date.now() < 1754006400000
     : false,
 
-  updateSoundedSpeedWheneverItChangesOnWebsite: true,
+  onPlaybackRateChangeFromOtherScripts: 'updateSoundedSpeed',
 };

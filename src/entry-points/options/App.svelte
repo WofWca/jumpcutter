@@ -112,6 +112,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     }
   });
 
+  const onPlaybackRateChangeFromOtherScriptsOptions:
+    Array<{ v: Settings['onPlaybackRateChangeFromOtherScripts'], l: string }>
+    = [
+      { v: 'updateSoundedSpeed', l: `= ${getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}` },
+      { v: 'prevent', l: `✋ ${getMessage('preventOtherScriptsFromChangingPlaybackRate')}` },
+      { v: 'doNothing', l: `🧘 ${getMessage('doNothingWheneverPlaybackRateChanges')}` },
+    ];
   const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
     { v: 'relativeToSoundedSpeed', l: `✖️ ${getMessage('relativeToSounded')}` },
     { v: 'absolute', l: `= ${getMessage('absolute')}${getMessage('absoluteSilenceSpeedClarification')}` },
@@ -182,10 +189,22 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     >
       <section>
         <h3>{getMessage('general')}</h3>
-        <CheckboxField
-          label="▶️👀 {getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}"
-          bind:checked={settings.updateSoundedSpeedWheneverItChangesOnWebsite}
-        />
+        <fieldset>
+          <legend>▶️👀 {getMessage('wheneverPlaybackRateChangesFromOtherScripts')}</legend>
+          {#each onPlaybackRateChangeFromOtherScriptsOptions as { v, l }}
+            <input
+              type="radio"
+              name="onPlaybackRateChangeFromOtherScripts"
+              value={v}
+              bind:group={settings.onPlaybackRateChangeFromOtherScripts}
+              id={`onPlaybackRateChangeFromOtherScripts-radio-${v}`}
+            />
+            <label
+              for={`onPlaybackRateChangeFromOtherScripts-radio-${v}`}
+            >{l}</label>
+            <br>
+          {/each}
+        </fieldset>
         <InputFieldBase
           label="{getMessage('applyTo')}"
           let:id
