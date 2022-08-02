@@ -181,8 +181,17 @@
 	"general": {
 		"message": "General"
 	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Whenever playback rate gets changed by other scripts"
+	},
 	"updateSoundedSpeedWheneverItChangesOnWebsite": {
-		"message": "I want to control playback rate (sounded speed) by means other than this extension alone. This will update sounded speed whenever playback rate gets changed."
+		"message": "I want to control playback rate (sounded speed) through the website's UI or through other extensions, not just this one. This will update sounded speed whenever playback rate gets changed."
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "On some websites I visit, playback rate is getting changed in an unexpected manner. Don't let them change playback rate set by this extension."
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "None of the above. Simply ignore playback rate changes from other scripts."
 	},
 	"applyTo": {
 		"message": "Apply to"
