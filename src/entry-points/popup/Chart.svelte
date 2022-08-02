@@ -713,9 +713,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       }
     }
 
-    (function updateVolumeSeries() {
-      volumeSeries.append(sToMs(now), r.inputVolume)
-    })();
+    volumeSeries.append(sToMs(now), r.inputVolume)
 
     function arePlaybackRateChangeObjectsEqual(
       a: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
