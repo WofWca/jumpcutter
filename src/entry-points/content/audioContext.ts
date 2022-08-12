@@ -19,6 +19,12 @@
  */
 
 export const audioContext = new AudioContext({
+  // From what I understood `latencyHint` only affects the delay between `AudioDestinationNode`
+  // and the system's output, so changing this to something faster won't actually affect
+  // how fast we can react to loudness changes.
+  // https://webaudio.github.io/web-audio-api/#dom-audiocontextoptions-latencyhint
+  // https://webaudio.github.io/web-audio-api/#dom-audiocontext-baselatency
+  // Would be cool if I was wrong.
   latencyHint: 'playback',
 });
 
