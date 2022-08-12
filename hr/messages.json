@@ -232,7 +232,7 @@
 		}
 	},
 	"switch": {
-		"message": "uključi/isključi"
+		"message": "prekidač"
 	},
 	"rewind": {
 		"message": "Premotaj natrag (sekunde)"
@@ -428,5 +428,17 @@
 	},
 	"updateSoundedSpeedWheneverItChangesOnWebsite": {
 		"message": "Želim kontrolirati brzinu reprodukcije (normalnu brzinu) drugim sredstvima osim samo ovim proširenjem. To će aktualizirati normalnu brzinu kad god se promijeni brzina reprodukcije."
+	},
+	"toggleExtension": {
+		"message": "Uklj./Isklj. proširenje"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Kad jedna druga skripta promijeni brzinu reprodukcije"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Ništa od navedenog. Jednostavno zanemari promjene brzine reprodukcije drugih skripata."
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "Na nekim web-stranicama koje posjećujem brzina reprodukcije se mijenja na neočekivan način. Zabrani im mijenjanje brzine reprodukcije koju postavlja ovo proširenje."
 	}
 }
