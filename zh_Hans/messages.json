@@ -431,5 +431,14 @@
 	},
 	"toggleExtension": {
 		"message": "开启/关闭本插件"
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "在我访问的一些网站上，播放速度总是被意外改变。不要让这些网站更改本插件设置的播放速率。"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "每当播放速率被其他脚本更改时"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "以上都不是。无需对其他脚本改变播放速率的行为做出修正。"
 	}
 }
