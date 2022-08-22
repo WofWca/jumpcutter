@@ -93,6 +93,7 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
       if (sampleIsLoud) {
         // TODO refactor: it is not quite corrent to use `currentTime` the time must actually depend on `sampleI`.
         // This gives an error of up to 128/44100=2.9ms. Consider using `currentFrame` and `sampleRate` instead.
+        // https://webaudio.github.io/web-audio-api/#ref-for-dom-baseaudiocontext-current-frame-slot%E2%91%A0
         this._lastLoudSampleTime = currentTime;
         if (this._lastTimePostedSilenceStart) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
