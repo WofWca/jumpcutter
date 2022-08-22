@@ -25,8 +25,11 @@ import { getGeckoMajorVersion } from './';
 // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
 // For Firefox >= 97 this threshold is defined by `media.audio.playbackrate.muting_threshold` of `about:config`.
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1630569#c15
-// TODO but this doesn't check the value of that option (hence the word "likely" in the name).
+// TODO improvement: but this doesn't check the value of that option (hence the word "likely" in the name).
 // Add an extension setting called something like `maxPlaybackRate`, in case `muting_threshold` is different from 8?
+// Or we could make a dummy media element with dummy sound (maybe through Web Audio API?) and keep
+// increasing `playbackRate` until we observe it getting muted.
+// Or we could ask Gecko devs to make this value available through JS.
 function _getGeckoLikelyMaxNonMutedPlaybackRate() {
   const geckoMajorVersion = getGeckoMajorVersion();
   return (
