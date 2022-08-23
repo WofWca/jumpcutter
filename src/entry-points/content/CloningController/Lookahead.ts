@@ -19,8 +19,8 @@
  */
 
 import browser from '@/webextensions-api';
-import type { Settings as ExtensionSettings } from '@/settings';
-import { assertDev, getGeckoLikelyMaxNonMutedPlaybackRate, MediaTime } from '@/helpers';
+import { Settings as ExtensionSettings } from '@/settings';
+import { assertDev, clamp, maxPlaybackRate, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode, getRealtimeMargin } from '@/entry-points/content/helpers';
 import once from 'lodash/once';
 import throttle from 'lodash/throttle';
@@ -54,12 +54,12 @@ function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
 
 type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefore' | 'marginAfter'>;
 
-// TODO make it depend on `soundedSpeed` and how much silence there is and other stuff.
-const clonePlaybackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
-  ? Math.min(5, getGeckoLikelyMaxNonMutedPlaybackRate())
-  // Somewhat arbitrary.
-  : 5;
-
+// The `maxPlaybackRate` could change in the future, to something like 64, so let's cap it at
+// this value. Because higher playback rate is more processing-heavy (things may start lagging)
+// and reduces time accuracy of silence ranges, which can cause it to miss short silence ranges.
+// This is practically the greatest effective absolute playbackRate one expects to achieve.
+// TODO improvement: turn this into an option.
+const maxClonePlaybackRate = Math.min(8, maxPlaybackRate);
 
 export default class Lookahead {
   clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
@@ -122,7 +122,7 @@ export default class Lookahead {
     // TODO DRY
     // const smoothingWindowLenght = 0.03;
     // const smoothingWindowLenght = 0.15;
-    // If you ever change `clonePlaybackRate`, remember to change `lookaheadVolumeFilterSmoothing` as well.
+    // TODO improvement: `lookaheadVolumeFilterSmoothing` must depend on the element's playbackRate.
     const smoothingWindowLenght = lookaheadVolumeFilterSmoothing;
     // TODO DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
@@ -161,8 +161,8 @@ export default class Lookahead {
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
           // `marginAfter` will be taken into account when we `pushNewSilenceRange`.
           const realTimePassedSinceSilenceStart =
-            realTimePassedSinceEvent + silenceDetectorDurationThreshold + volumeSmoothingCausedDelay;
-          const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * clonePlaybackRate;
+            realTimePassedSinceEvent + silenceDetector.durationThreshold + volumeSmoothingCausedDelay;
+          const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * this.clone.playbackRate;
           const silenceStartAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceStart;
           this.silenceSince = silenceStartAtIntrinsicTime;
         } else {
@@ -170,7 +170,7 @@ export default class Lookahead {
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
           const realTimePassedSinceSilenceEnd =
             realTimePassedSinceEvent + volumeSmoothingCausedDelay;
-          const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * clonePlaybackRate;
+          const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * this.clone.playbackRate;
           const silenceEndAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
           this.pushNewSilenceRange(
             this.silenceSince + this.settings.marginAfter,
@@ -205,7 +205,6 @@ export default class Lookahead {
     clone.addEventListener('ended', onEnded, { passive: true });
     this._destroyedPromise.then(() => clone.removeEventListener('ended', onEnded));
 
-    clone.playbackRate = clonePlaybackRate;
     // For better performance. TODO however I'm not sure if this can significantly affect volume readings.
     // On one hand we could say "we don't change the waveform, we're just processing it faster", on the other hand
     // frequency characteristics are changed, and there's a risk of exceeding the Nyquist frequency.
@@ -239,6 +238,63 @@ export default class Lookahead {
     this._destroyedPromise.then(() => {
       originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
     });
+
+    {
+      // TODO refactor: shouldn't we watch both originalElement's and clone's 'timeupdate'?
+      // Are there edge cases?
+      const addListener = () => originalElement.addEventListener(
+        'timeupdate',
+        setClonePlaybackRateAndScheduleAnother,
+        { once: true, passive: true }
+      );
+      let timeoutId = -1;
+      const setClonePlaybackRateAndScheduleAnother = () => {
+        // TODO improvement: also make it depend on `soundedSpeed` and how much
+        // silence there is and other stuff. Maybe also on for how long we can't keep up?
+        // Maybe we could utilize `TimeSavedTracker`.
+        // Because it doesn't make sense to play the clone say 4x faster than
+        // the original if we're only expecting 10% of the meida to be silent.
+        // Like if there was a seek forward maybe we don't want to immediately switch to max speed?
+        // Also does it really make sense to set the max speed right from the start?
+
+        // TODO improvement: this doesn't consider how much silence there is. So if the clone is ahead
+        // 1 minute, but all that minute is silence, we'll slow down, but we shouldn't.
+        const aheadSeconds = clone.currentTime - originalElement.currentTime;
+        if (IS_DEV_MODE) {
+          // TODO improvement: this can happen when a seek is performed. In that case speed will jump to max.
+          if (aheadSeconds < 0) {
+            console.warn('aheadSeconds < 0:', aheadSeconds, clone.currentTime, originalElement.currentTime);
+          }
+        }
+        // Speed is max when 0 seconds ahead and is 0 when 3 minutes ahead (but we'll clamp it, below).
+        const playbackRateUnclamped = maxClonePlaybackRate * (1 - (aheadSeconds / (3 * 60)));
+        // Min clamp shouldn't be low because of performance - playing a video at 0.01 speed for 100 seconds
+        // is much worse than playing it at 1 speed for 1 second.
+        // TODO perf: Need to pause the video instead when it goes below the lower bound.
+        // Need upper bound just in case `aheadSeconds` is negative for some reason.
+        // TODO improvement: also approaching it this way in effect makes it so that the greater
+        // the effective playbackRate of the original element is, the less far ahead the clone
+        // is going to be, which sounds a little stupid.
+        clone.playbackRate = clamp(playbackRateUnclamped, 2, maxClonePlaybackRate);
+        // TODO refactor: await for it somewhere above, otherwise it's not synchronous.
+        // Also it's not really correct to immediately change `durationThreshold` because
+        // the `silenceDetector` has data of media being played at different speed.
+        silenceDetectorP.then(silenceDetector => {
+          silenceDetector.durationThreshold = this._getSilenceDetectorNodeDurationThreshold();
+        });
+        // TODO perf: changing playback rate too often may not be a good idea.
+        // Maybe need to change the speed in steps (like don't change by less than 0.5).
+        timeoutId = (setTimeout as typeof window.setTimeout)(
+          addListener,
+          3000
+        );
+      };
+      setClonePlaybackRateAndScheduleAnother();
+      this._destroyedPromise.then(() => {
+        originalElement.removeEventListener('timeupdate', setClonePlaybackRateAndScheduleAnother);
+        clearTimeout(timeoutId);
+      });
+    }
 
     // So silenceDetector doesn't process audio from the clone element while it is paused
     // (e.g. if it reached the end, or fetching data).
@@ -282,7 +338,7 @@ export default class Lookahead {
   public ensureInit = once(this._init);
 
   private _getSilenceDetectorNodeDurationThreshold() {
-    return getRealtimeMargin(this.settings.marginAfter + this.settings.marginBefore, clonePlaybackRate);
+    return getRealtimeMargin(this.settings.marginAfter + this.settings.marginBefore, this.clone.playbackRate);
   }
 
   /**

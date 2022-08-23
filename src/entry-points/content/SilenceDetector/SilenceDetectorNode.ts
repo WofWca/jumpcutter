@@ -21,6 +21,8 @@
 export * from './SilenceDetectorMessage';
 
 export default class SilenceDetectorNode extends AudioWorkletNode {
+  volumeThresholdParam: AudioParam;
+  durationThresholdParam: AudioParam;
   constructor(context: AudioContext, durationThreshold: number) {
     super(context, 'SilenceDetectorProcessor', {
       parameterData: {
@@ -33,6 +35,10 @@ export default class SilenceDetectorNode extends AudioWorkletNode {
       // processorOptions: { initialDuration: 0 },
       numberOfOutputs: 0,
     });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.volumeThresholdParam = this.parameters.get('volumeThreshold')!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.durationThresholdParam = this.parameters.get('durationThreshold')!;
     // TODO a workaround. Otherwise when you create an instance of `SilenceDetectorNode`, it appears to not have
     // the below `volumeThreshold` & `durationThreshold` setters.
     // Need to report this bug.
@@ -41,11 +47,12 @@ export default class SilenceDetectorNode extends AudioWorkletNode {
     }
   }
   set volumeThreshold(v: number) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.parameters.get('volumeThreshold')!.value = v;
+    this.volumeThresholdParam.value = v;
+  }
+  get durationThreshold() {
+    return this.durationThresholdParam.value;
   }
   set durationThreshold(v: number) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.parameters.get('durationThreshold')!.value = v;
+    this.durationThresholdParam.value = v;
   }
 }
