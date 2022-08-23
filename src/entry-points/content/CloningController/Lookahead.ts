@@ -230,7 +230,8 @@ export default class Lookahead {
         this.silenceSince = originalElementTime;
       }
     }
-    // TODO also utilize `requestIdleCallback` so it gets called less frequently during high loads?
+    // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
+    // TODO perf: we could instead detach the listener and attach it again after one second.
     const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
     // TODO using `timeupdate` is pretty bug-proof, but not very efficient.
     originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
