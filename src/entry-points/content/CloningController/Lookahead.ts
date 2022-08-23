@@ -122,6 +122,7 @@ export default class Lookahead {
     // TODO DRY
     // const smoothingWindowLenght = 0.03;
     // const smoothingWindowLenght = 0.15;
+    // If you ever change `clonePlaybackRate`, remember to change `lookaheadVolumeFilterSmoothing` as well.
     const smoothingWindowLenght = lookaheadVolumeFilterSmoothing;
     // TODO DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
