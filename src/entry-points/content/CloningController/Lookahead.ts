@@ -213,6 +213,7 @@ export default class Lookahead {
     // It's a bit weird that it's not at the very bottom of the function. TODO?
     await Promise.all(toAwait);
 
+    // TODO perf: also need to seek if the clone started playing a processed range.
     // TODO but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
     // i.e. non-sorted and having overlapping (in our case, duplicate) entries.
     // However, the current implementation of `getMaybeSilenceRangeForTime` allows this.
