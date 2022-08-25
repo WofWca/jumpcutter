@@ -90,7 +90,12 @@ Other than that, there are no known things concerning this. It doesn't interact 
 ## Donate
 
 * <https://antiwarcommittee.info/en/sunrise/#help>
-* <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
+* Monero (XMR):
+
+  > <monero:88yzE5FbDoMVLXUXkbJXVHjNpP5S3xkMaTwBSxmetBDvQMbecMtVCXnQ44W6WRYsPGCPoAYp74ER9aDgBLYDGAAiSt2wu8a?tx_amount=0.050000000000&recipient_name=WofWca%20(https%3A//github.com/WofWca)&tx_description=Donation%20for%20Jump%20Cutter%20extension%20development>
+* Bitcoin (BTC):
+
+  > <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
 * <https://liberapay.com/WofWca>
 
 <br>
