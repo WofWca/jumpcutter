@@ -52,5 +52,31 @@
 	},
 	"resetToDefaults": {
 		"message": "Auf Standardwerte zurücksetzen"
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➖ Funktioniert nicht auf vielen Seiten (YouTube, Vimeo). Funktioniert für Lokale Daten. Wenn es nicht funktioniert, wird nichts übersprungen. Nur schneller abgespielt\n➕ Leise Segmente werden übersprungen. Keine Beschleunigung.\n➕ Kein Audio Verzerrung, Verzögerung oder unsynchronisierung\n➖ Graph Zeigt die Lautstärke der leisen Regionen nicht an. Es zeigt stattdessen nur 0."
+	},
+	"tryOpeningDirectly": {
+		"message": "Versuch es manuell zu öffnen"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Wenn die Lautstärke unter dem Wert liegt, wird die Stelle beschleunigt.\nAuf dem Graphen ist das in Rot 🟥 eingezeichnet. Das Blaue 🟦 ist die jetzige Lautstärke. Ist diese unter der roten Linie, wird das als stille bewertet."
+	},
+	"marginBefore": {
+		"message": "Platz vorher"
+	},
+	"marginAfter": {
+		"message": "Platz nachher"
+	},
+	"soundedSpeedTooltip": {
+		"message": "Die normale Geschwindigkeit, wenn die es nicht still ist.\nAuf dem Graph sind die Stellen mit der Geschwindigkeit in grün 🟩 eingezeichnet."
+	},
+	"silenceSpeedTooltip": {
+		"message": "Die Geschwindigkeit, mit der die stillen Stellen abgespielt werden.\nIm Graphen werden diese Stellen in rot 🟥 eingezeichnet.$relativeNote$\n⚠️ Ist dieser Wert sehr groß (> ~4) werden die Anfänge der Sätze auch übersprungen. (Wie wenn \"Abstand vorher\" kleiner ist).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
 	}
 }
