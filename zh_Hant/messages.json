@@ -201,5 +201,244 @@
 				"example": "open a local file"
 			}
 		}
+	},
+	"advance": {
+		"message": "快進(秒)"
+	},
+	"rewind": {
+		"message": "快退(秒)"
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "顯示\"$openLocalFileLabel$\"連結",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"popupSpecificHotkeys": {
+		"message": "彈出窗口相關的快捷鍵"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "平均算法"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "全歷史平均值(無更新衰退)"
+	},
+	"hotkeys": {
+		"message": "快捷鍵"
+	},
+	"increaseVolume": {
+		"message": "提高音量(%)"
+	},
+	"saving": {
+		"message": "正在儲存…"
+	},
+	"meta": {
+		"message": "設置同步與導出"
+	},
+	"saved": {
+		"message": "已儲存"
+	},
+	"more": {
+		"message": "更多"
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "已節省的時間(與只播放有聲片段速度的時間相比)"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "已節省的時間(與完全以1x標準播放速度的時間相比)"
+	},
+	"wouldHaveLastedIfSpeedWasSounded": {
+		"message": "在不跳過無聲片段的情況下，以有聲片段速度播放所需的時間"
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "在不跳過無聲片段的情況下，以1x標準播放速度播放需要多長時間"
+	},
+	"applyToBoth": {
+		"message": "影片與音頻元素"
+	},
+	"none": {
+		"message": "無"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (也稱為相對於正常媒體速度(標準播放速度))"
+	},
+	"hotkey": {
+		"message": "快捷鍵"
+	},
+	"openPopup": {
+		"message": "打開彈出窗口"
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "只考慮最後播放的N秒"
+	},
+	"iconBadge": {
+		"message": "圖標數值顯示"
+	},
+	"hotkeysNotes": {
+		"message": "支持組合鍵(Ctrl, Shift等)。\n可以將多個操作綁定到單一個鍵，用來創建\"配置文件\"。\n\"$switch$\"和\"=\"(也稱為\"設置\")操作之間的區別在於，\"$switch$\"切換前一個值和快捷鍵的參數之間的值，而\"設置\"總是將其設置為參數的值。\n當彈出窗口打開時，快捷鍵也處於啟動狀態。",
+		"placeholders": {
+			"switch": {
+				"content": "$1",
+				"example": "switch"
+			}
+		}
+	},
+	"switch": {
+		"message": "切換"
+	},
+	"chartLengthInSeconds": {
+		"message": "長度(以秒為單位)"
+	},
+	"chartJumpPeriod": {
+		"message": "跳躍長度百分比(%)。表示為音量圖長度的一小部分。設置為0可以平滑移動(無跳躍)。"
+	},
+	"chartWidthPx": {
+		"message": "寬度(像素)"
+	},
+	"chartHeightPx": {
+		"message": "高度(像素)"
+	},
+	"chartSpeed": {
+		"message": "移動速度"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "與當前影片速度相同"
+	},
+	"input": {
+		"message": "輸入項目"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "當被調整的項目處於焦點時，禁用快捷鍵"
+	},
+	"autofocusEnabledInput": {
+		"message": "彈出窗口打開時，自動設置焦點為\"$enableCheckboxLabel$\"多選框",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"omitMutedElements": {
+		"message": "不應用在已靜音的媒體元素"
+	},
+	"togglePause": {
+		"message": "暫停/播放"
+	},
+	"toggleMute": {
+		"message": "靜音/取消靜音"
+	},
+	"decreaseVolume": {
+		"message": "降低音量(%)"
+	},
+	"action": {
+		"message": "動作"
+	},
+	"value": {
+		"message": "值"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "覆寫網站設置的快捷鍵"
+	},
+	"removeBinding": {
+		"message": "刪除綁定"
+	},
+	"addBinding": {
+		"message": "新增快捷鍵"
+	},
+	"edit": {
+		"message": "編輯"
+	},
+	"popup": {
+		"message": "彈出窗口"
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "請注意:瀏覽器不支持高於特定限制的播放速率。\n在本插件測試時，Chromium 內核的瀏覽器(如Chrome, Edge)版本是16，Gecko內核的瀏覽器(如Firefox)版本是8。"
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "只考慮最新數據(按指數衰減更新)"
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "最後播放周期的平均權重"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "預設情況下顯示的設置值"
+	},
+	"runSnowflakeBridge": {
+		"message": "通過簡單地安裝(其他)插件來幫助其他人繞過審查"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "以上都不是。忽略來自其他腳本的播放速度變化。"
+	},
+	"volumeThreshold": {
+		"message": "有聲片段的最低響度"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "對不同的演算法使用單獨的\"$marginBeforeLabel$\"和\"$marginAfterLabel$\"(與$useExperimentalAlgorithmLabel$設置相關)",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"chart": {
+		"message": "音量圖"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "當前影片速度與有聲片段速度關係相同"
+	},
+	"chartSpeedRealTime": {
+		"message": "固定值(實時)"
+	},
+	"rangeSlidersAttributes": {
+		"message": "范圍滑塊的屬性值"
+	},
+	"min": {
+		"message": "最小值"
+	},
+	"max": {
+		"message": "最大值"
+	},
+	"step": {
+		"message": "間距"
+	},
+	"downloadFromSync": {
+		"message": "從同步儲存下載設定"
+	},
+	"uploadToSync": {
+		"message": "將設置上傳到同步儲存"
+	},
+	"about": {
+		"message": "關於"
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "結果數據權重半衰期:$length$秒",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
+	},
+	"donate": {
+		"message": "捐助"
+	},
+	"helpTranslate": {
+		"message": "幫助翻譯"
+	},
+	"license": {
+		"message": "許可協議"
 	}
 }
