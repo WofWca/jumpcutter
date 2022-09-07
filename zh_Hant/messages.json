@@ -194,7 +194,7 @@
 		"message": "在我瀏覽的一些網站上，播放速度總是被意外改變。不要讓這些網站更改本插件設置的播放速率。"
 	},
 	"suggestOpenLocalFile": {
-		"message": "是否要開啟 **$本機檔案$**?",
+		"message": "是否要開啟 **本機檔案**?",
 		"placeholders": {
 			"openLocalFile": {
 				"content": "$1",
