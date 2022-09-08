@@ -185,6 +185,12 @@ module.exports = env => {
                   to: `_locales/zh_CN/messages.json`,
                   transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
                 },
+                {
+                  context: 'src',
+                  from: `_locales/zh_Hant/messages.json`,
+                  to: `_locales/zh_TW/messages.json`,
+                  transform: (content) => minimizeI18nMessagedJsonString(content, { unsafe: false }),
+                },
               ]
               : []
           ),
