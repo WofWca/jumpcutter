@@ -32,20 +32,20 @@
     "lodash": "^4.17.21",
     "tippy.js": "^6.3.7",
     "tone": "^14.7.77",
-    "webextension-polyfill": "^0.9.0"
+    "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.193",
+    "@types/chrome": "^0.0.195",
     "@types/firefox-webext-browser": "^94.0.1",
     "@types/hh-mm-ss": "^1.2.1",
-    "@types/lodash": "^4.14.182",
-    "@types/node": "^18.6.1",
-    "@typescript-eslint/eslint-plugin": "^5.31.0",
-    "@typescript-eslint/parser": "^5.31.0",
+    "@types/lodash": "^4.14.184",
+    "@types/node": "^18.7.14",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
+    "@typescript-eslint/parser": "^5.36.1",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
-    "eslint": "^8.20.0",
+    "eslint": "^8.23.0",
     "minimize-webext-i18n-json": "^2.0.2",
     "style-loader": "^3.3.1",
     "svelte": "~3.47.0",
@@ -53,9 +53,9 @@
     "svelte-loader": "^3.1.3",
     "svelte-preprocess": "^4.10.7",
     "ts-loader": "^9.3.1",
-    "typescript": "^4.7.4",
+    "typescript": "^4.8.2",
     "webpack": "^5.74.0",
-    "webpack-bundle-analyzer": "^4.5.0",
+    "webpack-bundle-analyzer": "^4.6.1",
     "webpack-cli": "^4.10.0"
   }
 }
