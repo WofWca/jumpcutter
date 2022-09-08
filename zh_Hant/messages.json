@@ -377,7 +377,7 @@
 		"message": "有聲片段的最低響度"
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "對不同的演算法使用單獨的\"$marginBeforeLabel$\"和\"$marginAfterLabel$\"(與$useExperimentalAlgorithmLabel$設置相關)",
+		"message": "對不同的演算法使用單獨的\"$marginBeforeLabel$\"和\"$marginAfterLabel$\"(與\"$useExperimentalAlgorithmLabel$\"設置相關)",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
