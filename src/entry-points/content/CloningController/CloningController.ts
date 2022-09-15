@@ -445,7 +445,7 @@ export default class Controller {
     // In cases where a seek is scheduled ahead of time, some event may happen that makes it better to not perform this
     // seek. For example, if the user decided to manually seek to some other time, or if I suck at coding and performed
     // a conflicting seek.
-    // TODO would be more efficient to `clearTimeout` instead. On what occasions though?
+    // TODO perf: would be more efficient to `clearTimeout` instead. On what occasions though?
     const expectedCurrentTime = seekScheduledTo;
     const cancelSeek =
       Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
@@ -554,7 +554,7 @@ export default class Controller {
   /**
    * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved),
    * othersie it will never resolve its promise.
-   * TODO make it work when it's false?
+   * TODO refactor: make it work when it's false?
    */
   async destroy(): Promise<void> {
     // `await this._initPromise` because the `init` function has side-effects (e.g. doing
@@ -570,7 +570,7 @@ export default class Controller {
 
     this._resolveDestroyedPromise();
 
-    // TODO make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
+    // TODO refactor: make sure built-in nodes (like gain) are also garbage-collected (I think they should be).
   }
 
   private _initLookahead() {
@@ -592,7 +592,7 @@ export default class Controller {
    * @param oldSettings - better to provide this so the current state can be reconstructed and
    * respected (e.g. if a silent part is currently playing it wont change speed to sounded speed as it would if the
    * parameter is omitted).
-   * TODO maybe it's better to just store the state on the class instance?
+   * TODO refactor: maybe it's better to just store the state on the class instance?
    */
   private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
     this.settings = newSettings;
