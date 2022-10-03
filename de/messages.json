@@ -78,5 +78,14 @@
 				"content": "$1"
 			}
 		}
+	},
+	"or": {
+		"message": "Oder"
+	},
+	"retry": {
+		"message": "Wiederholen"
+	},
+	"video": {
+		"message": "Video"
 	}
 }
