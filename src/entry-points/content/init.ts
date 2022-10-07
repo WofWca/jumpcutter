@@ -52,8 +52,8 @@ export default async function init(): Promise<void> {
     // `browser.runtime.sendMessage`, including other `broadcastStatus`.
     if (message !== 'checkContentStatus') { // TODO DRY.
       if (IS_DEV_MODE) {
-        const extensionPage = document.location.href.startsWith(browser.runtime.getURL(''));
-        const thisIsLocalFilePlayer = extensionPage;
+        const thisIsExtensionPage = document.location.href.startsWith(browser.runtime.getURL(''));
+        const thisIsLocalFilePlayer = thisIsExtensionPage;
         if (!thisIsLocalFilePlayer) {
           console.error('Unrecognized message', message);
         }
