@@ -1,1 +1,11 @@
-{}
+{
+	"extensionDescription": {
+		"message": "Mireu els vídeos ~ 1.5x més ràpidament avançant pauses llargues entre frases"
+	},
+	"volumeThreshold": {
+		"message": "Menor volum"
+	},
+	"soundedSpeed": {
+		"message": "Velocitat normal"
+	}
+}
