@@ -84,6 +84,11 @@ export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: n
   if (el.playbackRate !== newVal) {
     // Using a microtask because for our extension (at least for StretchingController (because it doesn't
     // use any lookahead)) it is critical to be as fast as possible when changing `playbackRate`.
+    // Why not just put `el.playbackRate = ` as the first line? Because I'm afraid that
+    // doing `addEventListener('ratechange')`
+    // (inside `rememberChangeAndForgetAfterEventListenersWereExecuted`)
+    // after `.playbackRate = ` may cause the listener to not get executed. If not now, maybe in
+    // a future version of the spec. TODO perf?
     queueMicrotask(() => rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentPlaybackRateChangesCausedByUs,
       el,
