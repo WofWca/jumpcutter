@@ -336,6 +336,7 @@ export default class Controller {
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           // Keep in mind that we need to do `el.playbackRate =` as fast as possible here in order to not
           // skip over the start of the sentence.
+          // TODO improvement: how about get `elementSpeedSwitchedAt` from 'ratechange' e.timestamp?
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SOUNDED);
           // But we're not really in a hurry to perform `onSilenceEnd` or `onSilenceStart` because there's
           // a lookahead delay so the sound doesn't get output immediately.
