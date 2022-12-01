@@ -507,7 +507,7 @@ export default class AllMediaElementsController {
       let prevPlaybackRate = el.playbackRate;
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
-        const bail = (
+        const doNothing = (
           // It may be because we made it switch to silenceSpeed, or other stuff.
           mayRatechangeEventBeCausedByUs(event)
           /*
@@ -531,7 +531,7 @@ export default class AllMediaElementsController {
           */
           || prevPlaybackRate === el_.playbackRate
         );
-        if (!bail) {
+        if (!doNothing) {
           switch (this.settings!.onPlaybackRateChangeFromOtherScripts) {
             case 'updateSoundedSpeed': {
               // TODO improvement: hey, how about we watch `defaultPlaybackRate` instead of `playbackRate`?
