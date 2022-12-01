@@ -36,7 +36,7 @@ import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 import { mediaElementSourcesMap } from '@/entry-points/content/audioContext';
-import { mayRatechangeEventBeCausedByUs, setPlaybackRateAndDoRelatedStuff } from './playbackRateChangeTracking';
+import { mayRatechangeEventBeCausedByUs, setPlaybackRateAndRememberIt } from './playbackRateChangeTracking';
 
 type SomeController = StretchingController | CloningController | AlwaysSoundedController;
 
@@ -555,7 +555,7 @@ export default class AllMediaElementsController {
             case 'prevent': {
               // It may be better to let the controller change the speed instead of
               // just setting it to the old value.
-              setPlaybackRateAndDoRelatedStuff(el_, prevPlaybackRate);
+              setPlaybackRateAndRememberIt(el_, prevPlaybackRate);
               // The website may be listening to 'ratechange' events and update `playbackRate`
               // inside the listener. Let's make it so that it doesn't receive the event.
               // This happens on Twitch (https://github.com/WofWca/jumpcutter/issues/25).

@@ -75,7 +75,7 @@ function rememberChangeAndForgetAfterEventListenersWereExecuted(
 /**
  * This must be used instead of `el.playbackRate =`
  */
-export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: number) {
+export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: number) {
   // Need this check because performing the assignment when the value is the same
   // doesn't cause the 'ratechange' event to fire (at least in Chromium at least right now),
   // so cleanup wouldn't be peformed here:
@@ -98,9 +98,9 @@ export function setPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: n
   }
 }
 /**
- * @see {@link setPlaybackRateAndDoRelatedStuff}
+ * @see {@link setPlaybackRateAndRememberIt}
  */
-export function setDefaultPlaybackRateAndDoRelatedStuff(el: HTMLMediaElement, newVal: number) {
+export function setDefaultPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: number) {
   if (el.defaultPlaybackRate !== newVal) {
     queueMicrotask(() => rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentDefaultPlaybackRateChangesCausedByUs,

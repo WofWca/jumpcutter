@@ -35,8 +35,8 @@ import {
   getOrCreateMediaElementSourceAndUpdateMap
 } from '@/entry-points/content/audioContext';
 import {
-  setPlaybackRateAndDoRelatedStuff,
-  setDefaultPlaybackRateAndDoRelatedStuff,
+  setPlaybackRateAndRememberIt,
+  setDefaultPlaybackRateAndRememberIt,
 } from '../playbackRateChangeTracking';
 
 type Time = AnyTime;
@@ -226,8 +226,8 @@ export default class Controller {
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
     this._destroyedPromise.then(() => {
-      setPlaybackRateAndDoRelatedStuff(element, elementPlaybackRateBeforeInitialization);
-      setDefaultPlaybackRateAndDoRelatedStuff(element, elementDefaultPlaybackRateBeforeInitialization);
+      setPlaybackRateAndRememberIt(element, elementPlaybackRateBeforeInitialization);
+      setDefaultPlaybackRateAndRememberIt(element, elementDefaultPlaybackRateBeforeInitialization);
     });
 
     toAwait.push(this.lookahead!.ensureInit().then(() => {
@@ -603,7 +603,7 @@ export default class Controller {
     // the opposite, when the ad ends).
     // It's also a good practice.
     // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:dom-media-defaultplaybackrate-2
-    setDefaultPlaybackRateAndDoRelatedStuff(
+    setDefaultPlaybackRateAndRememberIt(
       this.element,
       getActualPlaybackRateForSpeed(
         this.settings.soundedSpeed,
@@ -657,7 +657,7 @@ export default class Controller {
         : this.settings.silenceSpeed,
       this.settings.volumeThreshold
     );
-    setPlaybackRateAndDoRelatedStuff(this.element, speedVal);
+    setPlaybackRateAndRememberIt(this.element, speedVal);
     const elementSpeedSwitchedAt = this.audioContext.currentTime;
 
     if (IS_DEV_MODE) {
