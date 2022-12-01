@@ -520,7 +520,9 @@ export default class AllMediaElementsController {
           so, think of it as as if `el.playbackRate = el.playbackRate` would cause the event to fire
           (which it doesn't, but like if it did).
           If the video is at silenceSpeed at the moment it is done, we would otherwise (without this check)
-          set soundedSpeed to the current playbackRate, which would not be good.
+          set soundedSpeed to the current playbackRate (assuming
+          `settings.onPlaybackRateChangeFromOtherScripts === 'updateSoundedSpeed'`),
+          which would not be good.
           In fact this is what happens on YouTube when you change video quality.
           Also this can happen if only `el.defaultPlaybackRate` was changed.
           See https://github.com/WofWca/jumpcutter/issues/95
