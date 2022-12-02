@@ -36,7 +36,9 @@ import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 import { mediaElementSourcesMap } from '@/entry-points/content/audioContext';
-import { mayRatechangeEventBeCausedByUs, setPlaybackRateAndRememberIt } from './playbackRateChangeTracking';
+import {
+  lastPlaybackRateSetByUsMap, lastDefaultPlaybackRateSetByUsMap, setPlaybackRateAndRememberIt
+} from './playbackRateChangeTracking';
 
 type SomeController = StretchingController | CloningController | AlwaysSoundedController;
 
@@ -504,38 +506,28 @@ export default class AllMediaElementsController {
       // Video Speed Controller extension does this too, but that code is not really of use to us
       // because we also switch to silenceSpeed, in which case we must not update soundedSpeed.
       // https://github.com/igrigorik/videospeed/blob/caacb45d614db312cf565e5f92e09a14e52ccf62/inject.js#L467-L493
-      let prevPlaybackRate = el.playbackRate;
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
-        const doNothing = (
-          // It may be because we made it switch to silenceSpeed, or other stuff.
-          mayRatechangeEventBeCausedByUs(event)
-          /*
-          This can happen e.g. like this
-          ```
-          const old = el.playbackRate;
-          el.playbackRate = 42;
-          el.playbackRate = old;
-          ```
-          so, think of it as as if `el.playbackRate = el.playbackRate` would cause the event to fire
-          (which it doesn't, but like if it did).
-          If the video is at silenceSpeed at the moment it is done, we would otherwise (without this check)
-          set soundedSpeed to the current playbackRate (assuming
-          `settings.onPlaybackRateChangeFromOtherScripts === 'updateSoundedSpeed'`),
-          which would not be good.
-          In fact this is what happens on YouTube when you change video quality.
-          Also this can happen if only `el.defaultPlaybackRate` was changed.
-          See https://github.com/WofWca/jumpcutter/issues/95
-          This check also causes us to ignore 'ratechange' events that were fired on the same
-          event cycle
-          TODO maybe we also need to wait for the next event cycle (or two) to see if
-          playbackRate got changed back?
-          */
-          || prevPlaybackRate === el_.playbackRate
-        );
-        if (!doNothing) {
-          switch (this.settings!.onPlaybackRateChangeFromOtherScripts) {
-            case 'updateSoundedSpeed': {
+
+        // TODO refactor: Right now the maps (almost?) always have a value (`get` never
+        // returns `undefined`). But in the future (or idk when) this may not be the case, so
+        // might need to reassert the logic here.
+        if (IS_DEV_MODE) {
+          if (lastPlaybackRateSetByUsMap.get(el_) === undefined) {
+            console.warn('Expected playbackRate to have been set by us at least once');
+          }
+          if (lastDefaultPlaybackRateSetByUsMap.get(el_) === undefined) {
+            console.warn('Expected defaultPlaybackRate to have been set by us at least once');
+          }
+        }
+
+        switch (this.settings!.onPlaybackRateChangeFromOtherScripts) {
+          case 'updateSoundedSpeed': {
+            const lastPlaybackRateSetByUs = lastPlaybackRateSetByUsMap.get(el_);
+            if (
+              el_.playbackRate !== lastPlaybackRateSetByUs
+              && lastPlaybackRateSetByUs !== undefined
+            ) {
               // TODO improvement: hey, how about we watch `defaultPlaybackRate` instead of `playbackRate`?
               // While it may make more, sense, unfortunately it's rare that websites ever use `defaultPlaybackRate`.
               // Even YouTube doesn't update it. Make it an option at least? And should we maybe reach out to
@@ -552,29 +544,25 @@ export default class AllMediaElementsController {
                 console.warn('Updating soundedSpeed because apparently playbackRate was changed by'
                   + ' something other that this extension.');
               }
-              break;
             }
-            case 'prevent': {
-              // It may be better to let the controller change the speed instead of
-              // just setting it to the old value.
-              setPlaybackRateAndRememberIt(el_, prevPlaybackRate);
+            break;
+          }
+          case 'prevent': {
+            // Consider doing this for `defaultPlaybackRate` as well.
+            const lastPlaybackRateSetByUs = lastPlaybackRateSetByUsMap.get(el_);
+            if (
+              el_.playbackRate !== lastPlaybackRateSetByUs
+              && lastPlaybackRateSetByUs !== undefined
+            ) {
+              setPlaybackRateAndRememberIt(el_, lastPlaybackRateSetByUs);
               // The website may be listening to 'ratechange' events and update `playbackRate`
               // inside the listener. Let's make it so that it doesn't receive the event.
               // This happens on Twitch (https://github.com/WofWca/jumpcutter/issues/25).
               event.stopImmediatePropagation();
-              break;
             }
+            break;
           }
         }
-
-        // It is important to update `prevPlaybackRate` _after_ the above code because it may change
-        // `el.playbackRate`. For example, if the options to prevent other scripts from changing playbackRate
-        // is set, then if current playbackRate set by us is 4 and the webiste does
-        // `el.playbackRate = 1; el.playbackRate = 2;`, this will fire two 'ratechange' events.
-        // In the first one we'll set `playbackRate` back to 4, but on the second one
-        // `prevPlaybackRate` would otherwise be `2`, so we'd set it "back to 2", but it
-        // actually needs to be 4.
-        prevPlaybackRate = el_.playbackRate;
       };
       const listenerOptions = {
         // Need `capture` so that this listener gets executed before all the other ones that other scripts

@@ -18,19 +18,17 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * A list of values we recently assigned to the corresponding HTMLMediaElement's playbackRate.
- * The array may contain duplicate values (e.g. [2.5, 1, 2.5, 2.5]).
- */
-const recentPlaybackRateChangesCausedByUs = new WeakMap<HTMLMediaElement, number[]>();
-/** @see {@link recentPlaybackRateChangesCausedByUs} */
-const recentDefaultPlaybackRateChangesCausedByUs = new WeakMap<HTMLMediaElement, number[]>();
+export const lastPlaybackRateSetByUsMap =        new WeakMap<HTMLMediaElement, number>();
+export const lastDefaultPlaybackRateSetByUsMap = new WeakMap<HTMLMediaElement, number>();
+// const recentlySetPlaybackRateFor =        new WeakSet<HTMLMediaElement>();
+// const recentlySetDefaultPlaybackRateFor = new WeakSet<HTMLMediaElement>();
 
+/*
 /**
  * Care to perform the `el.(default)playbackRate` assignment AFTER calling this because of
  * `el.addEventListener('ratechange'`. Well, it currently works either way, but IDK, browser
  * behavior may change. Wrapping it in `queueMicrotask` also works (at least for now).
- */
+ * /
 function rememberChangeAndForgetAfterEventListenersWereExecuted(
   recentChangesMap:
     typeof recentPlaybackRateChangesCausedByUs
@@ -66,6 +64,7 @@ function rememberChangeAndForgetAfterEventListenersWereExecuted(
   // https://developer.mozilla.org/en-US/docs/Web/API/Event/timeStamp#reduced_time_precision
   // We can't rely on it to accurately determine when the assignment was performed.
 }
+*/
 
 // TODO how about write an ESLint rule that prohibits the use assignment to `playbackRate`
 // so the devs don't forget to call these?
@@ -76,6 +75,13 @@ function rememberChangeAndForgetAfterEventListenersWereExecuted(
  * This must be used instead of `el.playbackRate =`
  */
 export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: number) {
+  /*
+  TODO feat: use this for a feature where we BOTH prevent other scripts from changing the playback
+  rate AND update soundedSpeed when the user does it. How to differentiate? Simple. Roll back
+  every playback rate change that was perfrormed shortly after this extension changed playback rate.
+  If playbackRate was changed long since this extension changed playback rate, then say that it's
+  probably the user who did it (and they meant it), so, update `soundedSpeed`.
+
   // Need this check because performing the assignment when the value is the same
   // doesn't cause the 'ratechange' event to fire (at least in Chromium at least right now),
   // so cleanup wouldn't be peformed here:
@@ -96,11 +102,16 @@ export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: numbe
     ));
     el.playbackRate = newVal;
   }
+  */
+
+  el.playbackRate = newVal;
+  lastPlaybackRateSetByUsMap.set(el, newVal);
 }
 /**
  * @see {@link setPlaybackRateAndRememberIt}
  */
 export function setDefaultPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: number) {
+  /*
   if (el.defaultPlaybackRate !== newVal) {
     queueMicrotask(() => rememberChangeAndForgetAfterEventListenersWereExecuted(
       recentDefaultPlaybackRateChangesCausedByUs,
@@ -109,12 +120,16 @@ export function setDefaultPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal
     ));
     el.defaultPlaybackRate = newVal;
   }
+  */
+
+  el.defaultPlaybackRate = newVal;
+  lastDefaultPlaybackRateSetByUsMap.set(el, newVal);
 }
 
 /**
  * @returns If `false` then it's 100% not caused by us (unless I'm stupid). If `true`,
  * it may be either.
- */
+ * /
 export function mayRatechangeEventBeCausedByUs(event: Event): boolean {
   // Well, actually if there were several assignments to `playbackRate` in the same event cycle,
   // several 'ratechange' events will be fired, one of which may be caused by us, while another isn't.
@@ -137,3 +152,4 @@ export function mayRatechangeEventBeCausedByUs(event: Event): boolean {
   }
   return false;
 }
+*/
