@@ -19,7 +19,8 @@
  */
 
 import type { Settings as ExtensionSettings } from '@/settings';
-import type { ControllerSettings } from '../StretchingController/StretchingController';
+import type { ControllerSettings } from
+  '../ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import { getAbsoluteClampedSilenceSpeed } from '@/settings';
 
 export default function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {

@@ -137,7 +137,7 @@ const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 20;
 
 const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
 
-// TODO a lot of stuff is copy-pasted from StretchingController.
+// TODO a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
 
@@ -286,7 +286,7 @@ export default class Controller {
         || (browserGecko && element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
 
       if (captureStream) {
-        // Also mostly copy-pasted from `StretchingController`.
+        // Also mostly copy-pasted from `ElementPlaybackControllerStretching`.
         const audioContext = this.audioContext;
         const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
         // Must be the same so what the user sees matches what the lookahead sees.
@@ -544,7 +544,7 @@ export default class Controller {
           realTimeLeftUntilDestinationAtSilenceSpeed * 1000,
         );
         // Yes, there's actually two speed switches, but we increment it just once. Need to refactor.
-        // Same in StretchingController.
+        // Same in ElementPlaybackControllerStretching.
         this._didNotDoDesyncCorrectionForNSpeedSwitches++;
       }
     }
@@ -611,7 +611,8 @@ export default class Controller {
       )
     );
 
-    // TODO do it as we do in StretchingController, not always SOUNDED? Fine for now though.
+    // TODO do it as we do in ElementPlaybackControllerStretching, not always SOUNDED?
+    // Fine for now though.
     this._setSpeedAndLog(SpeedName.SOUNDED);
     const lookaheadSettingsChanged =
       oldSettings && (

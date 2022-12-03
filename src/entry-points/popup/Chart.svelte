@@ -28,8 +28,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     MediaTime, AudioContextTime, TimeDelta, AnyTime,
   } from '@/helpers';
   import { Settings } from '@/settings';
-  import type { TelemetryRecord as StretchingControllerTelemetryRecord }
-    from '@/entry-points/content/StretchingController/StretchingController';
+  import type { TelemetryRecord as ElementPlaybackControllerStretchingTelemetryRecord }
+    from '@/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
   import type { TelemetryRecord as CloningControllerTelemetryRecord }
     from '@/entry-points/content/CloningController/CloningController';
   import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
@@ -40,7 +40,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const PLOT_STRETCHER_DELAY = IS_DEV_MODE && true;
 
   type TelemetryRecord =
-    StretchingControllerTelemetryRecord
+    ElementPlaybackControllerStretchingTelemetryRecord
     | CloningControllerTelemetryRecord
     | AlwaysSoundedControllerTelemetryRecord
   ;

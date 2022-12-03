@@ -25,7 +25,8 @@ import {
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin } from '@/entry-points/content/helpers';
-import type StretchingController from './StretchingController/StretchingController';
+import type ElementPlaybackControllerStretching from
+  './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import type CloningController from './CloningController/CloningController';
 import type AlwaysSoundedController from './AlwaysSoundedController';
 import type TimeSavedTracker from './TimeSavedTracker';
@@ -41,7 +42,10 @@ import {
   setPlaybackRateAndRememberIt
 } from './playbackRateChangeTracking';
 
-type SomeController = StretchingController | CloningController | AlwaysSoundedController;
+type SomeController =
+  ElementPlaybackControllerStretching
+  | CloningController
+  | AlwaysSoundedController;
 
 export type TelemetryMessage =
   SomeController['telemetry']
@@ -78,7 +82,7 @@ function executeNonSettingsActions(
 let allMediaElementsControllerActive = false;
 
 type ControllerType<T extends ControllerKind> =
-  T extends ControllerKind.STRETCHING ? typeof StretchingController
+  T extends ControllerKind.STRETCHING ? typeof ElementPlaybackControllerStretching
   : T extends ControllerKind.CLONING ? typeof CloningController
   : T extends ControllerKind.ALWAYS_SOUNDED ? typeof AlwaysSoundedController
   : never;
@@ -119,7 +123,7 @@ async function importAndCreateController<T extends ControllerKind>(
     case ControllerKind.STRETCHING: {
       ({ default: Controller } = await import(
         /* webpackExports: ['default'] */
-        './StretchingController/StretchingController'
+        './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching'
       ));
       break;
     }

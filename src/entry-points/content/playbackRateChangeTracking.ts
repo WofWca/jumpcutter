@@ -88,7 +88,8 @@ export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: numbe
   // https://github.com/WofWca/jumpcutter/blob/8b964227b8522631a56e00e34e9b414e0ad63d36/src/entry-points/content/playbackRateChangeTracking.ts#L45-L58
   // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource:event-media-ratechange
   if (el.playbackRate !== newVal) {
-    // Using a microtask because for our extension (at least for StretchingController (because it doesn't
+    // Using a microtask because for our extension (at least for
+    // ElementPlaybackControllerStretching (because it doesn't
     // use any lookahead)) it is critical to be as fast as possible when changing `playbackRate`.
     // Why not just put `el.playbackRate = ` as the first line? Because I'm afraid that
     // doing `addEventListener('ratechange')`

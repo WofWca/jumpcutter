@@ -60,7 +60,7 @@ export interface TelemetryRecord {
   stretcherDelay: 0,
 }
 
-// TODO a lot of stuff is copy-pasted from StretchingController.
+// TODO a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
 /**
  * A controller that never switches to silenceSpeed.
  */

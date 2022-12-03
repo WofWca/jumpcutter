@@ -300,7 +300,7 @@ export default class Lookahead {
     // So silenceDetector doesn't process audio from the clone element while it is paused
     // (e.g. if it reached the end, or fetching data).
     // TODO need to also pause processing between 'seeking' and 'seeked'.
-    // TODO The same problem exists in the StretchingController. DRY?
+    // TODO The same problem exists in the ElementPlaybackControllerStretching. DRY?
     const resumeAudioContext = () => {
       ctx.resume();
     };

@@ -24,7 +24,7 @@ import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
 import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 
-const stretchingControllerSpecificDefaults = {
+const ElementPlaybackControllerStretchingSpecificDefaults = {
   marginBefore: 0,
   marginAfter: 0.100,
 } as const;
@@ -50,10 +50,10 @@ export const defaultSettings: Readonly<Settings> = {
   enabled: enabledSettingDefaultValue,
   // Seems like new users get immediately scared by the sound distortion the extension causes, so let's let users
   // enable marginBefore manually IF they start noticing that they need it.
-  marginBefore:         stretchingControllerSpecificDefaults.marginBefore,
-  previousMarginBefore: stretchingControllerSpecificDefaults.marginBefore,
-  marginAfter:          stretchingControllerSpecificDefaults.marginAfter,
-  previousMarginAfter:  stretchingControllerSpecificDefaults.marginAfter,
+  marginBefore:         ElementPlaybackControllerStretchingSpecificDefaults.marginBefore,
+  previousMarginBefore: ElementPlaybackControllerStretchingSpecificDefaults.marginBefore,
+  marginAfter:          ElementPlaybackControllerStretchingSpecificDefaults.marginAfter,
+  previousMarginAfter:  ElementPlaybackControllerStretchingSpecificDefaults.marginAfter,
 
   experimentalControllerType: ControllerKind.STRETCHING,
   useSeparateMarginSettingsForDifferentAlgorithms: true,
@@ -63,7 +63,7 @@ export const defaultSettings: Readonly<Settings> = {
       marginAfter: 0.030,
     },
     [ControllerKind.STRETCHING]: {
-      ...stretchingControllerSpecificDefaults,
+      ...ElementPlaybackControllerStretchingSpecificDefaults,
     },
   },
 
