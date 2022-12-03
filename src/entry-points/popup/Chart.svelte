@@ -32,8 +32,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     from '@/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
   import type { TelemetryRecord as ElementPlaybackControllerCloningTelemetryRecord }
     from '@/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
-  import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
-    from '@/entry-points/content/AlwaysSoundedController';
+  import type { TelemetryRecord as ElementPlaybackControllerAlwaysSoundedTelemetryRecord }
+    from '@/entry-points/content/ElementPlaybackControllerAlwaysSounded';
   import debounce from 'lodash/debounce';
 
   // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
@@ -42,7 +42,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   type TelemetryRecord =
     ElementPlaybackControllerStretchingTelemetryRecord
     | ElementPlaybackControllerCloningTelemetryRecord
-    | AlwaysSoundedControllerTelemetryRecord
+    | ElementPlaybackControllerAlwaysSoundedTelemetryRecord
   ;
   export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;

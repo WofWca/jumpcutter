@@ -28,7 +28,7 @@ import { isSourceCrossOrigin } from '@/entry-points/content/helpers';
 import type ElementPlaybackControllerStretching from
   './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
-import type AlwaysSoundedController from './AlwaysSoundedController';
+import type ElementPlaybackControllerAlwaysSounded from './ElementPlaybackControllerAlwaysSounded';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './helpers/extensionSettings2ControllerSettings';
 import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
@@ -45,7 +45,7 @@ import {
 type SomeController =
   ElementPlaybackControllerStretching
   | ElementPlaybackControllerCloning
-  | AlwaysSoundedController;
+  | ElementPlaybackControllerAlwaysSounded;
 
 export type TelemetryMessage =
   SomeController['telemetry']
@@ -84,7 +84,7 @@ let allMediaElementsControllerActive = false;
 type ControllerType<T extends ControllerKind> =
   T extends ControllerKind.STRETCHING ? typeof ElementPlaybackControllerStretching
   : T extends ControllerKind.CLONING ? typeof ElementPlaybackControllerCloning
-  : T extends ControllerKind.ALWAYS_SOUNDED ? typeof AlwaysSoundedController
+  : T extends ControllerKind.ALWAYS_SOUNDED ? typeof ElementPlaybackControllerAlwaysSounded
   : never;
 
 const controllerTypeDependsOnSettings = [
@@ -137,7 +137,7 @@ async function importAndCreateController<T extends ControllerKind>(
     case ControllerKind.ALWAYS_SOUNDED: {
       ({ default: Controller } = await import(
         /* webpackExports: ['default'] */
-        './AlwaysSoundedController'
+        './ElementPlaybackControllerAlwaysSounded'
       ));
       break;
     }
