@@ -506,12 +506,16 @@ export default class AllMediaElementsController {
       // Video Speed Controller extension does this too, but that code is not really of use to us
       // because we also switch to silenceSpeed, in which case we must not update soundedSpeed.
       // https://github.com/igrigorik/videospeed/blob/caacb45d614db312cf565e5f92e09a14e52ccf62/inject.js#L467-L493
+
+      // Ensure that the values for this element exist in the map. Currently they should already be
+      // there, but let's super-ensure it.
+      // Semantically it says "we approve the current values".
+      lastPlaybackRateSetByUsMap.set(el, el.playbackRate);
+      lastDefaultPlaybackRateSetByUsMap.set(el, el.defaultPlaybackRate);
+
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
 
-        // TODO refactor: Right now the maps (almost?) always have a value (`get` never
-        // returns `undefined`). But in the future (or idk when) this may not be the case, so
-        // might need to reassert the logic here.
         if (IS_DEV_MODE) {
           if (lastPlaybackRateSetByUsMap.get(el_) === undefined) {
             console.warn('Expected playbackRate to have been set by us at least once');
@@ -552,6 +556,7 @@ export default class AllMediaElementsController {
             const lastPlaybackRateSetByUs = lastPlaybackRateSetByUsMap.get(el_);
             if (
               el_.playbackRate !== lastPlaybackRateSetByUs
+              // Just in case.
               && lastPlaybackRateSetByUs !== undefined
             ) {
               setPlaybackRateAndRememberIt(el_, lastPlaybackRateSetByUs);
