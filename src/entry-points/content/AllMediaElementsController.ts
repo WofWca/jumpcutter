@@ -514,6 +514,23 @@ export default class AllMediaElementsController {
       lastPlaybackRateSetByThisExtensionMap.set(el, el.playbackRate);
       lastDefaultPlaybackRateSetByThisExtensionMap.set(el, el.defaultPlaybackRate);
 
+      // A quick and dirty fix for Twitch (https://github.com/WofWca/jumpcutter/issues/25).
+      // TODO improvement: https://github.com/WofWca/jumpcutter/issues/101.
+      // So people don't have to go to settings.
+      const forcePrevent = (
+        // Check if the setting has the default value (so the user didn't change it, otherwise
+        // they probably want different behavior).
+        [undefined, 'updateSoundedSpeed'].includes(
+          this.settings!.onPlaybackRateChangeFromOtherScripts
+        )
+        // So people have a way of tirning this off.
+        // @ts-expect-error 2339
+        && !this.settings.dontForcePreventPlaybackRateChangesOnTwitch
+        && ['www.twitch.tv', 'twitch.tv'].includes(document.location.host)
+        // 2050-01-01. In case I get hit by a bus.
+        && Date.now() < 2524608000000
+      );
+
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
 
@@ -526,7 +543,11 @@ export default class AllMediaElementsController {
           }
         }
 
-        switch (this.settings!.onPlaybackRateChangeFromOtherScripts) {
+        switch (
+          !forcePrevent
+            ? this.settings!.onPlaybackRateChangeFromOtherScripts
+            : 'prevent'
+        ) {
           case 'updateSoundedSpeed': {
             const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
             if (
