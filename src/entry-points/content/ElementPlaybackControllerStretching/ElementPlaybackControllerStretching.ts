@@ -96,6 +96,19 @@ function isStretcherEnabled(settings: ControllerSettings) {
 
 const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
 
+/**
+ * Controls playback rate (and `.currentTime`) of an `HTMLMediaElement` (like the other ones).
+ * Simply listens to the output of the target element. If it's silence, then we speed up.
+ *
+ * The "stretching" part is trickier. It plays a role when `marginBefore > 0`. Because we're simply
+ * listening to the output of the element, we can't directly look ahead its audio, so we can only
+ * slow down after a silent part when we've already reached the loud part, so it's impossible
+ * to make `marginBefore` work.
+ * Or is it? *Vsauce theme starts*
+ * What we do is take that `marginBefore` part (which was played at a faster speed because
+ * we can't look ahead) and before outputting it to the user we simply time-stretch
+ * (and pitch-shift it) so that it's played back at normal speed.
+ */
 export default class Controller {
   static controllerType = ControllerKind.STRETCHING;
 

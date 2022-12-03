@@ -138,6 +138,11 @@ const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 20;
 const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
 
 // TODO a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
+/**
+ * Controls playback rate (and `.currentTime`) of an `HTMLMediaElement` (like the other ones).
+ * Searches for silent parts by creating a new hidden `HTMLMediaElement` with the same `src` as the
+ * target one and playing it separately, in advance of the target one.
+ */
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
 

@@ -62,7 +62,8 @@ export interface TelemetryRecord {
 
 // TODO a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
 /**
- * A controller that never switches to silenceSpeed.
+ * A controller that never switches to silenceSpeed (only makes the element play at soundedSpeed).
+ * Basically a stub.
  */
 export default class Controller {
   static controllerType = ControllerKind.ALWAYS_SOUNDED;

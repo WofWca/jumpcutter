@@ -20,6 +20,9 @@
 
 import type { TimeDelta } from "@/helpers"
 
+/**
+ * Takes audio and outputs its loudness.
+ */
 export default class VolumeFilterNode extends AudioWorkletNode {
   constructor(context: AudioContext, maxSmoothingWindowLength: TimeDelta, smoothingWindowLength: TimeDelta) {
     super(context, 'VolumeFilter', {
