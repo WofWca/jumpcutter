@@ -37,7 +37,8 @@ import once from 'lodash/once';
 import debounce from 'lodash/debounce';
 import { mediaElementSourcesMap } from '@/entry-points/content/audioContext';
 import {
-  lastPlaybackRateSetByUsMap, lastDefaultPlaybackRateSetByUsMap, setPlaybackRateAndRememberIt
+  lastPlaybackRateSetByThisExtensionMap, lastDefaultPlaybackRateSetByThisExtensionMap,
+  setPlaybackRateAndRememberIt
 } from './playbackRateChangeTracking';
 
 type SomeController = StretchingController | CloningController | AlwaysSoundedController;
@@ -510,24 +511,24 @@ export default class AllMediaElementsController {
       // Ensure that the values for this element exist in the map. Currently they should already be
       // there, but let's super-ensure it.
       // Semantically it says "we approve the current values".
-      lastPlaybackRateSetByUsMap.set(el, el.playbackRate);
-      lastDefaultPlaybackRateSetByUsMap.set(el, el.defaultPlaybackRate);
+      lastPlaybackRateSetByThisExtensionMap.set(el, el.playbackRate);
+      lastDefaultPlaybackRateSetByThisExtensionMap.set(el, el.defaultPlaybackRate);
 
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
 
         if (IS_DEV_MODE) {
-          if (lastPlaybackRateSetByUsMap.get(el_) === undefined) {
+          if (lastPlaybackRateSetByThisExtensionMap.get(el_) === undefined) {
             console.warn('Expected playbackRate to have been set by us at least once');
           }
-          if (lastDefaultPlaybackRateSetByUsMap.get(el_) === undefined) {
+          if (lastDefaultPlaybackRateSetByThisExtensionMap.get(el_) === undefined) {
             console.warn('Expected defaultPlaybackRate to have been set by us at least once');
           }
         }
 
         switch (this.settings!.onPlaybackRateChangeFromOtherScripts) {
           case 'updateSoundedSpeed': {
-            const lastPlaybackRateSetByUs = lastPlaybackRateSetByUsMap.get(el_);
+            const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
             if (
               el_.playbackRate !== lastPlaybackRateSetByUs
               && lastPlaybackRateSetByUs !== undefined
@@ -553,7 +554,7 @@ export default class AllMediaElementsController {
           }
           case 'prevent': {
             // Consider doing this for `defaultPlaybackRate` as well.
-            const lastPlaybackRateSetByUs = lastPlaybackRateSetByUsMap.get(el_);
+            const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
             if (
               el_.playbackRate !== lastPlaybackRateSetByUs
               // Just in case.

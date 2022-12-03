@@ -18,8 +18,8 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const lastPlaybackRateSetByUsMap =        new WeakMap<HTMLMediaElement, number>();
-export const lastDefaultPlaybackRateSetByUsMap = new WeakMap<HTMLMediaElement, number>();
+export const lastPlaybackRateSetByThisExtensionMap =        new WeakMap<HTMLMediaElement, number>();
+export const lastDefaultPlaybackRateSetByThisExtensionMap = new WeakMap<HTMLMediaElement, number>();
 // const recentlySetPlaybackRateFor =        new WeakSet<HTMLMediaElement>();
 // const recentlySetDefaultPlaybackRateFor = new WeakSet<HTMLMediaElement>();
 
@@ -105,7 +105,7 @@ export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: numbe
   */
 
   el.playbackRate = newVal;
-  lastPlaybackRateSetByUsMap.set(el, newVal);
+  lastPlaybackRateSetByThisExtensionMap.set(el, newVal);
 }
 /**
  * @see {@link setPlaybackRateAndRememberIt}
@@ -123,7 +123,7 @@ export function setDefaultPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal
   */
 
   el.defaultPlaybackRate = newVal;
-  lastDefaultPlaybackRateSetByUsMap.set(el, newVal);
+  lastDefaultPlaybackRateSetByThisExtensionMap.set(el, newVal);
 }
 
 /**
