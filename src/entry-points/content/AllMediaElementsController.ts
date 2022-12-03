@@ -27,7 +27,7 @@ import { clamp, assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin } from '@/entry-points/content/helpers';
 import type ElementPlaybackControllerStretching from
   './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
-import type CloningController from './CloningController/CloningController';
+import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
 import type AlwaysSoundedController from './AlwaysSoundedController';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './helpers/extensionSettings2ControllerSettings';
@@ -44,7 +44,7 @@ import {
 
 type SomeController =
   ElementPlaybackControllerStretching
-  | CloningController
+  | ElementPlaybackControllerCloning
   | AlwaysSoundedController;
 
 export type TelemetryMessage =
@@ -83,7 +83,7 @@ let allMediaElementsControllerActive = false;
 
 type ControllerType<T extends ControllerKind> =
   T extends ControllerKind.STRETCHING ? typeof ElementPlaybackControllerStretching
-  : T extends ControllerKind.CLONING ? typeof CloningController
+  : T extends ControllerKind.CLONING ? typeof ElementPlaybackControllerCloning
   : T extends ControllerKind.ALWAYS_SOUNDED ? typeof AlwaysSoundedController
   : never;
 
@@ -130,7 +130,7 @@ async function importAndCreateController<T extends ControllerKind>(
     case ControllerKind.CLONING: {
       ({ default: Controller } = await import(
         /* webpackExports: ['default'] */
-        './CloningController/CloningController'
+        './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning'
       ));
       break;
     }
@@ -143,7 +143,7 @@ async function importAndCreateController<T extends ControllerKind>(
     }
     default: assertNever(kind);
   }
-  type Hack = ConstructorParameters<typeof CloningController>;
+  type Hack = ConstructorParameters<typeof ElementPlaybackControllerCloning>;
   const controller = new Controller(...(getConstructorArgs() as Hack));
   return controller;
 }

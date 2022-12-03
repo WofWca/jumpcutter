@@ -30,8 +30,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import { Settings } from '@/settings';
   import type { TelemetryRecord as ElementPlaybackControllerStretchingTelemetryRecord }
     from '@/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
-  import type { TelemetryRecord as CloningControllerTelemetryRecord }
-    from '@/entry-points/content/CloningController/CloningController';
+  import type { TelemetryRecord as ElementPlaybackControllerCloningTelemetryRecord }
+    from '@/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
   import type { TelemetryRecord as AlwaysSoundedControllerTelemetryRecord }
     from '@/entry-points/content/AlwaysSoundedController';
   import debounce from 'lodash/debounce';
@@ -41,7 +41,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
   type TelemetryRecord =
     ElementPlaybackControllerStretchingTelemetryRecord
-    | CloningControllerTelemetryRecord
+    | ElementPlaybackControllerCloningTelemetryRecord
     | AlwaysSoundedControllerTelemetryRecord
   ;
   export let latestTelemetryRecord: TelemetryRecord | undefined;
@@ -367,8 +367,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       const delayToAvoidExtrapolationRealTime = telemetryUpdatePeriod;
 
       // TODO when `el.seeking`, `elementPlaybackActive` is `false`. And seeking happens on every seilence range
-      // when `silenceSpeed === Infinity` (currently that is when the `CloningController` is used), so this causes
-      // jumps. Perhaps we should also base this on `referenceTelemetry`, so it doesn't jump when the video
+      // when `silenceSpeed === Infinity` (currently that is when the
+      // `ElementPlaybackControllerCloning` is used), so this causes jumps.
+      // Perhaps we should also base this on `referenceTelemetry`, so it doesn't jump when the video
       // gets paused?
       if (!r.elementPlaybackActive) {
         // TODO this is incorrect if the speed recently changed. Good enoguh though.

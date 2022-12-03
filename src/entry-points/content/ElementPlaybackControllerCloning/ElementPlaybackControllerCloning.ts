@@ -461,7 +461,7 @@ export default class Controller {
       if (expectedSeekDuration < 0.010) {
         console.warn(
           '`expectedSeekDuration` got lower than 0.010, but we ignore silence ranges that are shorter than this.'
-          + ' See `pushNewSilenceRange` in `CloningController/Lookahead.ts`'
+          + ' See `pushNewSilenceRange` in `ElementPlaybackControllerCloning/Lookahead.ts`'
         );
       }
     }
@@ -475,8 +475,9 @@ export default class Controller {
     const needForceSeekForDesyncCorrection = () => {
       let forceSeekForDesyncCorrection = false;
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
-        // Desync correction is crucial for CloningController because otherwise we'll start skipping at
-        // incorrect time. Apparently it's audio that gets out of sync with `el.currentTime`, not video.
+        // Desync correction is crucial for ElementPlaybackControllerCloning because
+        // otherwise we'll start skipping at incorrect time. Apparently it's audio that
+        // gets out of sync with `el.currentTime`, not video.
         // TODO maybe then it even makes sense to ignore whether `enableDesyncCorrection === false`?
   
         // In order to save more time, we don't simply check if
