@@ -349,8 +349,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             required
             min="0"
           />
+          <!-- ▶️ -->
           <InputFieldBase
-            label="▶️ {getMessage('chartSpeed')}"
+            label="🚶 {getMessage('chartSpeed')}"
             let:id
           >
             <select
