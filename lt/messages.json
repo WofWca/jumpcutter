@@ -1,1 +1,26 @@
-{}
+{
+	"useExperimentalAlgorithm": {
+		"message": "Naudoti eksperimentinį algoritmą"
+	},
+	"enable": {
+		"message": "Įjungti"
+	},
+	"or": {
+		"message": "Arba"
+	},
+	"more": {
+		"message": "Plačiau"
+	},
+	"toggleExtension": {
+		"message": "Įjungti plėtinį"
+	},
+	"volume": {
+		"message": "Garsas"
+	},
+	"retry": {
+		"message": "Bandyti dar kartą"
+	},
+	"toggleMute": {
+		"message": "Išjungti/Įjungti garsą"
+	}
+}
