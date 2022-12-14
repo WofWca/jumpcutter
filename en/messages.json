@@ -426,6 +426,9 @@
 	"donate": {
 		"message": "Donate"
 	},
+	"chat": {
+		"message": "Chat"
+	},
 	"runSnowflakeBridge": {
 		"message": "Help others circumvent censorship by simply installing (another) extension"
 	},
