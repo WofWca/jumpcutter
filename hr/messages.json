@@ -440,5 +440,8 @@
 	},
 	"preventOtherScriptsFromChangingPlaybackRate": {
 		"message": "Na nekim web-stranicama koje posjećujem brzina reprodukcije se mijenja na neočekivan način. Zabrani im mijenjanje brzine reprodukcije koju postavlja ovo proširenje."
+	},
+	"chat": {
+		"message": "Chat"
 	}
 }
