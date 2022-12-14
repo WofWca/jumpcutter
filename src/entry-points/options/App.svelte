@@ -534,6 +534,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <div style="margin: 1rem 0;">
     <a
       target="_blank"
+      href="https://matrix.to/#/#jump-cutter-extension:matrix.org"
+      rel="extenral noopener noreferrer"
+    >💬 {getMessage('chat')}</a>
+  </div>
+  <div style="margin: 1rem 0;">
+    <a
+      target="_blank"
       href="https://hosted.weblate.org/engage/jump-cutter/"
       rel="extenral noopener noreferrer"
     >🌐 {getMessage('helpTranslate')}</a>
