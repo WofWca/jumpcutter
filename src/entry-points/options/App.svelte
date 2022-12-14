@@ -571,6 +571,14 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     >ℹ️ {getMessage('about')}</a>
   </div>
 </main>
+<footer>
+  <a
+    target="_blank"
+    href="{browser.runtime.getURL('/license.html')}"
+  >
+    <img src="/agplv3-with-text-162x68.png" alt="AGPLv3 Logo">
+  </a>
+</footer>
 <!-- I've seen this design (bottom status bar) in some desktop applications (e.g. KeePassXC, if you go to settings).
 However, in Gecko the whole page is stretched, so the scroll is outside of the document, so it's the same as with
 `position: static;` TODO? -->
@@ -605,13 +613,21 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
 :global(body) {
   margin: 0;
   --main-padding: 1rem;
+  --content-max-width: 48rem;
 }
 main {
   padding: 0 var(--main-padding);
 
-  max-width: 48rem;
+  max-width: var(--content-max-width);
   margin-right: auto;
   margin-left: auto;
+}
+footer {
+  padding: 0 var(--main-padding);
+  text-align: end;
+
+  max-width: var(--content-max-width);
+  margin: 3rem auto 1rem auto;
 }
 section {
   background: #88888814;
