@@ -54,10 +54,10 @@
 		"message": "Auf Standardwerte zurücksetzen"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ Funktioniert nicht auf vielen Seiten (YouTube, Vimeo). Funktioniert für Lokale Daten. Wenn es nicht funktioniert, wird nichts übersprungen. Nur schneller abgespielt\n➕ Leise Segmente werden übersprungen. Keine Beschleunigung.\n➕ Kein Audio Verzerrung, Verzögerung oder unsynchronisierung\n➖ Graph Zeigt die Lautstärke der leisen Regionen nicht an. Es zeigt stattdessen nur 0."
+		"message": "➖ Funktioniert nicht auf vielen Seiten (YouTube, Vimeo). Funktioniert für Lokale Dateien. Wenn es nicht funktioniert, wird nichts übersprungen.\n➕ Leise Segmente werden übersprungen. Keine Beschleunigung.\n➕ Kein Audio Verzerrung, Verzögerung oder Unsynchronisierung\n➖ Graph zeigt die Lautstärke der leisen Regionen nicht an. Er zeigt stattdessen nur 0."
 	},
 	"tryOpeningDirectly": {
-		"message": "Versuch es manuell zu öffnen"
+		"message": "Versuchen sie es direkt zu öffnen"
 	},
 	"volumeThresholdTooltip": {
 		"message": "Wenn die Lautstärke unter dem Wert liegt, wird die Stelle beschleunigt.\nAuf dem Graphen ist das in Rot 🟥 eingezeichnet. Das Blaue 🟦 ist die jetzige Lautstärke. Ist diese unter der roten Linie, wird das als stille bewertet."
@@ -69,7 +69,7 @@
 		"message": "Platz nachher"
 	},
 	"soundedSpeedTooltip": {
-		"message": "Die normale Geschwindigkeit, wenn die es nicht still ist.\nAuf dem Graph sind die Stellen mit der Geschwindigkeit in grün 🟩 eingezeichnet."
+		"message": "Die Geschwindigkeit, mit der wir das Video abspielen wenn es gerade NICHT still ist, also die \"normale\" Geschwindigkeit.\nAuf dem Graph sind die Stellen mit der Geschwindigkeit in grün 🟩 eingezeichnet."
 	},
 	"silenceSpeedTooltip": {
 		"message": "Die Geschwindigkeit, mit der die stillen Stellen abgespielt werden.\nIm Graphen werden diese Stellen in rot 🟥 eingezeichnet.$relativeNote$\n⚠️ Ist dieser Wert sehr groß (> ~4) werden die Anfänge der Sätze auch übersprungen. (Wie wenn \"Abstand vorher\" kleiner ist).",
@@ -87,5 +87,26 @@
 	},
 	"video": {
 		"message": "video"
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "Im Durchschnitt wie viel schneller das Video sich abspielt im Vergleich mit der normalen (intrinsischen) Geschwindigkeit"
+	},
+	"comparedToSounded": {
+		"message": "im Vergleich zu \"laut\""
+	},
+	"comparedToIntrinsic": {
+		"message": "im Vergleich zu normal (intrinsisch)"
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nEs ist als multiplier der \"lauten\" Geschwindigkeit, also wenn z.b. die \"laute\" Geschwindigkeit 1.5 ist und die \"leise\" Geschwindigkeit 2 is, wird der absolute wert 3 sein. Man kann diese Funktionalität in der Einstellungsseite verändern."
+	},
+	"timeSavedComparedToSounded": {
+		"message": "Im Durchschnitt wie viel schneller das Video abgespielt wird im Vergleich mit der \"lauten\" Geschwindigkeit"
+	},
+	"timeSavedPercentage": {
+		"message": "Equivalente Zeiteinsparung in Prozent:"
+	},
+	"marginBeforeTooltip": {
+		"message": "Wenn es gerade still ist und wir einen lauten Teil hoeren, wie viele Sekunden vorher muessen wir es langsam abspielen (aenderung zur \"lauten\" Geschwindigkeit).\nDies ist da, damit man die ersten Buchstaben deutlich verstehen kann, wenn irgendjemand anfaengt zu sprechen.\n\nNicht-null-werte werden zu einer Audioverzerrung fuehren"
 	}
 }
