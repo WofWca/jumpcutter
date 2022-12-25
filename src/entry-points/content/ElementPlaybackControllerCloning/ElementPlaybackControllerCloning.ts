@@ -539,6 +539,8 @@ export default class Controller {
       const expectedMinimumSetTimeoutDelay = 1 / 60; // TODO determine this dynamically, as with `expectedSeekDuration`.
       // TODO but maybe otherwise we could simply use a smaller value of silenceSpeed instead of not speeding up
       // at all?
+      // TODO improvement: or maybe it's wrong? Does knowing setTimeout period let us predict when
+      // the next setTimeout is going to get called??
       let farEnoughToSpeedUp = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         const expectedTimeSavedBySpeedingUp = seekAmount / this.settings.soundedSpeed - seekAmount / newSpeed;
