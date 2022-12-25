@@ -407,6 +407,10 @@ export default class Controller {
   }
 
   maybeSeekOrSpeedupTimeoutId = -1;
+  /**
+   * Look at the upcoming silent part and maybe schedule a call
+   * to {@link Controller.maybeSeekOrSpeedup} to skip it.
+   */
   maybeScheduleMaybeSeekOrSpeedup() {
     const { currentTime } = this.element;
     const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
@@ -441,6 +445,13 @@ export default class Controller {
       );
     }
   }
+  /**
+   * Perform a seek to skip silence, or increase `playbackRate` if seeking is not good enough.
+   * Or don't do either if neither actually saves time, or under some other circumstances.
+   * This function is usually called with `setTimeout`, this is why it looks weird.
+   * @param seekTo where to seek (currently it's always the end of a silent part).
+   * @param seekScheduledTo what `el.currentTime` time we wanted this function to be called at.
+   */
   maybeSeekOrSpeedup(seekTo: MediaTime, seekScheduledTo: MediaTime): void {
     const element = this.element;
     const { currentTime, paused } = element;
