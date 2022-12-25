@@ -542,6 +542,19 @@ export default class Controller {
       // TODO improvement: or maybe it's wrong? Does knowing setTimeout period let us predict when
       // the next setTimeout is going to get called??
       let farEnoughToSpeedUp = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
+      if (IS_DEV_MODE) {
+        if (!farEnoughToSpeedUp) {
+          performance.mark('timeout-scheduled')
+          setTimeout(() => {
+            performance.mark('timeout-executed');
+            const delay = performance.measure('timeout-delay', 'timeout-scheduled', 'timeout-executed').duration;
+            if (delay < expectedMinimumSetTimeoutDelay * 1000) {
+              console.warn('Did not speedup because expected `setTimeout` delay to be '
+                + `> ${expectedMinimumSetTimeoutDelay * 1000}ms, but actually it was ${delay}ms`);
+            }
+          });
+        }
+      }
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         const expectedTimeSavedBySpeedingUp = seekAmount / this.settings.soundedSpeed - seekAmount / newSpeed;
         // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
