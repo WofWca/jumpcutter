@@ -107,6 +107,6 @@
 		"message": "Equivalente Zeiteinsparung in Prozent:"
 	},
 	"marginBeforeTooltip": {
-		"message": "Wenn es gerade still ist und wir einen lauten Teil hoeren, wie viele Sekunden vorher muessen wir es langsam abspielen (aenderung zur \"lauten\" Geschwindigkeit).\nDies ist da, damit man die ersten Buchstaben deutlich verstehen kann, wenn irgendjemand anfaengt zu sprechen.\n\nNicht-null-werte werden zu einer Audioverzerrung fuehren"
+		"message": "Wenn es gerade still ist und wir einen lauten Teil hoeren, wie viele Sekunden vorher muessen wir es langsam abspielen (aenderung zur \"lauten\" Geschwindigkeit).\nDies ist da, damit man die ersten Buchstaben deutlich verstehen kann, wenn irgendjemand anfaengt zu sprechen.\n\n⚠️ Nicht-null-werte werden zu einer Audioverzerrung fuehren when switching from silence to sounded speed AND will add constant audio DELAY equivalent to the value of this setting. These drawbacks do not apply if you use the \"experimental algorithm\"."
 	}
 }
