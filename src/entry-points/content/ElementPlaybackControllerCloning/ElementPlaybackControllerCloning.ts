@@ -238,7 +238,7 @@ export default class Controller {
     toAwait.push(this.lookahead!.ensureInit().then(() => {
       // TODO Super inefficient, I know.
       const onTimeupdate = () => {
-        this.maybeScheduleMaybeSeek();
+        this.maybeScheduleMaybeSeekOrSpeedup();
       }
       element.addEventListener('timeupdate', onTimeupdate, { passive: true });
       this._destroyedPromise.then(() => element.removeEventListener('timeupdate', onTimeupdate));
@@ -254,9 +254,9 @@ export default class Controller {
     this._destroyedPromise.then(() => element.removeEventListener('loadstart', onNewSrc));
 
     // Why `onNewSrc` is not enough? Because a 'timeupdate' event gets emited before 'loadstart', so
-    // 'maybeScheduleMaybeSeek' gets executed, and it tries to use the lookahead that was used for the
-    // previous source, so if the previous source started with silence, a seek will be performed
-    // immediately on the new source.
+    // 'maybeScheduleMaybeSeekOrSpeedup' gets executed, and it tries to use the lookahead that was
+    // used for the previous source, so if the previous source started with silence, a seek
+    // will be performed immediately on the new source.
     // TODO doesn't work on Gecko:
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1744398
     const onOldSrcGone = () => {
@@ -408,8 +408,8 @@ export default class Controller {
     delete this._pendingSettingsUpdates;
   }
 
-  maybeSeekTimeoutId = -1;
-  maybeScheduleMaybeSeek() {
+  maybeSeekOrSpeedupTimeoutId = -1;
+  maybeScheduleMaybeSeekOrSpeedup() {
     const { currentTime } = this.element;
     const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
     if (!maybeUpcomingSilenceRange) {
@@ -425,25 +425,25 @@ export default class Controller {
     const seekInRealTime = seekInVideoTime / this.settings.soundedSpeed;
     // Yes, this means that `getMaybeSilenceRangeForTime` may return the same silence range
     // on two subsequent 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
-    // This case is handled inside `this.maybeSeek`.
+    // This case is handled inside `this.maybeSeekOrSpeedup`.
     //
     // Just so the seek is performed a bit faster compared to `setTimeout`.
-    // TODO not very effective because `maybeSeek` performs some checks that are unnecessary when it is
-    // called immediately (and not by `setTimeout`).
-    clearTimeout(this.maybeSeekTimeoutId);
+    // TODO not very effective because `maybeSeekOrSpeedup` performs some checks that are
+    // unnecessary when it is called immediately (and not by `setTimeout`).
+    clearTimeout(this.maybeSeekOrSpeedupTimeoutId);
     // TODO should this be `<= expectedMinSetTimeoutDelay` instead of `<= 0`?
     if (seekInRealTime <= 0) {
-      this.maybeSeek(seekTo, seekAt);
+      this.maybeSeekOrSpeedup(seekTo, seekAt);
     } else {
-      this.maybeSeekTimeoutId = (setTimeout as typeof window.setTimeout)(
-        this.maybeSeekBounded,
+      this.maybeSeekOrSpeedupTimeoutId = (setTimeout as typeof window.setTimeout)(
+        this.maybeSeekOrSpeedupBounded,
         seekInRealTime * 1000,
         seekTo,
         seekAt,
       );
     }
   }
-  maybeSeek(seekTo: MediaTime, seekScheduledTo: MediaTime): void {
+  maybeSeekOrSpeedup(seekTo: MediaTime, seekScheduledTo: MediaTime): void {
     const element = this.element;
     const { currentTime, paused } = element;
 
@@ -473,7 +473,7 @@ export default class Controller {
 
     const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
     // TODO just use `fastSeek`?
-    // TODO should we maybe also calculate it before `setTimeout(maybeSeek)`?
+    // TODO should we maybe also calculate it before `setTimeout(maybeSeekOrSpeedup)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
     const farEnoughToPerformSeek = realTimeLeftUntilDestinationWithoutSeeking > expectedSeekDuration;
@@ -555,7 +555,7 @@ export default class Controller {
       }
     }
   }
-  maybeSeekBounded = this.maybeSeek.bind(this);
+  maybeSeekOrSpeedupBounded = this.maybeSeekOrSpeedup.bind(this);
 
   /**
    * Assumes `init()` to has been or will be called (but not necessarily that its return promise has been resolved),
@@ -630,11 +630,12 @@ export default class Controller {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
       this.destroyAndThrottledInitLookahead();
     }
-    // The previously scheduled `maybeSeek` became scheduled to an incorrect time because of this
-    // (so `Math.abs(currentTime - expectedCurrentTime)` inside `maybeSeek` will be big).
+    // The previously scheduled `maybeSeekOrSpeedup` became scheduled to an incorrect time because
+    // of this (so `Math.abs(currentTime - expectedCurrentTime)` inside `maybeSeekOrSpeedup`
+    // will be big).
     if (newSettings.soundedSpeed !== oldSettings?.soundedSpeed) {
-      clearTimeout(this.maybeSeekTimeoutId);
-      this.maybeScheduleMaybeSeek();
+      clearTimeout(this.maybeSeekOrSpeedupTimeoutId);
+      this.maybeScheduleMaybeSeekOrSpeedup();
     }
   }
 
