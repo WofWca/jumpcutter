@@ -541,6 +541,11 @@ export default class Controller {
       // at all?
       // TODO improvement: or maybe it's wrong? Does knowing setTimeout period let us predict when
       // the next setTimeout is going to get called??
+      // Wait, but maybe the `setTimeout` delay is not the only thing that should stop us from
+      // changing `playbackRate`? Maybe it's just not worth for the user to try to speedup such a
+      // short period because it won't save much time but make everything jumpy. It takes
+      // on average 120 snippets shorter than 1 / 60 to save 0.875 of a second at silenceSpeed of 8.
+      // Nah, sounds like an excuse to me.
       let farEnoughToSpeedUp = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
       if (IS_DEV_MODE) {
         if (!farEnoughToSpeedUp) {
