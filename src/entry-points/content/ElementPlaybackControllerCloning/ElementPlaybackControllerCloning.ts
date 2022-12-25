@@ -480,12 +480,12 @@ export default class Controller {
       }
     }
 
-    const realTimeLeftUntilDestinationWithoutSeeking = seekAmount / this.settings.soundedSpeed;
+    const realTimeLeftUntilDestinationAtNormalSpeed = seekAmount / this.settings.soundedSpeed;
     // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeekOrSpeedup)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
-    const farEnoughToPerformSeek = realTimeLeftUntilDestinationWithoutSeeking > expectedSeekDuration;
+    const farEnoughToPerformSeek = realTimeLeftUntilDestinationAtNormalSpeed > expectedSeekDuration;
     const needForceSeekForDesyncCorrection = () => {
       let forceSeekForDesyncCorrection = false;
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
@@ -506,7 +506,7 @@ export default class Controller {
         const howMuchWeWantDesyncCorrection =
           this._didNotDoDesyncCorrectionForNSpeedSwitches / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
         const howMuchWeWantToSeek =
-          realTimeLeftUntilDestinationWithoutSeeking / (expectedSeekDuration || Number.MIN_VALUE);
+          realTimeLeftUntilDestinationAtNormalSpeed / (expectedSeekDuration || Number.MIN_VALUE);
         const howMuchWeDontWantToSeek = 1 - howMuchWeWantToSeek;
         if (howMuchWeWantDesyncCorrection >= howMuchWeDontWantToSeek) {
           forceSeekForDesyncCorrection = true;
