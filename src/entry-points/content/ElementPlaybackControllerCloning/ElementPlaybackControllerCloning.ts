@@ -485,7 +485,7 @@ export default class Controller {
     // TODO should we maybe also calculate it before `setTimeout(maybeSeekOrSpeedup)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
-    const farEnoughToPerformSeek = realTimeLeftUntilDestinationAtNormalSpeed > expectedSeekDuration;
+    const seekingCanSaveTime = realTimeLeftUntilDestinationAtNormalSpeed > expectedSeekDuration;
     const needForceSeekForDesyncCorrection = () => {
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         // Desync correction is crucial for ElementPlaybackControllerCloning because
@@ -518,7 +518,7 @@ export default class Controller {
       }
       return false;
     }
-    if (farEnoughToPerformSeek || needForceSeekForDesyncCorrection()) {
+    if (seekingCanSaveTime || needForceSeekForDesyncCorrection()) {
       element.currentTime = seekTo;
       this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
 
@@ -533,7 +533,7 @@ export default class Controller {
       this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
     } else {
       // This also happens right after we perform a seek (because 'timeupdate' gets fired). It's fine though
-      // because of `farEnoughToSpeedUp`.
+      // because of `speedupWontOvershoot`.
 
       // TOOD but the `silenceSpeed` input is disabled. Maybe then we could use a constant value instead of
       // `this.settings.silenceSpeed`? Need to make sure to clamp it (`getAbsoluteClampedSilenceSpeed`).
@@ -550,9 +550,9 @@ export default class Controller {
       // short period because it won't save much time but make everything jumpy. It takes
       // on average 120 snippets shorter than 1 / 60 to save 0.875 of a second at silenceSpeed of 8.
       // Nah, sounds like an excuse to me.
-      let farEnoughToSpeedUp = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
+      const speedupWontOvershoot = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
       if (IS_DEV_MODE) {
-        if (!farEnoughToSpeedUp) {
+        if (!speedupWontOvershoot) {
           performance.mark('timeout-scheduled')
           setTimeout(() => {
             performance.mark('timeout-executed');
@@ -564,15 +564,16 @@ export default class Controller {
           });
         }
       }
+      let speedingUpCanSaveTime = true;
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         const expectedTimeSavedBySpeedingUp = seekAmount / this.settings.soundedSpeed - seekAmount / newSpeed;
         // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
         const oneSpeedupDesyncCorrectionTimeCost =
           expectedSeekDuration / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
-        farEnoughToSpeedUp &&= expectedTimeSavedBySpeedingUp > oneSpeedupDesyncCorrectionTimeCost;
+        speedingUpCanSaveTime = expectedTimeSavedBySpeedingUp > oneSpeedupDesyncCorrectionTimeCost;
       }
 
-      if (farEnoughToSpeedUp) {
+      if (speedupWontOvershoot && speedingUpCanSaveTime) {
         // TODO what if `realTimeLeftUntilDestinationAtSilenceSpeed` is pretty big? Need to cancel this if
         // the user seeks to a sounded place.
         // May be other caveats.
