@@ -502,8 +502,13 @@ export default class Controller {
         // Yes, this means that we seek more often than `DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES`, but I believe
         // that it's beneficial.
         // Perhaps there is a better way to describe this.
+        //
+        // In practice this number is between 0 and 1.
         const howMuchWeWantDesyncCorrection =
           this._didNotDoDesyncCorrectionForNSpeedSwitches / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
+        // This is between 0 and Infinity (unless `realTimeLeftUntilDestinationAtNormalSpeed < 0`,
+        // in which case it's between -Infinity and Infinity, but it's also ok, because we're just
+        // gonna behave as if there was no this silent part).
         const howMuchWeWantToSeek =
           realTimeLeftUntilDestinationAtNormalSpeed / (expectedSeekDuration || Number.MIN_VALUE);
         const howMuchWeDontWantToSeek = 1 - howMuchWeWantToSeek;
