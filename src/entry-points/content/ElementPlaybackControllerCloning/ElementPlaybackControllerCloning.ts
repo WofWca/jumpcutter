@@ -487,7 +487,6 @@ export default class Controller {
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
     const farEnoughToPerformSeek = realTimeLeftUntilDestinationAtNormalSpeed > expectedSeekDuration;
     const needForceSeekForDesyncCorrection = () => {
-      let forceSeekForDesyncCorrection = false;
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         // Desync correction is crucial for ElementPlaybackControllerCloning because
         // otherwise we'll start skipping at incorrect time. Apparently it's audio that
@@ -509,10 +508,10 @@ export default class Controller {
           realTimeLeftUntilDestinationAtNormalSpeed / (expectedSeekDuration || Number.MIN_VALUE);
         const howMuchWeDontWantToSeek = 1 - howMuchWeWantToSeek;
         if (howMuchWeWantDesyncCorrection >= howMuchWeDontWantToSeek) {
-          forceSeekForDesyncCorrection = true;
+          return true;
         }
       }
-      return forceSeekForDesyncCorrection;
+      return false;
     }
     if (farEnoughToPerformSeek || needForceSeekForDesyncCorrection()) {
       element.currentTime = seekTo;
