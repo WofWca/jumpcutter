@@ -469,6 +469,7 @@ export default class Controller {
     }
 
     const seekAmount = seekTo - currentTime;
+    // TODO just use `fastSeek`?
     const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
 
     if (IS_DEV_MODE) {
@@ -481,7 +482,6 @@ export default class Controller {
     }
 
     const realTimeLeftUntilDestinationAtNormalSpeed = seekAmount / this.settings.soundedSpeed;
-    // TODO just use `fastSeek`?
     // TODO should we maybe also calculate it before `setTimeout(maybeSeekOrSpeedup)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
