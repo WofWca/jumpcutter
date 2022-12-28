@@ -485,7 +485,26 @@ export default class Controller {
     // TODO should we maybe also calculate it before `setTimeout(maybeSeekOrSpeedup)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
-    const seekingCanSaveTime = realTimeLeftUntilDestinationAtNormalSpeed > expectedSeekDuration;
+
+    const canSaveTimeBySeeking: number =
+      realTimeLeftUntilDestinationAtNormalSpeed - expectedSeekDuration;
+
+    // TOOD but the `silenceSpeed` input is disabled. Maybe then we could use a constant value instead of
+    // `this.settings.silenceSpeed`? Need to make sure to clamp it (`getAbsoluteClampedSilenceSpeed`).
+    // If so, don't forget to change `_setSpeedAndLog` (because it accepts `SpeedName`).
+    const playbackRateForSpeedup = this.settings.silenceSpeed;
+    const realTimeLeftUntilDestinationAtSilenceSpeed = seekAmount / playbackRateForSpeedup;
+    let canSaveTimeBySpeedingUp_: number =
+      realTimeLeftUntilDestinationAtNormalSpeed -
+      realTimeLeftUntilDestinationAtSilenceSpeed;
+    if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
+      // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
+      const oneSpeedupDesyncCorrectionTimeCost =
+        expectedSeekDuration / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
+      canSaveTimeBySpeedingUp_ -= oneSpeedupDesyncCorrectionTimeCost;
+    }
+    const canSaveTimeBySpeedingUp = canSaveTimeBySpeedingUp_;
+
     const needForceSeekForDesyncCorrection = () => {
       if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
         // Desync correction is crucial for ElementPlaybackControllerCloning because
@@ -518,28 +537,37 @@ export default class Controller {
       }
       return false;
     }
-    if (seekingCanSaveTime || needForceSeekForDesyncCorrection()) {
-      element.currentTime = seekTo;
-      this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
 
-      // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
-      // Also see the comment about seeking error above. TODO?
-      // element.fastSeek(seekTo);
+    const enum WhatToDo {
+      NOTHING,
+      SPEEDUP,
+      SEEK,
+    }
+    const whatToDo: WhatToDo = (() => {
+      // Why not just check it at the very start? Because it's somewhat expensive (well not
+      // really, but I've challenged myself to write the code imagining that it is expensive)
+      // and there are cases when we don't need to check `needForceSeekForDesyncCorrection()`
+      // to decide what to do.
+      const ifNeedForceSeekThenSeekElse = <T extends Exclude<WhatToDo, WhatToDo.SEEK>>(
+        else_: T
+      ): WhatToDo => {
+        return needForceSeekForDesyncCorrection()
+          ? WhatToDo.SEEK
+          : else_;
+      };
+      // TODO improvement: maybe it's worth adding a multiplier of like 0.90 to one of the values
+      // because e.g. we can tolerate saving 10% less time than we could have, but in return get
+      // video not stopping for the duration of a seek. Maybe even turn it into a setting.
+      if (canSaveTimeBySeeking > canSaveTimeBySpeedingUp) {
+        if (canSaveTimeBySeeking <= 0) {
+          return ifNeedForceSeekThenSeekElse(WhatToDo.NOTHING);
+        }
+        return WhatToDo.SEEK;
+      }
+      if (canSaveTimeBySpeedingUp <= 0) {
+        return ifNeedForceSeekThenSeekElse(WhatToDo.NOTHING);
+      }
 
-      // TODO it's wrong to pass only the `expectedSeekDuration` instead of the real one, but it's better
-      // than passing 0.
-      this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime, expectedSeekDuration);
-
-      this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
-    } else {
-      // This also happens right after we perform a seek (because 'timeupdate' gets fired). It's fine though
-      // because of `speedupWontOvershoot`.
-
-      // TOOD but the `silenceSpeed` input is disabled. Maybe then we could use a constant value instead of
-      // `this.settings.silenceSpeed`? Need to make sure to clamp it (`getAbsoluteClampedSilenceSpeed`).
-      // If so, don't forget to change `_setSpeedAndLog` (because it accepts `SpeedName`).
-      const newSpeed = this.settings.silenceSpeed;
-      const realTimeLeftUntilDestinationAtSilenceSpeed = seekAmount / newSpeed
       const expectedMinimumSetTimeoutDelay = 1 / 60; // TODO determine this dynamically, as with `expectedSeekDuration`.
       // TODO but maybe otherwise we could simply use a smaller value of silenceSpeed instead of not speeding up
       // at all?
@@ -564,29 +592,42 @@ export default class Controller {
           });
         }
       }
-      let speedingUpCanSaveTime = true;
-      if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
-        const expectedTimeSavedBySpeedingUp = seekAmount / this.settings.soundedSpeed - seekAmount / newSpeed;
-        // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
-        const oneSpeedupDesyncCorrectionTimeCost =
-          expectedSeekDuration / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
-        speedingUpCanSaveTime = expectedTimeSavedBySpeedingUp > oneSpeedupDesyncCorrectionTimeCost;
+      if (!speedupWontOvershoot) {
+        if (canSaveTimeBySeeking > 0) {
+          return WhatToDo.SEEK;
+        }
+        return ifNeedForceSeekThenSeekElse(WhatToDo.NOTHING);
       }
 
-      if (speedupWontOvershoot && speedingUpCanSaveTime) {
-        // TODO what if `realTimeLeftUntilDestinationAtSilenceSpeed` is pretty big? Need to cancel this if
-        // the user seeks to a sounded place.
-        // May be other caveats.
+      return ifNeedForceSeekThenSeekElse(WhatToDo.SPEEDUP);
+    })();
 
-        this._setSpeedAndLog(SpeedName.SILENCE);
-        setTimeout(
-          () => this._setSpeedAndLog(SpeedName.SOUNDED),
-          realTimeLeftUntilDestinationAtSilenceSpeed * 1000,
-        );
-        // Yes, there's actually two speed switches, but we increment it just once. Need to refactor.
-        // Same in ElementPlaybackControllerStretching.
-        this._didNotDoDesyncCorrectionForNSpeedSwitches++;
-      }
+    if (whatToDo === WhatToDo.SEEK) {
+      element.currentTime = seekTo;
+      this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+
+      // It's very rough and I think it can skip the start of a sounded part. Also not supported in Chromium.
+      // Also see the comment about seeking error above. TODO?
+      // element.fastSeek(seekTo);
+
+      // TODO it's wrong to pass only the `expectedSeekDuration` instead of the real one, but it's better
+      // than passing 0.
+      this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime, expectedSeekDuration);
+
+      this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
+    } else if (whatToDo === WhatToDo.SPEEDUP) {
+      // TODO what if `realTimeLeftUntilDestinationAtSilenceSpeed` is pretty big? Need to cancel this if
+      // the user seeks to a sounded place.
+      // May be other caveats.
+
+      this._setSpeedAndLog(SpeedName.SILENCE);
+      setTimeout(
+        () => this._setSpeedAndLog(SpeedName.SOUNDED),
+        realTimeLeftUntilDestinationAtSilenceSpeed * 1000,
+      );
+      // Yes, there's actually two speed switches, but we increment it just once. Need to refactor.
+      // Same in ElementPlaybackControllerStretching.
+      this._didNotDoDesyncCorrectionForNSpeedSwitches++;
     }
   }
   maybeSeekOrSpeedupBounded = this.maybeSeekOrSpeedup.bind(this);
