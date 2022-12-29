@@ -588,9 +588,9 @@ export default class Controller {
       // short period because it won't save much time but make everything jumpy. It takes
       // on average 120 snippets shorter than 1 / 60 to save 0.875 of a second at silenceSpeed of 8.
       // Nah, sounds like an excuse to me.
-      const speedupWontOvershoot = realTimeLeftUntilDestinationAtSilenceSpeed > expectedMinimumSetTimeoutDelay;
+      const speedupCanOvershoot = realTimeLeftUntilDestinationAtSilenceSpeed <= expectedMinimumSetTimeoutDelay;
       if (IS_DEV_MODE) {
-        if (!speedupWontOvershoot) {
+        if (speedupCanOvershoot) {
           performance.mark('timeout-scheduled')
           setTimeout(() => {
             performance.mark('timeout-executed');
@@ -602,7 +602,7 @@ export default class Controller {
           });
         }
       }
-      if (!speedupWontOvershoot) {
+      if (speedupCanOvershoot) {
         if (canSaveTimeBySeeking > 0) {
           return WhatToDo.SEEK;
         }
