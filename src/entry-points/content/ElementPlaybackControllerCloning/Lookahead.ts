@@ -218,12 +218,15 @@ export default class Lookahead {
     // TODO but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
     // i.e. non-sorted and having overlapping (in our case, duplicate) entries.
     // However, the current implementation of `getMaybeSilenceRangeForTime` allows this.
+    const seekClone = clone.fastSeek
+      ? (seekTo: MediaTime) => clone.fastSeek(seekTo)
+      : (seekTo: MediaTime) => { clone.currentTime = seekTo };
     const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
       const originalElementTime = originalElement.currentTime;
       const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
       if (playingUnprocessedRange) {
         // TODO call `pushNewSilenceRange` before seeking if it's silence currently?
-        clone.currentTime = originalElementTime; // TODO `fastSeek`, because we don't need precision here.
+        seekClone(originalElementTime);
         // To avoid the case where it's currently silence, then you seek forward a lot and it's loud so it marks
         // the whole range that you skipped as silence.
         // TODO it seems to me that it would be cleaner to somehow reset the state of `silenceDetector` instead so
