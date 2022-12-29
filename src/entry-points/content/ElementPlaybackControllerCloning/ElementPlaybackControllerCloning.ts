@@ -90,9 +90,6 @@ class SeekDurationProphet {
   /** Can be called several times. Only the first call has effect. */
   public destroy!: () => void;
   private _destroyedPromise = new Promise<void>(r => this.destroy = r);
-  // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
-  // been fired, but before 'seeked'. `performance.now()` is not technically correct, but
-  // handling this being `undefined` separately seems worse.
   lastSeekStartTime: number = performance.now();
   constructor (el: HTMLMediaElement) {
     this.el = el;
@@ -108,6 +105,9 @@ class SeekDurationProphet {
     })
   }
   onSeeking(e: Event) {
+    // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
+    // been fired, but before 'seeked'. `performance.now()` is not technically correct, but
+    // handling this being `undefined` separately seems worse.
     this.lastSeekStartTime = e.timeStamp;
 
     // TODO probably need to take into account whether a seek has been performed into an unbuffered range
