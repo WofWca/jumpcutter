@@ -167,7 +167,8 @@ export default class Lookahead {
           const silenceStartAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceStart;
           this.silenceSince = silenceStartAtIntrinsicTime;
         } else {
-          assertDev(this.silenceSince, 'Thought `this.silenceSince` to be set because SilenceDetector was '
+          assertDev(this.silenceSince != undefined,
+            'Thought `this.silenceSince` to be set because SilenceDetector was '
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
           const realTimePassedSinceSilenceEnd =
             realTimePassedSinceEvent + volumeSmoothingCausedDelay;
