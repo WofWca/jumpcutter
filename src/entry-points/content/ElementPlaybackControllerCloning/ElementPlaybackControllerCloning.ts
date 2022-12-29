@@ -87,6 +87,7 @@ class SeekDurationProphet {
   // TODO replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
   history: number[] = [];
   historyAverage = seekDurationProphetNoDataInitialAssumedDuration;
+  /** Can be called several times. Only the first call has effect. */
   public destroy!: () => void;
   private _destroyedPromise = new Promise<void>(r => this.destroy = r);
   // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
@@ -203,8 +204,8 @@ export default class Controller {
       this.timeSavedTracker = timeSavedTracker;
     }
 
-    this.seekDurationProphet = new SeekDurationProphet(element);
-    this._destroyedPromise.then(() => this.seekDurationProphet.destroy());
+    const seekDurationProphet = this.seekDurationProphet = new SeekDurationProphet(element);
+    this._destroyedPromise.then(() => seekDurationProphet.destroy());
 
     // We don't need a high sample rate as this context is currently only used to volume on the chart,
     // so consider setting it manually to a lower one. But I'm thinking whether it woruld actually
@@ -249,6 +250,15 @@ export default class Controller {
       // https://html.spec.whatwg.org/multipage/media.html#dom-media-currentsrc
       // > Its value is changed by the resource selection algorithm
       this.destroyAndThrottledInitLookahead();
+
+      // Seek duration depends heavily on the media file, so need not to rely on old data.
+      //
+      // Yes, we don't undo the `this._destroyedPromise.then(` for the current
+      // `seekDurationProphet`. It's a bit of a memory leak, but doesn't matter too much as
+      // `seekDurationProphet.destroy()` can be called several times. TODO refactor.
+      this.seekDurationProphet.destroy();
+      const seekDurationProphet = this.seekDurationProphet = new SeekDurationProphet(element);
+      this._destroyedPromise.then(() => seekDurationProphet.destroy());
     }
     element.addEventListener('loadstart', onNewSrc, { passive: true });
     this._destroyedPromise.then(() => element.removeEventListener('loadstart', onNewSrc));
