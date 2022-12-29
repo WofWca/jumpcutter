@@ -224,6 +224,8 @@ export default class Lookahead {
     const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
       const originalElementTime = originalElement.currentTime;
       const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
+      // Keep in mind that `originalElement.seeking` could be `true`, so make sure not to repeatedly
+      // call this so that it gets stuck in that state.
       if (playingUnprocessedRange) {
         // TODO call `pushNewSilenceRange` before seeking if it's silence currently?
         seekClone(originalElementTime);
@@ -237,13 +239,14 @@ export default class Lookahead {
     }
     // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
     // TODO perf: we could instead detach the listener and attach it again after one second.
-    // TODO fix: if seeking the clone takes more than 1 second, then it will stuck in the
-    // `clone.seeking === true` state.
     const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
-    // TODO using `timeupdate` is pretty bug-proof, but not very efficient.
-    originalElement.addEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
+    throttledSeekCloneIfPlayingUnprocessedRange();
+    // TODO refactor: are there other cases when the clone can get out of sync?
+    // the media load algorithm, but we re-create the Lookahead in that case.
+    // Anything else? Maybe search the spec for "set the (current|official) playback position".
+    originalElement.addEventListener('seeking', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
     this._destroyedPromise.then(() => {
-      originalElement.removeEventListener('timeupdate', throttledSeekCloneIfPlayingUnprocessedRange);
+      originalElement.removeEventListener('seeking', throttledSeekCloneIfPlayingUnprocessedRange);
     });
 
     {
