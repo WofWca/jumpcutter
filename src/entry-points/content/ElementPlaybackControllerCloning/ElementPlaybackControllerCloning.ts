@@ -509,6 +509,12 @@ export default class Controller {
       realTimeLeftUntilDestinationAtSilenceSpeed;
     if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
       // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
+      // TODO refactor: yes, one speedup actually takes 2 speed switches, so it should be 2 times
+      // bigger, but `DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES` is actually 2x bigger than
+      // what its name suggests:
+      // https://github.com/WofWca/jumpcutter/blob/68455a9e0f880cf6e904b64a490b3ea134b9a09e/src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts#L640-L642
+      // So it's calculated correctly here.
+      // This is what I call "not a bug, but a feature".
       const oneSpeedupDesyncCorrectionTimeCost =
         expectedSeekDuration / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
       canSaveTimeBySpeedingUp_ -= oneSpeedupDesyncCorrectionTimeCost;
