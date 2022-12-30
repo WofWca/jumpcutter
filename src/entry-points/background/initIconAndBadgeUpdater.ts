@@ -82,35 +82,27 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
 
 export default async function initIconAndBadgeUpdater(): Promise<void> {
   const settings = await getSettings();
-  /**
-   * @param changes - pass `null` to initialize.
-   */
-  function handleSettingsChanges(changes: MyStorageChanges | null) {
-    if (changes) {
-      Object.assign(settings, settingsChanges2NewValues(changes));
-    }
+  function handleSettingsChanges(changes: MyStorageChanges) {
+    Object.assign(settings, settingsChanges2NewValues(changes));
 
     setIcon(settings);
 
-    if (changes) {
-      // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
-      const orderedSetingsNames =
-        ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
-      for (const settingName of orderedSetingsNames) {
-        const currSettingChange = changes[settingName];
-        if (currSettingChange) {
-          temporarelySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), settings);
-          break;
-        }
+    // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
+    const orderedSetingsNames =
+      ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
+    for (const settingName of orderedSetingsNames) {
+      const currSettingChange = changes[settingName];
+      if (currSettingChange) {
+        temporarelySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), settings);
+        break;
       }
-      // TODO refactor: it would be cooler if we wrote the badge's dependencies more declaratively.
-      if (changes.badgeWhatSettingToDisplayByDefault || changes.enabled) {
-        setBadgeToDefault(settings);
-      }
-    } else {
-      setBadgeToDefault(settings); // In case e.g. `settings.badgeWhatSettingToDisplayByDefault !== 'none'`
+    }
+    // TODO refactor: it would be cooler if we wrote the badge's dependencies more declaratively.
+    if (changes.badgeWhatSettingToDisplayByDefault || changes.enabled) {
+      setBadgeToDefault(settings);
     }
   }
-  handleSettingsChanges(null);
+  setBadgeToDefault(settings); // In case e.g. `settings.badgeWhatSettingToDisplayByDefault !== 'none'`
+  setIcon(settings);
   addOnStorageChangedListener(handleSettingsChanges);
 }
