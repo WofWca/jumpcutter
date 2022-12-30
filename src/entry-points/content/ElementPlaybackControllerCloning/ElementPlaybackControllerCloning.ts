@@ -84,7 +84,7 @@ const seekDurationProphetNoDataInitialAssumedDuration = 150;
  */
 class SeekDurationProphet {
   el: HTMLMediaElement
-  // TODO replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
+  // TODO perf: replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
   history: number[] = [];
   historyAverage = seekDurationProphetNoDataInitialAssumedDuration;
   /** Can be called several times. Only the first call has effect. */
@@ -110,8 +110,8 @@ class SeekDurationProphet {
     // handling this being `undefined` separately seems worse.
     this.lastSeekStartTime = e.timeStamp;
 
-    // TODO probably need to take into account whether a seek has been performed into an unbuffered range
-    // and adjust the seek duration accordingly or not consider it at all.
+    // TODO improvement: probably need to take into account whether a seek has been performed
+    // into an unbuffered range and adjust the seek duration accordingly or not consider it at all.
     // if (inRanges(this.el.buffered, this.el.currentTime))
   }
   onSeeked(e: Event) {
@@ -120,11 +120,11 @@ class SeekDurationProphet {
     // if (seekDuration > 2000) return;
 
     this.history.push(seekDuration);
-    // TODO performance - once this becomes `true`, it will never cease to.
+    // TODO perf: - once this becomes `true`, it will never cease to.
     if (this.history.length > seekDurationProphetHistoryLength) {
       this.history.shift();
     }
-    // TODO performance - only have consider the removed and the added element, not recalculate the whole array
+    // TODO perf: only consider the removed and the added element, not recalculate the whole array
     // every time
     const sum = this.history.reduce((acc, curr) => acc + curr);
     this.historyAverage = sum / this.history.length;
@@ -138,7 +138,7 @@ const DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES = 20;
 
 const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
 
-// TODO a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
+// TODO refactor: a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
 /**
  * Controls playback rate (and `.currentTime`) of an `HTMLMediaElement` (like the other ones).
  * Searches for silent parts by creating a new hidden `HTMLMediaElement` with the same `src` as the
@@ -147,8 +147,8 @@ const getActualPlaybackRateForSpeed = maybeClosestNonNormalSpeed;
 export default class Controller {
   static controllerType = ControllerKind.CLONING;
 
-  // I'd be glad to make most of these `private` but this makes it harder to specify types in this file. TODO maybe I'm
-  // just too bad at TypeScript.
+  // I'd be glad to make most of these `private` but this makes it harder to specify types in this file.
+  // TODO refactor. Maybe I'm just too bad at TypeScript.
   readonly element: HTMLMediaElement;
   settings: ControllerSettings;
   initialized = false;
@@ -237,7 +237,7 @@ export default class Controller {
     });
 
     toAwait.push(this.lookahead!.ensureInit().then(() => {
-      // TODO Super inefficient, I know.
+      // TODO perf: super inefficient, I know.
       const onTimeupdate = () => {
         this.maybeScheduleMaybeSeekOrSpeedup();
       }
@@ -284,7 +284,7 @@ export default class Controller {
       // But `captureStream` is not well-supported.
       // Also keep in mind that `createMediaElementSource` and `captureStream` are not 100% interchangeable.
       // For example, for `el.volume` doesn't affect the volume for `captureStream()`.
-      // TODO fall-back to `createMediaElementSource` if these are not supported?
+      // TODO fix: fall-back to `createMediaElementSource` if these are not supported?
       type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
         captureStream?: () => MediaStream,
         mozCaptureStream?: () => MediaStream,
@@ -428,9 +428,9 @@ export default class Controller {
       return;
     }
     const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
-    // TODO would it be maybe better to also just do nothing if the next silence range is too far, and
-    // `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`? Would time accuracy
-    // increase?
+    // TODO improvement: would it be maybe better to also just do nothing if the next silence range
+    // is too far, and `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`?
+    // Would time accuracy increase?
     const seekAt = Math.max(silenceStart, currentTime);
     const seekTo = silenceEnd;
     const seekInVideoTime = seekAt - currentTime;
@@ -440,10 +440,10 @@ export default class Controller {
     // This case is handled inside `this.maybeSeekOrSpeedup`.
     //
     // Just so the seek is performed a bit faster compared to `setTimeout`.
-    // TODO not very effective because `maybeSeekOrSpeedup` performs some checks that are
+    // TODO perf: not very effective because `maybeSeekOrSpeedup` performs some checks that are
     // unnecessary when it is called immediately (and not by `setTimeout`).
     clearTimeout(this.maybeSeekOrSpeedupTimeoutId);
-    // TODO should this be `<= expectedMinSetTimeoutDelay` instead of `<= 0`?
+    // TODO improvement: should this be `<= expectedMinSetTimeoutDelay` instead of `<= 0`?
     if (seekInRealTime <= 0) {
       this.maybeSeekOrSpeedup(seekTo, seekAt);
     } else {
@@ -479,7 +479,7 @@ export default class Controller {
     }
 
     const seekAmount = seekTo - currentTime;
-    // TODO just use `fastSeek`?
+    // TODO improvement: just use `fastSeek`? Add a setting?
     const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
 
     if (IS_DEV_MODE) {

@@ -120,12 +120,12 @@ export default class Lookahead {
     ctx.suspend();
     const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
 
-    // TODO DRY
+    // TODO refactor: DRY
     // const smoothingWindowLenght = 0.03;
     // const smoothingWindowLenght = 0.15;
     // TODO improvement: `lookaheadVolumeFilterSmoothing` must depend on the element's playbackRate.
     const smoothingWindowLenght = lookaheadVolumeFilterSmoothing;
-    // TODO DRY the creation and destruction of these 2 nodes?
+    // TODO refactor: DRY the creation and destruction of these 2 nodes?
     const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
       const volumeFilter = new VolumeFilterNode(ctx, smoothingWindowLenght, smoothingWindowLenght);
       this._destroyedPromise.then(() => destroyAudioWorkletNode(volumeFilter));
@@ -144,8 +144,8 @@ export default class Lookahead {
     // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
     // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
     // The following is to compensate for this.
-    // TODO Though the delay value is up for debate. Some might say it should be half equal to
-    // `smoothingWindowLenght`, or smaller than a half.
+    // TODO refactor: Though the delay value is up for debate. Some might say it should be half
+    // equal to `smoothingWindowLenght`, or smaller than a half.
     const volumeSmoothingCausedDelay = smoothingWindowLenght / 2;
 
     toAwait.push(volumeFilterP.then(async volumeFilter => {
@@ -216,7 +216,7 @@ export default class Lookahead {
     await Promise.all(toAwait);
 
     // TODO perf: also need to seek if the clone started playing a processed range.
-    // TODO but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
+    // TODO perf: but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
     // i.e. non-sorted and having overlapping (in our case, duplicate) entries.
     // However, the current implementation of `getMaybeSilenceRangeForTime` allows this.
     const seekClone = clone.fastSeek
@@ -228,7 +228,7 @@ export default class Lookahead {
       // Keep in mind that `originalElement.seeking` could be `true`, so make sure not to repeatedly
       // call this so that it gets stuck in that state.
       if (playingUnprocessedRange) {
-        // TODO call `pushNewSilenceRange` before seeking if it's silence currently?
+        // TODO improvement: call `pushNewSilenceRange` before seeking if it's silence currently?
         seekClone(originalElementTime);
         // To avoid the case where it's currently silence, then you seek forward a lot and it's loud so it marks
         // the whole range that you skipped as silence.
