@@ -62,9 +62,26 @@ function temporarelySetBadge(text: string, color: string, settings: Settings) {
   setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(setBadgeToDefault, 1500, settings);
 }
 
+let currentIconPath: string | undefined = undefined;
+function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
+  let path = 'icons/';
+  // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
+  if (!settings.enabled) {
+    path += 'icon-disabled.svg'
+  } else if (settings.volumeThreshold === 0) {
+    path += 'icon-only-sounded.svg'
+  } else {
+    path += 'icon.svg';
+  }
+  // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
+  if (currentIconPath !== path) {
+    browser.browserAction.setIcon({ path });
+    currentIconPath = path;
+  }
+}
+
 export default async function initIconAndBadgeUpdater(): Promise<void> {
   const settings = await getSettings();
-  let currentIconPath: string | undefined = undefined;
   /**
    * @param changes - pass `null` to initialize.
    */
@@ -72,20 +89,8 @@ export default async function initIconAndBadgeUpdater(): Promise<void> {
     if (changes) {
       Object.assign(settings, settingsChanges2NewValues(changes));
     }
-    let path = 'icons/';
-    // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
-    if (!settings.enabled) {
-      path += 'icon-disabled.svg'
-    } else if (settings.volumeThreshold === 0) {
-      path += 'icon-only-sounded.svg'
-    } else {
-      path += 'icon.svg';
-    }
-    // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
-    if (currentIconPath !== path) {
-      browser.browserAction.setIcon({ path });
-      currentIconPath = path;
-    }
+
+    setIcon(settings);
 
     if (changes) {
       // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
