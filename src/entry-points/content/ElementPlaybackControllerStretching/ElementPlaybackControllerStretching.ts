@@ -385,6 +385,10 @@ export default class Controller {
             // Cry about it.
             this._didNotDoDesyncCorrectionForNSpeedSwitches++;
             if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
+              // `+=` actually makes more sense to me here because the past frames might get
+              // discarded by the browser and maybe it'll have to re-buffer them. But
+              // based on a bit of testing using seeking with `+=` took 132ms on average,
+              // while `-=` 103.6. So I'll not be touching it for now.
               element.currentTime -= 1e-9;
               // TODO but it's also corrected when the user seeks the video manually.
               this._didNotDoDesyncCorrectionForNSpeedSwitches = 0;
