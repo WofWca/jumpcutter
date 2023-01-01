@@ -26,12 +26,8 @@ import type { MyStorageChanges } from './';
 type MyOnChangedListener = (changes: MyStorageChanges) => void;
 type NativeOnChangedListener = Parameters<typeof browser.storage.onChanged.addListener>[0];
 const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnChangedListener>();
-/**
- * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
- * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
- */
-export function addOnStorageChangedListener(listener: MyOnChangedListener): void {
-  const actualListener: NativeOnChangedListener = (changes, areaName) => {
+export function createWrapperListener(listener: MyOnChangedListener): NativeOnChangedListener {
+  return (changes, areaName) => {
     if (areaName !== mainStorageAreaName) return;
 
     if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT) {
@@ -43,6 +39,14 @@ export function addOnStorageChangedListener(listener: MyOnChangedListener): void
 
     listener(changes);
   };
+}
+
+/**
+ * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
+ * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
+ */
+export function addOnStorageChangedListener(listener: MyOnChangedListener): void {
+  const actualListener = createWrapperListener(listener);
   srcListenerToWrapperListener.set(listener, actualListener);
   browser.storage.onChanged.addListener(actualListener);
 }
