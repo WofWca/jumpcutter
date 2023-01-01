@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -131,6 +131,13 @@ export default class Controller {
   _silenceDetectorNode?: SilenceDetectorNode;
   _analyzerIn?: AnalyserNode;
   _volumeInfoBuffer?: Float32Array;
+  /**
+   * A delay so that we have some time to process the audio before deciding how to manipulate it.
+   * You can imagine that what the `HTMLMediaEelement` outputs is at the output of this node,
+   * and we kind of manage to "look-ahead" what it's going to output by tapping into this
+   * node's input.
+   * See {@link getOptimalLookaheadDelay} for more.
+   */
   _lookahead?: DelayNode;
   _stretcherAndPitch?: StretcherAndPitchCorrectorNode;
   _lastActualPlaybackRateChange?: {
@@ -354,7 +361,7 @@ export default class Controller {
           // TODO improvement: how about get `elementSpeedSwitchedAt` from 'ratechange' e.timestamp?
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SOUNDED);
           // But we're not really in a hurry to perform `onSilenceEnd` or `onSilenceStart` because there's
-          // a lookahead delay so the sound doesn't get output immediately.
+          // a lookahead delay (this._lookahear) so the sound doesn't get output immediately.
           // https://github.com/WofWca/jumpcutter/blob/81b4e507b68d9f7c50e90161326edc65038ae28c/src/entry-points/content/helpers/getOptimalLookaheadDelay.ts#L30-L37
           // TODO improvement: unlikely, but maybe putting everything that follows `el.playbackRate =`
           // in a `setTimeout / queueMicrotask` could make the browser actually switch the speed faster?
