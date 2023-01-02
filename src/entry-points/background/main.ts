@@ -44,14 +44,14 @@ async function setNewSettingsKeysToDefaults() {
 }
 
 const currentVersion = chrome.runtime.getManifest().version;
-let postInstallDonePromiseResolve: () => void;
+let postInstallStorageChangesDonePResolve: () => void;
 // Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
 // storage.
-const postInstallDonePromise = new Promise<void>(r => postInstallDonePromiseResolve = r);
+const postInstallStorageChangesDoneP = new Promise<void>(r => postInstallStorageChangesDonePResolve = r);
 // Pretty hacky. Feels like there must be API that allows us to do this. TODO?
 browser.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
   if (currentVersion === __lastHandledUpdateToVersion) {
-    postInstallDonePromiseResolve();
+    postInstallStorageChangesDonePResolve();
   }
 });
 browser.runtime.onInstalled.addListener(async details => {
@@ -72,13 +72,13 @@ browser.runtime.onInstalled.addListener(async details => {
   await setNewSettingsKeysToDefaults();
 
   browser.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
-  postInstallDonePromiseResolve();
+  postInstallStorageChangesDonePResolve();
 });
 
 // Just for top-level `await`. Don't do this for the whole file cause `runtime.onInstalled.addListener` needs to be
 // called synchronously (https://developer.chrome.com/docs/extensions/mv2/background_pages/#listeners).
 (async () => {
-  await postInstallDonePromise;
+  await postInstallStorageChangesDoneP;
 
   initBrowserHotkeysListener();
 
