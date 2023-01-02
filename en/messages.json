@@ -397,7 +397,7 @@
 		}
 	},
 	"iconBadge": {
-		"message": "Icon badge"
+		"message": "Extension's icon badge"
 	},
 	"badgeWhatSettingToDisplayByDefault": {
 		"message": "What setting value to display by default"
