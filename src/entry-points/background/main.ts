@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -24,9 +24,16 @@
 // 2. settings saving.
 import browser from '@/webextensions-api';
 
-import initBrowserHotkeysListener from './initBrowserHotkeysListener';
-import initIconAndBadgeUpdater from './initIconAndBadgeUpdater';
+import { onCommand as onCommandWhenReady } from './browserHotkeysListener';
+import { initIconAndBadge, updateIconAndBadge } from './iconAndBadgeUpdater';
 import { storage } from '@/settings/_storage';
+import { createWrapperListener, getSettings, settingsChanges2NewValues } from '@/settings';
+
+// Remember that we need to attach the event listeners at the top level since it's a
+// non-persistent background script:
+// * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Background_scripts#move_event_listeners
+// * https://developer.chrome.com/docs/extensions/mv2/background_migration/#listeners
+// Make sure that Webpack doesn't botch it.
 
 // This is so we don't have to retrieve settings like this `storage.local.get(defaultSettings)` every time and can
 // instead `storage.local.get()`. This at least reduces chunk size, and may be better for performance.
@@ -44,14 +51,16 @@ async function setNewSettingsKeysToDefaults() {
 }
 
 const currentVersion = chrome.runtime.getManifest().version;
-let postInstallStorageChangesDonePResolve: () => void;
-// Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
-// storage.
-const postInstallStorageChangesDoneP = new Promise<void>(r => postInstallStorageChangesDonePResolve = r);
+let postInstallStorageChangesDonePResolve: (storageMightHaveBeenChanged: boolean) => void;
+/**
+ * Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
+ * storage. The resolve value indicates if we might have made changes to the storage.
+ */
+const postInstallStorageChangesDoneP = new Promise<boolean>(r => postInstallStorageChangesDonePResolve = r);
 // Pretty hacky. Feels like there must be API that allows us to do this. TODO?
 browser.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
   if (currentVersion === __lastHandledUpdateToVersion) {
-    postInstallStorageChangesDonePResolve();
+    postInstallStorageChangesDonePResolve(false);
   }
 });
 browser.runtime.onInstalled.addListener(async details => {
@@ -72,15 +81,48 @@ browser.runtime.onInstalled.addListener(async details => {
   await setNewSettingsKeysToDefaults();
 
   browser.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
-  postInstallStorageChangesDonePResolve();
+  postInstallStorageChangesDonePResolve(true);
 });
 
-// Just for top-level `await`. Don't do this for the whole file cause `runtime.onInstalled.addListener` needs to be
-// called synchronously (https://developer.chrome.com/docs/extensions/mv2/background_pages/#listeners).
+browser.commands.onCommand.addListener(async (...args) => {
+  await postInstallStorageChangesDoneP;
+  onCommandWhenReady(...args);
+});
+
+let mayThisOnStorageChangeEventBeCausedByPostInstallScriptP: Promise<boolean> | boolean
+= (async () => {
+  const storageMightHaveBeenChangedByPostInstallScript = await postInstallStorageChangesDoneP;
+  return storageMightHaveBeenChangedByPostInstallScript;
+})();
 (async () => {
   await postInstallStorageChangesDoneP;
-
-  initBrowserHotkeysListener();
-
-  initIconAndBadgeUpdater();
+  setTimeout(() => setTimeout(() => {
+    // After some time all the the `storage.onChanged` listeners, that might have been triggered
+    // by the post-install script, have been executed so we don't expect any more of them.
+    // Yes, it may already be `Awaited<false>`
+    mayThisOnStorageChangeEventBeCausedByPostInstallScriptP = false;
+  }));
 })();
+
+const settingsP = postInstallStorageChangesDoneP.then(() => getSettings());
+
+const initIconAndBadgeP = settingsP.then(s => initIconAndBadge(s));
+const onStorageChanged = createWrapperListener(async changes => {
+  const settings = await settingsP;
+  Object.assign(settings, settingsChanges2NewValues(changes));
+
+  await initIconAndBadgeP;
+  updateIconAndBadge(settings, changes);
+});
+
+browser.storage.onChanged.addListener(async (...args) => {
+  // We can't just ignore all the events that were fired befoe `postInstallStorageChangesDoneP`
+  // resolved because this script is non-persistent and it may be woken up, that is executed all
+  // over again just to handle a `storage.onChanged` event, so this listener is gonna be executed
+  // immediately, before we can know if we need to make post-install changes to the storage.
+  if (await mayThisOnStorageChangeEventBeCausedByPostInstallScriptP) {
+    return;
+  }
+
+  await onStorageChanged(...args);
+});

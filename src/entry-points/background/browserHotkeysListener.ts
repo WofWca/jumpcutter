@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -21,20 +21,20 @@
 import browser from '@/webextensions-api';
 import { setSettings, getSettings } from '@/settings';
 
-export default function initBrowserHotkeysListener(): void {
-  browser.commands.onCommand.addListener(async (command) => {
-    switch (command) {
-      case 'toggle_enabled': {
-        // How about sharing the settings cache object with between all background scripts?
-        const { enabled } = await getSettings('enabled');
-        await setSettings({ enabled: !enabled });
-        break;
-      }
-      default: {
-        if (IS_DEV_MODE) {
-          console.error('Unrecognized command', command);
-        }
+type ListenerType = Parameters<typeof browser.commands.onCommand.addListener>[0];
+
+export const onCommand: ListenerType = async (command) => {
+  switch (command) {
+    case 'toggle_enabled': {
+      // How about sharing the settings cache object with between all background scripts?
+      const { enabled } = await getSettings('enabled');
+      await setSettings({ enabled: !enabled });
+      break;
+    }
+    default: {
+      if (IS_DEV_MODE) {
+        console.error('Unrecognized command', command);
       }
     }
-  });
+  }
 }

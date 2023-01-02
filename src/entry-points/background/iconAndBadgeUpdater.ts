@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -19,7 +19,7 @@
  */
 
 import browser from '@/webextensions-api';
-import { addOnStorageChangedListener, getSettings, Settings, MyStorageChanges, settingsChanges2NewValues } from '@/settings';
+import type { Settings, MyStorageChanges } from '@/settings';
 
 function setBadge(text: string, color: string) {
   browser.browserAction.setBadgeBackgroundColor({ color });
@@ -80,29 +80,29 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
   }
 }
 
-export default async function initIconAndBadgeUpdater(): Promise<void> {
-  const settings = await getSettings();
-  function handleSettingsChanges(changes: MyStorageChanges) {
-    Object.assign(settings, settingsChanges2NewValues(changes));
+export function updateIconAndBadge(
+  newSettings: Settings,
+  changes: MyStorageChanges,
+) {
+  setIcon(newSettings);
 
-    setIcon(settings);
-
-    // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
-    const orderedSetingsNames =
-      ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
-    for (const settingName of orderedSetingsNames) {
-      const currSettingChange = changes[settingName];
-      if (currSettingChange) {
-        temporarelySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), settings);
-        break;
-      }
-    }
-    // TODO refactor: it would be cooler if we wrote the badge's dependencies more declaratively.
-    if (changes.badgeWhatSettingToDisplayByDefault || changes.enabled) {
-      setBadgeToDefault(settings);
+  // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
+  const orderedSetingsNames =
+    ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
+  for (const settingName of orderedSetingsNames) {
+    const currSettingChange = changes[settingName];
+    if (currSettingChange) {
+      temporarelySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), newSettings);
+      break;
     }
   }
-  setBadgeToDefault(settings); // In case e.g. `settings.badgeWhatSettingToDisplayByDefault !== 'none'`
+  // TODO refactor: it would be cooler if we wrote the badge's dependencies more declaratively.
+  if (changes.badgeWhatSettingToDisplayByDefault || changes.enabled) {
+    setBadgeToDefault(newSettings);
+  }
+}
+
+export function initIconAndBadge(settings: Settings) {
+  setBadgeToDefault(settings);
   setIcon(settings);
-  addOnStorageChangedListener(handleSettingsChanges);
 }
