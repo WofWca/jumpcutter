@@ -36,8 +36,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   // Need this because Svelte's reactivity doesn't appear to work properly with `FileList`.
   let files: File[] = [];
   async function onInputChange() {
-    files = [];
-
     numFiles = inputEl.files.length;
     if (numFiles <= 0) {
       // In case it was un-selected (I think that's the only case when it can happen).
@@ -46,7 +44,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     }
 
     for (const file of inputEl.files) {
-      files.push(file);
+      files = [...files, file];
     }
 
     playFile(0);
