@@ -1,8 +1,7 @@
 1. Pull `src/_locales` from the Weblate repo, commit `.gitmodules`.
 2. Add new contributors to `src/_locales/LICENSE_NOTICES`. To make sure you didn't miss anyone, check if `git shortlog --summary --email | wc -l` outputs a number that is 1 smaller than the number of lines in the coppyright notice (to account for Anonymous).
-3. If new languages were added, check if their language code works alright in the browsers.
-4. Bump version in `src/manifest.json`
-5. Publish
+3. Bump version in `src/manifest.json`
+4. Publish
     * Chrome Web Store
 
       Nothing special currently
