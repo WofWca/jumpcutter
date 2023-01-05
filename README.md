@@ -29,13 +29,15 @@ But I believe this use case would be considered "fair use" anyway.
 
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
+<!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Contribute
 
 * [🌐 Translate (on Weblate)][weblate]
-* 👨‍💻 Code. Feel free to contact me.
+* 👨‍💻 Code. See [CONTRIBUTING.md](./CONTRIBUTING.md) on how to get started. And feel free to contact me.
 * [💸 Donate](#donate)
 * General feedback and questioning my decisions is appreciated
 
+<!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Build
 
 1. Install base tools:
@@ -70,6 +72,8 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
         ```
 
     Bundled files will appear in `./dist`.
+
+For development build, see [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 Then you can install it on the extensions management page of your browser ([Chromium](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked), [Gecko](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#installing)).
 
