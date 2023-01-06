@@ -1,5 +1,6 @@
 <!--
-Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
+Copyright (C) 2023  hychanbn1009
 
 This file is part of Jump Cutter Browser Extension.
 
@@ -30,29 +31,28 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   let videoEl: HTMLVideoElement;
   let objectURL: ReturnType<typeof URL.createObjectURL> | undefined;
 
-  let numFiles = 0;
   let currFileInd: number;
   // Need this because Svelte's reactivity doesn't appear to work properly with `FileList`.
   let files: File[] = [];
   async function onInputChange() {
-    files = [];
-
-    numFiles = inputEl.files.length;
+    const numFiles = inputEl.files.length;
     if (numFiles <= 0) {
       // In case it was un-selected (I think that's the only case when it can happen).
       document.title = defaultDocumentTitle;
       return;
     }
 
-    for (const file of inputEl.files) {
-      files.push(file);
-    }
+    const nowPlaying = currFileInd != undefined && files[currFileInd]
 
-    playFile(0);
+    files = [...files, ...inputEl.files];
+
+    if (!nowPlaying){
+      playFile(0);
+    }
   }
   async function playFile(ind: number) {
     currFileInd = ind;
-    const file = inputEl.files[ind];
+    const file = files[ind];
     // TODO handle `!video.canPlayType(file.type)`?
     document.title = file.name + ' – Jump Cutter';
     // For better performance. https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#Memory_management
@@ -65,11 +65,29 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     videoEl.focus();
   }
 
+  async function onDeleteFile(ind: number) {
+    const oldLength = files.length;
+    files = files.filter((file,fileIndex) => fileIndex !== ind)
+    if (currFileInd === ind){
+      if (ind === oldLength - 1) {
+        // Removed the last file, play the new last file
+        currFileInd = files.length-1
+      }
+      playFile(currFileInd);
+    }else{
+      // Just update `currFileInd` to match the file that is currently being played.
+      if(ind < currFileInd){
+        // Removed the file comes before current file, move forward the index
+        currFileInd-=1
+      } // Otherwise, the removed the file comes after current file, the index remain unchange
+    }
+  }
+
   onMount(() => {
     videoEl.addEventListener('ended', async () => {
       // TODO `if (loop)` `const nextFileInd = (currFileInd + 1) % inputEl.files.length;`
       const nextFileInd = currFileInd + 1;
-      if (nextFileInd < inputEl.files.length) {
+      if (nextFileInd < files.length) {
         // TODO `if (autoplay)`
         playFile(nextFileInd);
       }
@@ -101,12 +119,16 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         <!-- {#each inputEl?.files ?? [] as file, ind} -->
         {#each files as file, ind}
           <li>
-            <button
+            <div class="file-wrapper">
+              <button
               on:click={() => playFile(ind)}
               disabled={ind === currFileInd}
-            >
-              {file.name}
-            </button>
+              >
+                {file.name}
+              </button>
+              <!-- TODO `aria-label` with actual text? -->
+              <button on:click={() => onDeleteFile(ind)}> ❌ </button>
+            </div>
           </li>
         {/each}
       </ol>
@@ -187,6 +209,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     background:rgba(0, 255, 0, 0.3);
     border: 0.25rem dashed gray;
   }
+
+  .file-wrapper {
+    display: flex;
+    flex-direction: row;
+  }
+
   @media (prefers-color-scheme: dark) {
     .input-box-content {
       color: #aaa;
