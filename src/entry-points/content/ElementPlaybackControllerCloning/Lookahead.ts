@@ -235,7 +235,10 @@ export default class Lookahead {
         // TODO it seems to me that it would be cleaner to somehow reset the state of `silenceDetector` instead so
         // if there is silence where we seek, it will emit `SILENCE_START` even if the last thing
         // it emited too was `SILENCE_START`.
-        this.silenceSince = originalElementTime;
+        const currentlySilence = this.silenceSince != undefined;
+        if (currentlySilence) {
+          this.silenceSince = originalElementTime;
+        }
       }
     }
     // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
