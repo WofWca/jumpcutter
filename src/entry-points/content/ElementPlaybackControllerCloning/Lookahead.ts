@@ -232,9 +232,9 @@ export default class Lookahead {
         seekClone(originalElementTime);
         // To avoid the case where it's currently silence, then you seek forward a lot and it's loud so it marks
         // the whole range that you skipped as silence.
-        // TODO it seems to me that it would be cleaner to somehow reset the state of `silenceDetector` instead so
-        // if there is silence where we seek, it will emit `SILENCE_START` even if the last thing
-        // it emited too was `SILENCE_START`.
+        // TODO refactor: it seems to me that it would be cleaner to somehow reset the state of
+        // `silenceDetector` instead so if there is silence where we seek, it will emit
+        // `SILENCE_START` even if the last thing it emited too was `SILENCE_START`.
         const currentlySilence = this.silenceSince != undefined;
         if (currentlySilence) {
           this.silenceSince = originalElementTime;
