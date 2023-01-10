@@ -42,13 +42,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       return;
     }
 
-    const nowPlaying = currFileInd != undefined && files[currFileInd]
-
     files = [...files, ...inputEl.files];
 
-    if (!nowPlaying){
-      playFile(0);
-    }
+    const oldFilesLength = files.length - inputEl.files.length;
+    const firstAddedElementInd = (oldFilesLength - 1) + 1;
+
+    playFile(firstAddedElementInd);
   }
   async function playFile(ind: number) {
     currFileInd = ind;
