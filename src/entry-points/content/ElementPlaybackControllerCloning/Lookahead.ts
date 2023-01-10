@@ -190,7 +190,7 @@ export default class Lookahead {
     // You could ask - but is it useful at all to just seek to the end of the video, even though there is silence.
     // The answer - yes, e.g. if the user is watching a playlist, where e.g. in each video there is a silent outro.
     const onEnded = () => {
-      const currentlySounded = !this.silenceSince;
+      const currentlySounded = this.silenceSince == undefined;
       if (currentlySounded) {
         return;
       }
