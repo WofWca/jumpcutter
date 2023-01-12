@@ -37,6 +37,24 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 * [💸 Donate](#donate)
 * General feedback and questioning my decisions is appreciated
 
+## How it works
+
+Simple (mostly).
+
+Currently there are 2 separate algorithms in place.
+
+The first one we call "the stretching algorithm", and it's it [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`.
+
+<details><summary>Details, why it's called "stretching"</summary>
+It's about how we're able to "look ahead" and slow down shortly before a loud part ("Margin before"). Basically we slightly delay the audio from it before outputting it. When we encounter a loud part, we slow down (stretch and pitch-shift) the buffered audio so that it appears to have been played at normal speed, then output it.
+
+You can check out the comments in its source code for more details.
+</details>
+
+The second one is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original one, looking for silent parts and writing down where they are. When the target element reaches that part,
+we increase its `playbackRate`, or skip (seek) it entirely.
+Currently you can enable it by checking the "Use the experimental algorithm" checkbox.
+
 <!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Build
 
