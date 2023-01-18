@@ -198,5 +198,73 @@
 	},
 	"resetToDefaults": {
 		"message": "Сбросить настройки"
+	},
+	"general": {
+		"message": "Общее"
+	},
+	"none": {
+		"message": "Нет"
+	},
+	"applyToBoth": {
+		"message": "Как видео, так и аудио элементы"
+	},
+	"applyToOnly": {
+		"message": "$type$ только элементы",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Метод определения скорости молчания"
+	},
+	"enableHotkeys": {
+		"message": "Включить горячие клавиши"
+	},
+	"enableDesyncCorrection": {
+		"message": "Включить коррекцию десинхронизации аудио-видео (побочный эффект: по большей части незаметное заикание каждую минуту или около того)"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Ничего из вышеперечисленного. Просто игнорируйте изменения скорости воспроизведения из других сценариев."
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (т.е. относительно нормальной (внутренней) скорости носителя)"
+	},
+	"hotkeys": {
+		"message": "Горячие клавиши"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Когда скорость воспроизведения изменяется другими сценариями"
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "На некоторых сайтах, которые я посещаю, скорость воспроизведения изменяется неожиданным образом. Не позволяйте им изменять скорость воспроизведения, установленную этим расширением."
+	},
+	"omitMutedElements": {
+		"message": "Не применять к приглушенным элементам мультимедиа"
+	},
+	"hotkey": {
+		"message": "Горячая клавиша"
+	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "Я хочу контролировать скорость воспроизведения (скорость звука) через пользовательский интерфейс сайта или через другие расширения, а не только через это. Это будет обновлять скорость звучания при каждом изменении скорости воспроизведения."
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Используйте отдельные \"$marginBeforeLabel$\" и \"$marginAfterLabel$\" для разных алгоритмов (связано с настройкой \"$useExperimentalAlgorithmLabel$\").",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
 	}
 }
