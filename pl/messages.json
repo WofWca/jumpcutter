@@ -4,5 +4,35 @@
 	},
 	"extensionDescription": {
 		"message": "Oglądaj wykłady ~1,5x szybciej dzięki szybkiemu przewijaniu długich przerw miedzy zdaniami"
+	},
+	"enable": {
+		"message": "Włacz"
+	},
+	"resetToDefaults": {
+		"message": "Przywróć domyślne ustawienia"
+	},
+	"noSuitableElement": {
+		"message": "Nie znaleziono odpowiedniego elementu multimedialnego na stronie"
+	},
+	"silenceSpeed": {
+		"message": "Prędkość ciszy"
+	},
+	"relativeToSounded": {
+		"message": "w odniesieniu do prędkości dźwięku"
+	},
+	"absolute": {
+		"message": "bezwzględna"
+	},
+	"fileInputLabel": {
+		"message": "Przeciągnij plik / pliki\nalbo naciśnij tutaj aby wybrać"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Użyj eksperymentalnego algorytmu"
+	},
+	"contentScriptFail": {
+		"message": "Nie udało się uruchomić skryptu na tej stronie"
+	},
+	"openLocalFile": {
+		"message": "otwórz lokalny plik"
 	}
 }
