@@ -13,7 +13,7 @@ Follow the steps in [README.md#build](./README.md#build), until the `yarn build`
 ### 2. Build (for development)
 
 <!-- TODO refactor: this seems to be duplicating the README a little. -->
-If you're gonna be testing your changes in a Chromium-based browser, run `yarn serve:chromium`. For Gecko-based browsers it's `yarn serve:gecko`. The built files will appear in `./dist`, and will update as you make changes to the code.
+If you're gonna be testing your changes in a Chromium-based browser, run `yarn serve:chromium`. For Gecko-based browsers it's `yarn serve:gecko`. The built files will appear in `./dist-chromium` (or `./dist-gecko`), and will update as you make changes to the code.
 
 ### 3. Load the extension into the browser
 

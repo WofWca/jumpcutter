@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -104,7 +104,7 @@ module.exports = env => {
     },
 
     output: {
-      path: path.resolve(__dirname, 'dist'),
+      path: path.resolve(__dirname, `dist-${env.browser}`),
       filename: (pathData, assetInfo) => {
         const chunkName = pathData.chunk.name;
         if (['SilenceDetectorProcessor', 'VolumeFilterProcessor'].includes(chunkName)) {

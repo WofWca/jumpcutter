@@ -36,7 +36,7 @@ module.exports = {
   plugins: [
     '@typescript-eslint',
   ],
-  ignorePatterns: ['/dist/'],
+  ignorePatterns: ['/dist-gecko/', '/dist-chromium/'],
   rules: {
   },
 };

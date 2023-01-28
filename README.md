@@ -89,7 +89,7 @@ Currently you can enable it by checking the "Use the experimental algorithm" che
         yarn build:chromium
         ```
 
-    Bundled files will appear in `./dist`.
+    Bundled files will appear in `./dist-gecko` (or `./dist-chromium`).
 
 For development build, see [CONTRIBUTING.md](./CONTRIBUTING.md)
 

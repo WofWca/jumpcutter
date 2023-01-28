@@ -29,10 +29,10 @@ build chromium:
     # https://docs.gitlab.com/ee/ci/pipelines/job_artifacts.html#artifactsreports
     - yarn build:chromium --env noreport
   artifacts:
-    # TODO chore: when https://gitlab.com/gitlab-org/gitlab-runner/-/issues/1057 is merged, specify `cwd: dist`
+    # TODO chore: when https://gitlab.com/gitlab-org/gitlab-runner/-/issues/1057 is merged, specify `cwd: dist-gecko`
     # so Mozilla Add-ons Store accepts the archieve.
     paths:
-      - dist/
+      - dist-chromium/
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
   timeout: 10 minutes
 build gecko:
@@ -42,6 +42,6 @@ build gecko:
     - yarn build:gecko --env noreport
   artifacts:
     paths:
-      - dist/
+      - dist-gecko/
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
   timeout: 10 minutes
