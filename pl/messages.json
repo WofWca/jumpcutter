@@ -34,5 +34,8 @@
 	},
 	"openLocalFile": {
 		"message": "otwórz lokalny plik"
+	},
+	"soundedSpeed": {
+		"message": "Prędkość dźwięku"
 	}
 }
