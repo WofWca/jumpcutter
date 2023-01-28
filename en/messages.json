@@ -138,7 +138,7 @@
 		"message": "When the current audio volume is below this value, speed up.\nOn the chart, this is the red 🟥 horizontal line. The blue 🟦 line is the current volume, so when the blue line is below the red, it is considered to be silence."
 	},
 	"soundedSpeed": {
-		"message": "Sounded speed"
+		"message": "Regular speed"
 	},
 	"soundedSpeedTooltip": {
 		"message": "The speed at which we play the video when it's currently NOT silent, the \"normal\" speed.\nOn the chart, the parts that were played at this speed have green 🟩 background."
