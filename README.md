@@ -43,7 +43,7 @@ Simple (mostly).
 
 Currently there are 2 separate algorithms in place.
 
-The first one we call "the stretching algorithm", and it's it [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`.
+The first one we call "the stretching algorithm", and it's in [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`.
 
 <details><summary>Details, why it's called "stretching"</summary>
 It's about how we're able to "look ahead" and slow down shortly before a loud part ("Margin before"). Basically we slightly delay the audio from it before outputting it. When we encounter a loud part, we slow down (stretch and pitch-shift) the buffered audio so that it appears to have been played at normal speed, then output it.
