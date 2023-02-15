@@ -116,7 +116,7 @@ const onStorageChanged = createWrapperListener(async changes => {
 });
 
 browser.storage.onChanged.addListener(async (...args) => {
-  // We can't just ignore all the events that were fired befoe `postInstallStorageChangesDoneP`
+  // We can't just ignore all the events that were fired before `postInstallStorageChangesDoneP`
   // resolved because this script is non-persistent and it may be woken up, that is executed all
   // over again just to handle a `storage.onChanged` event, so this listener is gonna be executed
   // immediately, before we can know if we need to make post-install changes to the storage.
