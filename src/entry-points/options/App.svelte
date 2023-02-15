@@ -55,7 +55,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
   }
-  let updatedKeys = new Set<keyof Settings>();
+  const updatedKeys = new Set<keyof Settings>();
   function saveSettings() {
     assertDev(checkValidity(settings), 'Expected saveSettings to be called only when the form is valid');
     const updatedValues: Partial<Settings> = {};
