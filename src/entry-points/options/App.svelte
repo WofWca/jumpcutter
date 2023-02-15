@@ -55,7 +55,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
   }
-  const updatedKeys = new Set<keyof Settings>();
+  const keysEverUpdatedByThisScript = new Set<keyof Settings>();
   function saveSettings() {
     assertDev(checkValidity(settings), 'Expected saveSettings to be called only when the form is valid');
     const updatedValues: Partial<Settings> = {};
@@ -65,11 +65,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       const key = key_ as keyof typeof settings;
       // Why can't just do `isEqual`? Because then if we did change a setting and then changed it back,
       // only the first change would get saved.
-      if (!updatedKeys.has(key)) {
+      if (!keysEverUpdatedByThisScript.has(key)) {
         if (isEqual(originalSettings[key], value)) {
           continue;
         }
-        updatedKeys.add(key);
+        keysEverUpdatedByThisScript.add(key);
       }
       updatedValues[key] = value;
     }
