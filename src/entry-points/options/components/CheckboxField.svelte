@@ -26,19 +26,29 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 </script>
 
 <!-- Wrapper div so consecutive checkboxes are displayed on top of each other. -->
-<div style="margin: 0.75rem 0;">
+<div>
   <label>
+    {label}
     <input
       type="checkbox"
       {...$$restProps}
       bind:checked
-    > {label}
+    >
   </label>
 </div>
 
 <style>
+  div {
+    margin: 0.75rem 0;
+    border-bottom: 1px gray solid;
+    padding: 0.5rem;
+  }
+  
+  label {
+    display: grid;
+    grid-template-columns: auto auto; 
+  }
   input {
-    /* So emojis aren't so close to the checkbox so they don't look too confusing together */
-    margin-right: 0.4rem;
+    justify-self: right;
   }
 </style>

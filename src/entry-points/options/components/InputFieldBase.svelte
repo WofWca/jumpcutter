@@ -26,12 +26,30 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const id = Math.random().toString();
 </script>
 
-<div style="margin: 0.75rem 0;">
+<div class="container">
   <label
-    style="padding-bottom: 0.125rem; display: inline-block;"
     for={id}
   >{label}</label>
-  <div>
+  <div class="slotContainer">
     <slot {id}></slot>
   </div>
 </div>
+
+<style>
+  .container {
+    margin: 0.75rem 0;
+    border-bottom: 1px gray solid;
+    padding: 0.5rem;
+    display: grid;
+    grid-template-columns: auto auto; 
+  }
+  
+  label {
+    padding-bottom: 0.125rem;
+    display: inline-block;
+  }
+
+  .slotContainer {
+    justify-self: right;
+  }
+</style>
