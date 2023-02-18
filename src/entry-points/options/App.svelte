@@ -628,6 +628,8 @@ main {
   max-width: var(--content-max-width);
   margin-right: auto;
   margin-left: auto;
+  /* Needed for Firefox, by deafult it renders the settings page with a serif font */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 footer {
   padding: 0 var(--main-padding);
