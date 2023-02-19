@@ -1,5 +1,6 @@
 <!--
 Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+Copyright (C) 2023  jakubiakdev
 
 This file is part of Jump Cutter Browser Extension.
 
@@ -30,7 +31,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <label
     for={id}
   >{label}</label>
-  <div class="slotContainer">
+  <div class="slot-container">
     <slot {id}></slot>
   </div>
 </div>
@@ -41,15 +42,15 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     border-bottom: 1px gray solid;
     padding: 0.5rem;
     display: grid;
-    grid-template-columns: auto auto; 
+    grid-template-columns: auto auto;
   }
-  
+
   label {
     padding-bottom: 0.125rem;
     display: inline-block;
   }
 
-  .slotContainer {
+  .slot-container {
     justify-self: right;
   }
 </style>
