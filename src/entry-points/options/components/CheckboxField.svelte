@@ -41,8 +41,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <style>
   div {
     margin: 0.75rem 0;
-    border-bottom: 1px gray solid;
     padding: 0.5rem;
+  }
+  div:not(:last-child) {
+    border-bottom: 1px gray solid;
   }
 
   label {

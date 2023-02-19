@@ -39,10 +39,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <style>
   .container {
     margin: 0.75rem 0;
-    border-bottom: 1px gray solid;
     padding: 0.5rem;
     display: grid;
     grid-template-columns: auto auto;
+  }
+  .container:not(:last-child) {
+    border-bottom: 1px gray solid;
   }
 
   label {
