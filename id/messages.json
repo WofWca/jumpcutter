@@ -1,1 +1,50 @@
-{}
+{
+	"retry": {
+		"message": "Coba lagi"
+	},
+	"loading": {
+		"message": "Memuat"
+	},
+	"volumeThreshold": {
+		"message": "Kenyaringan suara terendah"
+	},
+	"silenceSpeed": {
+		"message": "Kecepatan keheningan"
+	},
+	"extensionDescription": {
+		"message": "Tonton kuliah ~1,5x lebih cepat dengan mempercepat jeda panjang di antara kalimat"
+	},
+	"noSuitableElement": {
+		"message": "Tidak dapat menemukan elemen media yang sesuai pada halaman"
+	},
+	"contentScriptFail": {
+		"message": "Tidak dapat menjalankan skrip konten di halaman ini"
+	},
+	"soundedSpeed": {
+		"message": "Kecepatan normal"
+	},
+	"suggestOpenLocalFile": {
+		"message": "Ingin **$membukaFileLokal$**?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"fileInputLabel": {
+		"message": "Jatuhkan satu atau beberapa file di sini \natau klik untuk memilih"
+	},
+	"audio": {
+		"message": "audio"
+	},
+	"video": {
+		"message": "video"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Gunakan algoritma eksperimental"
+	},
+	"enable": {
+		"message": "Aktifkan"
+	}
+}
