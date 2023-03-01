@@ -24,7 +24,7 @@
 		"message": "Kecepatan normal"
 	},
 	"suggestOpenLocalFile": {
-		"message": "Ingin **$membukaFileLokal$**?",
+		"message": "Ingin **$openLocalFile$**?",
 		"placeholders": {
 			"openLocalFile": {
 				"content": "$1",
@@ -33,7 +33,7 @@
 		}
 	},
 	"fileInputLabel": {
-		"message": "Jatuhkan satu atau beberapa file di sini \natau klik untuk memilih"
+		"message": "Jatuhkan satu atau beberapa file di sini\natau klik untuk memilih"
 	},
 	"audio": {
 		"message": "audio"
