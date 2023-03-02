@@ -275,6 +275,7 @@ export default class Controller {
     this._destroyedPromise.then(() => element.removeEventListener('emptied', onOldSrcGone));
 
     {
+      // TODO refactor: abstract this into a function that returns `getVolume`.
       // This is not strictly necessary, so not pushing anything to `toAwait`.
       //
       // Why not `createMediaElementSource`? Because:
