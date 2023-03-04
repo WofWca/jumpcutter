@@ -225,7 +225,7 @@ export default class Controller {
   async init(): Promise<void> {
     const element = this.element;
 
-    const toAwait : Array<Promise<void>> = [];
+    const toAwait: Array<Promise<void>> = [];
 
     const {
       playbackRate: elementPlaybackRateBeforeInitialization,
