@@ -391,7 +391,13 @@ export default class Controller {
             // Yes, we only increase the counter when switching to silenceSpeed, which makes the name incorrect.
             // Cry about it.
             this._didNotDoDesyncCorrectionForNSpeedSwitches++;
-            if (this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES) {
+            if (
+              this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES
+              // At least on YouTube, when the video is ended, performing a really short seek
+              // causes it to start over for some reason:
+              // https://github.com/WofWca/jumpcutter/issues/91
+              && !element.ended
+            ) {
               // `+=` actually makes more sense to me here because the past frames might get
               // discarded by the browser and maybe it'll have to re-buffer them. But
               // based on a bit of testing using seeking with `+=` took 132ms on average,
