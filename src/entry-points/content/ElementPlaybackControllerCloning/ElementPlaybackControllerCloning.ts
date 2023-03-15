@@ -436,7 +436,7 @@ export default class Controller {
     const seekTo = silenceEnd;
     const seekInVideoTime = seekAt - currentTime;
     const seekInRealTime = seekInVideoTime / this.settings.soundedSpeed;
-    // Yes, this means that `maybeUpcomingSilenceRange` may be the same on two subsequent
+    // `maybeUpcomingSilenceRange` may be the same on two subsequent
     // 'timeupdate' handler calls, and each of them would unconditionally call this `setTimeout`.
     // This case is handled inside `this.maybeSeekOrSpeedup`.
     //
