@@ -7,9 +7,13 @@
 [![Discord](https://img.shields.io/discord/678444692592918548?logo=discord)](https://discord.gg/HCjghyT)
 [![Translation status](https://hosted.weblate.org/widgets/jump-cutter/-/svg-badge.svg)][weblate]
 
+Download:
+
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
 [![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
 [![Microsoft Edge Add-ons](docs/extension-store-badges/microsoft.svg)][microsoft-edge-addons]
+or from GitHub: [Chromium](https://github.com/WofWca/jumpcutter/releases/latest/download/lmppdpldfpfdlipofacekcfleacbbncp_main.crx
+) / [Gecko (Firefox)](https://github.com/WofWca/jumpcutter/releases/latest/download/jump_cutter.xpi)
 
 Skips silent parts in videos, in real time.
 
