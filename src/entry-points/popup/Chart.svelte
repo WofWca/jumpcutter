@@ -36,7 +36,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     from '@/entry-points/content/ElementPlaybackControllerAlwaysSounded';
   import debounce from 'lodash/debounce';
 
-  // TODO make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
+  // TODO feat: make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = IS_DEV_MODE && true;
 
   type TelemetryRecord =
