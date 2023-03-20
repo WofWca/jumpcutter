@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -142,16 +142,17 @@ export default class StretcherAndPitchCorrectorNode {
   onSilenceEnd(elementSpeedSwitchedAt: AudioContextTime): void {
     // If you feel like your head is about to explode, check out `silenceDetector.port.onmessage = ` in
     // `ElementPlaybackControllerCloning/Lookahead.ts` first. This code kind of does the same.
+    // Consider reading it backwards since all we do is compute stretch parameters.
+    // TODO refactor: perhaps some pictures or/and unit tests could be of help to readers.
 
     // TODO all this does look like it may cause a snowballing floating point error. Mathematically simplify this?
     // Or just use if-else?
 
-    // These are guaranteed to be non-null, because `onSilenceStart` is always called before this function.
+    // These are guaranteed to be non-null, because `onSilenceStart` is always called
+    // before `onSilenceEnd`.
     assertDev(this.lastScheduledStretch && this.lastElementSpeedChangeAtInputTime);
     const lastScheduledStretcherDelayReset = this.lastScheduledStretch;
     const lastElementSpeedChangeAtInputTime = this.lastElementSpeedChangeAtInputTime;
-    // Assuming that `element.playbackRate` assignment was done in `Controller.ts` (which it was).
-    // Same in `onSilenceStart`.
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt;
 
     const lookaheadDelay = this.getLookaheadDelay();
@@ -159,19 +160,31 @@ export default class StretcherAndPitchCorrectorNode {
 
     const lastSilenceSpeedLastsForRealtime =
       elementSpeedSwitchedAt - lastElementSpeedChangeAtInputTime;
+    // "IntrinsicTime" siffix refers to the intrinsic time of the media. Same for the other
+    // variable names.
     const lastSilenceSpeedLastsForIntrinsicTime = lastSilenceSpeedLastsForRealtime * settings.silenceSpeed;
 
+    /**
+     * The fact that we encountered a loud part (`onSilenceEnd`) doesn't mean that the entire
+     * "margin before" part was played at silenceSpeed. The start of it may have been
+     * played at `soundedSpeed`. This happens when we've only just recently actually
+     * changed `playbackRate` to `silenceSpeed`, then immediately found a loud part.
+     */
     const marginBeforePartAtSilenceSpeedIntrinsicTimeDuration = Math.min(
       lastSilenceSpeedLastsForIntrinsicTime,
       settings.marginBefore
     );
-    const marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration =
-      settings.marginBefore - marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
     const marginBeforePartAtSilenceSpeedRealTimeDuration =
       marginBeforePartAtSilenceSpeedIntrinsicTimeDuration / settings.silenceSpeed;
+    const marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration =
+      settings.marginBefore - marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
     const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
       marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration / settings.soundedSpeed;
-    // The time at which the moment from which the speed of the video needs to be slow has been on the input.
+
+    /**
+     * The time at which the moment from which the speed of the video needs to be slow has
+     * been on the input (i.e. the output of the audio element).
+     */
     const marginBeforeStartInputTime =
       elementSpeedSwitchedAt
       - marginBeforePartAtSilenceSpeedRealTimeDuration
@@ -203,13 +216,6 @@ export default class StretcherAndPitchCorrectorNode {
         marginBeforeStartOutputTimeStretcherDelay,
         marginBeforeStartOutputTime
       );
-      // if (isLogging(this)) {
-      //   this._log({
-      //     type: 'pauseReset',
-      //     value: marginBeforeStartOutputTimeStretcherDelay,
-      //     time: marginBeforeStartOutputTime,
-      //   });
-      // }
     }
 
     const marginBeforePartAtSilenceSpeedStartOutputTime =
@@ -233,9 +239,6 @@ export default class StretcherAndPitchCorrectorNode {
     // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
     const endTime = elementSpeedSwitchedAt + getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
     this.stretch(startValue, endValue, startTime, endTime);
-    // if (isLogging(this)) {
-    //   this._log({ type: 'stretch', lastScheduledStretch: this.lastScheduledStretch });
-    // }
   }
   onSilenceStart(elementSpeedSwitchedAt: AudioContextTime): void {
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt; // See the same assignment in `onSilenceEnd`.
@@ -264,10 +267,6 @@ export default class StretcherAndPitchCorrectorNode {
       startTime,
       endTime,
     );
-
-    // if (isLogging(this)) {
-    //   this._log({ type: 'reset', lastScheduledStretch: this.lastScheduledStretch });
-    // }
   }
 
   private setOutputPitchAt(pitchSetting: PitchSetting, time: AudioContextTime, oldPitchSetting: PitchSetting) {
@@ -357,8 +356,8 @@ export default class StretcherAndPitchCorrectorNode {
   }
 
   /**
-   * @param interruptAtTime the time at which to stop changing the delay.
    * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
+   * @param interruptAtTime the time at which to stop changing the delay.
    */
   private interruptLastScheduledStretch(interruptAtTimeValue: TimeDelta, interruptAtTime: AudioContextTime): void {
     assertDev(this.lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
