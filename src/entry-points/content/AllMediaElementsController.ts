@@ -663,8 +663,9 @@ export default class AllMediaElementsController {
       this.handledElements.add(el);
 
       // Make the active element the one that got started last.
-      el.addEventListener('play', this.ensureAttachToEventTargetElementIfEligible, { passive: true });
-      this._destroyedPromise.then(() => el.removeEventListener('play', this.ensureAttachToEventTargetElementIfEligible));
+      // Why not 'play'? See the comment about `el.readyState` below.
+      el.addEventListener('playing', this.ensureAttachToEventTargetElementIfEligible, { passive: true });
+      this._destroyedPromise.then(() => el.removeEventListener('playing', this.ensureAttachToEventTargetElementIfEligible));
 
       if (el.muted) {
         this.handledMutedElements.add(el);
@@ -706,7 +707,7 @@ export default class AllMediaElementsController {
           // For example, this can happen if a website resumes playback from where the user stopped watching it on
           // another occasion (e.g. Odysee). Or with streams. This is mostly to ensure that we don't attach to
           // an element until its `currentSrc` is set to check if it cross-origin or not.
-          // If this happens, we'll attach to it later, on a 'play' event.
+          // If this happens, we'll attach to it later, on a 'playing' event.
           // How about move this condition to `isElementIneligible` in order to also check it before
           // every other call to `ensureAttach`.
           && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
