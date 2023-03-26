@@ -709,7 +709,9 @@ export default class AllMediaElementsController {
           // an element until its `currentSrc` is set to check if it cross-origin or not.
           // If this happens, we'll attach to it later, on a 'playing' event.
           // How about move this condition to `isElementIneligible` in order to also check it before
-          // every other call to `ensureAttach`.
+          // every other call to `ensureAttach`. Or make `ensureAttach` an async function
+          // that awaits for the element to become ready. Don't forget to cancel the attachment
+          // if it was called again with a new element.
           && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
         ) {
           this.esnureAttachToElement(el);
