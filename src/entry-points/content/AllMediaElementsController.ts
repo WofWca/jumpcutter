@@ -408,6 +408,8 @@ export default class AllMediaElementsController {
         // We shouldn't be doing that because this probably means that the element has no source or is still loading
         // so it doesn't make sense to assess whether it's CORS-restricted or whether we can use the cloning
         // algorithm.
+        // TODO fix: I think this can happen when the video is muted initially and you unmute
+        // it while it's still not loaded.
         console.warn('Attaching to an element with `el.readyState < HTMLMediaElement.HAVE_METADATA`');
       }
     }
