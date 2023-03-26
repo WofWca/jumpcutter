@@ -662,6 +662,7 @@ export default class AllMediaElementsController {
       }
       this.handledElements.add(el);
 
+      // Make the active element the one that got started last.
       el.addEventListener('play', this.ensureAttachToEventTargetElementIfEligible, { passive: true });
       this._destroyedPromise.then(() => el.removeEventListener('play', this.ensureAttachToEventTargetElementIfEligible));
 
