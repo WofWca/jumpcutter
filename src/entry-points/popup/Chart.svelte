@@ -23,11 +23,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import {
-    assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED, StretchInfo, AnyTime as TimeS,
-    MediaTime, AudioContextTime, TimeDelta, AnyTime,
+  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED } from '@/helpers';
+  import type {
+    StretchInfo, AnyTime as TimeS, MediaTime, AudioContextTime, TimeDelta, AnyTime,
   } from '@/helpers';
-  import { Settings } from '@/settings';
+  import type { Settings } from '@/settings';
   import type { TelemetryRecord as ElementPlaybackControllerStretchingTelemetryRecord }
     from '@/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
   import type { TelemetryRecord as ElementPlaybackControllerCloningTelemetryRecord }
