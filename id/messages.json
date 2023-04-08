@@ -46,5 +46,11 @@
 	},
 	"enable": {
 		"message": "Aktifkan"
+	},
+	"openLocalFile": {
+		"message": "buka file lokal"
+	},
+	"tryOpeningDirectly": {
+		"message": "Coba buka secara langsung"
 	}
 }
