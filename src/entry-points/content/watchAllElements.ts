@@ -41,6 +41,8 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMap>(
   }
   // Peeked at https://github.com/igrigorik/videospeed/blob/a25373f1d831fe06430c2e9e87dc1bd1aabd25b1/inject.js#L631
   function handleMutations(mutations: MutationRecord[]) {
+    // TODO perf: reduce the amount of allocations. Although an average page shouldn't
+    // have enough media elements for this to be a problem
     const newElements: Array<HTMLElementTagNameMap[T]> = [];
     for (const m of mutations) {
       if (m.type !== 'childList') {

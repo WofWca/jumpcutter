@@ -286,7 +286,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             style="margin: 0.75rem 0;"
           >
             <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
-            TODO move this comment to `manifest.json` somehow? -->
+            TODO refactor: move this comment to `manifest.json` somehow? -->
             {#await commandsPromise then commands}
               {#each commands as command}
                 <tr>
