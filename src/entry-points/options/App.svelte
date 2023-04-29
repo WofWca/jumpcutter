@@ -50,7 +50,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   originalSettingsPromise.then(s => originalSettings = s);
   let initialized = false;
   Promise.all([settingsPromise, originalSettingsPromise]).then(() => initialized = true);
-  const commandsPromise = browser.commands.getAll();
+
+  // `commands` API is currently not supported by Gecko for Android.
+  const commandsPromise: undefined | ReturnType<typeof browser.commands.getAll>
+    = browser.commands?.getAll?.();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -287,6 +290,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           >
             <!-- AFAIK There's no way to open popup programatically, so we use native commands for that.
             TODO refactor: move this comment to `manifest.json` somehow? -->
+            {#if commandsPromise}
             {#await commandsPromise then commands}
               {#each commands as command}
                 <tr>
@@ -317,6 +321,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
                 </tr>
               {/each}
             {/await}
+            {/if}
           </HotkeysTable>
         </div>
       </section>
