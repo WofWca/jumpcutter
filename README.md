@@ -17,7 +17,7 @@ or from GitHub: [Chromium](https://github.com/WofWca/jumpcutter/releases/latest/
 
 Skips silent parts in videos, in real time.
 
-Can be useful for watching lectures and other unedited videos.
+Can be useful for watching lectures, stream recordings (VODs), webinars, podcasts, and other unedited videos.
 
 Demo:
 
