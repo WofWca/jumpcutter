@@ -1,9 +1,7 @@
 # <img src="./src/icons/icon.svg" alt="Logo" height="32"/> Jump Cutter
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/users/lmppdpldfpfdlipofacekcfleacbbncp?logo=google-chrome)][chrome-web-store]
-[![Firefox Browser Add-ons](https://img.shields.io/amo/users/jump-cutter?logo=firefox-browser)][addons-mozilla-org]
-[![Liberapay](https://img.shields.io/liberapay/receives/WofWca?logo=liberapay)](https://liberapay.com/WofWca)
-[![Matrix](https://img.shields.io/matrix/jump-cutter-extension:matrix.org?logo=matrix&server_fqdn=matrix.org)](https://matrix.to/#/#jump-cutter-extension:matrix.org)
+[![Firefox Browser Add-ons](https://img.shields.io/amo/users/jump-cutter?logo=firefox-browser)][addons-mozilla-org] <!-- [![Liberapay](https://img.shields.io/liberapay/receives/WofWca?logo=liberapay)](https://liberapay.com/WofWca) --> [![Matrix](https://img.shields.io/matrix/jump-cutter-extension:matrix.org?logo=matrix&server_fqdn=matrix.org)](https://matrix.to/#/#jump-cutter-extension:matrix.org)
 [![Discord](https://img.shields.io/discord/678444692592918548?logo=discord)](https://discord.gg/HCjghyT)
 [![Translation status](https://hosted.weblate.org/widgets/jump-cutter/-/svg-badge.svg)][weblate]
 
@@ -123,7 +121,7 @@ Other than that, there are no known things concerning this. It doesn't interact 
 * Bitcoin (BTC):
 
   > <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
-* <https://liberapay.com/WofWca>
+<!-- * <https://liberapay.com/WofWca> -->
 
 <br>
 <br>
