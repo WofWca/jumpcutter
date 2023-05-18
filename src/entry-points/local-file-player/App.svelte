@@ -55,6 +55,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     // TODO handle `!video.canPlayType(file.type)`?
     document.title = file.name + ' – Jump Cutter';
     // For better performance. https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#Memory_management
+    // In the future it should be possible to `v.srcObject = file`:
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/srcObject
     objectURL && URL.revokeObjectURL(objectURL);
     objectURL = URL.createObjectURL(file);
     // TODO make the dimensions of the video element not jump when switching between videos.
