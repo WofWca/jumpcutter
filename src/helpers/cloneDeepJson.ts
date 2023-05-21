@@ -19,5 +19,6 @@
  */
 
 export function cloneDeepJson<T>(jsonable: T): T {
+  // TODO perf: maybe use `structuredClone` instead.
   return JSON.parse(JSON.stringify(jsonable));
 }
