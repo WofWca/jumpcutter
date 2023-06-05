@@ -164,6 +164,14 @@ export default class Lookahead {
           const realTimePassedSinceSilenceStart =
             realTimePassedSinceEvent + silenceDetector.durationThreshold + volumeSmoothingCausedDelay;
           const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * this.clone.playbackRate;
+          // TODO fix: very rarely this calculation can be a little off. It can happen when
+          // 1. The element got paused juuust before the event, and then got unpaused again.
+          // Imagine if the time between the message is sent and is received is 1 second.
+          // This code would say "well", the event actually happened one second ago, and the
+          // `playbackRate` of the element is 4, therefore it happend 4 intrinsic seconds ago.
+          // 2. Playback rate of the clone element got changed just recently.
+          // The bigger `silenceDetector.durationThreshold` is, the bigger is the error.
+          // Same applies to the `SILENCE_END` case below.
           const silenceStartAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceStart;
           this.silenceSince = silenceStartAtIntrinsicTime;
         } else {
