@@ -50,7 +50,7 @@ async function setNewSettingsKeysToDefaults() {
   await storage.set(newSettings);
 }
 
-const currentVersion = chrome.runtime.getManifest().version;
+const currentVersion = browser.runtime.getManifest().version;
 let postInstallStorageChangesDonePResolve: (storageMightHaveBeenChanged: boolean) => void;
 /**
  * Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
