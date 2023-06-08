@@ -89,10 +89,16 @@ export default class Lookahead {
     clone.crossOrigin = originalElement.crossOrigin;
     clone.src = originalElement.currentSrc;
 
-    // Not doing this appears to cause a resource (memory and processing) leak in Chromium manifesting itself when
-    // creating new instances of Lookahead (and discarding the old ones).
-    // Seems like a browser bug. TODO?
-    // BTW, `clone.pause()` also works.
+    // Not doing this appears to cause a resource (memory and processing) leak in Chromium
+    // manifesting itself when creating new instances of Lookahead (and discarding the old ones).
+    // Looks like it's because
+    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource
+    // > only once a media element is in a state where no further audio could ever be
+    // > played by that element may the element be garbage collected
+    // Here's the advice that tells us to do exactly this:
+    // https://html.spec.whatwg.org/multipage/media.html#best-practices-for-authors-using-media-elements
+    // > or, even better, by setting the element's src attribute to an empty string
+    // BTW, `clone.pause()` also works (sometimes?)
     this._destroyedPromise.then(() => clone.src = '');
 
     if (IS_DEV_MODE) {
