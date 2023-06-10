@@ -102,7 +102,7 @@
 		"message": "Use experimental algorithm"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ Doesn't work on many websites (YouTube, Vimeo). Works for local files. When unsupported, it simply won't skip silence.\n➕ Allows skipping silent parts entirely instead of playing them at a faster rate.\n➕ No audio distortion, delay or desync.\n➖ The chart won't display the actual volume on silent parts (it will just show 0 instead)."
+		"message": "➕ 🆕 Now works on most websites!\n➖ Sometimes stops working. Try to reload the page when that happens.\n➕ Allows skipping silent parts entirely instead of playing them at a faster rate.\n➕ No audio distortion, delay or desync.\n➖ May break playback-related functionality on some websites. In such a case, try disabling the extension on the extensions management page (not by just unchecking \"Enabled\").\n➖ The chart won't display the actual volume on silent parts (it will just show 0 instead)."
 	},
 	"mediaUnsupported": {
 		"message": "This media is **likely** unsupported — $consequences$.",
