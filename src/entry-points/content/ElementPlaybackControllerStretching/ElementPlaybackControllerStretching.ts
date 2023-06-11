@@ -19,7 +19,10 @@
  */
 
 import browser from '@/webextensions-api';
-import { audioContext, getOrCreateMediaElementSourceAndUpdateMap } from '@/entry-points/content/audioContext';
+import { audioContext } from '@/entry-points/content/audioContext';
+import {
+  getOrCreateMediaElementSourceAndUpdateMap
+} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
@@ -291,7 +294,10 @@ export default class Controller {
       });
     }
 
-    const mediaElementSource = getOrCreateMediaElementSourceAndUpdateMap(element);
+    const [, mediaElementSource] = getOrCreateMediaElementSourceAndUpdateMap(
+      element,
+      () => audioContext
+    );
     let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
       = mediaElementSource;
     if (this.isStretcherEnabled()) {

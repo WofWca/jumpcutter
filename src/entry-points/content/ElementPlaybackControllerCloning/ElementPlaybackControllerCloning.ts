@@ -32,8 +32,10 @@ import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNo
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
 import {
   audioContext as commonAudioContext,
-  getOrCreateMediaElementSourceAndUpdateMap
 } from '@/entry-points/content/audioContext';
+import {
+  getOrCreateMediaElementSourceAndUpdateMap
+} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
 import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
@@ -363,7 +365,10 @@ export default class Controller {
         if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
           const mozCaptureStreamUsed = !unprefixedCaptureStreamPresent;
           if (mozCaptureStreamUsed) {
-            const mediaElementSource = getOrCreateMediaElementSourceAndUpdateMap(element);
+            const [, mediaElementSource] = getOrCreateMediaElementSourceAndUpdateMap(
+              element,
+              () => commonAudioContext
+            );
             mediaElementSource.connect(commonAudioContext.destination);
           }
         }

@@ -36,7 +36,9 @@ import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
-import { mediaElementSourcesMap } from '@/entry-points/content/audioContext';
+import {
+  mediaElementSourcesMap
+} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
 import {
   lastPlaybackRateSetByThisExtensionMap, lastDefaultPlaybackRateSetByThisExtensionMap,
   setPlaybackRateAndRememberIt
