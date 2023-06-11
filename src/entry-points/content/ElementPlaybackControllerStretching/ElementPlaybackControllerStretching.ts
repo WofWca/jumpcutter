@@ -136,7 +136,7 @@ export default class Controller {
   _volumeInfoBuffer?: Float32Array;
   /**
    * A delay so that we have some time to process the audio before deciding how to manipulate it.
-   * You can imagine that what the `HTMLMediaEelement` outputs is at the output of this node,
+   * You can imagine that what the `HTMLMediaElement` outputs is at the output of this node,
    * and we kind of manage to "look-ahead" what it's going to output by tapping into this
    * node's input.
    * See {@link getOptimalLookaheadDelay} for more.
