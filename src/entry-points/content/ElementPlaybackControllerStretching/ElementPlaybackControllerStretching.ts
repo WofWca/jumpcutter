@@ -255,6 +255,8 @@ export default class Controller {
       // resume.
       // TODO This causes a bug - start playing two media elements (on the same <iframe>), then pause one - both will get
       // silenced. Nobody really does that, but still.
+      // Tbh I don't remember why we're using a single `audioContext`. Probably because it
+      // used to be good enough, and saved some memory on not creating a bunch of contexts.
       const suspendAudioContext = () => audioContext.suspend();
       let suspendAudioContextTimeoutId: number | undefined;
       const scheduleSuspendAudioContext = () => {
