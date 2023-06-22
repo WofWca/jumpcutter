@@ -84,7 +84,7 @@
 		"message": "Najniža glasnoća govora"
 	},
 	"autofocusEnabledInput": {
-		"message": "Automatski postavi potvrdni okvir „$enableCheckboxLabel$” aktivnim kad se otvori skočni prozor",
+		"message": "Automatski fokusiraj potvrdni okvir „$enableCheckboxLabel$” kad se otvori skočni prozor",
 		"placeholders": {
 			"enableCheckboxLabel": {
 				"content": "$1",
@@ -385,7 +385,7 @@
 		"message": "Promijeni kriterije pretrage …"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ Ne radi na mnogim web-stranicama (YouTube, Vimeo). Radi za lokalne datoteke. Kad nije podržan, jednostavno neće preskočiti tišinu.\n➕ Omogućuje preskakanje dijelova bez zvuka u potpunosti, umjesto da se reproduciraju brže.\n➕ Bez distorzije zvuka, kašnjenja ili desinkronizaije.\n➖ Grafikon neće prikazati stvarnu glasnoću dijelovima bez zvuka (umjesto toga će prikazati 0)."
+		"message": "➕ 🆕 Sada radi na većini web stranica!\n➖ Ponekad prestane raditi. Pokušaj ponovo učitati stranicu kada se to dogodi.\n➕ Omogućuje potpuno preskakanje tihih dijelova umjesto reprodukcije tih dijelova većom brzinom.\n➕ Bez distorzije zvuka, kašnjenja ili desinkronizacije.\n➖ Može pokvariti funkciju reprodukcije na nekim web stranicama. U tom slučaju pokušajte deaktivirati proširenje na stranici za upravljanje proširenjima (ne samo poništavanjem oznake „Aktivirano”).\n➖ Grafikon neće prikazati stvarnu glasnoću u tihim dijelovima (umjesto toga će prikazati samo 0)."
 	},
 	"general": {
 		"message": "Opće"
