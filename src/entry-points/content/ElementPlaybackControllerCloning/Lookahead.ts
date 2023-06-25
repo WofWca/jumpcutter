@@ -242,20 +242,21 @@ export default class Lookahead {
       // E.g. if you play a video in Odysee then reload the page such that the video starts
       // playing from the middle then this is gonna say that it `played` it from start to middle.
       const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
+      if (!playingUnprocessedRange) {
+        return;
+      }
       // Keep in mind that `originalElement.seeking` could be `true`, so make sure not to repeatedly
       // call this so that it gets stuck in that state.
-      if (playingUnprocessedRange) {
-        // TODO improvement: call `pushNewSilenceRange` before seeking if it's silence currently?
-        seekClone(originalElementTime);
-        // To avoid the case where it's currently silence, then you seek forward a lot and it's loud so it marks
-        // the whole range that you skipped as silence.
-        // TODO refactor: it seems to me that it would be cleaner to somehow reset the state of
-        // `silenceDetector` instead so if there is silence where we seek, it will emit
-        // `SILENCE_START` even if the last thing it emited too was `SILENCE_START`.
-        const currentlySilence = this.silenceSince != undefined;
-        if (currentlySilence) {
-          this.silenceSince = originalElementTime;
-        }
+      // TODO improvement: call `pushNewSilenceRange` before seeking if it's silence currently?
+      seekClone(originalElementTime);
+      // To avoid the case where it's currently silence, then you seek forward a lot and it's loud so it marks
+      // the whole range that you skipped as silence.
+      // TODO refactor: it seems to me that it would be cleaner to somehow reset the state of
+      // `silenceDetector` instead so if there is silence where we seek, it will emit
+      // `SILENCE_START` even if the last thing it emited too was `SILENCE_START`.
+      const currentlySilence = this.silenceSince != undefined;
+      if (currentlySilence) {
+        this.silenceSince = originalElementTime;
       }
     }
     // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
