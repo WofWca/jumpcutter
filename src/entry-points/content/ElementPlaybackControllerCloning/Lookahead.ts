@@ -238,6 +238,9 @@ export default class Lookahead {
       : (seekTo: MediaTime) => { clone.currentTime = seekTo };
     const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
       const originalElementTime = originalElement.currentTime;
+      // TODO fix: `clone.played` doesn't mean that we've actually played back that part.
+      // E.g. if you play a video in Odysee then reload the page such that the video starts
+      // playing from the middle then this is gonna say that it `played` it from start to middle.
       const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
       // Keep in mind that `originalElement.seeking` could be `true`, so make sure not to repeatedly
       // call this so that it gets stuck in that state.
