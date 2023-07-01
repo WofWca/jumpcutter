@@ -54,7 +54,7 @@ module.exports = env => {
     // Taken from https://github.com/sveltejs/svelte-loader#usage
     resolve: {
       alias: {
-        svelte: path.resolve('node_modules', 'svelte'),
+        svelte: path.resolve('node_modules', 'svelte/src/runtime'),
         '@': path.resolve(__dirname, 'src'),
       },
       extensions: ['.tsx', '.ts', '.mjs', '.js', '.svelte', '.json'],
@@ -83,6 +83,13 @@ module.exports = env => {
               hotReload: process.env.NODE_ENV !== 'production',
             },
           },
+        },
+        // From https://github.com/sveltejs/svelte-loader#usage
+        {
+          test: /node_modules\/svelte\/.*\.mjs$/,
+          resolve: {
+            fullySpecified: false
+          }
         },
         {
           test: /\.css$/,

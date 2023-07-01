@@ -18,6 +18,9 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// https://github.com/tsconfig/bases#svelte-tsconfigjson
+/// <reference types="svelte" />
+
 declare module 'tippy.js/dist/tippy.css'; // Not sure if it's the best way to go about suppressing that error.
 
 declare module 'webextension-polyfill' {
