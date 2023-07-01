@@ -93,6 +93,12 @@ module.exports = env => {
 
     entry: {
       content: './src/entry-points/content/main.ts',
+      // Yes, the following are also entry points, but I'm not convinced they should be put in a
+      // separate `./src/entry-points/*` directory.
+      'cloneMediaSources-for-extension-world':
+        './src/entry-points/content/cloneMediaSources/main-for-extension-world.ts',
+      'cloneMediaSources-for-page-world':
+        './src/entry-points/content/cloneMediaSources/main-for-page-world.ts',
       SilenceDetectorProcessor: './src/entry-points/content/SilenceDetector/SilenceDetectorProcessor.ts',
       VolumeFilterProcessor: './src/entry-points/content/VolumeFilter/VolumeFilterProcessor.ts',
 
@@ -107,7 +113,14 @@ module.exports = env => {
       path: path.resolve(__dirname, `dist-${env.browser}`),
       filename: (pathData, assetInfo) => {
         const chunkName = pathData.chunk.name;
-        if (['SilenceDetectorProcessor', 'VolumeFilterProcessor'].includes(chunkName)) {
+        if (
+          [
+            'cloneMediaSources-for-extension-world',
+            'cloneMediaSources-for-page-world',
+            'SilenceDetectorProcessor',
+            'VolumeFilterProcessor'
+          ].includes(chunkName)
+        ) {
           return `content/${chunkName}.js`;
         }
         return `${chunkName}/main.js`;

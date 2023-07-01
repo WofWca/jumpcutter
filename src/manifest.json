@@ -21,9 +21,17 @@
       "all_frames": true,
       "run_at": "document_idle",
       "match_about_blank": true
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content/cloneMediaSources-for-extension-world.js"],
+      "all_frames": true,
+      "run_at": "document_start",
+      "match_about_blank": true
     }
   ],
   "web_accessible_resources": [
+    "content/cloneMediaSources-for-page-world.js",
     "content/SilenceDetectorProcessor.js",
     "content/VolumeFilterProcessor.js",
     "chunks/*.js"

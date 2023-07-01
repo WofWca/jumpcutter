@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -188,6 +188,13 @@ export default class Controller {
 
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
 
+  // TODO refactor: make this a constructor parameter for this Controller.
+  private readonly getMediaSourceCloneElement: ConstructorParameters<typeof Lookahead>[2] =
+    (originalElement) => import(
+      /* webpackExports: ['getMediaSourceCloneElement']*/
+      '@/entry-points/content/cloneMediaSources/getMediaSourceCloneElement'
+    ).then(({ getMediaSourceCloneElement }) => getMediaSourceCloneElement(originalElement));
+
   constructor(
     element: HTMLMediaElement,
     controllerSettings: ControllerSettings,
@@ -196,7 +203,11 @@ export default class Controller {
     this.element = element;
     this.settings = controllerSettings;
 
-    const lookahead = this.lookahead = new Lookahead(element, this.settings);
+    const lookahead = this.lookahead = new Lookahead(
+      element,
+      this.settings,
+      this.getMediaSourceCloneElement
+    );
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
 
@@ -677,7 +688,11 @@ export default class Controller {
   }
 
   private _initLookahead() {
-    const lookahead = this.lookahead = new Lookahead(this.element, this.settings);
+    const lookahead = this.lookahead = new Lookahead(
+      this.element,
+      this.settings,
+      this.getMediaSourceCloneElement
+    );
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
   }

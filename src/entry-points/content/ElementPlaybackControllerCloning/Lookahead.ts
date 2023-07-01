@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -28,6 +28,10 @@ import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
   from '@/entry-points/content/SilenceDetector/SilenceDetectorNode';
 import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
+import {
+  getOrCreateMediaElementSourceAndUpdateMap
+} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
+import { getFinalCloneElement } from './getFinalCloneElement';
 
 // A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,
 // but I think this is a bit faster.
@@ -59,10 +63,12 @@ type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefo
 // and reduces time accuracy of silence ranges, which can cause it to miss short silence ranges.
 // This is practically the greatest effective absolute playbackRate one expects to achieve.
 // TODO improvement: turn this into an option.
-const maxClonePlaybackRate = Math.min(8, maxPlaybackRate);
+const maxClonePlaybackRateDefault = Math.min(8, maxPlaybackRate);
+const maxClonePlaybackRateWhenMediaSourceSrc = Math.min(4, maxPlaybackRate);
 
 export default class Lookahead {
-  clone: HTMLAudioElement; // Always <audio> for performance - so the browser doesn't have to decode video frames.
+  // Always <audio> for performance - so the browser doesn't have to decode video frames.
+  clone: HTMLAudioElement | undefined;
   silenceSince: MediaTime | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
@@ -75,33 +81,57 @@ export default class Lookahead {
 
   private _resolveDestroyedPromise!: () => void;
   private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
+  /**
+   * @param getFallbackCloneElement a function that returns a clone element. It is used when
+   * the `Lookahead` could not reuse the same source as the original element. The current
+   * use case is when the original element uses `MediaSource`. The function may return the same
+   * clone element for different calls.
+   */
   constructor(
     private originalElement: HTMLMediaElement,
     private settings: LookaheadSettings,
     // public onNewSilenceRange: (start: Time, end: Time) => void,
-  ) {
-    const clone = document.createElement('audio');
+    private readonly getFallbackCloneElement:
+      undefined | ((originalElement: HTMLMediaElement) => Promise<HTMLAudioElement | undefined>)
+  ) {}
+  private async _init(): Promise<void> {
+    const originalElement = this.originalElement;
+    const cloneElementP = getFinalCloneElement(
+      originalElement,
+      this.getFallbackCloneElement,
+    );
+
+    // TODO perf: don't await here, schedule other async operations.
+    const [clone, isFallbackElement] = await cloneElementP;
+    /**
+     * Whether the same element can be used between `Lookahead` instantiations and stuff.
+     * Otherwise it's disposable and we don't care what happens to it once we stop needing it.
+     */
+    const isCloneElementAndAudioContextReusable = isFallbackElement;
     this.clone = clone;
 
-    // TODO this probably doesn't cover all cases. Maybe it's better to just `originalElement.cloneNode(true)`?
-    // TODO also need to watch for changes of `crossOrigin`
-    // (in `ElementPlaybackControllerCloning.ts`).
-    clone.crossOrigin = originalElement.crossOrigin;
-    clone.src = originalElement.currentSrc;
+    if (isCloneElementAndAudioContextReusable) {
+      this._destroyedPromise.then(() => {
+        clone.pause();
+        // A lot of state is not reset, e.g. `playbackRate`, `volume`, `preservesPitch`,
+        // `currentTime`, because the next instance of `Lookahead` is gonna update it to
+        // whatever it needs anyway.
+      });
+    } else {
+      // Not doing this appears to cause a resource (memory and processing) leak in Chromium
+      // manifesting itself when creating new instances of Lookahead (and discarding the old ones).
+      // Looks like it's because
+      // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource
+      // > only once a media element is in a state where no further audio could ever be
+      // > played by that element may the element be garbage collected
+      // Here's the advice that tells us to do exactly this:
+      // https://html.spec.whatwg.org/multipage/media.html#best-practices-for-authors-using-media-elements
+      // > or, even better, by setting the element's src attribute to an empty string
+      // BTW, `clone.pause()` also works (sometimes?)
+      this._destroyedPromise.then(() => clone.src = '');
+    }
 
-    // Not doing this appears to cause a resource (memory and processing) leak in Chromium
-    // manifesting itself when creating new instances of Lookahead (and discarding the old ones).
-    // Looks like it's because
-    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource
-    // > only once a media element is in a state where no further audio could ever be
-    // > played by that element may the element be garbage collected
-    // Here's the advice that tells us to do exactly this:
-    // https://html.spec.whatwg.org/multipage/media.html#best-practices-for-authors-using-media-elements
-    // > or, even better, by setting the element's src attribute to an empty string
-    // BTW, `clone.pause()` also works (sometimes?)
-    this._destroyedPromise.then(() => clone.src = '');
-
-    if (IS_DEV_MODE) {
+    if (IS_DEV_MODE && !isFallbackElement) {
       const interval = setInterval(() => {
         const cloneSrc = clone.src;
         const originalSrc = originalElement.currentSrc;
@@ -111,18 +141,32 @@ export default class Lookahead {
       }, 2000);
       this._destroyedPromise.then(() => clearInterval(interval));
     }
-  }
-  private async _init(): Promise<void> {
-    const originalElement = this.originalElement;
-
-    const clone = this.clone;
 
     const toAwait: Array<Promise<void>> = [];
 
-    const ctx = new AudioContext({
-      latencyHint: 'playback',
-    });
-    this._destroyedPromise.then(() => ctx.close()); // Not sure if this is required, maybe it gets GCd automatically?
+    // TODO make sure to properly clean up the element, i.e. remove event listeners and stuff.
+    // Not only the element, but the audioContext as well.
+
+    // I might have made it too obscure, but yeah, if
+    // `isCloneElementAndAudioContextReusable === false` then we create an `AudioContext` here
+    // unconditionally.
+    const [ctx, src] = getOrCreateMediaElementSourceAndUpdateMap(
+      clone,
+      () => new AudioContext({
+        latencyHint: 'playback',
+      }),
+    );
+    if (isCloneElementAndAudioContextReusable) {
+      // The fact that the clone element is reusable also means that the `AudioContext` that it's
+      // attached to must be reusable as well because `createMediaelementSource` can only be called
+      // once for an element.
+      // Maybe we should use `clone.captureStream()` instead (when it's properly supported by
+      // browsers)?
+      this._destroyedPromise.then(() => ctx.suspend());
+    } else {
+      // Not sure if this is required, maybe it gets GCd automatically?
+      this._destroyedPromise.then(() => ctx.close());
+    }
     ctx.suspend();
     const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
 
@@ -144,8 +188,6 @@ export default class Lookahead {
       this._destroyedPromise.then(() => destroyAudioWorkletNode(silenceDetector));
       return silenceDetector;
     });
-
-    const src = ctx.createMediaElementSource(clone);
 
     // When `smoothingWindowLenght` is pretty big, it needs to be taken into account.
     // It kinda acts as a delay, so `marginBefore` gets decreased and `marginAfter` gets increased.
@@ -169,7 +211,7 @@ export default class Lookahead {
           // `marginAfter` will be taken into account when we `pushNewSilenceRange`.
           const realTimePassedSinceSilenceStart =
             realTimePassedSinceEvent + silenceDetector.durationThreshold + volumeSmoothingCausedDelay;
-          const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * this.clone.playbackRate;
+          const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * clone.playbackRate;
           // TODO fix: very rarely this calculation can be a little off. It can happen when
           // 1. The element got paused juuust before the event, and then got unpaused again.
           // Imagine if the time between the message is sent and is received is 1 second.
@@ -178,7 +220,7 @@ export default class Lookahead {
           // 2. Playback rate of the clone element got changed just recently.
           // The bigger `silenceDetector.durationThreshold` is, the bigger is the error.
           // Same applies to the `SILENCE_END` case below.
-          const silenceStartAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceStart;
+          const silenceStartAtIntrinsicTime = clone.currentTime - intrinsicTimePassedSinceSilenceStart;
           this.silenceSince = silenceStartAtIntrinsicTime;
         } else {
           assertDev(this.silenceSince != undefined,
@@ -186,8 +228,8 @@ export default class Lookahead {
             + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
           const realTimePassedSinceSilenceEnd =
             realTimePassedSinceEvent + volumeSmoothingCausedDelay;
-          const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * this.clone.playbackRate;
-          const silenceEndAtIntrinsicTime = this.clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
+          const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * clone.playbackRate;
+          const silenceEndAtIntrinsicTime = clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
           this.pushNewSilenceRange(
             this.silenceSince + this.settings.marginAfter,
             silenceEndAtIntrinsicTime - this.settings.marginBefore,
@@ -209,13 +251,13 @@ export default class Lookahead {
         return;
       }
       // In case it's due to a seek to the end of the file, so we don't create a silence range of 0 length.
-      if (this.silenceSince === this.clone.duration) {
+      if (this.silenceSince === clone.duration) {
         return;
       }
       assertDev(this.silenceSince);
       this.pushNewSilenceRange(
         this.silenceSince + this.settings.marginAfter,
-        this.clone.duration,
+        clone.duration,
       );
     }
     clone.addEventListener('ended', onEnded, { passive: true });
@@ -238,6 +280,18 @@ export default class Lookahead {
       : (seekTo: MediaTime) => { clone.currentTime = seekTo };
     const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
       const originalElementTime = originalElement.currentTime;
+      // TODO fix: Since the `HTMLMediaElement` may be reusable
+      // (`isCloneElementAndAudioContextReusable`), its `played` ranges may already be populated,
+      // so we can't rely on them. So we may actually skip performing a seek here even though
+      // it may be necessary.
+      // I don't know of a way to reset `played` for an element without re-loading its source.
+      // We probably need to make a custom `played` implementation that is
+      // specific to a `Lookahead` instance.
+      // Or, we can say that it's not a bug but a feature and that if you change some
+      // skipping settings (leading to `Lookahead` re-initialization) and seek back the video
+      // then it's not gonna skip silnece because "well I thought you seeked back because
+      // you wanted to thoriughly re-watch some part".
+      //
       // TODO fix: `clone.played` doesn't mean that we've actually played back that part.
       // E.g. if you play a video in Odysee then reload the page such that the video starts
       // playing from the middle then this is gonna say that it `played` it from start to middle.
@@ -262,7 +316,15 @@ export default class Lookahead {
     // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
     // TODO perf: we could instead detach the listener and attach it again after one second.
     const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
-    throttledSeekCloneIfPlayingUnprocessedRange();
+    if (isCloneElementAndAudioContextReusable) {
+      // A somewhat of a workaround for the `played` thing (see the comment about it above).
+      // Ensure that even if the current range is `played` by clone, we start processing
+      // it anyway, at least until the next `seekCloneIfOriginalElIsPlayingUnprocessedRange`
+      // (which currently happens when the original element is 'seeking').
+      seekClone(originalElement.currentTime);
+    } else {
+      throttledSeekCloneIfPlayingUnprocessedRange();
+    }
     // TODO refactor: are there other cases when the clone can get out of sync?
     // the media load algorithm, but we re-create the Lookahead in that case.
     // Anything else? Maybe search the spec for "set the (current|official) playback position".
@@ -282,7 +344,11 @@ export default class Lookahead {
       let timeoutId = -1;
       const setClonePlaybackRateAndScheduleAnother = () => {
         // TODO improvement: also make it depend on `soundedSpeed` and how much
-        // silence there is and other stuff. Maybe also on for how long we can't keep up?
+        // silence there is and other stuff. Also on `clone.buffered`? Especially useful for the
+        // `MediaSource` cloning algorithm where the clone's `buffered` range is the same as
+        // the original element's `buffered` range so it can't run ahead too much, only as far as
+        // `buffered` goes.
+        // Maybe also on for how long we can't keep up?
         // Maybe we could utilize `TimeSavedTracker`.
         // Because it doesn't make sense to play the clone say 4x faster than
         // the original if we're only expecting 10% of the meida to be silent.
@@ -298,8 +364,30 @@ export default class Lookahead {
             console.warn('aheadSeconds < 0:', aheadSeconds, clone.currentTime, originalElement.currentTime);
           }
         }
-        // Speed is max when 0 seconds ahead and is 0 when 3 minutes ahead (but we'll clamp it, below).
-        const playbackRateUnclamped = maxClonePlaybackRate * (1 - (aheadSeconds / (3 * 60)));
+
+        /**
+         * Yeah, looks like a naming/abstraction issue, we're not supposed to be able to say
+         * whether the clone is unable to get far ahead of the original element just based
+         * on the fact that it's reusable. It's just me knowing that if it's reusable then
+         * it means that it's `MediaSource` clone based.
+         * TODO refactor?
+         */
+        const cloneCanNotPlayFarAheadOfOriginal = isCloneElementAndAudioContextReusable;
+        const zeroSpeedAt = cloneCanNotPlayFarAheadOfOriginal
+          ? (2 * 60)
+          : (3 * 60);
+        // If the clone element can't get far ahead of the original one in terms of playback
+        // position, it happens more often that `aheadSeconds` is not high enough to the
+        // point that we don't see the next silence range. And silence range detection
+        // accuracy goes down as the clone playback increases.
+        // So, here's sort of a workaround to make sure that playback rate is never too big.
+        const maxClonePlaybackRate = cloneCanNotPlayFarAheadOfOriginal
+          ? maxClonePlaybackRateWhenMediaSourceSrc
+          : maxClonePlaybackRateDefault;
+        // Speed is max when 0 seconds ahead and is 0 when `zeroSpeedAt` ahead
+        // (but we'll clamp it, below).
+
+        const playbackRateUnclamped = maxClonePlaybackRate * (1 - (aheadSeconds / zeroSpeedAt));
         // Min clamp shouldn't be low because of performance - playing a video at 0.01 speed for 100 seconds
         // is much worse than playing it at 1 speed for 1 second.
         // TODO perf: Need to pause the video instead when it goes below the lower bound.
@@ -370,7 +458,8 @@ export default class Lookahead {
   public ensureInit = once(this._init);
 
   private _getSilenceDetectorNodeDurationThreshold() {
-    return getRealtimeMargin(this.settings.marginAfter + this.settings.marginBefore, this.clone.playbackRate);
+    // TODO refactor: get rid of the only occurence of `this.clone`? Or shall we keep it?
+    return getRealtimeMargin(this.settings.marginAfter + this.settings.marginBefore, this.clone!.playbackRate);
   }
 
   /**
