@@ -242,7 +242,7 @@
 		"message": "在不跳过无声片段的情况下，以1x标准播放速率播放需要多长时间"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ 在很多网站（如Youtube、Vimeo）上都不能使用。本地文件是可以的。如果此算法实际上不受支持，跳过无声片段的功能将完全失效。\n➕ 允许完全跳过静音部分，而不是以更快的速度播放它们。\n➕ 不会有音频失真、延迟或音画不同步的问题。\n➖ 音量图不会显示静音部分的实际音量（只会显示为0）。"
+		"message": "➕ 🆕 Now works on most websites!\n➖ Sometimes stops working. Try to reload the page when that happens.\n➕ 允许完全跳过静音部分，而不是以更快的速度播放它们。\n➕ 不会有音频失真、延迟或音画不同步的问题。\n➖ May break playback-related functionality on some websites. In such a case, try disabling the extension on the extensions management page (not by just unchecking \"Enabled\").\n➖ 音量图不会显示静音部分的实际音量（只会显示为0）。"
 	},
 	"useExperimentalAlgorithm": {
 		"message": "使用实验性算法"

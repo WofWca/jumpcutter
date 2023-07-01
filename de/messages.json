@@ -54,7 +54,7 @@
 		"message": "Auf Standardwerte zurücksetzen"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖ Funktioniert nicht auf vielen Seiten (YouTube, Vimeo). Funktioniert für Lokale Dateien. Wenn es nicht funktioniert, wird nichts übersprungen.\n➕ Leise Segmente werden übersprungen. Keine Beschleunigung.\n➕ Kein Audio Verzerrung, Verzögerung oder Unsynchronisierung\n➖ Graph zeigt die Lautstärke der leisen Regionen nicht an. Er zeigt stattdessen nur 0."
+		"message": "➕ 🆕 Now works on most websites!\n➖ Sometimes stops working. Try to reload the page when that happens.\n➕ Leise Segmente werden übersprungen. Keine Beschleunigung.\n➕ Kein Audio Verzerrung, Verzögerung oder Unsynchronisierung\n➖ May break playback-related functionality on some websites. In such a case, try disabling the extension on the extensions management page (not by just unchecking \"Enabled\").\n➖ Graph zeigt die Lautstärke der leisen Regionen nicht an. Er zeigt stattdessen nur 0."
 	},
 	"tryOpeningDirectly": {
 		"message": "Versuchen sie es direkt zu öffnen"

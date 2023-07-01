@@ -164,7 +164,7 @@
 		}
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➖在很多網站(如Youtube、Vimeo)都無法使用。但可用於本機檔案。如此算法不支持，則不能跳過無聲片段。\n➕ 允許完全跳過無聲部分，而不是以更快的速度播放它們。\n➕ 不會有音頻失真、延遲或音畫不同步的問題。\n➖音量圖不會顯示無聲部分的實際音量(只會顯示為0)。"
+		"message": "➕ 🆕 Now works on most websites!\n➖ Sometimes stops working. Try to reload the page when that happens.\n➕ 允許完全跳過無聲部分，而不是以更快的速度播放它們。\n➕ 不會有音頻失真、延遲或音畫不同步的問題。\n➖ May break playback-related functionality on some websites. In such a case, try disabling the extension on the extensions management page (not by just unchecking \"Enabled\").\n➖音量圖不會顯示無聲部分的實際音量(只會顯示為0)。"
 	},
 	"openLocalFile": {
 		"message": "打開本機檔案"
