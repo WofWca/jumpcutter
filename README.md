@@ -53,9 +53,9 @@ It's about how we're able to "look ahead" and slow down shortly before a loud pa
 You can check out the comments in its source code for more details.
 </details>
 
-The second one is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original one, looking for silent parts and writing down where they are. When the target element reaches that part,
-we increase its `playbackRate`, or skip (seek) it entirely.
-Currently you can enable it by checking the "Use the experimental algorithm" checkbox.
+The second one is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original element, looking for silent parts and writing down where they are. When the target element reaches a silent part,
+we increase its `playbackRate`, or skip (seek) the silent part entirely.
+Currently you can enable this algorithm by checking the "Use the experimental algorithm" checkbox.
 
 <!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Build
