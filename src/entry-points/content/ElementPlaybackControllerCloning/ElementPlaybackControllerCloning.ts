@@ -464,6 +464,7 @@ export default class Controller {
     if (seekInRealTime <= 0) {
       this.maybeSeekOrSpeedup(seekTo, seekAt);
     } else {
+      // TODO fix: `clearTimeout` on `destroy`.
       this.maybeSeekOrSpeedupTimeoutId = (setTimeout as typeof window.setTimeout)(
         this.maybeSeekOrSpeedupBounded,
         seekInRealTime * 1000,
