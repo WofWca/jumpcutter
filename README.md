@@ -69,12 +69,51 @@ Currently there are 2 separate algorithms in place.
 The first one we call "the stretching algorithm", and it's in [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`.
 
 <details><summary>Details, why it's called "stretching"</summary>
-It's about how we're able to "look ahead" and slow down shortly before a loud part ("Margin before"). Basically we slightly delay the audio from it before outputting it. When we encounter a loud part, we slow down (stretch and pitch-shift) the buffered audio so that it appears to have been played at normal speed, then output it.
+The algorithm we just described cannot "look ahead" in the audio timeline.
+It only looks at the current loudness, at the sample that we've already sent
+to the audio output device.
 
-You can check out the comments in its source code for more details.
+But looking ahead (a.k.a. "Margin before") is important, because, for example,
+there are certain sounds in speech that you can start a word with
+that are not very loud.
+But it's not good to skip such sounds just because of that.
+The speech would become harder to understand.
+For example, "throb" would become "rob".
+<!-- You'd probably still understand what's being said based on the context,
+but you'd need to use more mental effort. -->
+
+Here is where the "stretching" part comes in.
+It's about how we're able to "look ahead" and slow down
+shortly before a loud part.
+Basically it involves slightly (~200ms) _delaying_ the audio
+before outputting it (and that is for a purpose!).
+
+Imagine that we're currently playing a silent part,
+so the playback rate is higher.
+Now, when we encounter a loud part, we go
+"aha! That might be a word, and it might start with 'th'".
+<!-- , which we might not have marked as loud, because 'th' is not that loud" -->
+As said above, we always delay (buffer) the audio for ~200ms
+before outputting it.
+So we know that these 200ms of buffered audio
+must contain that "th" sound,
+and we want the user to hear that "th" sound.
+But remember: at the time we recorded the said sound,
+the video was playing at _a high speed_,
+but we want to play back that 'th' _at normal speed_.
+So we can't just output it as is. What do we do?
+
+What we do is we take that buffered (delayed) audio,
+and we _slow it down_ (stretch and pitch-shift it)
+so that it appears to have been played at normal speed!
+Only then do we pass it to the system (which then passes it to your speakers).
+
+And that, kids, is why we call it "the stretching algorithm".
+
+For more details, you can check out the comments in its source code.
 </details>
 
-The second one is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original element, looking for silent parts and writing down where they are. When the target element reaches a silent part,
+The second algorithm is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original element, looking for silent parts and writing down where they are. When the target element reaches a silent part,
 we increase its `playbackRate`, or skip (seek) the silent part entirely.
 Currently you can enable this algorithm by checking the "Use the experimental algorithm" checkbox.
 
