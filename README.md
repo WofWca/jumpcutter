@@ -43,6 +43,27 @@ Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
 Simple (mostly).
 
+<!--
+Idk where to put this part. It seems out of place as an introduction,
+because we don't really have to say anything about looking ahead
+to explain the simpler case, when "margin before" is 0.
+And both algorithms have their own pros and cons even with
+"margin before" being 0.
+
+With the current state of the web APIs,
+there is no direct way to inspect audio samples of a media file/stream
+anywhere other than at the current playback position of the media element.
+Otherwise it would be pretty easy to employ the algorithms used in
+the [analogous software](https://alternativeto.net/software/jump-cutter/),
+such as
+
+* [jump-cutter](https://github.com/jfkthame/jump-cutter)
+* <https://github.com/carykh/jumpcutter>
+* ExoPlayer ([SilenceSkippingAudioProcessor](https://github.com/google/ExoPlayer/blob/9c9f5a0599ec012d5cc46e3bd2e732a589adf61d/library/core/src/main/java/com/google/android/exoplayer2/audio/SilenceSkippingAudioProcessor.java))
+* ffmpeg ([`silenceremove`](https://ffmpeg.org/ffmpeg-filters.html#toc-silenceremove))
+
+So we have to work around that fact. -->
+
 Currently there are 2 separate algorithms in place.
 
 The first one we call "the stretching algorithm", and it's in [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`.
