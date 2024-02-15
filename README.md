@@ -31,14 +31,6 @@ But I believe this use case would be considered "fair use" anyway.
 
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
 
-<!-- FYI this section is linked from CONTRIBUTING.md -->
-## Contribute
-
-* [🌐 Translate (on Weblate)][weblate]
-* 👨‍💻 Code. See [CONTRIBUTING.md](./CONTRIBUTING.md) on how to get started. And feel free to contact me.
-* [💸 Donate](#donate)
-* General feedback and questioning my decisions is appreciated
-
 ## How it works
 
 Simple (mostly).
@@ -116,6 +108,14 @@ For more details, you can check out the comments in its source code.
 The second algorithm is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original element, looking for silent parts and writing down where they are. When the target element reaches a silent part,
 we increase its `playbackRate`, or skip (seek) the silent part entirely.
 Currently you can enable this algorithm by checking the "Use the experimental algorithm" checkbox.
+
+<!-- FYI this section is linked from CONTRIBUTING.md -->
+## Contribute
+
+* [🌐 Translate (on Weblate)][weblate]
+* 👨‍💻 Code. See [CONTRIBUTING.md](./CONTRIBUTING.md) on how to get started. And feel free to contact me.
+* [💸 Donate](#donate)
+* General feedback and questioning my decisions is appreciated
 
 <!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Build
