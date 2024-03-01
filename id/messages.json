@@ -52,5 +52,40 @@
 	},
 	"tryOpeningDirectly": {
 		"message": "Coba buka secara langsung"
+	},
+	"resetToDefaults": {
+		"message": "Atur ulang ke pengaturan default"
+	},
+	"timeSaved": {
+		"message": "Info waktu yang disimpan"
+	},
+	"relativeToSounded": {
+		"message": "relatif terhadap kecepatan suara"
+	},
+	"absolute": {
+		"message": "absolut"
+	},
+	"marginBefore": {
+		"message": "Margin sebelum"
+	},
+	"marginAfter": {
+		"message": "Margin sesudah"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Apabila volume audio saat ini berada di bawah nilai ini, percepatlah. \nPada grafik, ini adalah garis horizontal 🟥 merah. Garis 🟦 biru adalah volume saat ini, jadi ketika garis biru berada di bawah garis merah, itu dianggap sebagai hening."
+	},
+	"silenceSpeedTooltip": {
+		"message": "Kecepatan di mana kita memainkan bagian yang tidak bersuara. \nPada grafik, bagian yang dimainkan dengan kecepatan ini memiliki latar belakang 🟥 merah.$relativeNote$ \n⚠️ Jika nilai ini sangat tinggi (> ~4), awal kalimat juga mungkin mulai dilewati (ini seperti \"Margin sebelum\" lebih kecil).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
+	},
+	"soundedSpeedTooltip": {
+		"message": "Kecepatan pemutaran video saat video TIDAK dalam keadaan hening, yaitu kecepatan \"normal.\" \nPada bagan, bagian yang diputar pada kecepatan ini memiliki latar belakang 🟩 hijau."
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➕ 🆕 Sekarang berfungsi di sebagian besar situs web! \n➖ Kadang-kadang berhenti bekerja. Coba muat ulang halaman saat hal itu terjadi. \n➕ Memungkinkan melewatkan bagian yang tidak bersuara sama sekali alih-alih memutarnya dengan kecepatan yang lebih cepat. \n➕ Tidak ada distorsi audio, penundaan, atau desinkronisasi. \n➖ Dapat merusak fungsionalitas yang berhubungan dengan pemutaran di beberapa situs web. Dalam kasus seperti itu, coba nonaktifkan ekstensi pada halaman manajemen ekstensi (bukan hanya dengan menghapus centang pada \"Diaktifkan\"). \n➖ Grafik tidak akan menampilkan volume aktual pada bagian yang tidak bersuara (hanya akan menampilkan 0 sebagai gantinya)."
 	}
 }
