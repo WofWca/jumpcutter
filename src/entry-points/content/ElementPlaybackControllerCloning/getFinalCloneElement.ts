@@ -39,6 +39,7 @@ export async function getFinalCloneElement(
   if (await canPlayCurrentSrc(sameSourceClone)) {
     return [sameSourceClone, false];
   }
+  /** Whether we expect our extension to have created a fallback element. */
   const fallbackElementIsSupposedToExist =
     getFallbackCloneElement
     // You might ask "what about `MediaSourceHandle`? Aren't we supposed to have a clone
@@ -67,7 +68,8 @@ export async function getFinalCloneElement(
       }
     }
   }
-  // No fallback element, the only option is to return `sameSourceClone` that we can't play.
+  // No fallback element, the only option is to return `sameSourceClone`
+  // (that we can't play, as we've checked above).
   // Maybe we'll be able to play it later for some reason idk.
   return [sameSourceClone, false];
 }
