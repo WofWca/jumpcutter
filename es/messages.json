@@ -123,7 +123,7 @@
 		"message": "tiempo ahorrado comparado a solo ver el video a velocidad normal (intrinseca)"
 	},
 	"soundedSpeed": {
-		"message": "Velocidad del sonido"
+		"message": "Velocidad normal"
 	},
 	"soundedSpeedTooltip": {
 		"message": "La velocidad a la que reproducimos el video cuando actualmente NO está en silencio, la velocidad \"normal\".\nEn el gráfico, las partes que se reprodujeron a esta velocidad tienen un fondo verde 🟩 ."
@@ -187,5 +187,13 @@
 	},
 	"saving": {
 		"message": "Guardando…"
+	},
+	"silenceSpeedTooltip": {
+		"message": "La velocidad en la que reproducimos las partes en silencio.\nEn el gráfico, las partes que se reprodujeron a esta velocidad tienen un fondo rojo 🟥$relativeNote$\n⚠️ Si este valor es muy alto (> ~4) también se pueden empezar a omitir los comienzos de las frases (es como si el “Margen anterior” fuera más pequeño).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
 	}
 }
