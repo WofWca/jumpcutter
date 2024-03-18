@@ -538,7 +538,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             <p>
               <span>🤷‍♀️ {getMessage('noSuitableElement')}.</span>
               <br/>
-              <!-- Maybe remove this button as we alredy have the "changeElementSearchCriteria" one?
+              <!-- Maybe remove this button as we already have the "changeElementSearchCriteria" one?
               Also it's kind of confusing, because this button also qualifies as a one that changes
               the search criteria. -->
               <!-- TODO how about don't show this button when there are no such elements on the page

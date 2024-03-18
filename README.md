@@ -130,7 +130,7 @@ Currently you can enable this algorithm by checking the "Use the experimental al
     ```
 
 3.
-    Fill the `src/_locales` directory with localization files. Skip this step if they're alredy there. Either:
+    Fill the `src/_locales` directory with localization files. Skip this step if they're already there. Either:
 
     * If you're using `git`:
 
