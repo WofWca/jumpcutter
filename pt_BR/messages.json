@@ -6,6 +6,427 @@
 		"message": "Volume de fala (mais baixo)"
 	},
 	"soundedSpeed": {
-		"message": "Velocidade do som"
+		"message": "Velocidade regular"
+	},
+	"enable": {
+		"message": "Ativado"
+	},
+	"contentScriptFail": {
+		"message": "Não foi possivel executar o conteúdo do script nesta página"
+	},
+	"mediaUnsupported": {
+		"message": "Esta mídia é **provavelmente** não suportada — $consequences$.",
+		"placeholders": {
+			"consequences": {
+				"content": "$1",
+				"example": "it could get muted if we attach to it"
+			}
+		}
+	},
+	"or": {
+		"message": "Ou"
+	},
+	"absolute": {
+		"message": "absoluto"
+	},
+	"relativeToSounded": {
+		"message": "relativo à velocidade sonora"
+	},
+	"applyToOnly": {
+		"message": "apenas elementos do $type$",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"none": {
+		"message": "Nenhuma"
+	},
+	"resetToDefaults": {
+		"message": "Restaurar valores de fabrica"
+	},
+	"uploadToSync": {
+		"message": "Mandar configurações para armazenamento de sincronização"
+	},
+	"overTheLast": {
+		"message": "Sobre os últimos $duration$",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"value": {
+		"message": "Valor"
+	},
+	"chartHeightPx": {
+		"message": "Em altura (pixels)"
+	},
+	"chartSpeedRealTime": {
+		"message": "Constante (tempo real)"
+	},
+	"chartSpeed": {
+		"message": "Velocidade de movimentação"
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Esteja ciente de que os navegadores não suportam taxas de reprodução acima de um determinado limite.\nNo momento em que escrevo, é 16 para Chromium (Chrome, Edge) e 8 (por padrão) para Gecko (Firefox)."
+	},
+	"min": {
+		"message": "Mín"
+	},
+	"max": {
+		"message": "Máx"
+	},
+	"step": {
+		"message": "Avanço"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Desativar teclas de atalho enquanto um input estiver em foco"
+	},
+	"autofocusEnabledInput": {
+		"message": "Auto Focar na caixa de seleção \"$enableCheckboxLabel$\" quando o pop-up abrir",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Mostrar o link de \"$openLocalFileLabel$\"",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"popupSpecificHotkeys": {
+		"message": "Atalhos deste pop-up"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Método de calcular média"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Média do tempo inteiro (sem decadência)"
+	},
+	"iconBadge": {
+		"message": "Ícone da extensão"
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Apenas leve em conta os últimos N de segundos em reprodução"
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "Peso da média do ultimo período reproduzido"
+	},
+	"license": {
+		"message": "Licença"
+	},
+	"runSnowflakeBridge": {
+		"message": "Ajude outros a contornar a censura simplesmente instalando (outra) extensão"
+	},
+	"helpTranslate": {
+		"message": "Ajude na Tradução"
+	},
+	"toggleExtension": {
+		"message": "Ativar extensão"
+	},
+	"more": {
+		"message": "Mais"
+	},
+	"timeSaved": {
+		"message": "Informação sobre tempo salvo"
+	},
+	"volume": {
+		"message": "Volume\nNão é o barulho atual do material, mas sim sua amplificação multiplicada, como na TV"
+	},
+	"noSuitableElement": {
+		"message": "Não foi possível encontrar um elemento de mídia adequado na página"
+	},
+	"numbersMeanings": {
+		"message": "Significados dos números (em ordem):"
+	},
+	"timeSavedComparedToSounded": {
+		"message": "em média o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade sonora"
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "em média quanto o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade normal (intrínseca)"
+	},
+	"timeSavedPercentage": {
+		"message": "Porcentagem equivalente ao tempo economizado:"
+	},
+	"comparedToSounded": {
+		"message": "em comparação com a sonora"
+	},
+	"comparedToIntrinsic": {
+		"message": "em comparação com a normal (intrínseco)"
+	},
+	"retry": {
+		"message": "Tentar Novamente"
+	},
+	"alsoSearchFor": {
+		"message": "Também procure por elementos de $type$",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "audio"
+			}
+		}
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "tempo salvo em comparação com apenas reproduzir o vídeo em velocidade sonora"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "tempo salvo em comparação com apenas reproduzir o vídeo na velocidade normal (intrínseca)"
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "quanto tempo a reprodução levaria numa velocidade normal (intrínseca) SEM PULAR o silêncio"
+	},
+	"loading": {
+		"message": "Carregando"
+	},
+	"silenceSkippingWontWork": {
+		"message": "Skip de silêncio não funcionará corretamente"
+	},
+	"tryAttachAnyway": {
+		"message": "Tentar vincular de qualquer maneira"
+	},
+	"refreshIfMuted": {
+		"message": "Atualize a página se a mídia for mutada"
+	},
+	"marginAfter": {
+		"message": "Margem pós-som"
+	},
+	"fileInputLabel": {
+		"message": "Arraste um ou múltiplos arquivos aqui\nou clique para selecionar"
+	},
+	"applyTo": {
+		"message": "Aplicar para"
+	},
+	"general": {
+		"message": "Geral"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Método de especificação da velocidade do silêncio"
+	},
+	"hasErrors": {
+		"message": "Erros encontrados"
+	},
+	"saved": {
+		"message": "Salvo"
+	},
+	"switch": {
+		"message": "switch"
+	},
+	"couldGetMuted": {
+		"message": "ela pode ser mutada caso vincularmos nela"
+	},
+	"applyToBoth": {
+		"message": "Ambos elementos de vídeo e áudio"
+	},
+	"omitMutedElements": {
+		"message": "Não aplique a elementos de mídia mudos"
+	},
+	"hotkeys": {
+		"message": "Teclas de atalho"
+	},
+	"hotkey": {
+		"message": "Tecla de atalho"
+	},
+	"action": {
+		"message": "Ação"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Que valor configurado será exibido por padrão"
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"downloadFromSync": {
+		"message": "Baixar configurações do armazenamento de sincronização"
+	},
+	"input": {
+		"message": "Input"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Usar algoritmo experimental"
+	},
+	"openLocalFile": {
+		"message": "abrir arquivo local"
+	},
+	"changeElementSearchCriteria": {
+		"message": "Alterar critérios de pesquisa…"
+	},
+	"audio": {
+		"message": "áudio"
+	},
+	"video": {
+		"message": "Vídeo"
+	},
+	"enableHotkeys": {
+		"message": "Ativar teclas de atalho"
+	},
+	"rewind": {
+		"message": "Voltar (segundos)"
+	},
+	"advance": {
+		"message": "Avançar (segundos)"
+	},
+	"togglePause": {
+		"message": "Pausar/retornar"
+	},
+	"toggleMute": {
+		"message": "Mutar/desmutar"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Substituir atalhos do site"
+	},
+	"edit": {
+		"message": "Editar"
+	},
+	"openPopup": {
+		"message": "Abrir pop-up"
+	},
+	"popup": {
+		"message": "Pop-up"
+	},
+	"chart": {
+		"message": "Gráfico"
+	},
+	"chartLengthInSeconds": {
+		"message": "dura em segundos"
+	},
+	"chartWidthPx": {
+		"message": "Em largura (pixels)"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "A mesma que a velocidade de vídeo atual"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "A mesma que a velocidade de vídeo atual com relação à velocidade sonora"
+	},
+	"showErrors": {
+		"message": "Mostra erros"
+	},
+	"chat": {
+		"message": "Bate-Papo"
+	},
+	"saving": {
+		"message": "Salvando…"
+	},
+	"silenceSpeed": {
+		"message": "Velocidade do silêncio"
+	},
+	"tryOpeningDirectly": {
+		"message": "Tente abri-lo diretamente"
+	},
+	"marginBefore": {
+		"message": "Margem pré-som"
+	},
+	"soundedSpeedTooltip": {
+		"message": "A velocidade em que tocamos o vídeo quando não está em silêncio, a velocidade \"normal\".\nNo gráfico, as partes que foram reproduzidas nesta velocidade têm fundo verde 🟩."
+	},
+	"volumeThresholdTooltip": {
+		"message": "Quando o volume do atual áudio estiver abaixo desse valor, irá acelerar.\nNo gráfico, esta é a linha horizontal vermelha 🟥. A linha azul 🟦 é o volume atual, então quando a linha azul ficar abaixo da vermelha, é considerado silêncio."
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➕ 🆕 Agora funciona na maior parte dos sites!\n➖ Às vezes pára de funcionar. Tente recarregar a página quando isso acontecer.\n➕ Permite pular partes silenciosas inteiramente em vez de reproduzi-la a uma taxa mais rápida.\n➕ Sem distorção de áudio, atraso ou desync.\n➖ Pode quebrar a funcionalidade relacionada à reprodução em alguns sites. Nesse caso, tente desativar a extensão na página de gerenciamento de extensões (não apenas desmarcando \"Ativado\").\n➖ O gráfico não exibirá o volume real em partes silenciosas (ele só mostrará 0 em vez disso)."
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nNote que é especificado como um multiplicador da velocidade sonora, por exemplo, se a velocidade sonora é 1,5 e a velocidade do silêncio é 2, o valor absoluto resultante será 3. Você pode alterar esse comportamento na página de opções."
+	},
+	"marginBeforeTooltip": {
+		"message": "Quando estiver em silêncio e, em seguida, encontramos uma parte barulhenta, quantos segundos antes dela precisamos desacelerar (trocar para a velocidade sonora).\nIsso é principalmente para garantir que você possa claramente ouvir as primeiras letras quando alguém começa a falar.\n\n⚠️ Note que valores não zerados causarão DISTORÇÃO de áudio ao alternar do silêncio para a velocidade sonora E adicionarão DELAY de áudio constante equivalente ao valor desta configuração. Essas desvantagens não se aplicam se você usar o \"algoritmo experimental\"."
+	},
+	"marginAfterTooltip": {
+		"message": "Isto é semelhante a \"Margem pré-som\". Quando tinha barulho e, em seguida, ficou silencioso, quantos segundos precisamos esperar antes de acelerar (trocar para a velocidade do silêncio).\nIsso é principalmente para manter pausas no discurso, pelo menos em algum grau para que as palavras não se almondeguem e para garantir que você possa claramente ouvir as últimas letras em uma frase.\nAo contrário de \"Margem pré-som\" isso não causa distorção de áudio & delay (mas não é como se essas configurações fossem equivalentes."
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Sempre que a taxa de reprodução é alterada por outros scripts"
+	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "Eu quero controlar a taxa de reprodução (velocidade sonora) através da interface do site ou através de outras extensões, não apenas esta. Isso irá atualizar a velocidade sonora sempre que a taxa de reprodução for alterada."
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "Em alguns sites que eu visito, a taxa de reprodução está sendo alterada de forma inesperada. Não deixe que eles alterem a taxa de reprodução definida por esta extensão."
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Nenhuma das acima. Simplesmente ignore as alterações da taxa de reprodução de outros scripts."
+	},
+	"enableDesyncCorrection": {
+		"message": "Habilitar a correção de dessincronização audio-visual (efeito colateral: na maior parte, uma travada imperceptível a cada minuto ou outro)"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (a.k.a. relativa à velocidade normal (intrínseca) da mídia)"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Use separadamente \"$marginBeforeLabel$\" e \"$marginAfterLabel$\" para diferentes algoritmos (relacionado à configuração de \"$useExperimentalAlgorithmLabel$\")",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Apenas leve em conta os dados mais recentes (decadência exponential)"
+	},
+	"about": {
+		"message": "Sobre"
+	},
+	"wouldHaveLastedIfSpeedWasSounded": {
+		"message": "quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
+	},
+	"hotkeysNotes": {
+		"message": "As teclas modificadoras (Ctrl, Shift, etc.) são suportadas.\nVárias ações podem ser vinculadas a uma única tecla. Isso pode ser utilizado para criar \"profiles\".\nA diferença entre as ações \"$switch$\" e \"=\" (a.k.a \"set\") é que \"$switch$\" alterna entre ambos o valor anterior e o argumento do atalho, enquanto \"set\" sempre ira se definir ao valor do argumento.\nOs atalhos também estarão ativos quando o pop-up estiver aberto.",
+		"placeholders": {
+			"switch": {
+				"content": "$1",
+				"example": "switch"
+			}
+		}
+	},
+	"decreaseVolume": {
+		"message": "Diminuir volume (%)"
+	},
+	"increaseVolume": {
+		"message": "Aumentar volume (%)"
+	},
+	"addBinding": {
+		"message": "Adicionar atalho"
+	},
+	"removeBinding": {
+		"message": "Remover atalho"
+	},
+	"suggestOpenLocalFile": {
+		"message": "Deseja **$openLocalFile$**?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"silenceSpeedTooltip": {
+		"message": "A velocidade em que tocamos as partes silenciosas.\nNo gráfico, as partes que foram reproduzidas nesta velocidade têm fundo vermelho 🟥.$relativeNote$\n⚠️ Se esse valor for muito alto (> ~4) o começo das frases também podem começar a ser ignorados (é como se a \"Margem pré-som\" fosse menor).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
+	},
+	"donate": {
+		"message": "Faça uma doação"
 	}
 }
