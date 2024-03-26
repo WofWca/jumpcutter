@@ -58,7 +58,10 @@ So we have to work around that fact. -->
 
 Currently there are 2 separate algorithms in place.
 
-The first one we call "the stretching algorithm", and it's in [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`.
+The first one we call "the stretching algorithm", and it's in [this file](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts). It simply looks at the output audio of a media element, determines its current loudness and, when it's not loud, increases its `playbackRate`. (We're using Web Audio API's
+[`createMediaElementSource`](./src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts#L299)
+and [`AudioWorkletProcessor`](./src/entry-points/content/SilenceDetector/SilenceDetectorProcessor.ts)
+for this).
 
 <details><summary>Details, why it's called "stretching"</summary>
 The algorithm we just described cannot "look ahead" in the audio timeline.
@@ -108,6 +111,17 @@ For more details, you can check out the comments in its source code.
 The second algorithm is "the cloning algorithm", and it's [here](./src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts). It creates a hidden clone of the target media element and plays it ahead of the original element, looking for silent parts and writing down where they are. When the target element reaches a silent part,
 we increase its `playbackRate`, or skip (seek) the silent part entirely.
 Currently you can enable this algorithm by checking the "Use the experimental algorithm" checkbox.
+
+<!-- Referenced lines and lines might get shifted.
+Need to reference specific commits perhaps,
+but I don't want to link to GitHub. -->
+We look for video elements by
+[injecting a script in all pages](./src/manifest.json#L28-L30)
+and simply
+[`document.getElementsByTagName('video')`](./src/entry-points/content/watchAllElements.ts#L37).
+But new video elements could get inserted
+_after_ the page has already loaded,
+so we [watch for new elements with a `MutationObserver`](./src/entry-points/content/watchAllElements.ts#L90).
 
 <!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Contribute
