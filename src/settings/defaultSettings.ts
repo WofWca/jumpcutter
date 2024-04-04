@@ -173,7 +173,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupDisableHotkeysWhileInputFocused: true,
   popupAutofocusEnabledInput: false,
   popupChartWidthPx: 400,
-  popupChartHeightPx: 75,
+  popupChartHeightPx: 50,
   popupChartLengthInSeconds: 8,
   // TODO maybe even if `popupChartSpeed === 'intrinsicTime'` the period still should be in real time?
   // At least as an option? But we're now expressing it as a fraction of chart length.
