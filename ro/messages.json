@@ -1,1 +1,32 @@
-{}
+{
+	"enable": {
+		"message": "Activare"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Folosește algoritm experimental"
+	},
+	"extensionDescription": {
+		"message": "Urmărește cursuri de ~1.5x mai rapid prin a scurta automat pauzele dintre propoziții"
+	},
+	"contentScriptFail": {
+		"message": "Nu s-a putut executa script-ul de conținut pe acestă pagină"
+	},
+	"noSuitableElement": {
+		"message": "Nu am putut găsi un element multimedia pe această pagină"
+	},
+	"fileInputLabel": {
+		"message": "Lasă aici unul sau mai multe fișiere\nsau click pentru a selecta"
+	},
+	"tryOpeningDirectly": {
+		"message": "Încearcă să-l deschizi direct"
+	},
+	"volumeThreshold": {
+		"message": "Cel mai mic volum al vorbirii"
+	},
+	"soundedSpeed": {
+		"message": "Viteză normală"
+	},
+	"silenceSpeed": {
+		"message": "Viteză în timpul liniștii"
+	}
+}
