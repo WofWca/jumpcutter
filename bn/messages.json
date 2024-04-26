@@ -1,1 +1,32 @@
-{}
+{
+	"soundedSpeed": {
+		"message": "নিয়মিত গতি"
+	},
+	"contentScriptFail": {
+		"message": "এই পৃষ্ঠায় বিষয়বস্তুর স্ক্রিপ্ট চালানো যায়নি"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "পরীক্ষামূলক অ্যালগরিদম ব্যবহার করুন"
+	},
+	"tryOpeningDirectly": {
+		"message": "এটি সরাসরি খোলার চেষ্টা করুন"
+	},
+	"extensionDescription": {
+		"message": "বাক্যগুলির মধ্যে দীর্ঘ বিরতি দ্রুত-ফরওয়ার্ড করে ~১.৫x দ্রুত লেকচারগুলি দেখুন৷"
+	},
+	"volumeThreshold": {
+		"message": "সর্বনিম্ন কথাবার্তা উচ্চতা"
+	},
+	"silenceSpeed": {
+		"message": "নীরব গতি"
+	},
+	"fileInputLabel": {
+		"message": "এখানে এক বা একাধিক ফাইল ড্রপ করুন\nঅথবা নির্বাচন করতে ক্লিক করুন"
+	},
+	"enable": {
+		"message": "সক্ষম করুন"
+	},
+	"noSuitableElement": {
+		"message": "পৃষ্ঠায় একটি উপযুক্ত মিডিয়া উপাদান খুঁজে পাওয়া যায়নি"
+	}
+}
