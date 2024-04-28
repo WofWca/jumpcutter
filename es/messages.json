@@ -6,7 +6,7 @@
 		"message": "Informacion de tiempo ahorrado"
 	},
 	"more": {
-		"message": "Mas"
+		"message": "Más"
 	},
 	"overTheLast": {
 		"message": "Sobre las ultimas $duration$",
@@ -18,13 +18,13 @@
 		}
 	},
 	"numbersMeanings": {
-		"message": "Significado de numeros (en orden):"
+		"message": "Significado de los números (en orden):"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "cuanto tardaria la reproduccion del sonido SIN saltarse el silencio"
+		"message": "cuanto tardaría la reproducción a la velocidad normal SIN saltarse el silencio"
 	},
 	"timeSavedPercentage": {
-		"message": "Porcentaje equivalente a tiempo guardado:"
+		"message": "Porcentaje equivalente a tiempo ahorrado:"
 	},
 	"audio": {
 		"message": "audio"
@@ -36,7 +36,7 @@
 		"message": "No se pudo encontrar un elemento multimedia en la página"
 	},
 	"contentScriptFail": {
-		"message": "No se pudo ejecutar el script de contenido en esta pagina"
+		"message": "No se pudo ejecutar el script de contenido en esta página"
 	},
 	"retry": {
 		"message": "Reintentar"
@@ -72,7 +72,7 @@
 		"message": "Usar algoritmo experimental"
 	},
 	"tryOpeningDirectly": {
-		"message": "Intentar abrirlo directamente"
+		"message": "Intenta abrirlo directamente"
 	},
 	"mediaUnsupported": {
 		"message": "Este material es **probablemente** no soportado — $consequences$.",
@@ -111,7 +111,7 @@
 		}
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "cuanto tardaria la reproduccion a velocidad normal (intrinseca) SIN saltarse lo silencios"
+		"message": "cuanto tardaría la reproduccion a velocidad normal (intrínseca) SIN saltarse lo silencios"
 	},
 	"changeElementSearchCriteria": {
 		"message": "Cambiar criterio de busqueda…"
@@ -141,16 +141,16 @@
 		"message": "relativo a la velocidad del audio/sonido"
 	},
 	"absolute": {
-		"message": "absoluto"
+		"message": "absoluta"
 	},
 	"volumeThresholdTooltip": {
 		"message": "Cuando el volumen del audio actual esté por debajo de este valor, acelere.\nEn el gráfico, esta es la línea horizontal roja 🟥. La línea azul 🟦 es el volumen actual, por lo que cuando la línea azul está debajo de la roja, se considera silencio."
 	},
 	"marginBefore": {
-		"message": "Margen anterior (Ataque)"
+		"message": "Margen anterior"
 	},
 	"marginAfter": {
-		"message": "Margen despues"
+		"message": "Margen después"
 	},
 	"fileInputLabel": {
 		"message": "Suelte uno o varios archivos aquí\no haga clic para seleccionar"
@@ -168,7 +168,7 @@
 		"message": "Donar"
 	},
 	"runSnowflakeBridge": {
-		"message": "Ayuda a otros a evitar la censura simplemente instalando una extensión"
+		"message": "Ayuda a otros a evitar la censura simplemente instalando (otra) extensión"
 	},
 	"min": {
 		"message": "Minimo"
@@ -433,7 +433,7 @@
 		"message": "Descargar ajustes desde el almacenamiento de sincronización"
 	},
 	"uploadToSync": {
-		"message": "Cargar ajustes para sincronizar el almacenamiento"
+		"message": "Guardar ajustes en el almacenamiento sincronizado"
 	},
 	"timeSavedDataWeightDecayTimeConstant": {
 		"message": "Duración de los datos resultantes: $length$ segundos",
