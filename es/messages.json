@@ -33,7 +33,7 @@
 		"message": "video"
 	},
 	"noSuitableElement": {
-		"message": "No se pudo encontrar un elemento multimedia en la pagina"
+		"message": "No se pudo encontrar un elemento multimedia en la página"
 	},
 	"contentScriptFail": {
 		"message": "No se pudo ejecutar el script de contenido en esta pagina"
@@ -391,7 +391,7 @@
 		"message": "Teclas de acceso rápido específicas para ventanas emergentes"
 	},
 	"timeSavedAveragingMethod": {
-		"message": "Algoritmo promedio"
+		"message": "Método de promedio"
 	},
 	"hotkeysNotes": {
 		"message": "Admite combinaciones de teclas (Ctrl, Shift, etc.).\nSe pueden vincular varias acciones a una única clave para crear \"perfiles\".\n“La diferencia entre las operaciones $switch$ \" y \"=\" (también llamadas \"set\") es que, \"$switch$ \"cambia el valor entre el valor anterior y el parámetro de la tecla de método abreviado, mientras que \"set\" siempre lo establece en el valor del parámetro.\nCuando la ventana emergente está abierta, las teclas de acceso directo también están activas.",
@@ -401,5 +401,29 @@
 				"example": "switch"
 			}
 		}
+	},
+	"iconBadge": {
+		"message": "Insignia del icono de la extensión"
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "tiempo ahorrado comparado a solo reproducir el video a la velocidad normal"
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Solo tomar en cuenta los últimos datos (caída exponencial)"
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Solo tomar en cuenta los N últimos segundos de reproducción"
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"about": {
+		"message": "Acerca de"
+	},
+	"chat": {
+		"message": "Chat"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Que valor del ajuste mostrar como predeterminado"
 	}
 }
