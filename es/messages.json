@@ -159,7 +159,7 @@
 		"message": "Restablecer a la configuración predeterminada"
 	},
 	"extensionDescription": {
-		"message": "Vea videos ~1.5x más rápido al adelantar largas pausas entre oraciones."
+		"message": "Vea videos ~1.5x más rápido al adelantar largas pausas entre oraciones"
 	},
 	"timeSavedComparedToSounded": {
 		"message": "en promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
@@ -290,7 +290,7 @@
 		"message": "\nNótese que es específicado como un multiplicador de la velocidad normal, entonces por ejemplo: si la velocidad normal es 1.5 y la velocidad del silencio es 2, el valor del resultado absoluto será 3. Puedes cambiar este comportamiento en la página de las opciones."
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "en promedio cuanto más rápido el vídeo está efectivamente siendo reproducido en comparación a la velocidad normal (intrínseca)."
+		"message": "en promedio cuanto más rápido el vídeo está efectivamente siendo reproducido en comparación a la velocidad normal (intrínseca)"
 	},
 	"marginBeforeTooltip": {
 		"message": "Cuando está en silencio actualmente y luego encontramos una parte con sonido, cuántos segundos antes de esto necesitamos desacelerar (cambiar a la velocidad normal).\nEsto es mayormente para asegurar que puedas escuchar claramente las primeras letras cuando alguien empiece a hablar.\n\n⚠️ Nótese que valores diferentes de cero causarán DISTORSIÓN del audio cuando se cambie de velocidad del silencio a la normal Y añadirá constante RETRASO de audio equivalente al valor de este ajuste. Estás desventajas no aplican si usas el \"algoritmo experimental\"."
@@ -425,5 +425,23 @@
 	},
 	"badgeWhatSettingToDisplayByDefault": {
 		"message": "Que valor del ajuste mostrar como predeterminado"
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "Factor para calcular el tiempo promedio de la última reproducción"
+	},
+	"downloadFromSync": {
+		"message": "Descargar ajustes desde el almacenamiento de sincronización"
+	},
+	"uploadToSync": {
+		"message": "Cargar ajustes para sincronizar el almacenamiento"
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "Duración de los datos resultantes: $length$ segundos",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
 	}
 }
