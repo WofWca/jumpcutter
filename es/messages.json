@@ -424,7 +424,7 @@
 		"message": "Chat"
 	},
 	"badgeWhatSettingToDisplayByDefault": {
-		"message": "Que valor del ajuste mostrar como predeterminado"
+		"message": "¿Que valor del ajuste mostrar como predeterminado?"
 	},
 	"timeSavedExponentialAveragingLatestDataWeight": {
 		"message": "Factor para calcular el tiempo promedio de la última reproducción"
