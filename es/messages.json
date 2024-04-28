@@ -323,5 +323,83 @@
 				"example": "Use experimental algorithm"
 			}
 		}
+	},
+	"removeBinding": {
+		"message": "Eliminar enlace"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Promedio de tiempo completo (sin caída)"
+	},
+	"toggleExtension": {
+		"message": "Activar/desactivar este complemento"
+	},
+	"switch": {
+		"message": "cambiar"
+	},
+	"togglePause": {
+		"message": "Pausar/reanudar"
+	},
+	"toggleMute": {
+		"message": "Silenciar/activar el sonido"
+	},
+	"openPopup": {
+		"message": "Abrir ventana emergente"
+	},
+	"popup": {
+		"message": "Ventana emergente"
+	},
+	"step": {
+		"message": "Paso"
+	},
+	"input": {
+		"message": "Datos de entrada"
+	},
+	"enableDesyncCorrection": {
+		"message": "Corrige automáticamente los problemas de desincronización de audio y vídeo (efecto secundario: en la mayoría de los casos, habrá un ligero corte aproximadamente cada minuto)"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (también llamado relativo a la velocidad normal del medio (velocidad de reproducción estándar))"
+	},
+	"rangeSlidersAttributes": {
+		"message": "Atributos del control deslizante de rango"
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Tenga en cuenta que los navegadores no admiten velocidades de reproducción por encima de ciertos límites.\nCuando se probó este complemento, el navegador basado en Chromium (como Chrome, Edge) era 16 y el navegador basado en Gecko (Firefox) era 8 de forma predeterminada."
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Mostrar el enlace \"$openLocalFileLabel$\"",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Deshabilite las teclas de acceso rápido cuando el elemento que se está ajustando esté enfocado"
+	},
+	"autofocusEnabledInput": {
+		"message": "Cuando se abre la ventana emergente, el foco se establece automáticamente en \"$enableCheckboxLabel$ \"casilla de verificación múltiple",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"popupSpecificHotkeys": {
+		"message": "Teclas de acceso rápido específicas para ventanas emergentes"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Algoritmo promedio"
+	},
+	"hotkeysNotes": {
+		"message": "Admite combinaciones de teclas (Ctrl, Shift, etc.).\nSe pueden vincular varias acciones a una única clave para crear \"perfiles\".\n“La diferencia entre las operaciones $switch$ \" y \"=\" (también llamadas \"set\") es que, \"$switch$ \"cambia el valor entre el valor anterior y el parámetro de la tecla de método abreviado, mientras que \"set\" siempre lo establece en el valor del parámetro.\nCuando la ventana emergente está abierta, las teclas de acceso directo también están activas.",
+		"placeholders": {
+			"switch": {
+				"content": "$1",
+				"example": "switch"
+			}
+		}
 	}
 }
