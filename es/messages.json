@@ -159,7 +159,7 @@
 		"message": "Restablecer a la configuración predeterminada"
 	},
 	"extensionDescription": {
-		"message": "Mire conferencias ~1.5x más rápido al adelantar largas pausas entre oraciones"
+		"message": "Vea videos ~1.5x más rápido al adelantar largas pausas entre oraciones."
 	},
 	"timeSavedComparedToSounded": {
 		"message": "en promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
@@ -193,6 +193,134 @@
 		"placeholders": {
 			"relativeNote": {
 				"content": "$1"
+			}
+		}
+	},
+	"value": {
+		"message": "Valor"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Sobrescribir teclas rápidas del sitio web"
+	},
+	"comparedToIntrinsic": {
+		"message": "comparado a normal (intrínseca)"
+	},
+	"applyToOnly": {
+		"message": "elementos de $type$ solamente",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"hotkey": {
+		"message": "Tecla rápida"
+	},
+	"enableHotkeys": {
+		"message": "Activar teclas rápidas"
+	},
+	"rewind": {
+		"message": "Rebobinar (segundos)"
+	},
+	"advance": {
+		"message": "Avanzar (segundos)"
+	},
+	"decreaseVolume": {
+		"message": "Bajar volumen (%)"
+	},
+	"increaseVolume": {
+		"message": "Subir volumen (%)"
+	},
+	"addBinding": {
+		"message": "Añadir nueva tecla rápida"
+	},
+	"chart": {
+		"message": "Gráfica"
+	},
+	"chartLengthInSeconds": {
+		"message": "Longitud en segundos"
+	},
+	"chartHeightPx": {
+		"message": "Alto (píxeles)"
+	},
+	"chartWidthPx": {
+		"message": "Ancho (píxeles)"
+	},
+	"chartSpeed": {
+		"message": "Velocidad de movimiento"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "La misma que la velocidad del vídeo actual"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "La misma que la velocidad del vídeo actual en relación a la velocidad normal"
+	},
+	"chartSpeedRealTime": {
+		"message": "Constante (tiempo-real)"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Cuando la velocidad de reproducción cambia por otros scripts"
+	},
+	"applyTo": {
+		"message": "Aplicar a"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Método de especificación de la velocidad del silencio"
+	},
+	"hotkeys": {
+		"message": "Teclas rápidas"
+	},
+	"action": {
+		"message": "Acción"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Ninguno de los anteriores. Simplemente ignora cambios en la velocidad de reproducción de otros scripts."
+	},
+	"hasErrors": {
+		"message": "Errores encontrados"
+	},
+	"chartJumpPeriod": {
+		"message": "Periodo de salto, %. Expresado como una fracción de la longitud de la gráfica. Puesta a 0 para movimientos fluidos (sin saltos)."
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➕🆕 Ahora funciona en la mayoría de los sitios web!\n➖ A veces se detiene. Intenta recargar la página cuando eso pase.\n➕ Permite saltar las partes en silencio completamente en lugar de avanzarlas a una velocidad más rápida.\n➕ Sin distorsión de audio, retraso o falta de sincronización.\n➖ Podría romper la funcionalidad relacionada a reproducción en algunos sitios web, en ese caso intenta desactivando la extensión en la página de manejo de extensiones (no sólo desactivando la casilla \"Activar\").\n➖ El gráfico no mostrarán el volumen actual en las partes en silencio (en su lugar mostrará 0)."
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nNótese que es específicado como un multiplicador de la velocidad normal, entonces por ejemplo: si la velocidad normal es 1.5 y la velocidad del silencio es 2, el valor del resultado absoluto será 3. Puedes cambiar este comportamiento en la página de las opciones."
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "en promedio cuanto más rápido el vídeo está efectivamente siendo reproducido en comparación a la velocidad normal (intrínseca)."
+	},
+	"marginBeforeTooltip": {
+		"message": "Cuando está en silencio actualmente y luego encontramos una parte con sonido, cuántos segundos antes de esto necesitamos desacelerar (cambiar a la velocidad normal).\nEsto es mayormente para asegurar que puedas escuchar claramente las primeras letras cuando alguien empiece a hablar.\n\n⚠️ Nótese que valores diferentes de cero causarán DISTORSIÓN del audio cuando se cambie de velocidad del silencio a la normal Y añadirá constante RETRASO de audio equivalente al valor de este ajuste. Estás desventajas no aplican si usas el \"algoritmo experimental\"."
+	},
+	"marginAfterTooltip": {
+		"message": "Esto es similar a \"margen anterior\". Cuando hubo sonido y luego se quedó en silencio, cuántos segundos necesitamos esperar antes de acelerar (cambiar a la velocidad del silencio).\nEsto es mayormente para mantener pausas en el discurso al menos hasta cierto punto así las palabras no se juntan y para asegurar que puedas escuchar claramente las últimas letras en una oración.\nA diferencia de \"margin anterior\" esto no causa distorsión de audio & retraso (pero no es para decir que estos ajustes son intercambiables)."
+	},
+	"showErrors": {
+		"message": "Mostrar errores"
+	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "Quiero controlar la velocidad de reproducción (velocidad normal) a través de la UI del sitio web o a través de otras extensiones, no solo esta. Esto actualizará la velocidad normal cuando la velocidad de reproducción cambie."
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "En algunos sitios webs que visito, la velocidad de reproducción cambia en una forma inesperada. No los dejes cambiar la velocidad de reproducción puesta por esta extensión."
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Usar diferentes \"$marginBeforeLabel$\" y \"$marginAfterLabel$\" para diferentes algoritmos (relacionado a el ajuste \"$useExperimentalAlgorithmLabel$\"",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
 			}
 		}
 	}
