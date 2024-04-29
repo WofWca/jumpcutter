@@ -394,7 +394,7 @@
 		"message": "Método de promedio"
 	},
 	"hotkeysNotes": {
-		"message": "Admite combinaciones de teclas (Ctrl, Shift, etc.).\nSe pueden vincular varias acciones a una única clave para crear \"perfiles\".\n“La diferencia entre las operaciones $switch$ \" y \"=\" (también llamadas \"set\") es que, \"$switch$ \"cambia el valor entre el valor anterior y el parámetro de la tecla de método abreviado, mientras que \"set\" siempre lo establece en el valor del parámetro.\nCuando la ventana emergente está abierta, las teclas de acceso directo también están activas.",
+		"message": "Admite combinaciones de teclas (Ctrl, Shift, etc.).\nSe pueden vincular varias acciones a una única clave para crear \"perfiles\".\nLa diferencia entre las operaciones \"$switch$\" y \"=\" (también llamadas \"set\") es que \"$switch$\" cambia el valor entre el valor anterior y el parámetro de la tecla de método abreviado, mientras que \"set\" siempre lo establece en el valor del parámetro.\nCuando la ventana emergente está abierta, las teclas de acceso directo también están activas.",
 		"placeholders": {
 			"switch": {
 				"content": "$1",
@@ -430,7 +430,7 @@
 		"message": "Factor para calcular el tiempo promedio de la última reproducción"
 	},
 	"downloadFromSync": {
-		"message": "Aplicar ajustes desde el almacenamiento de sincronización"
+		"message": "Aplicar ajustes desde el almacenamiento sincronizado"
 	},
 	"uploadToSync": {
 		"message": "Guardar ajustes en el almacenamiento sincronizado"
