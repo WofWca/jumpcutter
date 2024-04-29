@@ -325,7 +325,7 @@
 		"message": "Same as the current video speed"
 	},
 	"chartSpeedSoundedSpeedTime": {
-		"message": "Same as the current video speed with relation to sounded speed"
+		"message": "Same as the current video speed, relative to sounded speed"
 	},
 	"chartSpeedRealTime": {
 		"message": "Constant (real-time)"
@@ -406,7 +406,7 @@
 		"message": "Meta"
 	},
 	"downloadFromSync": {
-		"message": "Download settings from sync storage"
+		"message": "Apply settings from sync storage"
 	},
 	"uploadToSync": {
 		"message": "Upload settings to sync storage"
