@@ -30,7 +30,7 @@
 		"message": "audio"
 	},
 	"video": {
-		"message": "video"
+		"message": "vídeo"
 	},
 	"noSuitableElement": {
 		"message": "No se pudo encontrar un elemento multimedia en la página"
@@ -51,7 +51,7 @@
 		}
 	},
 	"applyToBoth": {
-		"message": "Elementos de video y audio"
+		"message": "Elementos de vídeo y audio"
 	},
 	"openLocalFile": {
 		"message": "abrir archivo local"
@@ -63,7 +63,7 @@
 		"message": "Intentar adherirlo de todos modos"
 	},
 	"refreshIfMuted": {
-		"message": "Recargar la pagina si la multimedia esta silenciada"
+		"message": "Recargar la página si la multimedia está silenciada"
 	},
 	"loading": {
 		"message": "Cargando"
@@ -87,7 +87,7 @@
 		"message": "puede silenciarse si lo adherimos"
 	},
 	"silenceSkippingWontWork": {
-		"message": "el omitir el silencio no servira apropiadamente"
+		"message": "el omitir el silencio no funcionará apropiadamente"
 	},
 	"general": {
 		"message": "General"
@@ -96,10 +96,10 @@
 		"message": "No aplicar a elementos multimedia silenciados"
 	},
 	"none": {
-		"message": "Nada"
+		"message": "Ninguno"
 	},
 	"volume": {
-		"message": "Volumen\nNo es el volumen actual del material, pero es un amplificador, como en la television"
+		"message": "Volumen\nNo es el volumen actual del material, pero es un amplificador, como en la televisión"
 	},
 	"suggestOpenLocalFile": {
 		"message": "Quiere **$openLocalFile$**?",
@@ -114,13 +114,13 @@
 		"message": "cuanto tardaría la reproduccion a velocidad normal (intrínseca) SIN saltarse lo silencios"
 	},
 	"changeElementSearchCriteria": {
-		"message": "Cambiar criterio de busqueda…"
+		"message": "Cambiar criterio de búsqueda…"
 	},
 	"comparedToSounded": {
 		"message": "comparado a con sonido"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "tiempo ahorrado comparado a solo ver el video a velocidad normal (intrinseca)"
+		"message": "tiempo ahorrado comparado a solo ver el video a velocidad normal (intrínseca)"
 	},
 	"soundedSpeed": {
 		"message": "Velocidad normal"
@@ -171,10 +171,10 @@
 		"message": "Ayuda a otros a evitar la censura simplemente instalando (otra) extensión"
 	},
 	"min": {
-		"message": "Minimo"
+		"message": "Mínimo"
 	},
 	"max": {
-		"message": "Maximo"
+		"message": "Máximo"
 	},
 	"license": {
 		"message": "Licencia"
@@ -254,7 +254,7 @@
 		"message": "La misma que la velocidad del vídeo actual"
 	},
 	"chartSpeedSoundedSpeedTime": {
-		"message": "La misma que la velocidad del vídeo actual en relación a la velocidad normal"
+		"message": "La misma que la velocidad del vídeo actual relativo a la velocidad normal"
 	},
 	"chartSpeedRealTime": {
 		"message": "Constante (tiempo-real)"
@@ -379,7 +379,7 @@
 		"message": "Deshabilite las teclas de acceso rápido cuando el elemento que se está ajustando esté enfocado"
 	},
 	"autofocusEnabledInput": {
-		"message": "Cuando se abre la ventana emergente, el foco se establece automáticamente en \"$enableCheckboxLabel$ \"casilla de verificación múltiple",
+		"message": "Cuando se abre la ventana emergente, el foco se establece automáticamente en \"$enableCheckboxLabel$\" casilla de verificación",
 		"placeholders": {
 			"enableCheckboxLabel": {
 				"content": "$1",
@@ -412,7 +412,7 @@
 		"message": "Solo tomar en cuenta los últimos datos (caída exponencial)"
 	},
 	"timeSavedAveragingWindowLength": {
-		"message": "Solo tomar en cuenta los N últimos segundos de reproducción"
+		"message": "Solo tomar en cuenta los últimos N segundos de reproducción"
 	},
 	"meta": {
 		"message": "Meta"
@@ -430,7 +430,7 @@
 		"message": "Factor para calcular el tiempo promedio de la última reproducción"
 	},
 	"downloadFromSync": {
-		"message": "Descargar ajustes desde el almacenamiento de sincronización"
+		"message": "Aplicar ajustes desde el almacenamiento de sincronización"
 	},
 	"uploadToSync": {
 		"message": "Guardar ajustes en el almacenamiento sincronizado"
