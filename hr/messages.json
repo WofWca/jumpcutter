@@ -280,7 +280,7 @@
 		"message": "Ista kao brzina trenutačnog videa"
 	},
 	"chartSpeedSoundedSpeedTime": {
-		"message": "Ista kao brzina trenutačnog videa u odnosu na normalnu brzinu"
+		"message": "Isto kao brzina trenutačnog videa, relativno na brzinu zvuka"
 	},
 	"chartSpeedRealTime": {
 		"message": "Konstatna (stvarno vrijeme)"
@@ -325,7 +325,7 @@
 		"message": "Meta"
 	},
 	"downloadFromSync": {
-		"message": "Preuzmi postavke iz spremišta sinkronizacije"
+		"message": "Primijeni postavke iz spremišta sinkronizacije"
 	},
 	"uploadToSync": {
 		"message": "Prenesi postavke u spremište sinkronizacije"
@@ -340,7 +340,7 @@
 		"message": "Spremljeno"
 	},
 	"extensionDescription": {
-		"message": "Gledaj predavanja ca. 1,5 puta brže pomoću brzog preskakanja dugih stanki između rečenica"
+		"message": "Gledaj videa ca. 1,5 puta brže pomoću preskakanja dugih stanki između rečenica"
 	},
 	"more": {
 		"message": "Više"
