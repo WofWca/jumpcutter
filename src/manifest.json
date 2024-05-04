@@ -57,12 +57,6 @@
     "64": "icons/icon.svg-64.png",
     "128": "icons/icon-big-padded.svg-128.png"
   },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "jump-cutter@example.com",
-      "strict_min_version": "91.0a1"
-    }
-  },
   "manifest_version": 2,
   "default_locale": "en"
 }
