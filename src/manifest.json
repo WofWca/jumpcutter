@@ -31,10 +31,15 @@
     }
   ],
   "web_accessible_resources": [
-    "content/cloneMediaSources-for-page-world.js",
-    "content/SilenceDetectorProcessor.js",
-    "content/VolumeFilterProcessor.js",
-    "chunks/*.js"
+    {
+      "resources": [
+        "content/cloneMediaSources-for-page-world.js",
+        "content/SilenceDetectorProcessor.js",
+        "content/VolumeFilterProcessor.js",
+        "chunks/*.js"
+      ],
+      "matches": ["*://*/*"]
+    }
   ],
   "options_ui": {
     "page": "options/index.html",
@@ -57,6 +62,6 @@
     "64": "icons/icon.svg-64.png",
     "128": "icons/icon-big-padded.svg-128.png"
   },
-  "manifest_version": 2,
+  "manifest_version": 3,
   "default_locale": "en"
 }
