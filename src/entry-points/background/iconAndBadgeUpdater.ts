@@ -22,8 +22,8 @@ import browser from '@/webextensions-api';
 import type { Settings, MyStorageChanges } from '@/settings';
 
 function setBadge(text: string, color: string) {
-  browser.browserAction.setBadgeBackgroundColor({ color });
-  browser.browserAction.setBadgeText({ text });
+  browser.action.setBadgeBackgroundColor({ color });
+  browser.action.setBadgeText({ text });
 }
 type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold' | 'marginBefore'
   | 'marginAfter'>;
@@ -48,7 +48,7 @@ function settingToBadgeParams<T extends SupportedSettings>(
 }
 function setBadgeToDefault(settings: Settings) {
   if (settings.badgeWhatSettingToDisplayByDefault === 'none' || !settings.enabled) {
-    browser.browserAction.setBadgeText({ text: '' });
+    browser.action.setBadgeText({ text: '' });
   } else {
     const settingName = settings.badgeWhatSettingToDisplayByDefault;
     setBadge(...settingToBadgeParams(settingName, settings[settingName]));
@@ -64,7 +64,7 @@ function temporarelySetBadge(text: string, color: string, settings: Settings) {
 
 let currentIconPath: string | undefined = undefined;
 function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
-  let path = 'icons/';
+  let path = '/icons/';
   // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
   if (!settings.enabled) {
     path += 'icon-disabled.svg'
@@ -75,7 +75,7 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
   }
   // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
   if (currentIconPath !== path) {
-    browser.browserAction.setIcon({ path });
+    browser.action.setIcon({ path });
     currentIconPath = path;
   }
 }

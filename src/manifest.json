@@ -3,7 +3,7 @@
   "version": "1.27.0",
   "description": "__MSG_extensionDescription__",
   "permissions": ["storage"],
-  "browser_action": {
+  "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
       "64": "icons/icon.svg-64.png",
@@ -11,8 +11,7 @@
     }
   },
   "background": {
-    "scripts": ["background/main.js"],
-    "persistent": false
+    "service_worker": "background/main.js"
   },
   "content_scripts": [
     {
