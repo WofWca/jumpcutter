@@ -75,7 +75,7 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
   }
   // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
   if (currentIconPath !== path) {
-    browser.action.setIcon({ path });
+    // browser.action.setIcon({ path });
     currentIconPath = path;
   }
 }

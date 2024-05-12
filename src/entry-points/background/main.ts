@@ -39,12 +39,14 @@ import { createWrapperListener, getSettings, settingsChanges2NewValues } from '@
 // instead `storage.local.get()`. This at least reduces chunk size, and may be better for performance.
 async function setNewSettingsKeysToDefaults() {
   const existingSettingsP = storage.get();
-  const { defaultSettings } = await import(
+  //const { defaultSettings } = await import(
     /* webpackExports: ['defaultSettings'] */
+    /*
     '@/settings'
   );
+  */
   const newSettings = {
-    ...defaultSettings,
+    //...defaultSettings,
     ...(await existingSettingsP),
   };
   await storage.set(newSettings);
@@ -71,12 +73,14 @@ browser.runtime.onInstalled.addListener(async details => {
   // popups don't get opened immediately upon installation and in order to get content scripts to work you'd
   // need to reload the page.
   if (details.reason === 'update') {
-    const { default: runRequiredMigrations } = await import(
+    // const { default: runRequiredMigrations } = await import(
       /* webpackExports: ['default'] */
+      /*
       './migrations/runRequiredMigrations'
     );
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await runRequiredMigrations(details.previousVersion!);
+    */
   }
   await setNewSettingsKeysToDefaults();
 
