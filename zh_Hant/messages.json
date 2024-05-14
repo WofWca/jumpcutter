@@ -440,5 +440,8 @@
 	},
 	"license": {
 		"message": "許可協議"
+	},
+	"contact": {
+		"message": "聯絡我們"
 	}
 }

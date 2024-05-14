@@ -37,5 +37,8 @@
 	},
 	"soundedSpeed": {
 		"message": "Prędkość dźwięku"
+	},
+	"contact": {
+		"message": "Skontaktuj się z nami"
 	}
 }

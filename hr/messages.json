@@ -443,5 +443,8 @@
 	},
 	"chat": {
 		"message": "Chat"
+	},
+	"contact": {
+		"message": "Kontakt"
 	}
 }

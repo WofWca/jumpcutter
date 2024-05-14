@@ -22,5 +22,8 @@
 	},
 	"toggleMute": {
 		"message": "Išjungti/Įjungti garsą"
+	},
+	"contact": {
+		"message": "Susisiekite su mumis"
 	}
 }

@@ -428,5 +428,8 @@
 	},
 	"donate": {
 		"message": "Faça uma doação"
+	},
+	"contact": {
+		"message": "Contato"
 	}
 }

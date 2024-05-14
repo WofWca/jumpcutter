@@ -266,5 +266,8 @@
 				"example": "Use experimental algorithm"
 			}
 		}
+	},
+	"contact": {
+		"message": "Связаться с нами"
 	}
 }

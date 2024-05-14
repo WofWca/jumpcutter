@@ -28,5 +28,8 @@
 	},
 	"silenceSpeed": {
 		"message": "Viteză în timpul liniștii"
+	},
+	"contact": {
+		"message": "Contactați-ne"
 	}
 }

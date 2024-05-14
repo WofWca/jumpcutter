@@ -443,5 +443,8 @@
 	},
 	"chat": {
 		"message": "交流区"
+	},
+	"contact": {
+		"message": "联系我们"
 	}
 }

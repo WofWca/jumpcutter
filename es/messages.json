@@ -443,5 +443,8 @@
 				"example": "138.83"
 			}
 		}
+	},
+	"contact": {
+		"message": "Contacto"
 	}
 }

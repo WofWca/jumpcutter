@@ -425,5 +425,8 @@
 	},
 	"showErrors": {
 		"message": "Hataları göster"
+	},
+	"contact": {
+		"message": "Bize ulaşın"
 	}
 }
