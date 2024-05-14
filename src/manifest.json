@@ -6,8 +6,8 @@
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "64": "icons/icon.svg-64.png",
-      "128": "icons/icon-big-padded.svg-128.png"
+      "64": "icons/icon-64.png",
+      "128": "icons/icon-big-padded-128.png"
     }
   },
   "background": {
@@ -58,8 +58,8 @@
     }
   },
   "icons": {
-    "64": "icons/icon.svg-64.png",
-    "128": "icons/icon-big-padded.svg-128.png"
+    "64": "icons/icon-64.png",
+    "128": "icons/icon-big-padded-128.png"
   },
   "manifest_version": 3,
   "default_locale": "en"

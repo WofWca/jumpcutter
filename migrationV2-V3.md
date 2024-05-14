@@ -12,14 +12,6 @@
 ```
 since it shows an unnecessary warning on chromium.
 
-- The service worker can't use import(), so web-pack needs to be changed somehow to bundle all the service worker files to common JS.
-
-- There is some problem when setting the icon in the service worker:
-```
-Uncaught (in promise) Error: Failed to set icon '/icons/icon.svg': The source image could not be decoded.
-```
-I tried with a png image and it did not happen, so the solution would be replacing for pngs those 3 images. Check if there is some note in the api about svg problems and solutions in  case you want to use svgs.
-
 ### Chrome manifest migration checklist
 
 - [x] Manifest initial changes:

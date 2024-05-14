@@ -222,7 +222,7 @@ module.exports = env => {
           { from: 'COPYING' },
           { context: 'src/entry-points', from: 'license.html' },
           { from: 'docs/agplv3-with-text-162x68.png', to: '.' },
-          { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
+          { context: 'src', from: 'icons/(icon-64.png|icon-disabled-64.png|icon-only-sounded-64.png|icon-128.png|icon-disabled-128.png|icon-only-sounded-128.png|icon-big-padded-128.png)' },
           { context: 'src/entry-points', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src/entry-points', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
           { context: 'src/entry-points', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },

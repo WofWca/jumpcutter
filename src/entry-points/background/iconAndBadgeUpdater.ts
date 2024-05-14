@@ -62,21 +62,35 @@ function temporarelySetBadge(text: string, color: string, settings: Settings) {
   setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(setBadgeToDefault, 1500, settings);
 }
 
-let currentIconPath: string | undefined = undefined;
+let currentPath64: string | undefined;
 function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
-  let path = '/icons/';
+  const iconsDir = '/icons/';
+  let icon64, icon128;
   // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
   if (!settings.enabled) {
-    path += 'icon-disabled.svg'
+    icon64 = 'icon-disabled-64.png';
+    icon128 = 'icon-disabled-128.png';
   } else if (settings.volumeThreshold === 0) {
-    path += 'icon-only-sounded.svg'
+    icon64 = 'icon-only-sounded-64.png';
+    icon128 = 'icon-only-sounded-128.png';
   } else {
-    path += 'icon.svg';
+    icon64 = 'icon-64.png';
+    icon128 = 'icon-128.png';
   }
+
+  const path64 = iconsDir + icon64;
+  const path128 = iconsDir + icon128;
+
   // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
-  if (currentIconPath !== path) {
-    // browser.action.setIcon({ path });
-    currentIconPath = path;
+  if (path64 !== currentPath64) {
+    browser.action.setIcon({
+      path: {
+        "64": path64,
+        "128": path128,
+      }
+    });
+
+    currentPath64 = path64;
   }
 }
 
