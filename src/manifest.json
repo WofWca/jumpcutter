@@ -3,6 +3,9 @@
   "version": "1.27.0",
   "description": "__MSG_extensionDescription__",
   "permissions": ["storage"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'none'; script-src 'self'; img-src 'self'; style-src 'unsafe-inline';"
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
