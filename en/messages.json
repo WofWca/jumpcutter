@@ -426,6 +426,9 @@
 	"donate": {
 		"message": "Donate"
 	},
+	"contact": {
+		"message": "Contact"
+	},
 	"chat": {
 		"message": "Chat"
 	},
