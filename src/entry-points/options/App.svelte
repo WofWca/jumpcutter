@@ -181,6 +181,51 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const snowflakeExtensionUrl = BUILD_DEFINITIONS.BROWSER === 'gecko'
     ? 'https://addons.mozilla.org/firefox/addon/torproject-snowflake/'
     : 'https://chrome.google.com/webstore/detail/snowflake/mafpmfcccpbjnhfhjnllmmalhifmlcie';
+
+  let contactEmailHref: string | null = BUILD_DEFINITIONS.CONTACT_EMAIL
+    ? `mailto:${BUILD_DEFINITIONS.CONTACT_EMAIL}`
+    : null;
+  ((async () => {
+    if (!BUILD_DEFINITIONS.CONTACT_EMAIL) {
+      return null;
+    }
+
+    const params = new URLSearchParams({
+      subject: 'Jump Cutter',
+      // TODO improvement: i18n?
+      body: `Debug info (you can remove this):`
+        + `\nJump Cutter version: ${browser.runtime.getManifest().version}`
+        + `\nLanguage: ${browser.i18n.getUILanguage()}`
+        + `\nSystem info: ${navigator.userAgent}`
+        + `\nJump Cutter settings:`
+        + '\n\n```json'
+        // Why `filterSettings`? Because if the URL gets too long,
+        // the app might not open it properly.
+        + `\n${JSON.stringify(filterSettings(await originalSettingsPromise), undefined, 2)}`
+        + '\n```'
+    });
+
+    function filterSettings(settings: Settings): Partial<Settings> {
+      const includeSettings: Array<keyof Settings> = [
+        'enabled',
+        'volumeThreshold',
+        'experimentalControllerType',
+        'soundedSpeed',
+        'silenceSpeedRaw',
+        'silenceSpeedSpecificationMethod',
+        'marginBefore',
+        'marginAfter',
+        'enableDesyncCorrection',
+        'onPlaybackRateChangeFromOtherScripts',
+      ]
+      return Object.fromEntries(
+        includeSettings.map(key => [key, settings[key]])
+      )
+    }
+
+    return `mailto:${BUILD_DEFINITIONS.CONTACT_EMAIL}?${params.toString()}`
+  })())
+    .then(href => contactEmailHref = href)
 </script>
 
 <main>
@@ -536,6 +581,15 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     </form>
   {/if}
   {/await}
+  {#if contactEmailHref}
+    <div style="margin: 1rem 0;">
+      <a
+        target="_blank"
+        href={contactEmailHref}
+        rel="extenral noopener noreferrer"
+      >📧 {getMessage('contact')}</a>
+    </div>
+  {/if}
   <div style="margin: 1rem 0;">
     <a
       target="_blank"

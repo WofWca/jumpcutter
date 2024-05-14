@@ -42,6 +42,9 @@ module.exports = env => {
     'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG': JSON.stringify(env.browser === 'chromium'),
     'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT':
       JSON.stringify(env.browser !== 'chromium'),
+
+    'BUILD_DEFINITIONS.CONTACT_EMAIL':
+      JSON.stringify('wofwca@protonmail.com'),
   });
 
   return {
