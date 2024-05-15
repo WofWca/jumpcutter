@@ -68,14 +68,14 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
   let icon64, icon128;
   // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
   if (!settings.enabled) {
-    icon64 = 'icon-disabled-64.png';
-    icon128 = 'icon-disabled-128.png';
+    icon64 = 'icon-disabled.svg-64.png';
+    icon128 = 'icon-disabled.svg-128.png';
   } else if (settings.volumeThreshold === 0) {
-    icon64 = 'icon-only-sounded-64.png';
-    icon128 = 'icon-only-sounded-128.png';
+    icon64 = 'icon-only-sounded.svg-64.png';
+    icon128 = 'icon-only-sounded.svg-128.png';
   } else {
-    icon64 = 'icon-64.png';
-    icon128 = 'icon-128.png';
+    icon64 = 'icon.svg-64.png';
+    icon128 = 'icon.svg-128.png';
   }
 
   const path64 = iconsDir + icon64;

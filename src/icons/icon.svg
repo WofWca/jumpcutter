@@ -1,0 +1,50 @@
+<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+
+  <filter id="grayscale">
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+
+  <style>
+    .bg-left {
+      fill: #8F8;
+    }
+    .bg-right {
+      fill: #F88;
+    }
+    .wave {
+      fill: #00F;
+    }
+
+    .only-sounded .bg-right {
+      fill: #8F8;
+    }
+
+    .disabled {
+      filter: url(#grayscale);
+    }
+  </style>
+
+  <g class="bg-left">
+    <rect x="8" y="0" width="8" height="32" />
+    <rect x="0" y="0" width="16" height="32" rx="4"/>
+  </g>
+
+  <g class="bg-right">
+    <rect x="16" y="0" width="8" height="32" />
+    <rect x="16" y="0" width="16" height="32" rx="4"/>
+  </g>
+
+  <g class="wave">
+    <rect x="1" y="11" width="2" height="10" rx="0.5" />
+    <rect x="4" y="8" width="2" height="16" rx="0.5" />
+    <rect x="7" y="3" width="2" height="26" rx="0.5" />
+    <rect x="10" y="6" width="2" height="20" rx="0.5" />
+    <rect x="13" y="10" width="2" height="12" rx="0.5" />
+
+    <rect x="17" y="15" width="2" height="2" rx="0.5" />
+    <rect x="20" y="14" width="2" height="4" rx="0.5" />
+    <rect x="23" y="15" width="2" height="2" rx="0.5" />
+    <rect x="26" y="15" width="2" height="2" rx="0.5" />
+    <rect x="29" y="14" width="2" height="4" rx="0.5" />
+  </g>
+</svg>
