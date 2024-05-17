@@ -131,6 +131,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
   $: meterMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
 
+  // TODO perf: `preload` doesn't work on Chromium:
+  // A preload for 'chrome-extension://.../chunks/655.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute.
+  // I believe this started happening since the migration to Manifest V3 (1348cd8)
+  // Though it's not happening for `tippy.js`, which we also preload hmm.
   const smoothieImportP = import(
     /* webpackPreload: true */
     /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
