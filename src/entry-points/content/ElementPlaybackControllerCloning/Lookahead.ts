@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, clamp, maxPlaybackRate, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode, getRealtimeMargin } from '@/entry-points/content/helpers';
@@ -124,7 +124,8 @@ export default class Lookahead {
     });
     this._destroyedPromise.then(() => ctx.close()); // Not sure if this is required, maybe it gets GCd automatically?
     ctx.suspend();
-    const addWorkletProcessor = (url: string) => ctx.audioWorklet.addModule(browser.runtime.getURL(url));
+    const addWorkletProcessor = (url: string) =>
+      ctx.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
 
     // TODO refactor: DRY
     // const smoothingWindowLenght = 0.03;

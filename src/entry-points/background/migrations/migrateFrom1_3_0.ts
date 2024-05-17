@@ -22,12 +22,12 @@
 // Once everyone has installed this version or a later one, this file can be removed, along with other changes coming
 // with this commit (so you could `git revert` it).
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { defaultSettings } from '@/settings';
 
 export default async function (): Promise<void> {
   const toFix = ['volumeThreshold', 'silenceSpeed', 'soundedSpeed'] as const;
-  const values = await browser.storage.sync.get(toFix) as { [P in typeof toFix[number]]?: any };
+  const values = await browserOrChrome.storage.sync.get(toFix) as { [P in typeof toFix[number]]?: any };
   function getDefault(key: typeof toFix[number]): number {
     // The `silenceSpeed` key is not present in defaultSettings, it was removed in 1.9.0.
     if (key === 'silenceSpeed') {
@@ -47,5 +47,5 @@ export default async function (): Promise<void> {
         : getDefault(key);
     }
   }
-  await browser.storage.sync.set(values);
+  await browserOrChrome.storage.sync.set(values);
 }

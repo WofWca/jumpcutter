@@ -18,14 +18,14 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { defaultSettings, Settings } from '@/settings';
 
 export default async function (): Promise<void> {
   const {
     popupChartLengthInSeconds,
     soundedSpeed,
-  } = await browser.storage.local.get(['popupChartLengthInSeconds', 'soundedSpeed']);
+  } = await browserOrChrome.storage.local.get(['popupChartLengthInSeconds', 'soundedSpeed']);
 
   const newValues: Partial<Settings> = {};
 
@@ -45,5 +45,5 @@ export default async function (): Promise<void> {
     newValues.soundedSpeed = defaultSettings.soundedSpeed;
   }
 
-  await browser.storage.local.set(newValues);
+  await browserOrChrome.storage.local.set(newValues);
 }

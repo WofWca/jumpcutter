@@ -32,38 +32,10 @@ async function importAndInit() {
   init();
 }
 
-// In Chromium, compared to `getSettings(`, this function does not require the whole `browser` API polyfill.
-async function isEnabled(): Promise<boolean> {
-  const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
-  const p = BUILD_DEFINITIONS.BROWSER === 'gecko' || (typeof browser !== 'undefined')
-    ? browser.storage.local.get(keys) as Promise<Settings>
-    : new Promise(r => chrome.storage.local.get(keys, r as (s: Record<string, any>) => void)) as Promise<Settings>;
-  const { enabled } = await p;
-  return enabled;
-}
-
-if (IS_DEV_MODE) {
-  Promise.all([
-    import(
-      /* webpackExports: ['storage']*/
-      '@/settings/_storage'
-    ),
-    import(
-      /* webpackExports: ['default']*/
-      '@/webextensions-api'
-    ),
-  ]).then(([
-    { storage },
-    { default: browser },
-  ]) => {
-    if (browser.storage.local !== storage) {
-      console.error('Looks like you\'ve changed the default storage and `isEnabled` will not work as intended.'
-        + ' If you don\'t know what to do, just revert this commit.');
-    }
-  });
-}
-
-const enabledOnInitialization = await isEnabled();
+const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
+const enabledOnInitialization = (
+  (await browserOrChrome.storage[mainStorageAreaName].get(keys)) as Settings
+).enabled;
 if (enabledOnInitialization) {
   importAndInit();
 }

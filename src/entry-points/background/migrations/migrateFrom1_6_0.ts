@@ -20,9 +20,9 @@
 
 // Since 1.7.0 we're going to store settings both in `browser.storage.local` and `browser.storage.sync`. This migration
 // copies settings from sync storage to the local one.
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 export default async function (): Promise<void> {
-  const settings = await browser.storage.sync.get();
-  await browser.storage.local.set(settings);
+  const settings = await browserOrChrome.storage.sync.get();
+  await browserOrChrome.storage.local.set(settings);
 }

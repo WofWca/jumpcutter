@@ -18,7 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
 import { setSettings, getSettings } from '@/settings';
 
 type ListenerType = Parameters<typeof browser.commands.onCommand.addListener>[0];

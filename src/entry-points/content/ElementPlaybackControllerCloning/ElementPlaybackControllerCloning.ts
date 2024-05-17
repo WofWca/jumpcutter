@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import Lookahead, { TimeRange } from './Lookahead';
 import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
@@ -304,7 +304,8 @@ export default class Controller {
       if (captureStream) {
         // Also mostly copy-pasted from `ElementPlaybackControllerStretching`.
         const audioContext = this.audioContext;
-        const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
+        const addWorkletProcessor = (url: string) =>
+          audioContext.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
         // Must be the same so what the user sees matches what the lookahead sees.
         const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
         const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');

@@ -19,10 +19,10 @@
  */
 
 import type { Settings } from '@/settings';
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 export default async function(): Promise<void> {
-  const { updateSoundedSpeedWheneverItChangesOnWebsite } = await browser.storage.local.get(
+  const { updateSoundedSpeedWheneverItChangesOnWebsite } = await browserOrChrome.storage.local.get(
     'updateSoundedSpeedWheneverItChangesOnWebsite'
   );
   if (updateSoundedSpeedWheneverItChangesOnWebsite !== undefined) {
@@ -32,8 +32,8 @@ export default async function(): Promise<void> {
         : 'prevent',
     };
     await Promise.all([
-      browser.storage.local.set(newValues),
-      browser.storage.local.remove('updateSoundedSpeedWheneverItChangesOnWebsite'),
+      browserOrChrome.storage.local.set(newValues),
+      browserOrChrome.storage.local.remove('updateSoundedSpeedWheneverItChangesOnWebsite'),
     ]);
   }
 }

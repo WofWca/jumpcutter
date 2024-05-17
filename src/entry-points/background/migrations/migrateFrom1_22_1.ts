@@ -19,13 +19,13 @@
  */
 
 import type { Settings } from '@/settings';
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 export default async function (): Promise<void> {
   const newSettings: Partial<Settings> = {};
 
   // `popupChartJumpPeriod` is now expressed as a fraction of `popupChartLengthInSeconds`.
-  const { popupChartLengthInSeconds, popupChartJumpPeriod } = await browser.storage.local.get({
+  const { popupChartLengthInSeconds, popupChartJumpPeriod } = await browserOrChrome.storage.local.get({
     popupChartLengthInSeconds: 8,
     popupChartJumpPeriod: 0,
   });
@@ -39,5 +39,5 @@ export default async function (): Promise<void> {
   // Just the new default.
   newSettings.popupChartSpeed = 'soundedSpeedTime';
 
-  await browser.storage.local.set(newSettings);
+  await browserOrChrome.storage.local.set(newSettings);
 }

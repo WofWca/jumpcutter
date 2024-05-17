@@ -18,7 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type browser from '@/webextensions-api';
 import isEqual from 'lodash/isEqual';
 
 /**

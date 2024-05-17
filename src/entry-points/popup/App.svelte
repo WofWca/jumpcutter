@@ -18,7 +18,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script lang="ts">
-  import browser from '@/webextensions-api';
+  import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
   import { onDestroy } from 'svelte';
   import {
     addOnStorageChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
@@ -77,7 +77,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   async function getTab() {
     // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
     // guaranteed that there will be a tab, is it?
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true, });
+    const tabs = await browserOrChrome.tabs.query({ active: true, currentWindow: true, });
     return tabs[0];
   }
   const tabPromise = getTab();
@@ -86,19 +86,23 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     if (tab.status !== 'complete') { // TODO it says `status` is optional? When is it missing?
       tab = await new Promise(r => {
         let pollTimeout: ReturnType<typeof setTimeout>;
-        function finishIfComplete(tab: browser.tabs.Tab) {
+        function finishIfComplete(tab: browser.tabs.Tab | chrome.tabs.Tab) {
           if (tab.status === 'complete') {
             r(tab);
-            browser.tabs.onUpdated.removeListener(onUpdatedListener);
+            browserOrChrome.tabs.onUpdated.removeListener(onUpdatedListener);
             clearTimeout(pollTimeout);
             return true;
           }
         }
-        const onUpdatedListener: Parameters<typeof browser.tabs.onUpdated.addListener>[0] = (tabId, _, updatedTab) => {
+        const onUpdatedListener = (
+          tabId: number,
+          _: unknown,
+          updatedTab: browser.tabs.Tab | chrome.tabs.Tab
+        ) => {
           if (tabId !== tab.id) return;
           finishIfComplete(updatedTab);
         }
-        browser.tabs.onUpdated.addListener(onUpdatedListener);
+        browserOrChrome.tabs.onUpdated.addListener(onUpdatedListener);
 
         // Sometimes if you open the popup during page load, it would never resolve. I tried attaching the listener
         // before calling `browser.tabs.query`, but it didn't help either. This is a workaround. TODO.
@@ -115,7 +119,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return tab;
   })();
 
-  let nonSettingsActionsPort: Omit<ReturnType<typeof browser.tabs.connect>, 'postMessage'> & {
+  let nonSettingsActionsPort: Omit<ReturnType<typeof browserOrChrome.tabs.connect>, 'postMessage'> & {
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
   } | undefined;
 
@@ -133,7 +137,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     const tab = await tabPromise;
     let elementLastActivatedAt: number | undefined;
 
-    const onMessageListener: Parameters<typeof browser.runtime.onMessage.addListener>[0] = (message, sender) => {
+    const onMessageListener = (
+      message: any,
+      sender: chrome.runtime.MessageSender | browser.runtime.MessageSender
+    ) => {
       if (
         sender.tab?.id !== tab.id
         || message.type !== 'contentStatus' // TODO DRY message types.
@@ -152,7 +159,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
         // TODO how do we close it on popup close? Do we have to?
         // https://developer.chrome.com/extensions/messaging#port-lifetime
-        const telemetryPort = browser.tabs.connect(tab.id!, { name: 'telemetry', frameId });
+        const telemetryPort = browserOrChrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
         telemetryPort.onMessage.addListener(msg => {
           if (msg) {
             latestTelemetryRecord = msg as TelemetryMessage;
@@ -166,7 +173,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           telemetryTimeoutId = setTimeout(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
-        nonSettingsActionsPort = browser.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
+        nonSettingsActionsPort = browserOrChrome.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
 
         disconnect = () => {
           clearTimeout(telemetryTimeoutId);
@@ -178,8 +185,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
       }
     };
-    browser.runtime.onMessage.addListener(onMessageListener);
-    browser.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
+    browserOrChrome.runtime.onMessage.addListener(onMessageListener);
+    browserOrChrome.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
   })();
 
   (async () => {
@@ -297,7 +304,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
 
   const openLocalFileLinkProps = {
-    href: browser.runtime.getURL('local-file-player/index.html'),
+    href: browserOrChrome.runtime.getURL('local-file-player/index.html'),
     target: '_new',
   };
 
@@ -402,7 +409,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <!-- TODO but this is technically a button. Is this ok? -->
   <button
     id="options-button"
-    on:click={() => browser.runtime.openOptionsPage()}
+    on:click={() => browserOrChrome.runtime.openOptionsPage()}
     use:tippy={{
       content: () => getMessage('more'),
       theme: 'my-tippy',
@@ -558,7 +565,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               <!-- TODO somehow highligth the related section after opening the options page? Or maybe it's Better
               to replace it with those very inputs from the options page? -->
               <button
-                on:click={() => browser.runtime.openOptionsPage()}
+                on:click={() => browserOrChrome.runtime.openOptionsPage()}
                 style="margin: 0.25rem"
               >⚙️ {getMessage('changeElementSearchCriteria')}</button>
               <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
