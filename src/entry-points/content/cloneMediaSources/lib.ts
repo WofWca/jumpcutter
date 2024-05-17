@@ -308,7 +308,6 @@ function startInterceptingMethodCalls<
   object[methodName] = makeIntercepted(object[methodName], callback);
 
   const originalValuePropName = `_jumpCutterExtensionOriginal_${methodName}` as const;
-  type OriginalValuePropName = typeof originalValuePropName;
   type MutatedOriginalObject = T & {
     OriginalValuePropName?: T[U]
   };

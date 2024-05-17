@@ -57,6 +57,7 @@ const bridgeElement = receiveBridgeElement();
 
 const [
   getCloneElement,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   stopCloningMediaSources,
 ] = startCloningMediaSources();
 

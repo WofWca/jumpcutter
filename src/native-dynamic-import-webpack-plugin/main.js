@@ -33,7 +33,8 @@ module.exports = class NativeDynamicImportPlugin {
     compiler.hooks.compilation.tap(NativeDynamicImportPlugin.name, (compilation) => {
       compilation.hooks.runtimeRequirementInTree
         .for(RuntimeGlobals.loadScript)
-        .tap(NativeDynamicImportPlugin.name, (chunk, set) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .tap(NativeDynamicImportPlugin.name, (chunk, _set) => {
           compilation.addRuntimeModule(chunk, new LoadScriptRuntimeModule())
           return true
         })

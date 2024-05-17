@@ -38,5 +38,6 @@ module.exports = {
   ],
   ignorePatterns: ['/dist-gecko/', '/dist-chromium/'],
   rules: {
+    "@typescript-eslint/no-explicit-any": "warn",
   },
 };
