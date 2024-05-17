@@ -18,7 +18,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script lang="ts">
-  import browser from '@/webextensions-api';
+  import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
   import { tick } from 'svelte';
   import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
@@ -52,8 +52,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   Promise.all([settingsPromise, originalSettingsPromise]).then(() => initialized = true);
 
   // `commands` API is currently not supported by Gecko for Android.
-  const commandsPromise: undefined | ReturnType<typeof browser.commands.getAll>
-    = browser.commands?.getAll?.();
+  const commandsPromise: undefined | ReturnType<typeof browserOrChrome.commands.getAll>
+    = browserOrChrome.commands?.getAll?.();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -169,13 +169,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
   // Yes, these don't take migartions into account at all. TODO.
   async function downloadFromSync() {
-    Object.assign(settings, await browser.storage.sync.get() as Partial<Settings>);
+    Object.assign(settings, await browserOrChrome.storage.sync.get() as Partial<Settings>);
     settings = settings;
   }
   async function uploadToSync() {
     assertDev(checkValidity(settings));
-    browser.storage.sync.clear();
-    browser.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
+    browserOrChrome.storage.sync.clear();
+    browserOrChrome.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
   }
 
   const snowflakeExtensionUrl = BUILD_DEFINITIONS.BROWSER === 'gecko'
@@ -194,8 +194,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       subject: 'Jump Cutter',
       // TODO improvement: i18n?
       body: `Debug info (you can remove this):`
-        + `\nJump Cutter version: ${browser.runtime.getManifest().version}`
-        + `\nLanguage: ${browser.i18n.getUILanguage()}`
+        + `\nJump Cutter version: ${browserOrChrome.runtime.getManifest().version}`
+        + `\nLanguage: ${browserOrChrome.i18n.getUILanguage()}`
         + `\nSystem info: ${navigator.userAgent}`
         + `\nJump Cutter settings:`
         + '\n\n```json'
@@ -352,7 +352,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
                     to not work fully (no scrolling to anchor). Just 'href' doesn't work. -->
                     <a
                       href={editNativeShortcutsLinkUrl}
-                      on:click|preventDefault={_ => browser.tabs.create({
+                      on:click|preventDefault={_ => browserOrChrome.tabs.create({
                         url: editNativeShortcutsLinkUrl,
                         active: true,
                       })}
@@ -626,7 +626,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <div style="margin: 1rem 0;">
     <a
       target="_blank"
-      href="{browser.runtime.getURL('/license.html')}"
+      href="{browserOrChrome.runtime.getURL('/license.html')}"
     >⚖️ {getMessage('license')}</a>
   </div>
   <div style="margin: 1rem 0;">
@@ -640,7 +640,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <footer>
   <a
     target="_blank"
-    href="{browser.runtime.getURL('/license.html')}"
+    href="{browserOrChrome.runtime.getURL('/license.html')}"
   >
     <img src="/agplv3-with-text-162x68.png" alt="AGPLv3 Logo">
   </a>

@@ -18,7 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type browser from '@/webextensions-api';
 import migrateFrom1_3_0 from "./migrateFrom1_3_0";
 import migrateFrom1_6_0 from "./migrateFrom1_6_0";
 import migrateFrom1_8_0 from "./migrateFrom1_8_0";

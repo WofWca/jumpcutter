@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { audioContext } from '@/entry-points/content/audioContext';
 import {
   getOrCreateMediaElementSourceAndUpdateMap
@@ -188,7 +188,8 @@ export default class Controller {
 
     this.audioContext = audioContext;
 
-    const addWorkletProcessor = (url: string) => audioContext.audioWorklet.addModule(browser.runtime.getURL(url));
+    const addWorkletProcessor = (url: string) =>
+      audioContext.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
 
     const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
     const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');

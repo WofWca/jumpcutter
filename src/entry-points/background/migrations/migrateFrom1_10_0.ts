@@ -19,7 +19,7 @@
  */
 
 import { HotkeyAction, HotkeyBinding, combinationIsEqual } from "@/hotkeys";
-import browser from '@/webextensions-api';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
 /**
  * @param hotkeys - mutable
@@ -81,7 +81,7 @@ export default async function(): Promise<void> {
     popupDisableHotkeysWhileInputFocused: true, // Since we now have volume up/down bound to arrows in popup.
   };
   // Add new hotkeys if the user didn't customize them much.
-  const { hotkeys } = await browser.storage.local.get('hotkeys') as { hotkeys?: HotkeyBinding[] };
+  const { hotkeys } = await browserOrChrome.storage.local.get('hotkeys') as { hotkeys?: HotkeyBinding[] };
   if (hotkeys) {
     const added: boolean = tryAddVolumeThresholdHotkeys(hotkeys);
     if (added) {
@@ -89,5 +89,5 @@ export default async function(): Promise<void> {
     }
   }
 
-  await browser.storage.local.set(newValues);
+  await browserOrChrome.storage.local.set(newValues);
 }

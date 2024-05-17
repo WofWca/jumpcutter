@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
   Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
   removeOnStorageChangedListener, settingsChanges2NewValues,
@@ -279,7 +279,7 @@ export default class AllMediaElementsController {
     }
   }
 
-  private onConnect = (port: browser.runtime.Port) => {
+  private onConnect = (port: browser.runtime.Port | chrome.runtime.Port) => {
     let listener: (msg: unknown) => void;
     switch (port.name) {
       case 'telemetry': {
@@ -327,8 +327,8 @@ export default class AllMediaElementsController {
     this._destroyedPromise.then(() => port.onMessage.removeListener(listener));
   }
   private _addOnConnectListener() {
-    browser.runtime.onConnect.addListener(this.onConnect);
-    this._destroyedPromise.then(() => browser.runtime.onConnect.removeListener(this.onConnect));
+    browserOrChrome.runtime.onConnect.addListener(this.onConnect);
+    this._destroyedPromise.then(() => browserOrChrome.runtime.onConnect.removeListener(this.onConnect));
   }
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
 

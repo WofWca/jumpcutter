@@ -18,12 +18,12 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import type { Settings, MyStorageChanges } from '@/settings';
 
 function setBadge(text: string, color: string) {
-  browser.action.setBadgeBackgroundColor({ color });
-  browser.action.setBadgeText({ text });
+  browserOrChrome.action.setBadgeBackgroundColor({ color });
+  browserOrChrome.action.setBadgeText({ text });
 }
 type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold' | 'marginBefore'
   | 'marginAfter'>;
@@ -48,7 +48,7 @@ function settingToBadgeParams<T extends SupportedSettings>(
 }
 function setBadgeToDefault(settings: Settings) {
   if (settings.badgeWhatSettingToDisplayByDefault === 'none' || !settings.enabled) {
-    browser.action.setBadgeText({ text: '' });
+    browserOrChrome.action.setBadgeText({ text: '' });
   } else {
     const settingName = settings.badgeWhatSettingToDisplayByDefault;
     setBadge(...settingToBadgeParams(settingName, settings[settingName]));
@@ -84,7 +84,7 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
 
   // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
   if (path64 !== currentPath64) {
-    browser.action.setIcon({
+    browserOrChrome.action.setIcon({
       path: {
         "64": path64,
         "128": path128,

@@ -18,10 +18,10 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 export default function broadcastStatus(status: { elementLastActivatedAt: undefined | number }): void {
-  browser.runtime.sendMessage({
+  (browserOrChrome as typeof chrome).runtime.sendMessage({
     type: 'contentStatus', // TODO DRY this?
     ...status,
   });

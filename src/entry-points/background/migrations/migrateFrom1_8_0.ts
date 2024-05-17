@@ -18,11 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import type { Settings } from "@/settings";
 
 export default async function (): Promise<void> {
-  const storage = browser.storage.local;
+  const storage = browserOrChrome.storage.local;
   const defaults = {
     silenceSpeed: 4,
     soundedSpeed: 1.5,

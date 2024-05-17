@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
   addOnStorageChangedListener, removeOnStorageChangedListener, MyStorageChanges, getSettings
 } from '@/settings';
@@ -52,7 +52,9 @@ export default async function init(): Promise<void> {
     // `browser.runtime.sendMessage`, including other `broadcastStatus`.
     if (message !== 'checkContentStatus') { // TODO DRY.
       if (IS_DEV_MODE) {
-        const thisIsExtensionPage = document.location.href.startsWith(browser.runtime.getURL(''));
+        const thisIsExtensionPage = document.location.href.startsWith(
+          browserOrChrome.runtime.getURL('')
+        );
         const thisIsLocalFilePlayer = thisIsExtensionPage;
         if (!thisIsLocalFilePlayer) {
           console.error('Unrecognized message', message);
@@ -62,12 +64,12 @@ export default async function init(): Promise<void> {
     }
     broadcastStatus2(allMediaElementsController);
   }
-  browser.runtime.onMessage.addListener(onMessage);
+  browserOrChrome.runtime.onMessage.addListener(onMessage);
   // So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
   broadcastStatus2(allMediaElementsController);
   const onSettingsChanged = (changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
-      browser.runtime.onMessage.removeListener(onMessage);
+      browserOrChrome.runtime.onMessage.removeListener(onMessage);
       stopWatchingElements();
       removeOnStorageChangedListener(onSettingsChanged);
     }

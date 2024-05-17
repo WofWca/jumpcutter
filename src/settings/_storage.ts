@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { mainStorageAreaName } from './mainStorageAreaName';
 
-export const storage = browser.storage[mainStorageAreaName];
+export const storage = browserOrChrome.storage[mainStorageAreaName];

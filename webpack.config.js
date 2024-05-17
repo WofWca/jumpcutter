@@ -145,17 +145,6 @@ module.exports = env => {
     plugins: [
       new CleanWebpackPlugin(),
       definePlugin,
-      new webpack.NormalModuleReplacementPlugin(
-        /^\{WEBEXTENSIONS_API_PATH\}$/,
-        resource => {
-          // This is so the polyfill is not included in builds for browsers that support it natively, for better
-          // performance. The polyfill is said to act as a no-op in such browsers, so it can be safely removed:
-          // https://github.com/mozilla/webextension-polyfill/blob/614a1f3f36ca8666ecf1e26ee828a5dd1e0e04c2/README.md#supported-browsers
-          resource.request = env.browser === 'gecko'
-            ? '@/webextensions-api-native.ts'
-            : '@/webextensions-api-polyfill.ts'
-        },
-      ),
       // This is so dynamic import works in content scripts (but it affects all scripts).
       // TODO refactor: replace with `output.environment.dynamicImport = true` (which will act as
       // `output.chunkLoading = 'import'`). But doing `browser.runtime.getURL()` (in

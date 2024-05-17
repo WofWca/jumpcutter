@@ -22,7 +22,7 @@
 // https://developer.chrome.com/extensions/background_pages#unloading
 // 1. migrations
 // 2. settings saving.
-import browser from '@/webextensions-api';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 import { onCommand as onCommandWhenReady } from './browserHotkeysListener';
 import { initIconAndBadge, updateIconAndBadge } from './iconAndBadgeUpdater';
@@ -55,7 +55,7 @@ async function setNewSettingsKeysToDefaults() {
   await storage.set(newSettings);
 }
 
-const currentVersion = browser.runtime.getManifest().version;
+const currentVersion = browserOrChrome.runtime.getManifest().version;
 let postInstallStorageChangesDonePResolve: (storageMightHaveBeenChanged: boolean) => void;
 /**
  * Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
@@ -63,12 +63,12 @@ let postInstallStorageChangesDonePResolve: (storageMightHaveBeenChanged: boolean
  */
 const postInstallStorageChangesDoneP = new Promise<boolean>(r => postInstallStorageChangesDonePResolve = r);
 // Pretty hacky. Feels like there must be API that allows us to do this. TODO?
-browser.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
+browserOrChrome.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
   if (currentVersion === __lastHandledUpdateToVersion) {
     postInstallStorageChangesDonePResolve(false);
   }
 });
-browser.runtime.onInstalled.addListener(async details => {
+browserOrChrome.runtime.onInstalled.addListener(async details => {
   if (!['update', 'install'].includes(details.reason)) {
     return;
   }
@@ -87,12 +87,12 @@ browser.runtime.onInstalled.addListener(async details => {
   }
   await setNewSettingsKeysToDefaults();
 
-  browser.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
+  browserOrChrome.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
   postInstallStorageChangesDonePResolve(true);
 });
 
 // `commands` API is currently not supported by Gecko for Android.
-browser.commands?.onCommand?.addListener?.(async (...args) => {
+browserOrChrome.commands?.onCommand?.addListener?.(async (...args) => {
   await postInstallStorageChangesDoneP;
   onCommandWhenReady(...args);
 });
@@ -123,7 +123,7 @@ const onStorageChanged = createWrapperListener(async changes => {
   updateIconAndBadge(settings, changes);
 });
 
-browser.storage.onChanged.addListener(async (...args) => {
+browserOrChrome.storage.onChanged.addListener(async (...args) => {
   // We can't just ignore all the events that were fired before `postInstallStorageChangesDoneP`
   // resolved because this script is non-persistent and it may be woken up, that is executed all
   // over again just to handle a `storage.onChanged` event, so this listener is gonna be executed

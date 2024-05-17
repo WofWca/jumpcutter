@@ -23,9 +23,6 @@
 
 declare module 'tippy.js/dist/tippy.css'; // Not sure if it's the best way to go about suppressing that error.
 
-declare module 'webextension-polyfill' {
-  export = browser;
-}
 declare const IS_DEV_MODE: boolean;
 declare const BUILD_DEFINITIONS: {
   BROWSER: 'chromium' | 'gecko',
@@ -33,7 +30,4 @@ declare const BUILD_DEFINITIONS: {
   BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT: boolean,
 
   CONTACT_EMAIL: string,
-}
-declare module '{WEBEXTENSIONS_API_PATH}' {
-  export = browser;
 }

@@ -18,13 +18,18 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import browser from '@/webextensions-api';
 import { filterOutUnchangedValues } from '@/helpers';
 import { mainStorageAreaName } from './mainStorageAreaName';
 import type { MyStorageChanges } from './';
+import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 type MyOnChangedListener = (changes: MyStorageChanges) => void;
-type NativeOnChangedListener = Parameters<typeof browser.storage.onChanged.addListener>[0];
+// type NativeOnChangedListener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
+type NativeOnChangedListener = (
+  changes: { [key: string]: browser.storage.StorageChange | chrome.storage.StorageChange },
+  // areaName: chrome.storage.AreaName,
+  areaName: typeof mainStorageAreaName | string,
+) => void;
 const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnChangedListener>();
 export function createWrapperListener(listener: MyOnChangedListener): NativeOnChangedListener {
   return (changes, areaName) => {
@@ -48,7 +53,7 @@ export function createWrapperListener(listener: MyOnChangedListener): NativeOnCh
 export function addOnStorageChangedListener(listener: MyOnChangedListener): void {
   const actualListener = createWrapperListener(listener);
   srcListenerToWrapperListener.set(listener, actualListener);
-  browser.storage.onChanged.addListener(actualListener);
+  browserOrChrome.storage.onChanged.addListener(actualListener);
 }
 export function removeOnStorageChangedListener(listener: MyOnChangedListener): void {
   const actualListener = srcListenerToWrapperListener.get(listener);
@@ -58,5 +63,5 @@ export function removeOnStorageChangedListener(listener: MyOnChangedListener): v
     }
     return;
   }
-  browser.storage.onChanged.removeListener(actualListener);
+  browserOrChrome.storage.onChanged.removeListener(actualListener);
 }
