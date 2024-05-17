@@ -168,9 +168,14 @@ module.exports = env => {
           {
             context: 'src',
             from: 'manifest.json',
-            // Compress JSON. Might want to switch to https://webpack.js.org/plugins/json-minimizer-webpack-plugin/
-            // later.
-            transform: (content) => JSON.stringify(JSON.parse(content)),
+            transform: (content) => {
+              const parsed = JSON.parse(content);
+              injectBrowserSpecificManifestFields(parsed, env.browser)
+              // Compressed JSON. Might want to switch to
+              // https://webpack.js.org/plugins/json-minimizer-webpack-plugin/
+              // later.
+              return JSON.stringify(parsed)
+            }
           },
 
           {
@@ -222,7 +227,7 @@ module.exports = env => {
           { from: 'COPYING' },
           { context: 'src/entry-points', from: 'license.html' },
           { from: 'docs/agplv3-with-text-162x68.png', to: '.' },
-          { context: 'src', from: 'icons/(icon.svg|icon-disabled.svg|icon-only-sounded.svg|icon.svg-64.png|icon-big-padded.svg-128.png)' },
+          { context: 'src', from: 'icons/(icon.svg-64.png|icon-disabled.svg-64.png|icon-only-sounded.svg-64.png|icon.svg-128.png|icon-disabled.svg-128.png|icon-only-sounded.svg-128.png|icon-big-padded.svg-128.png)' },
           { context: 'src/entry-points', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src/entry-points', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
           { context: 'src/entry-points', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
@@ -241,4 +246,28 @@ module.exports = env => {
       },
     }
   };
+}
+
+/**
+ * @param {"chromium" | "gecko"} browser
+ * @returns {void}
+ */
+function injectBrowserSpecificManifestFields(manifest, browser) {
+  if (browser === "chromium") {
+    manifest.background = {
+      service_worker: "background/main.js",
+    };
+  } else if (browser === "gecko") {
+    manifest.background = {
+      scripts: ["background/main.js"],
+    };
+    manifest.browser_specific_settings = {
+      gecko: {
+        id: "jump-cutter@example.com",
+        // This is due to this bug
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1517199
+        strict_min_version: "91.0a1",
+      },
+    };
+  }
 }
