@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "快進句子之間的長時間停頓，令觀看講座的速度提升約1.5倍"
+		"message": "透過快進句子之間的長時間停頓，觀看影片的速度提高約 1.5 倍"
 	},
 	"enable": {
 		"message": "啟用"
@@ -54,7 +54,7 @@
 		"message": "音量\n這不是當前時刻音頻的響度，而是其放大倍數，就像電視那樣"
 	},
 	"soundedSpeed": {
-		"message": "有聲片段的速度"
+		"message": "正常速度"
 	},
 	"silenceSpeed": {
 		"message": "無聲片段的速度"
@@ -275,7 +275,7 @@
 		"message": "只考慮最後播放的N秒"
 	},
 	"iconBadge": {
-		"message": "圖標數值顯示"
+		"message": "擴充功能的圖示徽章"
 	},
 	"hotkeysNotes": {
 		"message": "支持組合鍵(Ctrl, Shift等)。\n可以將多個操作綁定到單一個鍵，用來創建\"配置文件\"。\n\"$switch$\"和\"=\"(也稱為\"設置\")操作之間的區別在於，\"$switch$\"切換前一個值和快捷鍵的參數之間的值，而\"設置\"總是將其設置為參數的值。\n當彈出窗口打開時，快捷鍵也處於啟動狀態。",
@@ -415,7 +415,7 @@
 		"message": "間距"
 	},
 	"downloadFromSync": {
-		"message": "從同步儲存下載設定"
+		"message": "套用同步儲存中的設定"
 	},
 	"uploadToSync": {
 		"message": "將設置上傳到同步儲存"
@@ -443,5 +443,8 @@
 	},
 	"contact": {
 		"message": "聯絡我們"
+	},
+	"chat": {
+		"message": "聊天"
 	}
 }
