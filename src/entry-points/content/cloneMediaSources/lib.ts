@@ -266,10 +266,20 @@ function makeIntercepted<T extends (...args: unknown[]) => unknown>(
   return new Proxy(originalFn, {
     apply(target, thisArg, argArray, ...rest) {
       const originalRetVal = Reflect.apply(target, thisArg, argArray, ...rest) as ReturnType<T>;
-      // `queueMicrotask` ensures that if `callback` throws, the intercepted call still returns
-      // as normal. It's also probably good for performance as it gives the website's code
-      // the priority.
-      queueMicrotask(() => callback(argArray as Parameters<T>, originalRetVal));
+      // TODO perf: maybe `queueMicrotask` so that the website's code is given
+      // priority. However, it's the way the code was initially,
+      // but switching to synchronous execution makes the cloning algorithm
+      // much more reliable.
+      // This applies to all other callbacks in this file.
+      //
+      // queueMicrotask(() => callback(argArray as Parameters<T>, originalRetVal));
+      try {
+        callback(argArray as Parameters<T>, originalRetVal);
+      } catch (e) {
+        IS_DEV_MODE
+        && console.error('calling', originalFn, 'on clone threw an error', e);
+      }
+
       return originalRetVal;
     },
   })
@@ -362,7 +372,15 @@ function startInterceptingSetters<
     ...originalDescriptor,
     set(newVal, ...rest) {
       const retVal = originalSet.call(this, newVal, ...rest);
-      queueMicrotask(() => callback(newVal));
+
+      // queueMicrotask(() => callback(newVal));
+      try {
+        callback(newVal);
+      } catch (e) {
+        IS_DEV_MODE
+        && console.error('setting', object, propName, 'on clone threw an error', e);
+      }
+
       return retVal;
     },
   });
@@ -391,10 +409,21 @@ function startInterceptingMediaSourceConstructorCalls(
   globalThis.MediaSource = new Proxy(MediaSource, {
     construct(target, argArray, newTarget, ...rest) {
       const originalRetVal = Reflect.construct(target, argArray, newTarget, ...rest);
-      queueMicrotask(() => callback(
-        argArray as ConstructorParameters<typeof MediaSource>,
-        originalRetVal
-      ));
+
+      // queueMicrotask(() => callback(
+      //   argArray as ConstructorParameters<typeof MediaSource>,
+      //   originalRetVal
+      // ));
+      try {
+        callback(
+          argArray as ConstructorParameters<typeof MediaSource>,
+          originalRetVal
+        );
+      } catch (e) {
+        IS_DEV_MODE
+        && console.error('MediaSource constructor interceptor threw an error', argArray, e);
+      }
+
       return originalRetVal;
     },
     // TODO refactor: this does not belong to the function named
