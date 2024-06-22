@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2023  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2023, 2024  WofWca <wofwca@protonmail.com>
  * Copyright (C) 2023  Jonas Herzig <me@johni0702.de>
  *
  * This file is part of Jump Cutter Browser Extension.
@@ -19,6 +19,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { assertDev } from "@/helpers";
 import type { KeysOfType } from "@/helpers";
 
 // TODO refactor: hmmm there is a lot of `stopSomething: () => void`. Maybe we can utilize
@@ -569,55 +570,93 @@ function makeMaintainedSourceBufferCloneWhenOpen(
  * If this function was called several times while `sourceBuffer.updating === true` then
  * `fn`s are executed in the same order as this function was called.
  */
-async function execWhenSourceBufferReady(sourceBuffer: SourceBuffer, fn: () => void) {
-  // TODO refactor: this comment is written with an assumption that the reader knows
-  // the context of where it is used.
-  //
-  // Why `while` instead of just `if`? Because if there were several calls to
-  // `originalSourceBuffer.appendBuffer` then several instances of this function could be
-  // `await`ing here. The event is gonna trigger all of them, but when the first awaiter
-  // does `cloneSourceBuffer.appendBuffer()`, it's gonna set `cloneSourceBuffer.updating`
-  // to `true` again. So the next awaiter is gonna need to wait again, hence `while`.
-  //
-  // This usually only happens during initialization, when `cloneMediaSource`'s 'sourceopen'
-  // fires.
-  //
-  // Don't worry, buffers are appended to the clone in the same order as they are appended
-  // to the original `SourceBuffer` (I believe so at least), in case `.mode === "sequence"`.
-  //
-  // Be careful if you decide to refactor this function as it is important that
-  // `fn` is executed _synchronously_ after the `sourceBuffer.updating` check, otherwise
-  // `sourceBuffer.updating` may actually be `true`.
-  //
-  // FYI we could also rewrite it using an explicit queue.
-  while (sourceBuffer.updating) {
-    await new Promise(r => {
-      // TODO fix: wait, 'updateend' is not the only event that signals the transition of
-      // `.updating` from `true` to `false`.
-      // https://www.w3.org/TR/media-source-2/#sourcebuffer-events
-      // So there is an error where `fn` is called in a different order than for the original
-      // sourceBuffer.
-      //
-      // TODO fix: actually, I think it's not the only case where this can happen.
-      // Suppose currently `cloneSourceBuffer.updating === true` and the following website code
-      // gets executed:
-      // ```
-      // originalSourceBuffer.appendBuffer(...);
-      // originalSourceBuffer.addEventListener('updateend', () => {
-      //   originalSourceBuffer.appendBuffer(...))
-      // });
-      // ```
-      // Also suppose that for every `SourceBuffer` after `appendBuffer` `.updating` becomes
-      // `false` for the next event loop.
-      // After this is executed, in terms of the event loop queue, the first thing in the queue
-      // is gonna be the first line's interceptor's `queueMicrotask`. Then there's gonna be the
-      // second line's addEventListener. After the `queueMicrotask`'s task is executed,
-      // `clone.addEventListener('updateend'` will get appended.
-      // wait, actually it's fine because of `queueMicrotask` again.
-      //
-      // Anyways, maybe it's time to switch to an explicit queue, as I said above?
-      sourceBuffer.addEventListener('updateend', r, { once: true, passive: true });
-    })
+function execWhenSourceBufferReady(sourceBuffer: SourceBuffer, fn: () => void): void {
+  let queue = queueMap.get(sourceBuffer);
+  if (queue && queue.length > 0) {
+    // console.log('queue not empty, pushing', fn);
+
+    queue.push(fn);
+    return;
   }
-  fn();
+  // There is nothing in the queue.
+
+  if (!sourceBuffer.updating) {
+    // console.log('sourceBuffer.updating === false, executing immediately', fn);
+    fn();
+    return;
+  }
+
+  if (!queue) {
+    queue = [fn];
+    queueMap.set(sourceBuffer, queue);
+  } else {
+    queue.push(fn);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _assert1: true = sourceBuffer.updating
+  // `sourceBuffer.updating === true` and we just added the first item
+  // to the queue.
+  // Let's initiate the "empty queue" process
+
+  const onSourceBufferReadyAndQueueNotEmpty = () => {
+    if (sourceBuffer.updating) {
+      IS_DEV_MODE && console.warn(
+        "sourceBuffer.updating === true, but we're supposed to be the only " +
+        "party that can operate on the sourceBuffer. " +
+        "Something else made it busy. " +
+        "We'll graciously wait for the next 'updateend' event"
+      )
+      return
+    }
+
+    // why `do while`? Because if `sourceBuffer.updating` didn't
+    // become `true` after `fn()`,
+    // there will be no subsequent 'updateend' event,
+    // so we'd be waiting for it indefinitely.
+    do {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _assert2: true = !sourceBuffer.updating
+      const fn = queue.shift();
+      assertDev(fn);
+      fn();
+
+      if (!sourceBuffer.updating) {
+        IS_DEV_MODE && console.warn(
+          "Executed `fn()`, but it didn't make " +
+          "`sourceBuffer.updating === true`\n" +
+          "We'll handle it graciously, but usually " +
+          "operations on `sourceBuffer` cause it to become busy."
+        )
+      }
+  
+      // Checking length _after_ `queue.shift()` because, as stated before,
+      // there is at least one item in the queue, and this is the only code
+      // that can reduce the size of the queue.
+      if (queue.length === 0) {
+        sourceBuffer.removeEventListener(
+          'updateend',
+          onSourceBufferReadyAndQueueNotEmpty
+        );
+        return
+      }
+      // The queue is still not empty.
+    } while (!sourceBuffer.updating)
+    // `sourceBuffer.updating === true` and the queue is still not empty.
+    // Let's simply wait for the next 'updateend' event.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _assert2: true = sourceBuffer.updating
+  }
+
+  sourceBuffer.addEventListener(
+    'updateend',
+    onSourceBufferReadyAndQueueNotEmpty,
+    { passive: true }
+  );
+  // TODO fix: wait, 'updateend' is not the only event that signals the transition of
+  // `.updating` from `true` to `false`.
+  // https://www.w3.org/TR/media-source-2/#sourcebuffer-events
+  // So there is an error where `fn` is called in a different order than for the original
+  // sourceBuffer.
 }
+const queueMap = new WeakMap<SourceBuffer, Array<() => void>>();
