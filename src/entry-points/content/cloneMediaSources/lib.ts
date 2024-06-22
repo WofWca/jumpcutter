@@ -22,6 +22,8 @@
 import { assertDev } from "@/helpers";
 import type { KeysOfType } from "@/helpers";
 
+const VERBOSE_LOGGING = IS_DEV_MODE && true;
+
 // TODO refactor: hmmm there is a lot of `stopSomething: () => void`. Maybe we can utilize
 // `WeakRef`s and `FinalizationRegistry`? Why doesn't everybody does it?
 
@@ -202,6 +204,15 @@ function createMaintainedMediaSourceToCloneMediaElementMap(): [
       // the original `MediaSource` becomes unreachable.
       const cloneElement = document.createElement('audio');
 
+      if (IS_DEV_MODE) {
+        cloneElement.addEventListener('error', () => {
+          console.error(
+            'Jump Cutter: clone element error:',
+            cloneElement.error
+          );
+        });
+      }
+
       // TODO fix: I believe we also need to copy some attributes from the original element,
       // like `crossOrigin` (see {@link createCloneElementWithSameSrc}).
       // Should we leave it up to the script that actually uses the element?
@@ -266,6 +277,14 @@ function makeIntercepted<T extends (...args: unknown[]) => unknown>(
   return new Proxy(originalFn, {
     apply(target, thisArg, argArray, ...rest) {
       const originalRetVal = Reflect.apply(target, thisArg, argArray, ...rest) as ReturnType<T>;
+
+      VERBOSE_LOGGING &&
+        console.debug(
+          "➡️ intercepted",
+          originalFn,
+          argArray,
+          originalRetVal
+        );
       // TODO perf: maybe `queueMicrotask` so that the website's code is given
       // priority. However, it's the way the code was initially,
       // but switching to synchronous execution makes the cloning algorithm
@@ -373,6 +392,8 @@ function startInterceptingSetters<
     set(newVal, ...rest) {
       const retVal = originalSet.call(this, newVal, ...rest);
 
+      VERBOSE_LOGGING &&
+        console.debug("➡️ intercepted setter", object, propName, newVal);
       // queueMicrotask(() => callback(newVal));
       try {
         callback(newVal);
@@ -410,6 +431,13 @@ function startInterceptingMediaSourceConstructorCalls(
     construct(target, argArray, newTarget, ...rest) {
       const originalRetVal = Reflect.construct(target, argArray, newTarget, ...rest);
 
+      VERBOSE_LOGGING &&
+        console.debug(
+          "➡️ intercepted MediaSource constructor",
+          newTarget,
+          argArray,
+          originalRetVal
+        );
       // queueMicrotask(() => callback(
       //   argArray as ConstructorParameters<typeof MediaSource>,
       //   originalRetVal
@@ -430,6 +458,15 @@ function startInterceptingMediaSourceConstructorCalls(
     // `startInterceptingMediaSourceConstructorCalls`
     get(target, propName, receiver) {
       if (propName === 'canConstructInDedicatedWorker') {
+        VERBOSE_LOGGING &&
+          console.debug(
+            "➡️ intercepted `MediaSource.canConstructInDedicatedWorker` getter. " +
+              "Overiding with `false`",
+            propName,
+            "original would have returned:",
+            Reflect.get(target, propName, receiver)
+          );
+
         // We cannot intercept `MediaSource`s that are created inside dedicated workers.
         // Let's try to trick the website into falling back to creating `MediaSource` in
         // the page's context, where we can intercept it.
@@ -511,7 +548,18 @@ function makeMaintainedMediaSourceClone(
     'removeSourceBuffer',
     ([originalSourceBuffer]) => {
       const cloneSourceBufferP = originalToCloneSourceBufferP.get(originalSourceBuffer);
-      cloneSourceBufferP!.then(cloneSourceBuffer => cloneMS.removeSourceBuffer(cloneSourceBuffer));
+      cloneSourceBufferP!.then(cloneSourceBuffer => {
+        VERBOSE_LOGGING &&
+          console.debug(
+            "⬅️ executing on clone",
+            originalMS,
+            "removeSourceBuffer",
+            originalSourceBuffer,
+            cloneSourceBuffer,
+          );
+
+        cloneMS.removeSourceBuffer(cloneSourceBuffer)
+      });
     }
   );
   // TBH I'm not sure if it's of any use to replicate `endOfStream`.
@@ -519,13 +567,23 @@ function makeMaintainedMediaSourceClone(
     // TODO fix: this throws if one or more of the `SourceBuffer`s are `.updating === true`.
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/endOfStream#exceptions
     // M8, how am I supposed to track that?
-    cloneMSOpenP.then(cloneMS => cloneMS.endOfStream(...params));
+    cloneMSOpenP.then(cloneMS => {
+      VERBOSE_LOGGING &&
+        console.debug("⬅️ executing on clone", originalMS, "endOfStream", params);
+
+      cloneMS.endOfStream(...params)
+    });
   });
 
   startInterceptingSetters(originalMS, 'duration', MediaSource, newVal => {
     // TODO this throws if one or more of the `SourceBuffer`s are `.updating === true`.
     // And I actually encountered it in the wild.
-    cloneMSOpenP.then(cloneMS => cloneMS.duration = newVal);
+    cloneMSOpenP.then(cloneMS => {
+      VERBOSE_LOGGING &&
+        console.debug("⬅️ setting on clone", originalMS, "duration", newVal);
+
+      cloneMS.duration = newVal;
+    });
   });
 
   return cloneMS;
@@ -540,8 +598,17 @@ function makeMaintainedSourceBufferCloneWhenOpen(
   cloneMediaSourceOpenP: Promise<MediaSource>,
 ): Promise<SourceBuffer> {
   const cloneSourceBufferP = cloneMediaSourceOpenP.then(cloneMS => {
+    VERBOSE_LOGGING && console.debug('make sourceBuffer', addSourceBufferParams);
     return cloneMS.addSourceBuffer(...addSourceBufferParams);
   });
+
+  if (IS_DEV_MODE) {
+    cloneSourceBufferP.then(cloneSourceBuffer => {
+      cloneSourceBuffer.addEventListener('error', (event) => {
+        console.error('cloneSourceBuffer error event', event)
+      })
+    })
+  }
 
   // TODO perf: `stopIntercepting`.
   //
@@ -569,7 +636,16 @@ function makeMaintainedSourceBufferCloneWhenOpen(
       const cloneSourceBuffer = await cloneSourceBufferP;
       execWhenSourceBufferReady(
         cloneSourceBuffer,
-        () => (cloneSourceBuffer[methodName] as any)(...params),
+        () => {
+          VERBOSE_LOGGING &&
+            console.debug(
+              "⬅️ executing on clone",
+              originalSourceBuffer,
+              methodName,
+              params
+            );
+          (cloneSourceBuffer[methodName] as any)(...params);
+        },
       );
     });
   }
@@ -585,7 +661,16 @@ function makeMaintainedSourceBufferCloneWhenOpen(
       const cloneSourceBuffer = await cloneSourceBufferP;
       execWhenSourceBufferReady(
         cloneSourceBuffer,
-        () => (cloneSourceBuffer[propName] as any) = newVal
+        () => {
+          VERBOSE_LOGGING &&
+            console.debug(
+              "⬅️ setting on clone",
+              originalSourceBuffer,
+              propName,
+              newVal
+            );
+          (cloneSourceBuffer[propName] as any) = newVal;
+        }
       );
     });
   }
