@@ -564,7 +564,8 @@ function makeMaintainedSourceBufferCloneWhenOpen(
 }
 
 /**
- * Execute `fn` synchronously when `sourceBuffer.updating` becomes `false`.
+ * Execute `fn` when `sourceBuffer.updating` becomes `false`,
+ * or immediately if it's already `false`.
  * If this function was called several times while `sourceBuffer.updating === true` then
  * `fn`s are executed in the same order as this function was called.
  */
