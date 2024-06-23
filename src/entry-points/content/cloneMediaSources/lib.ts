@@ -767,10 +767,17 @@ function execWhenSourceBufferReady(sourceBuffer: SourceBuffer, fn: () => void): 
     onSourceBufferReadyAndQueueNotEmpty,
     { passive: true }
   );
-  // TODO fix: wait, 'updateend' is not the only event that signals the transition of
-  // `.updating` from `true` to `false`.
+  // Why 'updateend' and not 'updated' or 'update' and 'error' and 'abort'?
+  // Because 'updateend' seems to be the only event that 100% correlates
+  // with `.updating` becoming `false`.
   // https://www.w3.org/TR/media-source-2/#sourcebuffer-events
-  // So there is an error where `fn` is called in a different order than for the original
-  // sourceBuffer.
+  // Search for "updating attribute to false" and
+  // "fire an event named updateend". The former is always accompanied
+  // by the latter.
+  //
+  // Although you might ask whether it makes sense
+  // to apply queued operations
+  // if the event that caused `.updating` to become `false`
+  // is 'error' or 'abort'. IDK.
 }
 const queueMap = new WeakMap<SourceBuffer, Array<() => void>>();
