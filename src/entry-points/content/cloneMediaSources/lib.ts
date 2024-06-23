@@ -567,6 +567,8 @@ function makeMaintainedMediaSourceClone(
     // TODO fix: this throws if one or more of the `SourceBuffer`s are `.updating === true`.
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/endOfStream#exceptions
     // M8, how am I supposed to track that?
+    // Perhaps need a function like `execWhenSourceBufferReady`, but
+    // `execWhenAllSourceBuffersReady(mediaSource, fn)`
     cloneMSOpenP.then(cloneMS => {
       VERBOSE_LOGGING &&
         console.debug("⬅️ executing on clone", originalMS, "endOfStream", params);
