@@ -62,6 +62,14 @@ function sendBridgeElement(): void {
   // This is so other scripts of this (the extension's) world (not the page's world)
   // can get a reference to it as well. This does nothing to the page's world.
   (globalThis as GlobalThisWithBridgeElement)[BRIDGE_ELEMENT_ID_AND_PROP_NAME] = el;
+
+  if (IS_DEV_MODE) {
+    console.log(
+      "Bridge element appended to document and set on `globalThis`",
+      document.getElementById(BRIDGE_ELEMENT_ID_AND_PROP_NAME),
+      (globalThis as GlobalThisWithBridgeElement)[BRIDGE_ELEMENT_ID_AND_PROP_NAME],
+    );
+  }
 }
 
 export type GlobalThisWithBridgeElement = typeof globalThis & {

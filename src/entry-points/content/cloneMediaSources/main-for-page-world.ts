@@ -122,6 +122,13 @@ document.addEventListener(GET_CLONE_REQUEST_EVENT_NAME, async e_ => {
  * @see {@link sendBridgeElement}
  */
 function receiveBridgeElement(): HTMLDivElement {
+  if (IS_DEV_MODE) {
+    console.log(
+      "receiveBridgeElement",
+      document.getElementById(BRIDGE_ELEMENT_ID_AND_PROP_NAME)
+    );
+  }
+
   const el = document.getElementById(BRIDGE_ELEMENT_ID_AND_PROP_NAME) as HTMLDivElement;
   el.id = ''; // No need for it anymore.
   el.remove();
