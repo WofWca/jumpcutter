@@ -27,7 +27,13 @@ import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { onCommand as onCommandWhenReady } from './browserHotkeysListener';
 import { initIconAndBadge, updateIconAndBadge } from './iconAndBadgeUpdater';
 import { storage } from '@/settings/_storage';
-import { createWrapperListener, getSettings, settingsChanges2NewValues } from '@/settings';
+import {
+  ControllerKind_CLONING,
+  createWrapperListener,
+  getSettings,
+  settingsChanges2NewValues,
+} from "@/settings";
+import type { Settings } from '@/settings';
 import { defaultSettings } from '@/settings';
 import runRequiredMigrations from './migrations/runRequiredMigrations';
 
@@ -115,11 +121,20 @@ let mayThisOnStorageChangeEventBeCausedByPostInstallScriptP: Promise<boolean> | 
 const settingsP = postInstallStorageChangesDoneP.then(() => getSettings());
 
 const initIconAndBadgeP = settingsP.then(s => initIconAndBadge(s));
+settingsP.then(s => {
+  // FYI the script registration might already be in the desired state
+  // since the last time the background script was running.
+  updateMediaSourceCloningScriptRegistered(s);
+})
 const onStorageChanged = createWrapperListener(async changes => {
   const settings = await settingsP;
   // Yes, every time this function executes, `await settingsP` is the same
   // object, so mutations to it persist.
   Object.assign(settings, settingsChanges2NewValues(changes));
+
+  if (changes.experimentalControllerType || changes.enabled) {
+    updateMediaSourceCloningScriptRegistered(settings);
+  }
 
   await initIconAndBadgeP;
   updateIconAndBadge(settings, changes);
@@ -136,3 +151,69 @@ browserOrChrome.storage.onChanged.addListener(async (...args) => {
 
   await onStorageChanged(...args);
 });
+
+async function updateMediaSourceCloningScriptRegistered(
+  settings: Pick<Settings, "enabled" | "experimentalControllerType">
+) {
+  // TODO fix: this function is async, probably won't work well
+  // if the related setting change rapidly. Though it's rare.
+  const needsToBeRegistered =
+    settings.experimentalControllerType === ControllerKind_CLONING &&
+    settings.enabled;
+  const isRegistered =
+    (
+      await browserOrChrome.scripting.getRegisteredContentScripts({
+        ids: [cloneMediaSourcesScriptId],
+      })
+    ).length > 0;
+
+  if (isRegistered === needsToBeRegistered) {
+    if (IS_DEV_MODE) {
+      console.log(
+        `\`cloneMediaSources\` content script is already` +
+          ` ${isRegistered ? "" : "un"}registered, keeping it this way`
+      );
+    }
+
+    return;
+  }
+
+  if (needsToBeRegistered) {
+    IS_DEV_MODE &&
+      console.log("Registering `cloneMediaSources` content script");
+
+    await browserOrChrome.scripting.registerContentScripts([
+      {
+        id: cloneMediaSourcesScriptId,
+        matches: ["http://*/*", "https://*/*"],
+        js: ["content/cloneMediaSources-for-extension-world.js"],
+        runAt: "document_start",
+        persistAcrossSessions: true,
+
+        allFrames: true,
+        // Apparently there is no `match_about_blank`, but this is its
+        // replacement, although I suppose it's not exactly the same:
+        // https://developer.chrome.com/docs/extensions/reference/api/scripting#type-RegisteredContentScript
+        // > Indicates whether the script can be injected into frames
+        // > where the URL contains an unsupported scheme;
+        // > specifically: about:, data:, blob:, or filesystem:.
+        //
+        // It's going to be available in Gecko since version 128:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1853411
+        // which comes out on 2024-07-09:
+        // https://whattrainisitnow.com/calendar/
+        // But let's not mark `strict_min_version`, because the extension
+        // is still usable without this script.
+        matchOriginAsFallback: true,
+      },
+    ]);
+  } else {
+    IS_DEV_MODE &&
+      console.log("Unregistering `cloneMediaSources` content script");
+
+    await browserOrChrome.scripting.unregisterContentScripts({
+      ids: [cloneMediaSourcesScriptId],
+    });
+  }
+}
+const cloneMediaSourcesScriptId = 'cloneMediaSources';

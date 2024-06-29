@@ -32,15 +32,6 @@ sendBridgeElement();
 // TODO fix: _this_ script runs at `document_start` (see `manifest.json`), but I'm not sure whether
 // the script we inject below also runs before other scripts. Manifest V3 with its
 // `content_scripts.world` should fix it.
-//
-// TODO fix: add an option to disable the execution of this script. Because of it, now
-// in Chromium if the user has "Site access" for this extension set to "activate on click",
-// the browser will prompt the user to reload the page after they do click on it.
-// Also it slows down page load, and introduces potential side effects because it mutates
-// built-in objects.
-// `scripting.registerContentScripts()` or `contentScripts.register()` is the way.
-// Or maybe add a way to execute it on `document_idle` as well, in case the target websites work
-// ok that way.
 const scriptEl = document.createElement('script');
 scriptEl.src = browserOrChrome.runtime.getURL('content/cloneMediaSources-for-page-world.js');
 // TODO perf: consider adding `defer`, `async`, etc.
