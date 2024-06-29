@@ -117,6 +117,8 @@ const settingsP = postInstallStorageChangesDoneP.then(() => getSettings());
 const initIconAndBadgeP = settingsP.then(s => initIconAndBadge(s));
 const onStorageChanged = createWrapperListener(async changes => {
   const settings = await settingsP;
+  // Yes, every time this function executes, `await settingsP` is the same
+  // object, so mutations to it persist.
   Object.assign(settings, settingsChanges2NewValues(changes));
 
   await initIconAndBadgeP;
