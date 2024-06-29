@@ -14,10 +14,10 @@ import json
 def main():
     """
     * Switch to a new `release-x.x.x` branch
-    * Bump version in `manifest.json` (minor or patch, depending on arguments)
+    * Bump version in `manifest_base.json` (minor or patch, depending on arguments)
     * `git commit -m "chore: bump version"`
     """
-    manifest_path = 'src/manifest.json'
+    manifest_path = 'src/manifest_base.json'
     with open(manifest_path) as f:
         parsed = json.load(f)
     curr_version = parsed['version']

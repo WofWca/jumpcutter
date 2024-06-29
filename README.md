@@ -116,7 +116,7 @@ Currently you can enable this algorithm by checking the "Use the experimental al
 Need to reference specific commits perhaps,
 but I don't want to link to GitHub. -->
 We look for video elements by
-[injecting a script in all pages](./src/manifest.json#L28-L30)
+[injecting a script in all pages](./src/manifest_base.json#L16-L23)
 and simply
 [`document.getElementsByTagName('video')`](./src/entry-points/content/watchAllElements.ts#L37).
 But new video elements could get inserted

@@ -156,7 +156,8 @@ module.exports = env => {
         patterns: [
           {
             context: 'src',
-            from: 'manifest.json',
+            from: 'manifest_base.json',
+            to: 'manifest.json',
             transform: (content) => {
               const parsed = JSON.parse(content);
               injectBrowserSpecificManifestFields(parsed, env.browser)
