@@ -168,7 +168,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         });
         let telemetryTimeoutId: ReturnType<typeof setTimeout>;
         (function sendGetTelemetryAndScheduleAnother() {
-          telemetryPort.postMessage('getTelemetry');
+          telemetryPort.postMessage(IS_DEV_MODE ? 'getTelemetry' : undefined);
           telemetryTimeoutId = setTimeout(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
