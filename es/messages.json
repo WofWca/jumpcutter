@@ -284,7 +284,7 @@
 		"message": "Periodo de salto, %. Expresado como una fracción de la longitud de la gráfica. Puesta a 0 para movimientos fluidos (sin saltos)."
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕🆕 Ahora funciona en la mayoría de los sitios web!\n➖ A veces se detiene. Intenta recargar la página cuando eso pase.\n➕ Permite saltar las partes en silencio completamente en lugar de avanzarlas a una velocidad más rápida.\n➕ Sin distorsión de audio, retraso o falta de sincronización.\n➖ Podría romper la funcionalidad relacionada a reproducción en algunos sitios web, en ese caso intenta desactivando la extensión en la página de manejo de extensiones (no sólo desactivando la casilla \"Activar\").\n➖ El gráfico no mostrarán el volumen actual en las partes en silencio (en su lugar mostrará 0)."
+		"message": "➕ 🆕 ¡Ahora funciona en la mayoría de los sitios web!\n➕ Permite omitir partes silenciosas por completo en lugar de reproducirlas a un ritmo más rápido.\n➕ Sin distorsión, retraso ni desincronización del audio.\n➖ Puede interrumpir la funcionalidad relacionada con la reproducción en algunos sitios web.\n➖ El gráfico no mostrará el volumen real en las partes silenciosas (en su lugar, solo mostrará 0)."
 	},
 	"silenceSpeedTooltipRelativeNote": {
 		"message": "\nNótese que es específicado como un multiplicador de la velocidad normal, entonces por ejemplo: si la velocidad normal es 1.5 y la velocidad del silencio es 2, el valor del resultado absoluto será 3. Puedes cambiar este comportamiento en la página de las opciones."
