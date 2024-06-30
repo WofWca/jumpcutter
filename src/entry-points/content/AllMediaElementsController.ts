@@ -289,22 +289,23 @@ export default class AllMediaElementsController {
               throw new Error('Unsupported message type')
             }
           }
-          if (this.controller?.initialized && this.timeSavedTracker) {
-            assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
-            assertDev(this.activeMediaElement);
-            const elementLikelyCorsRestricted = this.activeMediaElementSourceIsCrossOrigin;
-            const telemetryMessage: TelemetryMessage = {
-              ...this.controller.telemetry,
-              ...this.timeSavedTracker.timeSavedData,
-              controllerType: (this.controller.constructor as any).controllerType,
-              elementLikelyCorsRestricted,
-              // `undefined` for performance.
-              elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
-              // TODO check if the map lookup is too slow to do it several times per second.
-              createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
-            };
-            port.postMessage(telemetryMessage);
+          if (!this.controller?.initialized || !this.timeSavedTracker) {
+            return;
           }
+          assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
+          assertDev(this.activeMediaElement);
+          const elementLikelyCorsRestricted = this.activeMediaElementSourceIsCrossOrigin;
+          const telemetryMessage: TelemetryMessage = {
+            ...this.controller.telemetry,
+            ...this.timeSavedTracker.timeSavedData,
+            controllerType: (this.controller.constructor as any).controllerType,
+            elementLikelyCorsRestricted,
+            // `undefined` for performance.
+            elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
+            // TODO check if the map lookup is too slow to do it several times per second.
+            createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
+          };
+          port.postMessage(telemetryMessage);
         };
         break;
       }

@@ -161,9 +161,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         // https://developer.chrome.com/extensions/messaging#port-lifetime
         const telemetryPort = browserOrChrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
         telemetryPort.onMessage.addListener(msg => {
-          if (msg) {
-            latestTelemetryRecord = msg as TelemetryMessage;
+          if (!msg) {
+            return;
           }
+          latestTelemetryRecord = msg as TelemetryMessage;
         });
         let telemetryTimeoutId: ReturnType<typeof setTimeout>;
         (function sendGetTelemetryAndScheduleAnother() {
