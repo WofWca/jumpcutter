@@ -405,7 +405,7 @@ export default class AllMediaElementsController {
   }
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
-  private async esnureAttachToElement(el: HTMLMediaElement) {
+  private async ensureAttachToElement(el: HTMLMediaElement) {
     if (IS_DEV_MODE) {
       if (el.readyState < HTMLMediaElement.HAVE_METADATA) {
         // We shouldn't be doing that because this probably means that the element has no source or is still loading
@@ -635,7 +635,7 @@ export default class AllMediaElementsController {
 
     const el = e.target as HTMLMediaElement;
     if (!isElementIneligibleBecauseMuted(el, this.basicSettings)) {
-      this.esnureAttachToElement(el);
+      this.ensureAttachToElement(el);
     }
   }
   // private ensureAttachToEventTargetElementIfGotUnmutedAndIsPlayingAndOmitMutedIsTrue = async (e: Event) => {
@@ -653,7 +653,7 @@ export default class AllMediaElementsController {
       await this.basicSettingsP;
       assertDev(this.basicSettings);
       if (this.basicSettings.omitMutedElements) {
-        this.esnureAttachToElement(el);
+        this.ensureAttachToElement(el);
       }
     }
   }
@@ -699,7 +699,7 @@ export default class AllMediaElementsController {
     // it, or I missed some other common cases. TODO think about it.
     for (const el of eligibleForAttachmentElements) {
       if (!el.paused) {
-        this.esnureAttachToElement(el);
+        this.ensureAttachToElement(el);
         break;
       }
     }
@@ -719,7 +719,7 @@ export default class AllMediaElementsController {
           // if it was called again with a new element.
           && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
         ) {
-          this.esnureAttachToElement(el);
+          this.ensureAttachToElement(el);
           break;
         }
       }
