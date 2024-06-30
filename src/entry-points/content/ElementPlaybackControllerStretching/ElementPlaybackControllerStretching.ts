@@ -428,7 +428,7 @@ export default class Controller {
           const messageSentAt = data[1];
           const delayS = elementSpeedSwitchedAt - messageSentAt;
           if (delayS > 0.03) {
-            console.warn(`elementSpeedSwitchedAt - messageSentAt === ${delayS}s`);
+            console.warn(`Skipped too much, or too little: delay: ${delayS}s`);
           }
         }
       }
