@@ -333,7 +333,7 @@
 		"message": "Quando o volume do atual áudio estiver abaixo desse valor, irá acelerar.\nNo gráfico, esta é a linha horizontal vermelha 🟥. A linha azul 🟦 é o volume atual, então quando a linha azul ficar abaixo da vermelha, é considerado silêncio."
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Agora funciona na maior parte dos sites!\n➖ Às vezes pára de funcionar. Tente recarregar a página quando isso acontecer.\n➕ Permite pular partes silenciosas inteiramente em vez de reproduzi-la a uma taxa mais rápida.\n➕ Sem distorção de áudio, atraso ou desync.\n➖ Pode quebrar a funcionalidade relacionada à reprodução em alguns sites. Nesse caso, tente desativar a extensão na página de gerenciamento de extensões (não apenas desmarcando \"Ativado\").\n➖ O gráfico não exibirá o volume real em partes silenciosas (ele só mostrará 0 em vez disso)."
+		"message": "➕ 🆕 Agora funciona na maior parte dos sites!\n➕ Permite pular partes silenciosas inteiramente em vez de reproduzi-la a uma taxa mais rápida.\n➕ Sem distorção de áudio, atraso ou desync.\n➖ Pode quebrar a funcionalidade relacionada à reprodução em alguns sites.\n➖ O gráfico não exibirá o volume real em partes silenciosas (ele só mostrará 0 em vez disso)."
 	},
 	"silenceSpeedTooltipRelativeNote": {
 		"message": "\nNote que é especificado como um multiplicador da velocidade sonora, por exemplo, se a velocidade sonora é 1,5 e a velocidade do silêncio é 2, o valor absoluto resultante será 3. Você pode alterar esse comportamento na página de opções."
