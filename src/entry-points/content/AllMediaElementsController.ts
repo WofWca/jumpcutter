@@ -24,7 +24,7 @@ import {
   removeOnStorageChangedListener, settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
-import { isSourceCrossOrigin } from '@/entry-points/content/helpers';
+import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
 import type ElementPlaybackControllerStretching from
   './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
@@ -283,12 +283,38 @@ export default class AllMediaElementsController {
     let listener: (msg: unknown) => void;
     switch (port.name) {
       case 'telemetry': {
+        let shouldRespondToNextRequest = true;
+        const setShouldRespondToNextRequestToTrue =
+          () => shouldRespondToNextRequest = true;
         listener = (msg: unknown) => {
           if (IS_DEV_MODE) {
             if (msg !== 'getTelemetry') {
               throw new Error('Unsupported message type')
             }
           }
+
+          if (!shouldRespondToNextRequest) {
+            // This is most usable for the initial page load where the listener
+            // would queue up a lot of messages and they would all fire
+            // almost at the same time.
+            //
+            // Actually, measuring time it takes to execute this function,
+            // It's below 1 ms (yep) 90% of the time, but it might affect
+            // performance indirectly, loading up GC and IPC.
+            //
+            // Would be ideal if the popup didn't send the messages
+            // at all if we didn't respond for a while. I tried to do that,
+            // but it's a bit of a headache to do this
+            // without degrading performance.
+            // Perhaps let's just wait until we get around to switching
+            // to "subscription"-based telemetry.
+            return;
+          }
+          shouldRespondToNextRequest = false;
+          // Whichever is faster
+          requestIdleCallbackPolyfill(setShouldRespondToNextRequestToTrue);
+          setTimeout(setShouldRespondToNextRequestToTrue, 200);
+
           if (!this.controller?.initialized || !this.timeSavedTracker) {
             return;
           }
