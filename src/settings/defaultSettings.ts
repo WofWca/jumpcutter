@@ -25,12 +25,13 @@ import { HotkeyAction } from '@/hotkeys';
 import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 
 const ElementPlaybackControllerStretchingSpecificDefaults = {
+  volumeThreshold: 0.005,
   marginBefore: 0,
   marginAfter: 0.100,
 } as const;
 
 export const defaultSettings: Readonly<Settings> = {
-  volumeThreshold:          0.005,
+  volumeThreshold: ElementPlaybackControllerStretchingSpecificDefaults.volumeThreshold,
   previousVolumeThreshold:  0.005,
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
   silenceSpeedRaw:         2.5,
@@ -59,6 +60,7 @@ export const defaultSettings: Readonly<Settings> = {
   useSeparateMarginSettingsForDifferentAlgorithms: true,
   algorithmSpecificSettings: {
     [ControllerKind.CLONING]: {
+      volumeThreshold: 0.010,
       marginBefore: 0.050,
       marginAfter: 0.030,
     },

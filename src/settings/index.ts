@@ -54,7 +54,10 @@ export interface Settings {
   // Which is a bit confusing and wasteful in terms of storage space. But not too bad.
   algorithmSpecificSettings: {
     [P in SettingsControllerKind]: {
-      [P in keyof Pick<Settings, 'marginBefore' | 'marginAfter'>]: Settings[P];
+      [P in keyof Pick<
+        Settings,
+        'volumeThreshold' | 'marginBefore' | 'marginAfter'
+      >]: Settings[P];
     };
   },
 

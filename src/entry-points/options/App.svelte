@@ -299,6 +299,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             bind:checked={settings.enableDesyncCorrection}
           />
         {/if}
+        <!-- The English `useSeparateMarginSettingsForDifferentAlgorithms`
+        no longer uses `marginBefore` and `marginAfter` substitutions,
+        but some languages still do, so we need to keep all 3 substitutions
+        until that changes. -->
         <CheckboxField
           label="🔄 {getMessage('useSeparateMarginSettingsForDifferentAlgorithms', [
             getMessage('marginBefore'),

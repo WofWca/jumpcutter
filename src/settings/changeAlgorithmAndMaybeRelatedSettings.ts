@@ -25,6 +25,7 @@ export function changeAlgorithmAndMaybeRelatedSettings(
     'algorithmSpecificSettings'
     | 'useSeparateMarginSettingsForDifferentAlgorithms'
     | 'experimentalControllerType'
+    | 'volumeThreshold'
     | 'marginBefore'
     | 'marginAfter'
   >,
@@ -43,6 +44,7 @@ export function changeAlgorithmAndMaybeRelatedSettings(
       algorithmSpecificSettings: {
         ...settings.algorithmSpecificSettings,
         [oldControllerType]: {
+          volumeThreshold: settings.volumeThreshold,
           marginBefore: settings.marginBefore,
           marginAfter: settings.marginAfter,
         }
