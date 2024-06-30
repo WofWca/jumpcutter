@@ -153,7 +153,7 @@
 		"message": "Prøv igjen"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Now works on most websites!\n➖ Sometimes stops working. Try to reload the page when that happens.\n➕ Tillater å hoppe over stille deler helt, istedenfor å spille dem i raskere tempo.\n➕ Ingen lydforvrengning, forsinkelse, eller avsynkronisering.\n➖ May break playback-related functionality on some websites. In such a case, try disabling the extension on the extensions management page (not by just unchecking \"Enabled\").\n➖ Diagrammet vil ikke vise faktisk lydstyrke for stille deler (det vil kun vise 0 istedenfor)."
+		"message": "➕ 🆕 Now works on most websites!\n➕ Tillater å hoppe over stille deler helt, istedenfor å spille dem i raskere tempo.\n➕ Ingen lydforvrengning, forsinkelse, eller avsynkronisering.\n➖ May break playback-related functionality on some websites.\n➖ Diagrammet vil ikke vise faktisk lydstyrke for stille deler (det vil kun vise 0 istedenfor)."
 	},
 	"volumeThresholdTooltip": {
 		"message": "Hvor stille det må være før hastigheten økes.\nPå diagrammet er dette den røde 🟥 vannrette linjen. Den blå 🟦 linjen er nåværende lydstyrke, så når den blå linjen er under den rød, oppfattes dette som stillhet."
