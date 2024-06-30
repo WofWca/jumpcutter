@@ -204,7 +204,14 @@ async function updateMediaSourceCloningScriptRegistered(
         // https://whattrainisitnow.com/calendar/
         // But let's not mark `strict_min_version`, because the extension
         // is still usable without `matchOriginAsFallback`.
-        matchOriginAsFallback: true,
+        ...(
+          (
+            BUILD_DEFINITIONS.BROWSER === "gecko" &&
+            !(await doesGeckoSupportMatchOriginAsFallback())
+          )
+            ? {}
+            : { matchOriginAsFallback: true }
+        ),
 
         // TODO improvement: add `world: 'MAIN'` and load the
         // `content/cloneMediaSources-for-page-world.js` script directly.
@@ -221,3 +228,13 @@ async function updateMediaSourceCloningScriptRegistered(
   }
 }
 const cloneMediaSourcesScriptId = 'cloneMediaSources';
+
+async function doesGeckoSupportMatchOriginAsFallback(): Promise<boolean> {
+  const version = (
+    await import(
+      /* webpackExports: ['getGeckoMajorVersion']*/
+      "@/helpers"
+    )
+  ).getGeckoMajorVersion();
+  return version == undefined || version >= 128;
+}
