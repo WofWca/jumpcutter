@@ -99,7 +99,7 @@
 		"message": "Deneysel algoritmayı kullan"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Now works on most websites!\n➖ Sometimes stops working. Try to reload the page when that happens.\n➕ Sessiz bölümleri daha hızlı oynatmak yerine tamamen atlamanıza olanak tanır.\n➕ Ses bozulması, gecikme veya uyumsuzluk olmaz.\n➖ May break playback-related functionality on some websites. In such a case, try disabling the extension on the extensions management page (not by just unchecking \"Enabled\").\n➖ Grafik sessiz bölümlerdeki gerçek sesi göstermez (bunun yerine sadece 0 gösterecektir)."
+		"message": "➕ 🆕 Now works on most websites!\n➕ Sessiz bölümleri daha hızlı oynatmak yerine tamamen atlamanıza olanak tanır.\n➕ Ses bozulması, gecikme veya uyumsuzluk olmaz.\n➖ May break playback-related functionality on some websites.\n➖ Grafik sessiz bölümlerdeki gerçek sesi göstermez (bunun yerine sadece 0 gösterecektir)."
 	},
 	"mediaUnsupported": {
 		"message": "Bu medya **neredeyse** desteklenmiyor. — $consequences$.",
