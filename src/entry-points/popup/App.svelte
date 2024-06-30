@@ -167,9 +167,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         });
         let telemetryTimeoutId: ReturnType<typeof setTimeout>;
         (function sendGetTelemetryAndScheduleAnother() {
-          // TODO remove `as any` (will need to fix type definitions, "@types/firefox-webext-browser").
-          // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#type
-          telemetryPort.postMessage('getTelemetry' as any);
+          telemetryPort.postMessage('getTelemetry');
           telemetryTimeoutId = setTimeout(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
