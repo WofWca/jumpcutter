@@ -205,6 +205,10 @@ async function updateMediaSourceCloningScriptRegistered(
         // But let's not mark `strict_min_version`, because the extension
         // is still usable without this script.
         matchOriginAsFallback: true,
+
+        // TODO improvement: add `world: 'MAIN'` and load the
+        // `content/cloneMediaSources-for-page-world.js` script directly.
+        // See comments about "world" in `cloneMediaSources-for-extension-world`
       },
     ]);
   } else {
