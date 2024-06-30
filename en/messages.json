@@ -224,7 +224,7 @@
 		"message": "Enable correction of audio-video desynchronization (side effect: for the most part unnoticeable stutter every minute or so)"
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "Use separate \"$marginBeforeLabel$\" and \"$marginAfterLabel$\" for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
+		"message": "Use separate silence skipping settings for different algorithms (related to the \"$useExperimentalAlgorithmLabel$\" setting)",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
