@@ -235,10 +235,10 @@ export default class Controller {
     // well. This is purely for performance. TODO?
     if (this.isStretcherEnabled()) {
       this._lookahead = audioContext.createDelay(MAX_MARGIN_BEFORE_REAL_TIME);
-      const { default: StretcherAndPitchCorrectorNode } = await import(
+      const StretcherAndPitchCorrectorNode = (await import(
         /* webpackExports: ['default'] */
         './StretcherAndPitchCorrectorNode'
-      );
+      )).default;
       const maxSpeedToPreserveSpeech = audioContext.sampleRate / MIN_HUMAN_SPEECH_ADEQUATE_SAMPLE_RATE;
       const maxMaginStretcherDelay = MAX_MARGIN_BEFORE_REAL_TIME * (maxSpeedToPreserveSpeech / MIN_SPEED);
       this._stretcherAndPitch = new StretcherAndPitchCorrectorNode(

@@ -123,24 +123,24 @@ async function importAndCreateController<T extends ControllerKind>(
   let Controller;
   switch (kind) {
     case ControllerKind.STRETCHING: {
-      ({ default: Controller } = await import(
+      Controller = (await import(
         /* webpackExports: ['default'] */
         './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching'
-      ));
+      )).default;
       break;
     }
     case ControllerKind.CLONING: {
-      ({ default: Controller } = await import(
+      Controller = (await import(
         /* webpackExports: ['default'] */
         './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning'
-      ));
+      )).default;
       break;
     }
     case ControllerKind.ALWAYS_SOUNDED: {
-      ({ default: Controller } = await import(
+      Controller = (await import(
         /* webpackExports: ['default'] */
         './ElementPlaybackControllerAlwaysSounded'
-      ));
+      )).default;
       break;
     }
     default: assertNever(kind);
@@ -360,10 +360,12 @@ export default class AllMediaElementsController {
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
   private async _initHotkeyListener() {
-    const { keydownEventToActions, eventTargetIsInput } = await import(
+    const hotkeysModule = await import(
       /* webpackExports: ['keydownEventToActions', 'eventTargetIsInput'] */
       '@/hotkeys'
     );
+    const keydownEventToActions = hotkeysModule.keydownEventToActions;
+    const eventTargetIsInput = hotkeysModule.eventTargetIsInput;
     // TODO how about put this into './hotkeys.ts' in the form of a curried function that takes arguments that look
     // something like `getSettings: () => Settings`?
     const handleKeydown = (e: KeyboardEvent) => {
@@ -505,10 +507,10 @@ export default class AllMediaElementsController {
 
     // TODO an option to disable it.
     (async () => {
-      const { default: TimeSavedTracker } = await import(
+      const TimeSavedTracker = (await import(
         /* webpackExports: ['default'] */
         './TimeSavedTracker'
-      );
+      )).default;
       await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
       const timeSavedTracker = this.timeSavedTracker = new TimeSavedTracker(
         el,

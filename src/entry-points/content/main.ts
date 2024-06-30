@@ -25,10 +25,10 @@ import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 (async function () { // Just for top-level `await`
 
 async function importAndInit() {
-  const { default: init } = await import(
+  const init = (await import(
     /* webpackExports: ['default'] */
     './init'
-  )
+  )).default
   init();
 }
 

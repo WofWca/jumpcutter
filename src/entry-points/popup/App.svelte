@@ -193,10 +193,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     const LISTEN_TO_HOTKEYS_IN_POPUP = true;
     await settingsPromise;
     if (LISTEN_TO_HOTKEYS_IN_POPUP && settings!.enableHotkeys) {
-      const { default: createKeydownListener } = await import(
+      const createKeydownListener = (await import(
         /* webpackExports: ['default'] */
         './hotkeys'
-      );
+      )).default;
       keydownListener = createKeydownListener(
         nonSettingsActions => nonSettingsActionsPort?.postMessage(nonSettingsActions),
         () => settings,

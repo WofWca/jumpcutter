@@ -37,10 +37,10 @@ export default async function init(): Promise<void> {
 
   let allMediaElementsController: AllMediaElementsController | undefined;
   const ensureInitAllMediaElementsController = once(async function () {
-    const { default: AllMediaElementsController } = await import(
+    const AllMediaElementsController = (await import(
       /* webpackExports: ['default'] */
       './AllMediaElementsController'
-    )
+    )).default
     allMediaElementsController = new AllMediaElementsController();
     return allMediaElementsController;
   });
