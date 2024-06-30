@@ -203,7 +203,7 @@ async function updateMediaSourceCloningScriptRegistered(
         // which comes out on 2024-07-09:
         // https://whattrainisitnow.com/calendar/
         // But let's not mark `strict_min_version`, because the extension
-        // is still usable without this script.
+        // is still usable without `matchOriginAsFallback`.
         matchOriginAsFallback: true,
 
         // TODO improvement: add `world: 'MAIN'` and load the
