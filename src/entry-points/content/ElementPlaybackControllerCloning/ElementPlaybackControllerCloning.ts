@@ -820,7 +820,7 @@ export default class Controller {
       stretcherDelay: 0,
       // TODO also log `interruptLastScheduledStretch` calls.
       // lastScheduledStretch: this._stretcherAndPitch.lastScheduledStretch,
-      lastScheduledStretchInputTime: undefined,
+      // lastScheduledStretchInputTime: undefined,
     };
   }
 }
