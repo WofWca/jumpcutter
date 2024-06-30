@@ -59,6 +59,9 @@ export async function getFinalCloneElement(
     const fallbackCloneElement = await getFallbackCloneElement(originalElement);
     if (fallbackCloneElement) {
       return [fallbackCloneElement, true];
+    } else {
+      IS_DEV_MODE &&
+        console.warn("Fallback element was supposed to exist, but it doesn't.");
     }
   } else {
     if (IS_DEV_MODE) {
