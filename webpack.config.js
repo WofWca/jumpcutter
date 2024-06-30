@@ -254,9 +254,13 @@ function injectBrowserSpecificManifestFields(manifest, browser) {
     manifest.browser_specific_settings = {
       gecko: {
         id: "jump-cutter@example.com",
-        // This is due to this bug
+        // At least "91.0a1" is required due to this bug:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1517199
-        strict_min_version: "91.0a1",
+        // "109" is required due to Manifest V3 migration:
+        // https://extensionworkshop.com/documentation/publish/distribute-manifest-versions/
+        // Also there are some issues on versions < "128",
+        // see comments in `background/main.ts`.
+        strict_min_version: "109.0",
       },
     };
   }
