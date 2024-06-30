@@ -385,7 +385,7 @@
 		"message": "Promijeni kriterije pretrage …"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Sada radi na većini web stranica!\n➖ Ponekad prestane raditi. Pokušaj ponovo učitati stranicu kada se to dogodi.\n➕ Omogućuje potpuno preskakanje tihih dijelova umjesto reprodukcije tih dijelova većom brzinom.\n➕ Bez distorzije zvuka, kašnjenja ili desinkronizacije.\n➖ Može pokvariti funkciju reprodukcije na nekim web stranicama. U tom slučaju pokušajte deaktivirati proširenje na stranici za upravljanje proširenjima (ne samo poništavanjem oznake „Aktivirano”).\n➖ Grafikon neće prikazati stvarnu glasnoću u tihim dijelovima (umjesto toga će prikazati samo 0)."
+		"message": "➕ 🆕 Sada radi na većini web stranica!\n➕ Omogućuje potpuno preskakanje tihih dijelova umjesto reprodukcije tih dijelova većom brzinom.\n➕ Bez distorzije zvuka, kašnjenja ili desinkronizacije.\n➖ Može pokvariti funkciju reprodukcije na nekim web stranicama.\n➖ Grafikon neće prikazati stvarnu glasnoću u tihim dijelovima (umjesto toga će prikazati samo 0)."
 	},
 	"general": {
 		"message": "Opće"
