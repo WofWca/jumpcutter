@@ -61,6 +61,10 @@ function sendBridgeElement(): void {
 
   // This is so other scripts of this (the extension's) world (not the page's world)
   // can get a reference to it as well. This does nothing to the page's world.
+  //
+  // FYI some code assumes that if the element is not present on `globalThis`,
+  // then this script did not execute at all, which (probably) means that
+  // `registerContentScripts` was called _after_ the page has already loaded.
   (globalThis as GlobalThisWithBridgeElement)[BRIDGE_ELEMENT_ID_AND_PROP_NAME] = el;
 
   if (IS_DEV_MODE) {
@@ -73,5 +77,5 @@ function sendBridgeElement(): void {
 }
 
 export type GlobalThisWithBridgeElement = typeof globalThis & {
-  [BRIDGE_ELEMENT_ID_AND_PROP_NAME]: HTMLDivElement;
+  [BRIDGE_ELEMENT_ID_AND_PROP_NAME]?: HTMLDivElement;
 };

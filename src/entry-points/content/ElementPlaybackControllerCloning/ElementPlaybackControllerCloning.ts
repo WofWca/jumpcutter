@@ -61,6 +61,7 @@ export type ControllerSettings =
   };
 
 export interface TelemetryRecord {
+  clonePlaybackError?: true,
   unixTime: Time,
   intrinsicTime: MediaTime,
   elementPlaybackActive: boolean,
@@ -180,6 +181,7 @@ export default class Controller {
   };
 
   lookahead?: Lookahead;
+  clonePlaybackError = false;
 
   // To be (optionally) assigned by an outside script.
   public timeSavedTracker?: TimeSavedTracker;
@@ -206,7 +208,8 @@ export default class Controller {
     const lookahead = this.lookahead = new Lookahead(
       element,
       this.settings,
-      this.getMediaSourceCloneElement
+      this.getMediaSourceCloneElement,
+      () => this.clonePlaybackError = true
     );
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
@@ -693,7 +696,8 @@ export default class Controller {
     const lookahead = this.lookahead = new Lookahead(
       this.element,
       this.settings,
-      this.getMediaSourceCloneElement
+      this.getMediaSourceCloneElement,
+      () => this.clonePlaybackError = true,
     );
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
@@ -807,6 +811,7 @@ export default class Controller {
     assertDev(this.isInitialized());
     // TODO that's a lot of 0s, can we do something about it?
     return {
+      clonePlaybackError: this.clonePlaybackError ? true : undefined,
       unixTime: Date.now() / 1000,
       intrinsicTime: this.element.currentTime,
       elementPlaybackActive: isPlaybackActive(this.element),

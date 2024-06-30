@@ -34,6 +34,19 @@ export async function getMediaSourceCloneElement(
   originalEl: HTMLMediaElement
 ): Promise<HTMLAudioElement | undefined> {
 return new Promise(r_ => {
+  if (!bridgeElement) {
+    // This (probably) means that the `cloneMediaSources` script
+    // did not execute, which can happen if `registerContentScripts` was called
+    // after the page has loaded, which means a page reload is needed.
+    // Let's still handle this graciously.
+    IS_DEV_MODE &&
+      console.warn(
+        'No bridge element. Did the `cloneMediaSources` script not execute?'
+      );
+    r_(undefined);
+    return;
+  }
+
   // `Math.random()` is good enough to avoid collisions, since events are handled within
   // a couple of event cycles.
   const requestId = Math.random();

@@ -33,7 +33,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
-  import { getMessage } from '@/helpers';
+  import { assertDev, getMessage } from '@/helpers';
 
   // See ./popup.css. Would be cool to do this at build-time
   if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
@@ -682,6 +682,43 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     >
     <span>🧪⚠️ {getMessage('useExperimentalAlgorithm')}</span>
   </label>
+  {#if latestTelemetryRecord?.clonePlaybackError}
+    <p>
+      <!-- This usually happens when the user has activated the experimental
+      algoruthm _after_ the page has loaded, so we couldn't intercept
+      and clone the original `MediaSource` in `cloneMediaSources`,
+      which can be fixed by a page reload.
+      If an error is caused by something else, a page reload might also help,
+      (but I haven't seen this happen, at least on YouTube).
+      -->
+      <!-- Maybe we should just switch back
+      to the stretching algorithm when this happens
+      instead of bothering the user with warnings?? -->
+      <!-- FYI "failed to analyze loudness" is confusing because
+      we actually do show the current loudness,
+      because we analyze the original element in parallel. -->
+      <!-- <span>⚠️</span> -->
+      <!-- <span>{getMessage('contentScriptFail')}</span><br> -->
+      <span>Reload the page to restart loudness analysis</span>
+      <!-- TODO improvement: i18n -->
+      <button
+        type="button"
+        on:click={(e) => {
+          tabPromise.then(tab => {
+            // Keep in mind that the currently actuve tab and the tab
+            // that we're currently connected to might not be the same tab,
+            // e.g. if this popup is open in a separate tab.
+            assertDev(tab.id)
+            browserOrChrome.tabs.reload(tab.id);
+          })
+          const thisButton = e.target;
+          assertDev(thisButton instanceof HTMLButtonElement)
+          thisButton.disabled = true;
+          setTimeout(() => thisButton.disabled = false, 5000);
+        }}
+      >🔄 Reload<!--  the page --></button>
+    </p>
+  {/if}
   <!-- TODO DRY `VolumeThreshold`? Like `'V' + 'olumeThreshold'`? Same for other inputs. -->
   <RangeSlider
     label="🔉 {getMessage('volumeThreshold')}"

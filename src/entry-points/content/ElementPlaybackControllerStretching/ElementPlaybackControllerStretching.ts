@@ -80,6 +80,7 @@ export type ControllerSettings =
   };
 
 export interface TelemetryRecord {
+  clonePlaybackError?: never,
   unixTime: UnixTime,
   intrinsicTime: MediaTime,
   elementPlaybackActive: boolean,

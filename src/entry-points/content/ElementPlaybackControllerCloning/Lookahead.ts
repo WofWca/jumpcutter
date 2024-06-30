@@ -92,7 +92,8 @@ export default class Lookahead {
     private settings: LookaheadSettings,
     // public onNewSilenceRange: (start: Time, end: Time) => void,
     private readonly getFallbackCloneElement:
-      undefined | ((originalElement: HTMLMediaElement) => Promise<HTMLAudioElement | undefined>)
+      undefined | ((originalElement: HTMLMediaElement) => Promise<HTMLAudioElement | undefined>),
+    private onClonePlaybackError: () => void,
   ) {}
   private async _init(): Promise<void> {
     const originalElement = this.originalElement;
@@ -109,6 +110,14 @@ export default class Lookahead {
      */
     const isCloneElementAndAudioContextReusable = isFallbackElement;
     this.clone = clone;
+
+    if (clone.error) {
+      this.onClonePlaybackError();
+    }
+    clone.addEventListener("error", this.onClonePlaybackError, { passive: true });
+    this._destroyedPromise.then(() =>
+      clone.removeEventListener("error", this.onClonePlaybackError)
+    );
 
     if (isCloneElementAndAudioContextReusable) {
       this._destroyedPromise.then(() => {
