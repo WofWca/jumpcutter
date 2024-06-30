@@ -245,7 +245,7 @@
 		"message": "Essayer quand même"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Fonctionne désormais sur la majorité des sites\n➖ Cesse parfois de fonctionner. Recharger la page lorsque cela se produit.\n➕ Autoriser le saut de morceaux silencieux au lieu de les lire à une vitesse supérieure.\n➕ Pas de retard, de délai ou de désynchronisation.\n➖ Peut perturber la lecture sur certains sites. Dans ce cas, il est recommandé de désactiver Jump Cutter sur la page de gestion d'extensions du navigateur.\n➖ Le graphique n'affichera pas le volume réel sur les morceaux silencieux (il indiquera simplement 0)."
+		"message": "➕ 🆕 Fonctionne désormais sur la majorité des sites\n➕ Autoriser le saut de morceaux silencieux au lieu de les lire à une vitesse supérieure.\n➕ Pas de retard, de délai ou de désynchronisation.\n➖ Peut perturber la lecture sur certains sites.\n➖ Le graphique n'affichera pas le volume réel sur les morceaux silencieux (il indiquera simplement 0)."
 	},
 	"marginBeforeTooltip": {
 		"message": "Délai, en secondes, avant le retour à la vitesse standard si nous rencontrons une séquence sonore lors d'un silence.\nCela vise à garantir que vous puissiez entendre correctement les premières lettres prononcées.\n\n⚠️ Notez que des valeurs non nulles entraîneront une distortion audio lors du passage de la vitesse silencieuse à la vitesse sonore, et ajouteront un retard audio constant équivalent à la valeur de ce paramètre. Ces inconvénients ne s'appliquent pas si vous utilisez l'algorithme expérimental."
