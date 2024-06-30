@@ -384,6 +384,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
 
   $: controllerTypeAlwaysSounded = latestTelemetryRecord?.controllerType === ControllerKind_ALWAYS_SOUNDED;
+
+  const displayNewBadgeOnExperimentalAlgorithm = new Date() < new Date('2024-09-30');
 </script>
 
 <svelte:window
@@ -679,7 +681,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       type="checkbox"
       style="margin: 0 0.5rem 0 0;"
     >
-    <span>🧪⚠️ {getMessage('useExperimentalAlgorithm')}</span>
+    <span>🧪</span>
+    {#if displayNewBadgeOnExperimentalAlgorithm}
+      <span>🆕</span>
+    {/if}
+    <span>&nbsp;{getMessage('useExperimentalAlgorithm')}</span>
   </label>
   {#if latestTelemetryRecord?.clonePlaybackError}
     <p>
