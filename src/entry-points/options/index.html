@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!-- media-src is more lax in the manifest.json's CSP,
+  it allows it for local-media-player. Here we don't need it. -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="media-src 'none';"
+  />
+
   <script defer src="main.js"></script>
   <meta charset="UTF-8">
   <!-- In Chromium for `manifest.json.options.options_ui.chrome_style = false` default dark styles are pretty bad,

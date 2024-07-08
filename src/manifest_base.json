@@ -1,10 +1,10 @@
 {
   "name": "Jump Cutter",
-  "version": "1.27.1",
+  "version": "1.27.2",
   "description": "__MSG_extensionDescription__",
   "permissions": ["storage", "scripting"],
   "content_security_policy": {
-    "extension_pages": "default-src 'none'; script-src 'self'; img-src 'self'; style-src 'unsafe-inline';"
+    "extension_pages": "default-src 'none'; script-src 'self'; img-src 'self'; style-src 'unsafe-inline'; media-src blob:"
   },
   "action": {
     "default_popup": "popup/popup.html",
