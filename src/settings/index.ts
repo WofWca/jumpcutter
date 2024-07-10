@@ -30,6 +30,10 @@ export interface Settings {
   previousVolumeThreshold: number,
 
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed' | 'absolute',
+  /**
+   * "raw" means that we need to check {@link silenceSpeedSpecificationMethod}
+   * and not simply `video.playbackRate = silenceSpeedRaw`
+   */
   silenceSpeedRaw: number,
   previousSilenceSpeedRaw: number,
 
@@ -43,12 +47,16 @@ export interface Settings {
 
   // TODO I made this purely for testing. For release we'll probably need something better.
   experimentalControllerType: SettingsControllerKind,
-  // Why do we need this? Controller algorithms are quite different and each have their advantages and disadvantages,
-  // which need to be considered when choosing settings such as margin(Before|After). For example, some people may hate
-  // audio distortion that is caused by the way marginBefore works in specifically the stretching algorithm, so they
-  // may want to set it to 0 for that algorithm specifically, while choosing a different value for the cloning algorithm
-  // as it is devoid of such a disadvantage.
-  // May want to replace this with a list of settings keys and rename it in the future.
+  /**
+   * Why do we need this? Controller algorithms are quite different and each have their advantages and disadvantages,
+   * which need to be considered when choosing settings such as margin(Before|After). For example, some people may hate
+   * audio distortion that is caused by the way marginBefore works in specifically the stretching algorithm, so they
+   * may want to set it to 0 for that algorithm specifically, while choosing a different value for the cloning algorithm
+   * as it is devoid of such a disadvantage.
+   *
+   * May want to replace this with a list of settings keys and rename it in the future.
+   * Because we also already added `volumeThreshold` to the list.
+   */
   useSeparateMarginSettingsForDifferentAlgorithms: boolean,
   // Settings for the currently active algorithm are not synced (just in case you decided to use them).
   // Which is a bit confusing and wasteful in terms of storage space. But not too bad.
@@ -63,11 +71,13 @@ export interface Settings {
 
   applyTo: 'videoOnly' | 'audioOnly' | 'both',
 
-  // This is to solve the following issues:
-  // * A lot of websites (Instagram, Twitter) auto-play their media, but have them initially muted. Attaching to them
-  // makes them play at silenceSpeed, which is quite annoying.
-  // * Some media elements are not even supposed to play audio (like some fancy backgrounds on some fancy designer's
-  // website).
+  /**
+   * This is to solve the following issues:
+   * * A lot of websites (Instagram, Twitter) auto-play their media, but have them initially muted. Attaching to them
+   * makes them play at silenceSpeed, which is quite annoying.
+   * * Some media elements are not even supposed to play audio (like some fancy backgrounds on some fancy designer's
+   * website).
+   */
   omitMutedElements: boolean,
 
   /**
@@ -79,18 +89,22 @@ export interface Settings {
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
 
-  // In case input controls and hotkeys are intersecting in popup.
-  // kind of looks like a half-assed solution, no? TODO.
+  /**
+   * In case input controls and hotkeys are intersecting in popup.
+   * kind of looks like a half-assed solution, no? TODO.
+   */
   popupDisableHotkeysWhileInputFocused: boolean,
-  // This comes in especially handy when `popupDisableHotkeysWhileInputFocused === true`.
-  // TODO but when `popupDisableHotkeysWhileInputFocused === true && popupAutofocusEnabledInput === true` it is
-  // practically impossible to use hotkeys in the popup as removing focus is done with "Esc", which also closes the
-  // popup. These options are considered "Advanced" so I think we can remove then without worrying too much.
+  /**
+   * This comes in especially handy when `popupDisableHotkeysWhileInputFocused === true`.
+   * TODO but when `popupDisableHotkeysWhileInputFocused === true && popupAutofocusEnabledInput === true` it is
+   * practically impossible to use hotkeys in the popup as removing focus is done with "Esc", which also closes the
+   * popup. These options are considered "Advanced" so I think we can remove then without worrying too much.
+   */
   popupAutofocusEnabledInput: boolean,
   popupChartWidthPx: number,
   popupChartHeightPx: number,
   popupChartLengthInSeconds: number,
-  // Expressed as a percentage.
+  /** Expressed as a percentage. */
   popupChartJumpPeriod: number,
   popupChartSpeed: 'realTime' | 'intrinsicTime' | 'soundedSpeedTime', // TODO add 'intrinsicTimeRelativeToSounded'
   popupAlwaysShowOpenLocalFileLink: boolean,
@@ -115,16 +129,18 @@ export interface Settings {
   popupMarginAfterMax: number,
   popupMarginAfterStep: number,
 
-  // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys. TODO use
-  // `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
+  // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys.
+  // TODO refactor use `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
   popupSpecificHotkeys: HotkeyBinding[],
 
   timeSavedAveragingMethod: 'all-time' | 'exponential',
-  // This may not be the most accurate name for an exponential averaging window. TODO?
+  // This may not be the most accurate name for an exponential averaging window. TODO refactor?
   timeSavedAveragingWindowLength: number,
-  // When the averaging window is an exponential window, how much weight does the interval of length
-  // `timeSavedAveragingWindowLength` has to possess (compared to the resulting average value) (so data older than
-  // `timeSavedAveragingWindowLength` has weight of as little as `1 - <this value>`).
+  /**
+   * When the averaging window is an exponential window, how much weight does the interval of length
+   * `timeSavedAveragingWindowLength` has to possess (compared to the resulting average value) (so data older than
+   * `timeSavedAveragingWindowLength` has weight of as little as `1 - <this value>`).
+   */
   timeSavedExponentialAveragingLatestDataWeight: number,
 
   // TODO should we add other options for this setting?
