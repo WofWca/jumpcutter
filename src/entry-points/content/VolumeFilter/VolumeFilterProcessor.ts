@@ -115,6 +115,11 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
 
     if (IS_DEV_MODE) {
       if (numSamples !== SAMPLES_PER_QUANTUM) {
+        // Yep, this can happen. TODO fix.
+        // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process
+        // > However, plans are already in place to revise the specification
+        // > to allow the size of the audio blocks to be changed
+        // > depending on circumstances
         throw new Error('Splish-splash. Your assumptions about quantum length are trash');
       }
     }
