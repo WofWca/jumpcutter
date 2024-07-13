@@ -47,7 +47,7 @@ export * from './assertDev';
 export * from './assertNever';
 export * from './filterOutUnchangedValues';
 export * from './speedName';
-export * from './getGeckoMajorVersion';
+export * from './getBrowserMajorVersion';
 export * from './maxPlaybackRate';
 export * from './getGeckoLikelyMaxNonMutedPlaybackRate';
 export * from './getMessage';
