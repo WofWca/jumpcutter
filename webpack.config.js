@@ -39,6 +39,9 @@ module.exports = env => {
   const definePlugin = new webpack.DefinePlugin({
     'IS_DEV_MODE': JSON.stringify(process.env.NODE_ENV !== 'production'),
     'BUILD_DEFINITIONS.BROWSER': JSON.stringify(env.browser),
+    // The bug is fixed in Chromium 128,
+    // but let's support older versions for a while.
+    // https://issues.chromium.org/issues/40190553#comment20
     'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG': JSON.stringify(env.browser === 'chromium'),
     'BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT':
       JSON.stringify(env.browser !== 'chromium'),

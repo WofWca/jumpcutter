@@ -45,6 +45,7 @@ import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
 } from '../playbackRateChangeTracking';
+import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -382,13 +383,17 @@ export default class Controller {
           elementSpeedSwitchedAt = this._setSpeedAndLog(SpeedName.SILENCE);
           this._stretcherAndPitch?.onSilenceStart(elementSpeedSwitchedAt);
 
-          if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
+          if (browserHasAudioDesyncBug && this.settings.enableDesyncCorrection) {
             // A workaround for
             // https://bugs.chromium.org/p/chromium/issues/detail?id=1231093
+            // https://issues.chromium.org/issues/40190553
             // (or https://github.com/vantezzen/skip-silence/issues/28).
             // Idea: https://github.com/vantezzen/skip-silence/issues/28#issuecomment-714317921
-            // TODO remove it when/if it's fixed in Chromium. Or make the period adjustable.
-            // Or keep for older browsers (and disable for newer)?
+            // TODO remove it after some time, this has been fixed in Chromium 128.
+            // When removing, don't forget to:
+            // - Remove the settings key from storage.
+            // - Remove the translation string.
+            //
             // Gecko doesn't have this problem (anymore?). Maybe thanks to this
             // https://bugzilla.mozilla.org/show_bug.cgi?id=1712595
             // It actually doesn't get noticeably out of sync for about 50 switches, but upon correction there is a

@@ -40,6 +40,7 @@ import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
 } from '../playbackRateChangeTracking';
+import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 
 type Time = AnyTime;
 
@@ -529,7 +530,7 @@ export default class Controller {
     let canSaveTimeBySpeedingUp_: number =
       realTimeLeftUntilDestinationAtNormalSpeed -
       realTimeLeftUntilDestinationAtSilenceSpeed;
-    if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
+    if (browserHasAudioDesyncBug && this.settings.enableDesyncCorrection) {
       // Due to high `expectedSeekDuration` it may not be woth speeding up because each speedup increases desync.
       // TODO refactor: yes, one speedup actually takes 2 speed switches, so it should be 2 times
       // bigger, but `DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES` is actually 2x bigger than
@@ -544,7 +545,7 @@ export default class Controller {
     const canSaveTimeBySpeedingUp = canSaveTimeBySpeedingUp_;
 
     const needForceSeekForDesyncCorrection = () => {
-      if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG && this.settings.enableDesyncCorrection) {
+      if (browserHasAudioDesyncBug && this.settings.enableDesyncCorrection) {
         // Desync correction is crucial for ElementPlaybackControllerCloning because
         // otherwise we'll start skipping at incorrect time. Apparently it's audio that
         // gets out of sync with `el.currentTime`, not video.

@@ -86,9 +86,6 @@ class MediaElementPlaybackStopwatch {
     if (isPlaybackActive(el)) {
       this._stopwatch.resume();
     }
-    // TODO how about also take desync correction (`settings.enableDesyncCorrection`) into account
-    // (as it takes time to perform a seek)? How to detect it? When we've got a `currentTime` difference of less
-    // than some amount of seconds.
     const removePlaybackStopListener = addPlaybackStopListener(el, () => this._stopwatch.pause());
     const removePlaybackResumeListener = addPlaybackResumeListener(el, () => this._stopwatch.resume());
 
@@ -245,8 +242,6 @@ export default class TimeSavedTracker {
     this._wouldHaveLastedIfSpeedWasSounded = wouldHaveLastedIfSpeedWasSounded;
     this._wouldHaveLastedIfSpeedWasIntrinsic = wouldHaveLastedIfSpeedWasIntrinsic;
   }
-  // TODO It would also be useful in `ElementPlaybackControllerStretching` to calculate how much
-  // time has been lost due to desync correction.
   // We currently accept `seekDurationRealTime` as an argument, but how about we just subtract ALL seeks' durations
   // from time saved, and not just the ones' that were initiated by
   // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...

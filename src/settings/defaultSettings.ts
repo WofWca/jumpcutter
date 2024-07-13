@@ -23,6 +23,7 @@ import type { Settings } from './';
 import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
 import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
+import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 
 const ElementPlaybackControllerStretchingSpecificDefaults = {
   volumeThreshold: 0.005,
@@ -243,11 +244,7 @@ export const defaultSettings: Readonly<Settings> = {
 
   badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
 
-  enableDesyncCorrection: BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG
-    // 2025-08-01. In case I get hit by a bus. I sure hope they'll fix it by that time.
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=1231093
-    ? Date.now() < 1754006400000
-    : false,
+  enableDesyncCorrection: browserHasAudioDesyncBug,
 
   onPlaybackRateChangeFromOtherScripts: 'updateSoundedSpeed',
 };

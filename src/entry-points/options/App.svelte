@@ -31,6 +31,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant
   } from '@/entry-points/content/TimeSavedTracker';
   import isEqual from 'lodash/isEqual';
+  import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 
   let unsaved = false;
   let formValid = true;
@@ -289,11 +290,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             {/each}
           </select>
         </InputFieldBase>
-        {#if BUILD_DEFINITIONS.BROWSER_MAY_HAVE_AUDIO_DESYNC_BUG}
-          <!-- TODO should we state that the desync problem is not present in Gecko, for the people who are using the
-          both versions? -->
-          <!-- TODO I'm afraid the part in brackets may make users think that disabling this will make all the bad things
-          about the extension go away. -->
+        {#if browserHasAudioDesyncBug}
+          <!-- When `browserHasAudioDesyncBug === false`, the value
+          of this setting has no effect, so there is no point in showing it -->
           <CheckboxField
             label="👫 {getMessage('enableDesyncCorrection')}"
             bind:checked={settings.enableDesyncCorrection}
