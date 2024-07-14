@@ -203,7 +203,7 @@
 		"message": "Aktiviraj ispravljanje audio-video desinkronizacije (nuspojava: uglavnom neprimjetna nepravilnost otprilike svake minute)"
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "Koristi zasebno „$marginBeforeLabel$” i „$marginAfterLabel$” za različite algoritme (povezano s postavkom „$useExperimentalAlgorithmLabel$”)",
+		"message": "Koristi zasebne postavke preskakanja za različite algoritme (povezano s postavkom „$useExperimentalAlgorithmLabel$”)",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
@@ -385,7 +385,7 @@
 		"message": "Promijeni kriterije pretrage …"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Sada radi na većini web stranica!\n➕ Omogućuje potpuno preskakanje tihih dijelova umjesto reprodukcije tih dijelova većom brzinom.\n➕ Bez distorzije zvuka, kašnjenja ili desinkronizacije.\n➖ Može pokvariti funkciju reprodukcije na nekim web stranicama.\n➖ Grafikon neće prikazati stvarnu glasnoću u tihim dijelovima (umjesto toga će prikazati samo 0)."
+		"message": "➕ 🆕 Sada radi na većini web stranica!\n➕ Omogućuje potpuno preskakanje tihih dijelova umjesto reprodukcije tih dijelova većom brzinom.\n➕ Bez distorzije zvuka ili kašnjenja.\n➖ Može pokvariti funkciju reprodukcije na nekim web stranicama.\n➖ Grafikon neće prikazati stvarnu glasnoću u tihim dijelovima (umjesto toga će prikazati samo 0)."
 	},
 	"general": {
 		"message": "Opće"
