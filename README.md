@@ -123,6 +123,113 @@ But new video elements could get inserted
 _after_ the page has already loaded,
 so we [watch for new elements with a `MutationObserver`](./src/entry-points/content/watchAllElements.ts#L90).
 
+<details><summary>High-level architecture chart</summary>
+
+If below you see a block of text instead of a chart,
+go [here](https://mermaid.ink/img/pako:eNrNWG1vm0gQ_isrTqlaKTEs7_jDSVES6Sr1JapzinT16bosszYNsGhZmqZx_nsXsI3BsbGvul5tOYFhdmb2mZmHgUeN8gi0sTYTJJ9Ps5OT-gDdXE6zaYbU5-QE3by_fI9IFKEkzu4KNJcyL8a6noJISRyNPhcjLmZ68ZBJ8lVnCb-ncyLkaC7T5Lc4kyAIlTHPVhbviaTz8yS5SiCFTBYfp1pf1ChWn4Rz5ZJxgVKIYoJgS4NnSM4B5WQGU-3vRk6TmN5tOUJTbRX7LJbzMhxRnuq3nN1Son8u05yWUkWrhwkPdT8wiBmaTmD7zAoYdhyLhgFhoeFSm1Js0CAyCQ70QlBdWRcPZzlXuy10ytWeM6n33Y9U1NoKBCV_W21odfFCLRI8SUAoOHZfbLdd7ZkLOodCCiK5OO1tfreNo2CwbUaiEAe-yULwosg0qGt7NiYQgOfYIQlMFxu2uRuG3YF0ANlK1tnZ74upxrN3cN9Z_3I0Gq2q4NVUW6AhtPYgUfngIp7FGUnQHzdv32wqLhCdc15Aq__YCNokkDwXPBcxkRtCutZ_WiakZ2bI7fLgOiEPIaF37cKLhGdxNkMvdqtMpAAFpNKaZhstPGRyQ7Uow4YDptrgqnX2hjQ_HmCsD2CB8qXuhw6-nC2LvwGwvdBHstcRg7Ae0xcWYwbGFvYjqkjBNjwgLGCKGPzIsiJG1NcIHQt298VQOIMKnfZ5o3iSzIFECun1cQtNhWSBKjM1dlRZgBWXbnAKr_m2ptsiTiCjgATJZlD0oFx7OAqzwPeBWgYOmQkuVZC5lFqmzzyL2NjzmOcYNsOAfwCzdWAdcAYzrxoSLdDOlkQCGIgKjgXqgdsiUdvoorY4uO-oAFXjlRCWS24VnBOSwkTQxvRWUHUShwI6aE97vW_mfX-Yx9QCBBFhDJtm9XMt4hgsxNQm2AA7xBb1WIQDg7IfqIW9wXbqo0ayBmfCS0GhGkk-bQnbPqmHGgq5ukuRJEHPK5EsQnOeREqncbCbqD712mvL9VHQOiFlClzHMlyXOoTazHVtMPwgDLCLsU8YWB6BPbfsLf96Eof7Eavvaf-mRBczkBuGNtO1QM_koDExafrsEiRQNfxglbCeqEW7lHESf1Mh3kKIzsso5uj8-nWH9aJ60Yrzetno-zquzhXBWY5hEFDtFgQ28UNwwlCVd1QRn-GDHzjM3lPnPff982vBFS4FX01Tz3BAw_ZbySEVFIut7T0PcGOpBW3y-s3Vu4urf67eXaIX2-LJzfmHGwRfuqP6vYILyThVMytJ8-WFTnmspxDIlsUyPMJ0R54jppiNhcO3ilb542Em_7dxpo3hV5lo2ogO0ekQTa8OzZ_Y6Oav3-iH1MDAGPA8C5jPo_9fssBx_V3zw-Y7inqYVage8dBz2HNUs2e5sr__ebPxfc3zMleVWv9vN_7yz9enqH438qpXebXiT3ouzytf-nmej4ovkCgm0g55TO4gUIernWrLN0DaWHusbEw1RWSpMjhWhxEwUiaysv6kVEkp-eQho9pYihJONcHL2VwbM5IU6qzMI8WJlzFRnJ2uVHKS_cV5ulZS59r4Ufuqjc-cAI8C9cf1bN-wXd8_1R4qsWMqsWl6hmN4Pjadp1PtW20Cj3wHO2r4MbFl2b5tPX0HOWuO6Q?type=png).
+
+```mermaid
+graph
+%%graph TD
+
+    %% TODO add links https://mermaid.js.org/syntax/flowchart.html#interaction
+
+    watchAllElements["watchAllElements
+        looks for media elements
+        on the page"]
+    click watchAllElements "https://github.com/WofWca/jumpcutter/blob/890a2b25948f39f1553cb9afb06c4cc10c9d2a19/src/entry-points/content/watchAllElements.ts"
+
+    AllMediaElementsController["AllMediaElementsController
+        the orchestrator,"]
+    click AllMediaElementsController "https://github.com/WofWca/jumpcutter/blob/44fadb1982fbe7dd20c64741ae9e754ba9261042/src/entry-points/content/AllMediaElementsController.ts"
+
+    watchAllElements -->|"onNewMediaElements(...elements)"| AllMediaElementsController
+    AllMediaElementsController -->|original HTMLMediaElement| chooseController{choose
+        appropriate
+        controller}
+    chooseController -->|original HTMLMediaElement| ElementPlaybackControllerCloning & ElementPlaybackControllerStretching
+
+
+    %% ElementPlaybackControllerCloning
+
+    %% subgraph "ElementPlaybackControllerCloning"
+
+    ElementPlaybackControllerCloning["ElementPlaybackControllerCloning
+        controls playbackRate
+        of the original
+        HTMLMediaElement"]
+    click ElementPlaybackControllerCloning "https://github.com/WofWca/jumpcutter/blob/3ff011318dc9af407eaf9f4cc8d33dfafaf0b53e/src/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning.ts"
+
+    Lookahead["Lookahead
+        plays back the clone element
+        to look for silence ranges"]
+    click Lookahead "https://github.com/WofWca/jumpcutter/blob/988ec301bf2e6c07e6cc328f73a4177f7504f1e1/src/entry-points/content/ElementPlaybackControllerCloning/Lookahead.ts"
+
+    ElementPlaybackControllerCloning --> | original HTMLMediaElement reference| Lookahead
+    Lookahead --> |silence ranges| ElementPlaybackControllerCloning
+
+    createCloneElementWithSameSrc --> |HTMLMediaElement clone| Lookahead
+    Lookahead --> |original HTMLMediaElement reference| createCloneElementWithSameSrc
+    click createCloneElementWithSameSrc "https://github.com/WofWca/jumpcutter/blob/e9daff122f12263a50fb1c4a10e4b13c7fd190cf/src/entry-points/content/ElementPlaybackControllerCloning/createCloneElementWithSameSrc.ts"
+
+    cloneMediaSources["`cloneMediaSources
+        intercepts all MediaSources
+        and holds a clone
+        HTMLMediaElement`"]
+    click cloneMediaSources "https://github.com/WofWca/jumpcutter/blob/5bcfdaf53066c5ac4f664e089b916118afe37ae2/src/entry-points/content/cloneMediaSources/lib.ts"
+
+    cloneMediaSources -->|HTMLMediaElement clone| Lookahead
+    Lookahead -->|getMediaSourceCloneElement| cloneMediaSources
+
+    SilenceDetector1["SilenceDetector
+        utilizes Web Audio API
+        to detect silence"]
+    click SilenceDetector1 "https://github.com/WofWca/jumpcutter/blob/e3283500aeefe994a8be5bb7fdd8f7308e895f4f/src/entry-points/content/SilenceDetector/SilenceDetectorProcessor.ts"
+    Lookahead --> |clone HTMLMediaElement audio| SilenceDetector1
+    SilenceDetector1 --> |
+        SILENCE_END &
+        SILENCE_START events
+        with timestamps
+    | Lookahead
+
+    %% end
+    
+    %% ElementPlaybackControllerStretching
+
+    %% subgraph "ElementPlaybackControllerStretching"
+
+    ElementPlaybackControllerStretching["ElementPlaybackControllerStretching
+        controls playbackRate
+        of the original
+        HTMLMediaElement"]
+    click ElementPlaybackControllerStretching "https://github.com/WofWca/jumpcutter/blob/3ff011318dc9af407eaf9f4cc8d33dfafaf0b53e/src/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching.ts"
+
+    SilenceDetector2["SilenceDetector
+        utilizes Web Audio API
+        to detect silence"]
+    click SilenceDetector2 "https://github.com/WofWca/jumpcutter/blob/e3283500aeefe994a8be5bb7fdd8f7308e895f4f/src/entry-points/content/SilenceDetector/SilenceDetectorProcessor.ts"
+    ElementPlaybackControllerStretching --> |original HTMLMediaElement audio| SilenceDetector2
+    SilenceDetector2 --> |
+        SILENCE_END &
+        SILENCE_START events
+        with timestamps
+    | ElementPlaybackControllerStretching
+
+    %% end
+
+
+    %% Telemetry
+
+    %% ElementPlaybackControllerCloning & ElementPlaybackControllerStretching --> |telemetry| AllMediaElementsController
+
+    Popup["Popup
+        (UI, chart)"]
+    click Popup "https://github.com/WofWca/jumpcutter/blob/44fadb1982fbe7dd20c64741ae9e754ba9261042/src/entry-points/popup/App.svelte"
+    AllMediaElementsController --> |telemetry| Popup
+```
+
+</details>
+
 <!-- FYI this section is linked from CONTRIBUTING.md -->
 ## Contribute
 
