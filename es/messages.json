@@ -284,7 +284,7 @@
 		"message": "Periodo de salto, %. Expresado como una fracción de la longitud de la gráfica. Puesta a 0 para movimientos fluidos (sin saltos)."
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 ¡Ahora funciona en la mayoría de los sitios web!\n➕ Permite omitir partes silenciosas por completo en lugar de reproducirlas a un ritmo más rápido.\n➕ Sin distorsión, retraso ni desincronización del audio.\n➖ Puede interrumpir la funcionalidad relacionada con la reproducción en algunos sitios web.\n➖ El gráfico no mostrará el volumen real en las partes silenciosas (en su lugar, solo mostrará 0)."
+		"message": "➕ 🆕 ¡Ahora funciona en la mayoría de las páginas web!\n➕ Permite saltarse partes mudas por completo en lugar de reproducirlas a mayor velocidad.\n➕ Sin distorsión ni retardo de audio.\n➖ Puede romper la funcionalidad relacionada con la reproducción en algunos sitios web.\n➖ El gráfico no mostrará el volumen real en las partes silenciosas (sólo mostrará 0 en su lugar)."
 	},
 	"silenceSpeedTooltipRelativeNote": {
 		"message": "\nNótese que es específicado como un multiplicador de la velocidad normal, entonces por ejemplo: si la velocidad normal es 1.5 y la velocidad del silencio es 2, el valor del resultado absoluto será 3. Puedes cambiar este comportamiento en la página de las opciones."
@@ -308,7 +308,7 @@
 		"message": "En algunos sitios webs que visito, la velocidad de reproducción cambia en una forma inesperada. No los dejes cambiar la velocidad de reproducción puesta por esta extensión."
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "Usar diferentes \"$marginBeforeLabel$\" y \"$marginAfterLabel$\" para diferentes algoritmos (relacionado a el ajuste \"$useExperimentalAlgorithmLabel$\"",
+		"message": "Utilizar ajustes de omisión de silencio independientes para los distintos algoritmos (relacionados con el ajuste «$useExperimentalAlgorithmLabel$»).",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
