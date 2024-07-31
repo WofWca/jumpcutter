@@ -574,6 +574,9 @@ export default class Lookahead {
     // we don't loose too much time not skipping them anyway.
     if (silenceDuration < 0.010) {
       if (IS_DEV_MODE) {
+        // TODO refactor: we call `pushNewSilenceRange` regardless of whether
+        // the silence was long enough to be skipped given `marginBefore` and
+        // `marginAfter`, so this warning is giving false alarms.
         if (silenceDuration <= 0) {
           if (silenceDuration < -0.050) {
             console.error('Huge negative silence duration', silenceDuration);
