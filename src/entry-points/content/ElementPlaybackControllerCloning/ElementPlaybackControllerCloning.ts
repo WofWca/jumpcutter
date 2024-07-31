@@ -494,10 +494,10 @@ export default class Controller {
     // a conflicting seek.
     // TODO perf: would be more efficient to `clearTimeout` instead. On what occasions though?
     const expectedCurrentTime = seekScheduledTo;
-    const cancelSeek =
+    const mustCancelSeek =
       Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
       || paused;
-    if (cancelSeek) {
+    if (mustCancelSeek) {
       return;
     }
 
