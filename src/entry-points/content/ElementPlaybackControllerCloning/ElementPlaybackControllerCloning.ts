@@ -449,12 +449,68 @@ export default class Controller {
     if (!maybeUpcomingSilenceRange) {
       return;
     }
-    const [silenceStart, silenceEnd] = maybeUpcomingSilenceRange;
+    const [
+      [silenceStart, silenceEnd],
+      isTheUpcomingSilenceRangeStillPending,
+    ] = maybeUpcomingSilenceRange;
+    // The fact that `isUpcomingSilenceRangeStillPending`
     // TODO improvement: would it be maybe better to also just do nothing if the next silence range
     // is too far, and `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`?
     // Would time accuracy increase?
     const seekAt = Math.max(silenceStart, currentTime);
-    const seekTo = silenceEnd;
+    const seekTo = isTheUpcomingSilenceRangeStillPending
+      // Let's not skip to the very end of the pending silence range,
+      // because it's usually the end of the buffered range,
+      // so if we do perform a seek, the video will not be able to play.
+      ? Math.max(seekAt, silenceEnd - 3)
+      : silenceEnd;
+
+    const amountToSkip = seekTo - currentTime;
+    if (isTheUpcomingSilenceRangeStillPending && amountToSkip < 3) {
+      // So that we don't skip continuously every few milliseconds.
+      return;
+      // You might ask: what's the point of skipping a range
+      // that is still pending? Isn't it better to just wait until we know
+      // where it ends and seek only once so as to not make it jarring
+      // for the user?
+      // The answer is buffering.
+      // Many webistes only buffer media only a couple of seconds
+      // ahead of current playback position. This especially applies to Twitch,
+      // where pieces of silence could get bigger than the buffer duration.
+      // So it might so happen that the original element is playing
+      // a silent range, but the clone element has played to the end of the
+      // buffered range and still hasn't found the end of this silence range,
+      // but since the original element is playing a part that is far
+      // from the end of the end of the buffered range, the website won't
+      // bother fetching more data thinking that whatever is buffered now
+      // is enough.
+      //
+      // In this case we want to advance the playback of the original element
+      // such that it buffers more data such that the clone can
+      // advance in analyzing it.
+      // In addition, it perhaps makes it more obvious that the extension
+      // didn't just stop skipping silence for no reason
+      // and is actually working.
+      // Also this gives the user an opportunity to see what is being skipped
+      // by showing them certain parts of the part that is actually silent.
+      //
+      // TODO improvement: a better approach would be to seek once
+      // if there is a lot to skip, and then simply increase the playback
+      // rate of the original element by a lot.
+      //
+      // TODO improvement: would be nice to show on the chart that
+      // despite the fact that we skipped only a part of a silent range,
+      // we actially did notice that the entire range is silent.
+      // So instead of showing `_lastSilenceSkippingSeek` on the chart,
+      // show the actual silent ranges we get from `getNextSilenceRange()`.
+      //
+      // TODO improvement: the main point of skipping a pending silent range
+      // is to make the website load (buffer) further chunks of the video,
+      // but we currently do skip pending range even when
+      // buffering is not a problem, e.g. for local videos where the clone
+      // and the original element are buffered independently.
+    }
+
     const seekInVideoTime = seekAt - currentTime;
     const seekInRealTime = seekInVideoTime / this.settings.soundedSpeed;
     // `maybeUpcomingSilenceRange` may be the same on two subsequent

@@ -475,9 +475,15 @@ export default class Lookahead {
   /**
    * Can be called before `ensureInit` has finished.
    * @returns If the `time` argument falls into a silence range, that range is returned.
-   *    `undefined` if there's no next silence range.
+   *    `undefined` if there's no next silence range. `isPending` is `true`
+   *    when the silence range's end time is not completely determined yet,
+   *    in which case the end time of the silent range says _at least_
+   *    how long the silent range is, i.e. it's actially gonna be longer
+   *    when it is determined, but we know that this range is safe to skip.
    */
-  public getNextSilenceRange(time: MediaTime): TimeRange | undefined {
+  public getNextSilenceRange(
+    time: MediaTime
+  ): [TimeRange, isPending: boolean] | undefined {
     // TODO I wrote this real quick, no edge cases considered.
     // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
     // returned value and the next return value are related (becaus `currentTime` just grows (besides seeks)).
@@ -493,12 +499,44 @@ export default class Lookahead {
         closestFutureEndI = i;
       }
     }
-    if (closestFutureEndI === undefined) {
-      // `time` is past all the ranges.
+    if (closestFutureEndI !== undefined) {
+      const nextSilenceRange: TimeRange = [
+        starts[closestFutureEndI],
+        ends[closestFutureEndI],
+      ];
+      return [nextSilenceRange, false];
+    }
+
+    {
+    // If there is a pending nextSilenceRange
+    const { silenceSince } = this;
+    const currentlySilence = silenceSince != undefined;
+    if (!currentlySilence) {
       return undefined;
     }
-    const nextSilenceRange: TimeRange = [starts[closestFutureEndI], ends[closestFutureEndI]];
-    return nextSilenceRange;
+
+    if (!this.clone) {
+      return undefined;
+    }
+
+    const pendingSilenceRangeEnd =
+      this.clone.currentTime -
+      this.settings.marginBefore -
+      // Take into account the fact that it might already be a sounded part,
+      // but we just haven't received the message from the `SilenceDetector`,
+      // so let's be conservative here.
+      0.05;
+
+    if (time < pendingSilenceRangeEnd) {
+      return [
+        [silenceSince + this.settings.marginAfter, pendingSilenceRangeEnd],
+        true,
+      ];
+    }
+    }
+
+    // `time` is past all the ranges.
+    return undefined;
   }
   // /**
   //  * @returns `TimeRange` if `forTime` falls into one, `undefined` otherwise.
