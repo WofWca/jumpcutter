@@ -474,9 +474,11 @@ export default class Lookahead {
 
   /**
    * Can be called before `ensureInit` has finished.
-   * @returns If the `time` argument falls into a silence range, that range is returned.
-   *    `undefined` if there's no next silence range. `isPending` is `true`
-   *    when the silence range's end time is not completely determined yet,
+   * @returns The closest silent range that comes after `time`, or,
+   *    if `time` falls into a silence range, that range is returned.
+   *    `undefined` if there's no next silence range.
+   *    `isPending` is `true` when the silence range's end time
+   *    is not completely determined yet,
    *    in which case the end time of the silent range says _at least_
    *    how long the silent range is, i.e. it's actially gonna be longer
    *    when it is determined, but we know that this range is safe to skip.
