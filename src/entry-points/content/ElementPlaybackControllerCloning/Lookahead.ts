@@ -69,6 +69,12 @@ const maxClonePlaybackRateWhenMediaSourceSrc = Math.min(4, maxPlaybackRate);
 export default class Lookahead {
   // Always <audio> for performance - so the browser doesn't have to decode video frames.
   clone: HTMLAudioElement | undefined;
+  /**
+   * This is `MediaTime` if the clone is currently playing a silent part,
+   * otherwise `undefined`.
+   * The time is when the loudness from `VolumeFilter` crossed
+   * the volume threshold, no margin before or margin after involved.
+   */
   silenceSince: MediaTime | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
