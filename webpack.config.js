@@ -188,7 +188,7 @@ module.exports = env => {
           // Chromium apparently refuses to display the extension in 'nb_NO', if you make 'nb'
           // the browser's UI language. Let's do this to make it satisfied, while also keeping
           // the original 'nb_NO' directory intact for forwards-compatibility.
-          // https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support
+          // https://developer.chrome.com/docs/extensions/reference/api/i18n#supported-locales
           // TODO file a bug? Or is it the way it should work?
           ...(
             env.browser === 'chromium'
