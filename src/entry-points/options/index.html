@@ -10,6 +10,10 @@
 
   <script defer src="main.js"></script>
   <meta charset="UTF-8">
+  <!-- Helps with popup size on Firefox for Android
+  https://extensionworkshop.com/documentation/develop/developing-extensions-for-firefox-for-android/#check-for-firefox-for-android-compatibility-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <!-- In Chromium for `manifest.json.options.options_ui.chrome_style = false` default dark styles are pretty bad,
   so let's keep it `false` for now, and maybe then either write them manually or just wait until they're fixed.-->
   <meta name="color-scheme" content="dark light">

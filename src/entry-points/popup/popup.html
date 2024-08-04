@@ -10,6 +10,10 @@
 
   <script defer src="main.js"></script>
   <meta charset="UTF-8">
+  <!-- Helps with popup size on Firefox for Android
+  https://extensionworkshop.com/documentation/develop/developing-extensions-for-firefox-for-android/#check-for-firefox-for-android-compatibility-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <link rel="stylesheet" href="popup.css"/>
   <!-- Who would have thogught that writing a dark theme is that easy.
   Currently this doesn't do much in Gecko, so either you try not to use `@media (prefers-color-scheme: dark)` or

@@ -265,6 +265,8 @@ function injectBrowserSpecificManifestFields(manifest, browser) {
         // see comments in `background/main.ts`.
         strict_min_version: "109.0",
       },
+      // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/browser_specific_settings#firefox_gecko_properties
+      gecko_android: {},
     };
   }
 }

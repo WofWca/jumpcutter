@@ -34,6 +34,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { assertDev, getMessage } from '@/helpers';
+  import { isMobile } from '@/helpers/isMobile';
 
   // See ./popup.css. Would be cool to do this at build-time
   if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
@@ -303,9 +304,29 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
 
   const openLocalFileLinkProps = {
-    href: browserOrChrome.runtime.getURL('local-file-player/index.html'),
-    target: '_new',
-  };
+    href: !isMobile
+      ? browserOrChrome.runtime.getURL('local-file-player/index.html')
+      : undefined,
+    // Firefox for Android acts weird and apparently opens this
+    // the same way it opens popups, and then when you select a file,
+    // nothing happens.
+    // We want to open it in a separate tab therefore.
+    onClick: !isMobile
+      ? undefined
+      : () => {
+        browserOrChrome.tabs.create({
+          url: browserOrChrome.runtime.getURL('local-file-player/index.html')
+        });
+        window.close();
+      },
+
+    // These are needed for a11y when 'href' is empty
+    // and we use `onClick` instead.
+    role: "link",
+    tabindex: 0,
+
+    target: '_blank',
+  } as const;
 
   function mmSs(s: number): string {
     return fromS(Math.round(s), 'mm:ss');
@@ -410,7 +431,14 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <!-- TODO but this is technically a button. Is this ok? -->
   <button
     id="options-button"
-    on:click={() => browserOrChrome.runtime.openOptionsPage()}
+    on:click={() => {
+      browserOrChrome.runtime.openOptionsPage();
+      if (isMobile) {
+        // The options tab gets opened, but it's not visible
+        // because the popup stays open. Let's close it.
+        window.close();
+      }
+    }}
     use:tippy={{
       content: () => getMessage('more'),
       theme: 'my-tippy',
@@ -589,8 +617,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
                   <span>{part}</span>
                 {:else}
                   <!-- svelte-ignore a11y-missing-attribute --->
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
                   <a
                     {...openLocalFileLinkProps}
+                    on:click={openLocalFileLinkProps.onClick}
                   >{part}</a>
                 {/if}
               {/each}
@@ -603,6 +633,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
+    <!-- Keep in mind that on Firefox for Android YouTube won't play
+    the video when the popup is open. This does _not_ apply to all websites. -->
     {#await import(
       /* webpackExports: ['default'] */
       './Chart.svelte'
@@ -795,9 +827,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   />
   {#if settings.popupAlwaysShowOpenLocalFileLink}
     <!-- svelte-ignore a11y-missing-attribute --->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <a
       class="capitalize-first-letter"
       {...openLocalFileLinkProps}
+      on:click={openLocalFileLinkProps.onClick}
       style="display: inline-block; margin-top: 1rem;"
     >📂 {getMessage('openLocalFile')}</a>
   {/if}

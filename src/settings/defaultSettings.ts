@@ -24,6 +24,7 @@ import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
 import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
+import { isMobile } from '@/helpers/isMobile';
 
 const ElementPlaybackControllerStretchingSpecificDefaults = {
   volumeThreshold: 0.005,
@@ -76,7 +77,9 @@ export const defaultSettings: Readonly<Settings> = {
 
   dontAttachToCrossOriginMedia: true,
 
-  enableHotkeys: true,
+  // I think phones can also work with keyboards,
+  // so let's not completely disable the hotkeys functionality.
+  enableHotkeys: !isMobile,
   // TODO some code here is pretty WET, like duplicate hotkeys. DRY?
   hotkeys: [
     // Rewind/advance +
