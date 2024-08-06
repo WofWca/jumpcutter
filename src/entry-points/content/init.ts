@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023, 2024  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -77,12 +77,12 @@ export default async function init(): Promise<void> {
   addOnStorageChangedListener(onSettingsChanged);
 
   const { applyTo } = await settingsP;
-  const tagNames: Array<'video' | 'audio'> = [];
+  const tagNames: Array<'VIDEO' | 'AUDIO'> = [];
   if (applyTo !== 'audioOnly') {
-    tagNames.push('video');
+    tagNames.push('VIDEO');
   }
   if (applyTo !== 'videoOnly') {
-    tagNames.push('audio');
+    tagNames.push('AUDIO');
   }
 
   const stopWatchingElements = watchAllElements(
