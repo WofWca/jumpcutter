@@ -48,16 +48,20 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMap>(
       if (m.type !== 'childList') {
         continue;
       }
-      for (const node of m.addedNodes) {
-        if (node.nodeType !== Node.ELEMENT_NODE) {
+      for (const node_ of m.addedNodes) {
+        if (node_.nodeType !== Node.ELEMENT_NODE) {
           continue;
         }
+        // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType#node.element_node
+        // https://dom.spec.whatwg.org/#ref-for-element%E2%91%A2%E2%91%A0
+        const node = node_ as Element;
+
         // Keep in mind that the same element may get removed then added to the tree again. This is handled
         // inside `handleNewElements` (`this.handledElements.has(el)`).
         // Also the fact that we have an array of `addedNodes` in an array of mutations may mean (idk actually)
         // that we can have duplicate nodes in the array, which currently is fine thanks to
         // `this.handledElements.has(el)`.
-        if ((tagNames as string[]).includes(node.nodeName)) {
+        if ((tagNames as string[]).includes(node.tagName)) {
           newElements.push(node as HTMLElementTagNameMap[typeof tagNames[number]]);
         } else {
           // TODO here https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName
@@ -67,7 +71,7 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMap>(
           // But here https://dom.spec.whatwg.org/#introduction-to-dom-ranges it says that upgdating
           // live ranges can be costly.
           for (const tagName of tagNames) {
-            const childTargetElements = (node as HTMLElement).getElementsByTagName(tagName);
+            const childTargetElements = node.getElementsByTagName(tagName);
             if (childTargetElements.length) {
               newElements.push(...childTargetElements);
             }
