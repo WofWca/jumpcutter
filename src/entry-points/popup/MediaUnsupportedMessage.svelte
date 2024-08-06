@@ -69,9 +69,6 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
   <!-- Actually currently `.elementLikelyCorsRestricted === true` guarantees the presence
   of `elementCurrentSrc`, but let's future-prove it. -->
   {#if latestTelemetryRecord.elementCurrentSrc}
-    <!-- role="link" tabindex="0" are needed for a11y when 'href' is empty
-    and we use `onClick` instead. Same approach as for `openLocalFile`. -->
-    <!-- svelte-ignore a11y-no-redundant-roles -->
     <!-- Set `noreferrer` just for additional "privacy" and stuff. Don't really know what I'm doing.
     Also `nofollow` is pointless, but it's canonical, so I let it be.
     Also `noopener` is implied with `target="_blank"` but idk, maybe something will change
@@ -80,22 +77,21 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
     you hover over it or focus. But they always can rightclick -> copy link address.
     TODO there's probably a better way. -->
     <a
-      href={!isMobile ? latestTelemetryRecord.elementCurrentSrc : undefined}
+      href={latestTelemetryRecord.elementCurrentSrc}
       target="_blank"
       rel="external nofollow noreferrer noopener"
       title={latestTelemetryRecord.elementCurrentSrc}
 
       on:click={!isMobile
         ? undefined
-        : () => {
+        : (e) => {
+          e.preventDefault();
           browserOrChrome.tabs.create({
             url: latestTelemetryRecord.elementCurrentSrc
           });
           window.close();
         }
       }
-      role="link"
-      tabindex="0"
     >{getMessage('tryOpeningDirectly')}</a>
 
     <br>

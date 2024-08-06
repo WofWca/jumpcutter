@@ -304,28 +304,21 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
 
   const openLocalFileLinkProps = {
-    href: !isMobile
-      ? browserOrChrome.runtime.getURL('local-file-player/index.html')
-      : undefined,
+    href: browserOrChrome.runtime.getURL('local-file-player/index.html'),
+    target: '_blank',
     // Firefox for Android acts weird and apparently opens this
     // the same way it opens popups, and then when you select a file,
     // nothing happens.
     // We want to open it in a separate tab therefore.
     onClick: !isMobile
       ? undefined
-      : () => {
+      : (e: Event) => {
+        e.preventDefault();
         browserOrChrome.tabs.create({
           url: browserOrChrome.runtime.getURL('local-file-player/index.html')
         });
         window.close();
       },
-
-    // These are needed for a11y when 'href' is empty
-    // and we use `onClick` instead.
-    role: "link",
-    tabindex: 0,
-
-    target: '_blank',
   } as const;
 
   function mmSs(s: number): string {
