@@ -306,20 +306,20 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const openLocalFileLinkProps = {
     href: browserOrChrome.runtime.getURL('local-file-player/index.html'),
     target: '_blank',
-    // Firefox for Android acts weird and apparently opens this
-    // the same way it opens popups, and then when you select a file,
-    // nothing happens.
-    // We want to open it in a separate tab therefore.
-    onClick: !isMobile
-      ? undefined
-      : (e: Event) => {
-        e.preventDefault();
-        browserOrChrome.tabs.create({
-          url: browserOrChrome.runtime.getURL('local-file-player/index.html')
-        });
-        window.close();
-      },
   } as const;
+  // Firefox for Android acts weird and apparently opens this
+  // the same way it opens popups, and then when you select a file,
+  // nothing happens.
+  // We want to open it in a separate tab therefore.
+  const onClickOpenLocalFileLink = !isMobile
+    ? undefined
+    : (e: Event) => {
+      e.preventDefault();
+      browserOrChrome.tabs.create({
+        url: browserOrChrome.runtime.getURL('local-file-player/index.html')
+      });
+      window.close();
+    };
 
   function mmSs(s: number): string {
     return fromS(Math.round(s), 'mm:ss');
@@ -613,7 +613,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
                   <a
                     {...openLocalFileLinkProps}
-                    on:click={openLocalFileLinkProps.onClick}
+                    on:click={onClickOpenLocalFileLink}
                   >{part}</a>
                 {/if}
               {/each}
@@ -824,7 +824,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     <a
       class="capitalize-first-letter"
       {...openLocalFileLinkProps}
-      on:click={openLocalFileLinkProps.onClick}
+      on:click={onClickOpenLocalFileLink}
       style="display: inline-block; margin-top: 1rem;"
     >📂 {getMessage('openLocalFile')}</a>
   {/if}
