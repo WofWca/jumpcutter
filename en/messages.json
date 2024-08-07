@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Watch videos ~1.5x faster by fast-forwarding long pauses between sentences"
+		"message": "Watch videos up to 2x faster by automatically skipping long pauses between sentences"
 	},
 	"enable": {
 		"message": "Enable"
