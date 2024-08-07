@@ -303,6 +303,9 @@ export default class Controller {
       // Also keep in mind that `createMediaElementSource` and `captureStream` are not 100% interchangeable.
       // For example, for `el.volume` doesn't affect the volume for `captureStream()`.
       // TODO fix: fall-back to `createMediaElementSource` if these are not supported?
+      //
+      // TODO perf: destroy the stream and AudioContext when it's not necessary,
+      // i.e. when the popup is closed.
       type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
         captureStream?: () => MediaStream,
         mozCaptureStream?: () => MediaStream,
