@@ -293,6 +293,53 @@ However I doubt that currently there are services that do specifically this. But
 
 Other than that, there are no known things concerning this. It doesn't interact with third parties or try to do other creepy stuff.
 
+## Why is it free?
+
+It started out as a hobby project in 2019
+and you could say it remains such today.
+It feels good to write software that thousands of people use,
+to give back to the humanity.
+
+However I am still thinking of monetizing it, in a liberal way.
+I really like
+[FUTO's take on it](https://www.futo.org/about/what-does-futo-believe/),
+and their "infinite free trial" thing they do with e.g.
+[FUTO Keyboard](https://keyboard.futo.org/).
+
+However, with the current amount of users
+I think it's not worth the effort right now.
+
+<details><summary>About donations</summary>
+
+Donations are great, but what they do is tell the user
+"we don't really want money, but if you insist, you can send some",
+or even "nobody pays for this product,
+so you'll be one of the generous few,
+and if you donate $5 I'll only be able to buy one coffee with it
+and will not really be incentivized to continue the development".
+
+<!-- Isn't this turning into a blog post rant? -->
+A lot of people are willing to pay. They want to really purchase the product
+and be done with it fair and square
+instead of running a charity
+and throwing money at the bottomless pit of "coffees",
+wondering "did I give enough?".
+
+Of course by this I'm not saying I don't appreciate donations.
+They mean a lot to me. They are more personal.
+I am just describing that in terms of revenue they're not as powerful.
+
+</details>
+
+Anyways, it is extremely unlikely that this software will go closed-source
+or be sold out,
+especially given that I am not its only contributor.
+I have already been offered $1000 for it,
+but this doesn't even cover the hours I spent on it.
+So, unless it's a life-changing amount of money
+(in which case I'd be able to fund another project like this!),
+I am not really considering it.
+
 ## Donate
 
 * <https://antiwarcommittee.info/en/sunrise/#help>
