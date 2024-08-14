@@ -12,7 +12,7 @@
 		"message": "Kecepatan keheningan"
 	},
 	"extensionDescription": {
-		"message": "Tonton kuliah ~1,5x lebih cepat dengan mempercepat jeda panjang di antara kalimat"
+		"message": "Tonton video hingga 2x lebih cepat dengan melewatkan jeda panjang di antara kalimat secara otomatis"
 	},
 	"noSuitableElement": {
 		"message": "Tidak dapat menemukan elemen media yang sesuai pada halaman"
@@ -90,5 +90,38 @@
 	},
 	"contact": {
 		"message": "Hubungi kami"
+	},
+	"timeSavedComparedToSounded": {
+		"message": "rata-rata seberapa cepat video diputar secara efektif dibandingkan dengan kecepatan suara"
+	},
+	"numbersMeanings": {
+		"message": "Arti angka (secara berurutan):"
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "rata-rata seberapa cepat video diputar secara efektif dibandingkan dengan kecepatan normal (intrinsik)"
+	},
+	"timeSavedPercentage": {
+		"message": "Persentase penghematan waktu yang setara:"
+	},
+	"comparedToSounded": {
+		"message": "dibandingkan dengan suara"
+	},
+	"comparedToIntrinsic": {
+		"message": "dibandingkan dengan normal (intrinsik)"
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nPerhatikan bahwa ini ditentukan sebagai pengali dari kecepatan yang dibunyikan, jadi misalnya jika kecepatan yang dibunyikan adalah 1,5 dan kecepatan diam adalah 2, nilai absolut yang dihasilkan adalah 3. Anda dapat mengubah perilaku ini pada halaman opsi."
+	},
+	"hasErrors": {
+		"message": "Ditemukan error"
+	},
+	"overTheLast": {
+		"message": "Selama $duration$ terakhir",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
 	}
 }
