@@ -159,7 +159,7 @@
 		"message": "Restablecer a la configuración predeterminada"
 	},
 	"extensionDescription": {
-		"message": "Vea videos ~1.5x más rápido al adelantar largas pausas entre oraciones"
+		"message": "Vea vídeos hasta dos veces más rápido saltándose automáticamente las pausas largas entre frases"
 	},
 	"timeSavedComparedToSounded": {
 		"message": "en promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
