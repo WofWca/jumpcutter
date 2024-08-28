@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Cümleler arasındaki uzun duraksamaları ileri sararak ~ 1,5 kat daha hızlı izleyin"
+		"message": "Cümleler arasındaki uzun duraklamaları otomatik olarak atlayarak videoları 2 kata kadar daha hızlı izleyin"
 	},
 	"enable": {
 		"message": "Aktif"
@@ -99,7 +99,7 @@
 		"message": "Deneysel algoritmayı kullan"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Now works on most websites!\n➕ Sessiz bölümleri daha hızlı oynatmak yerine tamamen atlamanıza olanak tanır.\n➕ Ses bozulması, gecikme veya uyumsuzluk olmaz.\n➖ May break playback-related functionality on some websites.\n➖ Grafik sessiz bölümlerdeki gerçek sesi göstermez (bunun yerine sadece 0 gösterecektir)."
+		"message": "➕ 🆕 Artık çoğu web sitesinde çalışıyor!\n➕ Sessiz bölümleri daha hızlı oynatmak yerine tamamen atlamanıza olanak tanır.\n➕ Ses bozulması, gecikme veya uyumsuzluk olmaz.\n➖ May break playback-related functionality on some websites.\n➖ Grafik sessiz bölümlerdeki gerçek sesi göstermez (bunun yerine sadece 0 gösterecektir)."
 	},
 	"mediaUnsupported": {
 		"message": "Bu medya **neredeyse** desteklenmiyor. — $consequences$.",
@@ -135,7 +135,7 @@
 		"message": "Mevcut ses seviyesi bu değerin altına düştüğünde, hızlandır.\nGrafikte, bu kırmızı 🟥 yatay çizgidir. Mavi 🟦 çizgi mevcut ses seviyesidir, bu nedenle mavi çizgi kırmızının altında olduğunda sessizlik olarak kabul edilir."
 	},
 	"soundedSpeed": {
-		"message": "Ses hızı"
+		"message": "Normal hız"
 	},
 	"soundedSpeedTooltip": {
 		"message": "Şu anda sessiz DEĞİLSE videoyu oynatma hızımız, \"normal\" hızdır.\nGrafikte bu hızda çalınan parçalar yeşil 🟩 arka plana sahiptir."
