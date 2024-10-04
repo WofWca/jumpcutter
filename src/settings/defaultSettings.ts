@@ -26,18 +26,20 @@ import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 import { isMobile } from '@/helpers/isMobile';
 
+const simpleSliderDefault = 30;
+
 const ElementPlaybackControllerStretchingSpecificDefaults = {
-  volumeThreshold: 0.005,
+  volumeThreshold: simpleSliderDefault * 0.001,
   marginBefore: 0,
-  marginAfter: 0.100,
+  marginAfter: 0.01 * (100 - simpleSliderDefault),
 } as const;
 
 export const defaultSettings: Readonly<Settings> = {
   volumeThreshold: ElementPlaybackControllerStretchingSpecificDefaults.volumeThreshold,
-  previousVolumeThreshold:  0.005,
+  previousVolumeThreshold:  simpleSliderDefault * 0.001,
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
-  silenceSpeedRaw:         2.5,
-  previousSilenceSpeedRaw: 2.5,
+  silenceSpeedRaw:         simpleSliderDefault * 0.05 + 1,
+  previousSilenceSpeedRaw: simpleSliderDefault * 0.05 + 1,
   // Argument for `soundedSpeed !== 1`:
   // * It reminds the user that the extension is enabled, so he's not confused by media getting seeked seemingly
   // randomly.
@@ -250,4 +252,8 @@ export const defaultSettings: Readonly<Settings> = {
   enableDesyncCorrection: browserHasAudioDesyncBug,
 
   onPlaybackRateChangeFromOtherScripts: 'updateSoundedSpeed',
+
+  advancedMode: false,
+
+  simpleSlider: simpleSliderDefault,
 };
