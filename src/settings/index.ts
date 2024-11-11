@@ -153,7 +153,6 @@ export interface Settings {
   __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
 
   advancedMode: boolean,
-
   simpleSlider: number,
 }
 
