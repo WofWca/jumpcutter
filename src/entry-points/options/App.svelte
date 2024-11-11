@@ -343,7 +343,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               {#each commands as command}
                 <tr>
                   <!-- _execute_page_action is unhandled. Though we don't use it. -->
-                  <td>{command.name === '_execute_browser_action' ? getMessage('openPopup') : command.description}</td>
+                  <td>{command.name === '_execute_action' ? getMessage('openPopup') : command.description}</td>
                   <td>
                     <input
                       disabled
