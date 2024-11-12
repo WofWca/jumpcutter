@@ -393,5 +393,8 @@
 	},
 	"saving": {
 		"message": "A gravar…"
+	},
+	"popupAdvancedMode": {
+		"message": "Definições avançadas"
 	}
 }
