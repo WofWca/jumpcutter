@@ -446,5 +446,8 @@
 	},
 	"contact": {
 		"message": "Contáctanos"
+	},
+	"popupAdvancedMode": {
+		"message": "Configuración avanzada"
 	}
 }
