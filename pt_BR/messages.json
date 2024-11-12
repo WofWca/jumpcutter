@@ -431,5 +431,8 @@
 	},
 	"contact": {
 		"message": "Contato"
+	},
+	"popupAdvancedMode": {
+		"message": "Configurações avançadas"
 	}
 }
