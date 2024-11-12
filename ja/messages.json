@@ -443,5 +443,8 @@
 	},
 	"chartSpeedSoundedSpeedTime": {
 		"message": "通常時速度と比較して現在の再生速度と同じ"
+	},
+	"popupAdvancedMode": {
+		"message": "高度な設定"
 	}
 }
