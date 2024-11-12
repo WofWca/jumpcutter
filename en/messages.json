@@ -8,6 +8,15 @@
 	"toggleExtension": {
 		"message": "Toggle extension"
 	},
+	"skipLess": {
+		"message": "Skip less"
+	},
+	"skipMore": {
+		"message": "Skip more"
+	},
+	"popupAdvancedMode": {
+		"message": "Advanced settings"
+	},
 	"more": {
 		"message": "More"
 	},
