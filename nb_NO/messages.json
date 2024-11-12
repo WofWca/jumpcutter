@@ -410,5 +410,8 @@
 	},
 	"contact": {
 		"message": "Kontakt"
+	},
+	"popupAdvancedMode": {
+		"message": "Avanserte innstillinger"
 	}
 }
