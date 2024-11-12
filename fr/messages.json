@@ -252,5 +252,8 @@
 	},
 	"contact": {
 		"message": "Nous contacter"
+	},
+	"popupAdvancedMode": {
+		"message": "Paramètres avancés"
 	}
 }
