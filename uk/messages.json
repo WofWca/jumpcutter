@@ -183,5 +183,8 @@
 	},
 	"contact": {
 		"message": "Напишіть нам"
+	},
+	"popupAdvancedMode": {
+		"message": "Розширені налаштування"
 	}
 }
