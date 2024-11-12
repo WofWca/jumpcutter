@@ -40,5 +40,8 @@
 	},
 	"contact": {
 		"message": "Skontaktuj się z nami"
+	},
+	"popupAdvancedMode": {
+		"message": "Ustawienia zaawansowane"
 	}
 }
