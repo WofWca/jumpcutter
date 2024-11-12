@@ -269,5 +269,14 @@
 	},
 	"contact": {
 		"message": "Связаться с нами"
+	},
+	"popupAdvancedMode": {
+		"message": "Расширенные настройки"
+	},
+	"skipLess": {
+		"message": "Пропускать меньше"
+	},
+	"skipMore": {
+		"message": "Пропускать больше"
 	}
 }
