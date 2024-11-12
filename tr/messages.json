@@ -428,5 +428,8 @@
 	},
 	"contact": {
 		"message": "Bize ulaşın"
+	},
+	"popupAdvancedMode": {
+		"message": "Gelişmiş ayarlar"
 	}
 }
