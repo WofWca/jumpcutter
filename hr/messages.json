@@ -446,5 +446,8 @@
 	},
 	"contact": {
 		"message": "Kontakt"
+	},
+	"popupAdvancedMode": {
+		"message": "Napredne postavke"
 	}
 }
