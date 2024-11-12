@@ -448,6 +448,12 @@
 		"message": "Contáctanos"
 	},
 	"popupAdvancedMode": {
-		"message": "Configuración avanzada"
+		"message": "Ajustes avanzados"
+	},
+	"skipMore": {
+		"message": "Omitir más"
+	},
+	"skipLess": {
+		"message": "Omitir menos"
 	}
 }
