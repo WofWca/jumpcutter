@@ -446,5 +446,8 @@
 	},
 	"chat": {
 		"message": "聊天"
+	},
+	"popupAdvancedMode": {
+		"message": "進階設定"
 	}
 }
