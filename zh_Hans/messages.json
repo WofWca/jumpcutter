@@ -446,5 +446,8 @@
 	},
 	"contact": {
 		"message": "联系我们"
+	},
+	"popupAdvancedMode": {
+		"message": "高级设置"
 	}
 }
