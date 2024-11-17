@@ -449,5 +449,11 @@
 	},
 	"popupAdvancedMode": {
 		"message": "Napredne postavke"
+	},
+	"skipLess": {
+		"message": "Preskoči manje"
+	},
+	"skipMore": {
+		"message": "Preskoči više"
 	}
 }
