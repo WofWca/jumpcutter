@@ -308,7 +308,7 @@
 		"message": "En algunos sitios webs que visito, la velocidad de reproducción cambia en una forma inesperada. No los dejes cambiar la velocidad de reproducción puesta por esta extensión."
 	},
 	"useSeparateMarginSettingsForDifferentAlgorithms": {
-		"message": "Utilizar ajustes de omisión de silencio independientes para los distintos algoritmos (relacionados con el ajuste «$useExperimentalAlgorithmLabel$»).",
+		"message": "Utilizar ajustes de omisión de silencio independientes para los distintos algoritmos (relacionado con el ajuste «$useExperimentalAlgorithmLabel$»).",
 		"placeholders": {
 			"marginBeforeLabel": {
 				"content": "$1",
