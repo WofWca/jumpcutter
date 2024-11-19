@@ -1,1 +1,43 @@
-{}
+{
+	"enable": {
+		"message": "Virkja"
+	},
+	"contentScriptFail": {
+		"message": "Ekki tókst að keyra efnisskriftuna á þessari síðu"
+	},
+	"openLocalFile": {
+		"message": "opna staðbundna skrá"
+	},
+	"tryOpeningDirectly": {
+		"message": "Prófaðu að opna það beint"
+	},
+	"relativeToSounded": {
+		"message": "miðað við hljóðhraða"
+	},
+	"absolute": {
+		"message": "alger"
+	},
+	"marginBefore": {
+		"message": "Framlegð á undan"
+	},
+	"marginAfter": {
+		"message": "Framlegð eftir"
+	},
+	"soundedSpeedTooltip": {
+		"message": "Hraðinn sem við spilum myndbandið á þegar það er EKKI í þögn, s.s. „venjulegi” hraðinn.\nÁ línuritinu hafa hlutirnir sem voru spilaðir á þessum hraða grænan 🟩 bakgrunn."
+	},
+	"extensionDescription": {
+		"message": "Horfðu á myndbönd allt að 2x hraðar með því að sleppa sjálfkrafa löngum hléum milli setninga"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Þegar núverandi hljóðstyrkur er undir þessu gildi, hraðaðu spilun.\nÁ línuritinu er þetta rauða 🟥 lárétta línan. Bláa 🟦 línan er núverandi hljóðstyrkurinn, þannig að þegar bláa línan er undir þeirri rauðu, er það talið vera þögn."
+	},
+	"silenceSpeedTooltip": {
+		"message": "Hraðinn sem við spilum hina þöglu hluta á.\nÁ línuritinu hafa hlutir sem voru spilaðir á þessum hraða rauðan 🟥 bakgrunn. $relativeNote$\n⚠️ Ef þetta gildi er mjög hátt (> ~4) gætu upphaf setninga einnig byrjað að vera sleppt (eins og „Framlegð fyrir” sé minni).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
+	}
+}
