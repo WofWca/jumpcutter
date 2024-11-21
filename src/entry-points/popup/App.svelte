@@ -367,6 +367,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return min < x && x < max;
   }
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+  $: estimatedRemainingDuration = mmSs((r?.elementRemainingDuration / timeSavedPlaybackRateEquivalents[0]) / settings?.soundedSpeed || 0);
   $: timeSavedPlaybackRateEquivalentsAreDifferent =
     // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
     // jump between being the same and being different even if you don't change soundedSpeed.
@@ -385,9 +386,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     // same (although for a brief moment), despite the soundedSpeed actually never being `=== 1`.
     || (settings && settings.soundedSpeed !== 1);
   // TODO DRY
-  $: timeSavedOnlyOneNumberIsShown =
-    !timeSavedPlaybackRateEquivalentsAreDifferent
-    && settings?.timeSavedAveragingMethod === 'exponential';
 
   function onUseExperimentalAlgorithmInput(e: Event) {
     const newControllerType = (e.target as HTMLInputElement).checked
@@ -503,13 +501,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               <span>{getMessage('overTheLast', mmSs(settings.timeSavedAveragingWindowLength))}.</span>
             {/if}
           </p>
-          {#if !timeSavedOnlyOneNumberIsShown}
-            <p>{getMessage('numbersMeanings')}</p>
-          {/if}
+        <p>{getMessage('numbersMeanings')}</p>
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
-            <li
-              style={timeSavedOnlyOneNumberIsShown ? 'list-style:none;' : ''}
-            >{timeSavedPlaybackRateEquivalents[0]} – {getMessage('timeSavedComparedToSounded')}</li>
+            <li>{timeSavedPlaybackRateEquivalents[0]} – {getMessage('timeSavedComparedToSounded')}</li>
+            {#if estimatedRemainingDuration}
+                <li>{estimatedRemainingDuration} – {getMessage('estimatedRemainingDuration')}</li>
+            {/if}
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
               <li>{timeSavedComparedToSoundedSpeedAbs} – {getMessage('timeSavedComparedToSoundedAbs')}</li>
               <li>{wouldHaveLastedIfSpeedWasSounded} – {getMessage('wouldHaveLastedIfSpeedWasSounded')}</li>

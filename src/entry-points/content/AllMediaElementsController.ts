@@ -57,6 +57,7 @@ export type TelemetryMessage =
     elementLikelyCorsRestricted: boolean,
     elementCurrentSrc?: string,
     createMediaElementSourceCalledForElement: boolean,
+    elementRemainingDuration: number,
   };
 
 function executeNonSettingsActions(
@@ -330,6 +331,7 @@ export default class AllMediaElementsController {
             elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
             // TODO check if the map lookup is too slow to do it several times per second.
             createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
+            elementRemainingDuration: this.activeMediaElement.duration-this.activeMediaElement.currentTime,
           };
           port.postMessage(telemetryMessage);
         };
