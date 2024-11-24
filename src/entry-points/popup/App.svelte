@@ -29,12 +29,40 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
-  import { HotkeyAction, HotkeyAction_TOGGLE_PAUSE, HotkeyBinding, NonSettingsAction, } from '@/hotkeys';
+  import {
+    HotkeyAction,
+    HotkeyAction_INCREASE_VOLUME,
+    HotkeyAction_DECREASE_VOLUME,
+    HotkeyAction_INCREASE_VOLUME_THRESHOLD,
+    HotkeyAction_DECREASE_VOLUME_THRESHOLD,
+    HotkeyAction_TOGGLE_VOLUME_THRESHOLD,
+    HotkeyAction_SET_VOLUME_THRESHOLD,
+    HotkeyAction_INCREASE_SOUNDED_SPEED,
+    HotkeyAction_DECREASE_SOUNDED_SPEED,
+    HotkeyAction_TOGGLE_SOUNDED_SPEED,
+    HotkeyAction_SET_SOUNDED_SPEED,
+    HotkeyAction_INCREASE_SILENCE_SPEED,
+    HotkeyAction_DECREASE_SILENCE_SPEED,
+    HotkeyAction_TOGGLE_SILENCE_SPEED,
+    HotkeyAction_SET_SILENCE_SPEED,
+    HotkeyAction_INCREASE_MARGIN_BEFORE,
+    HotkeyAction_DECREASE_MARGIN_BEFORE,
+    HotkeyAction_TOGGLE_MARGIN_BEFORE,
+    HotkeyAction_SET_MARGIN_BEFORE,
+    HotkeyAction_INCREASE_MARGIN_AFTER,
+    HotkeyAction_DECREASE_MARGIN_AFTER,
+    HotkeyAction_TOGGLE_MARGIN_AFTER,
+    HotkeyAction_SET_MARGIN_AFTER,
+    HotkeyAction_TOGGLE_PAUSE,
+    HotkeyBinding,
+    NonSettingsAction
+  } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { assertDev, getMessage } from '@/helpers';
   import { isMobile } from '@/helpers/isMobile';
+  import type { Props as TippyProps } from 'tippy.js';
 
   // See ./popup.css. Would be cool to do this at build-time
   if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
@@ -60,6 +88,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       | 'advancedMode'
       | 'simpleSlider'
       | 'onPlaybackRateChangeFromOtherScripts'
+      | 'hotkeys'
+      | 'popupSpecificHotkeys'
     >
     & ReturnType<Parameters<typeof createKeydownListener>[1]>
     & Parameters<typeof changeAlgorithmAndMaybeRelatedSettings>[0]
@@ -447,6 +477,65 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       marginAfter: 0.03 + 0.0020 * (100 - settings.simpleSlider)
     })
   }
+
+  let hotkeysActions: {[P in HotkeyAction]?: HotkeyBinding[]} = {};
+  settingsPromise.then((settings) => {
+    if (!settings.enableHotkeys) return;
+    [...settings.hotkeys, ...settings.popupSpecificHotkeys].forEach((hotKey) => {
+      const actionId = hotKey.action;
+      if (!hotkeysActions[actionId]) hotkeysActions[actionId] = [];
+      hotkeysActions[actionId].push(hotKey);
+    });
+  });
+
+  /**
+   * Example output: '\nDecrease: E, shift+E'.
+   * If there is no hotkey for the `actionId`, returns an empty string.
+   */
+  function getActionString(actionId: HotkeyAction, actionName: string): string {
+    const actionHotkeys = hotkeysActions[actionId];
+    if (!actionHotkeys) return '';
+    let actionString = '';
+    actionHotkeys.forEach((hotkey: HotkeyBinding, i: number) => {
+      let keysString = '';
+      const modifiers = hotkey.keyCombination.modifiers;
+      if (modifiers) {
+        modifiers.forEach((modifier) => {
+          keysString += modifier.replace('Key', '') + '+';
+        });
+      }
+
+      actionString += keysString + hotkey.keyCombination.code.replace(/^Key/, '');
+      if (actionHotkeys.length !== i + 1) {
+        actionString += ', ';
+      }
+    });
+
+    // Perhaps using placeholders when passing data to getMessage()
+    // to allow translator to have more control over this
+    // Also perhaps including ":" in the translation string
+    // because it might also be translated in some languages.
+    return '\n' + actionName + ': ' + actionString;
+  }
+
+  // `commands` API is currently not supported by Gecko for Android.
+  const commandsPromise: undefined | ReturnType<typeof browserOrChrome.commands.getAll>
+  = browserOrChrome.commands?.getAll?.();
+
+  let toggleExtensionTooltip: undefined | Partial<TippyProps> = undefined;
+  if (commandsPromise) {
+    commandsPromise.then(commands => {
+      commands.forEach(command => {
+        if (command.name === 'toggle_enabled' && command.shortcut) {
+          toggleExtensionTooltip = {
+            content: getMessage("toggleSettingValue") + ': ' + command.shortcut,
+            theme: 'my-tippy',
+            placement: 'bottom',
+          }
+        }
+      });
+    });
+  }
 </script>
 
 <svelte:window
@@ -454,7 +543,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 />
 {#await settingsPromise then _}
   <div style="display: flex; justify-content: center;">
-    <label class="enabled-input">
+    <!-- TODO style: when `toggleExtensionTooltip == undefined`,
+    the tooltip is just empty. -->
+    <label
+      class="enabled-input"
+      use:tippy={toggleExtensionTooltip}
+    >
       <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
       DRY? With `{...myBind}` or something?
       Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
@@ -490,7 +584,23 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     <span
       class="others__item"
       use:tippy={{
-        content: () => getMessage('volume'),
+        content: () => {
+          let tooltip = getMessage('volume');
+          const hotkeysString =
+            getActionString(
+              HotkeyAction_INCREASE_VOLUME,
+              getMessage("increaseSettingValue")
+            )
+            + getActionString(
+              HotkeyAction_DECREASE_VOLUME,
+              getMessage("decreaseSettingValue")
+            );
+          if (hotkeysString) {
+            tooltip += '\n' + hotkeysString;
+          }
+
+          return tooltip;
+        },
         theme: tippyThemeMyTippyAndPreLine,
       }}
     >
@@ -845,7 +955,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     on:input={createOnInputListener('volumeThreshold')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: () => getMessage('volumeThresholdTooltip'),
+      content: () => {
+        let tooltip = getMessage('volumeThresholdTooltip');
+        const hotkeysString = getActionString(HotkeyAction_INCREASE_VOLUME_THRESHOLD, getMessage("increaseSettingValue")) +
+        getActionString(HotkeyAction_DECREASE_VOLUME_THRESHOLD, getMessage("decreaseSettingValue")) +
+        getActionString(HotkeyAction_TOGGLE_VOLUME_THRESHOLD, getMessage("toggleSettingValue")) +
+        getActionString(HotkeyAction_SET_VOLUME_THRESHOLD, getMessage("setSettingValue"));
+
+        if (hotkeysString) {
+          tooltip += '\n' + hotkeysString;
+        }
+
+        return tooltip;
+      },
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -865,7 +987,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     bind:value={settings.soundedSpeed}
     on:input={createOnInputListener('soundedSpeed')}
     useForInputParams={{
-      content: () => getMessage('soundedSpeedTooltip'),
+      content: () => {
+        let tooltip = getMessage('soundedSpeedTooltip');
+        const hotkeysString = getActionString(HotkeyAction_INCREASE_SOUNDED_SPEED, getMessage("increaseSettingValue")) +
+        getActionString(HotkeyAction_DECREASE_SOUNDED_SPEED, getMessage("decreaseSettingValue")) +
+        getActionString(HotkeyAction_TOGGLE_SOUNDED_SPEED, getMessage("toggleSettingValue")) +
+        getActionString(HotkeyAction_SET_SOUNDED_SPEED, getMessage("setSettingValue"));
+
+        if (hotkeysString) {
+          tooltip += '\n' + hotkeysString;
+        }
+
+        return tooltip;
+      },
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -882,12 +1016,26 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       || controllerTypeAlwaysSounded
     }
     useForInputParams={{
-      content: () => getMessage(
+      content: () => {
+        let tooltip = getMessage(
         'silenceSpeedTooltip',
         settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
           ? getMessage('silenceSpeedTooltipRelativeNote')
           : ''
-      ),
+        );
+
+        const hotkeysString = getActionString(HotkeyAction_INCREASE_SILENCE_SPEED, getMessage("increaseSettingValue")) +
+        getActionString(HotkeyAction_DECREASE_SILENCE_SPEED, getMessage("decreaseSettingValue")) +
+        getActionString(HotkeyAction_TOGGLE_SILENCE_SPEED, getMessage("toggleSettingValue")) +
+        getActionString(HotkeyAction_SET_SILENCE_SPEED, getMessage("setSettingValue"));
+
+        if (hotkeysString) {
+          tooltip += '\n' + hotkeysString;
+        }
+
+        return tooltip;
+
+      },
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -898,7 +1046,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     on:input={createOnInputListener('marginBefore')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: () => getMessage('marginBeforeTooltip'),
+      content: () => {
+        let tooltip = getMessage('marginBeforeTooltip');
+        const hotkeysString = getActionString(HotkeyAction_INCREASE_MARGIN_BEFORE, getMessage("increaseSettingValue")) +
+        getActionString(HotkeyAction_DECREASE_MARGIN_BEFORE, getMessage("decreaseSettingValue")) +
+        getActionString(HotkeyAction_TOGGLE_MARGIN_BEFORE, getMessage('toggleSettingValue')) +
+        getActionString(HotkeyAction_SET_MARGIN_BEFORE, getMessage('setSettingValue'));
+
+        if (hotkeysString) {
+          tooltip += '\n' + hotkeysString;
+        }
+
+        return tooltip;
+      },
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
@@ -909,7 +1069,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     on:input={createOnInputListener('marginAfter')}
     disabled={controllerTypeAlwaysSounded}
     useForInputParams={{
-      content: () => getMessage('marginAfterTooltip'),
+      content: () => {
+        let tooltip = getMessage('marginAfterTooltip');
+        const hotkeysString = getActionString(HotkeyAction_INCREASE_MARGIN_AFTER, getMessage("increaseSettingValue")) +
+        getActionString(HotkeyAction_DECREASE_MARGIN_AFTER, getMessage("decreaseSettingValue")) +
+        getActionString(HotkeyAction_TOGGLE_MARGIN_AFTER, getMessage("toggleSettingValue")) +
+        getActionString(HotkeyAction_SET_MARGIN_AFTER, getMessage('setSettingValue'));
+
+        if (hotkeysString) {
+          tooltip += '\n' + hotkeysString;
+        }
+
+        return tooltip;
+      },
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
