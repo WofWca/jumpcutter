@@ -1,6 +1,6 @@
 {
   "name": "Jump Cutter",
-  "version": "1.27.5",
+  "version": "1.28.0",
   "description": "__MSG_extensionDescription__",
   "permissions": ["storage", "scripting"],
   "content_security_policy": {
