@@ -507,6 +507,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     {:else}
     <div style="flex-grow: 1"></div>
     {/if}
+
     <!-- TODO in "simple mode" the toolip's content is cut clipped. -->
     <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
     <button
@@ -737,28 +738,26 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   </div>
 
   {#if !settings.advancedMode}
-    <label
-      style="
-        margin-top: 1rem;
-        display: flex;
-        flex-direction: column;
-      "
-    >
-      <div style="display: flex; justify-content: space-between;">
-        <div>{getMessage("skipLess")}</div>
-        <div>{getMessage("skipMore")}</div>
-      </div>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        bind:value={settings.simpleSlider}
-        on:input={onSimpleSliderInput}
-      />
-    </label>
-  {/if}
-
-  {#if settings.advancedMode}
+  <label
+    style="
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+    "
+  >
+    <div style="display: flex; justify-content: space-between;">
+      <div>{getMessage("skipLess")}</div>
+      <div>{getMessage("skipMore")}</div>
+    </div>
+    <input
+      type="range"
+      min="0"
+      max="100"
+      bind:value={settings.simpleSlider}
+      on:input={onSimpleSliderInput}
+    />
+  </label>
+  {:else}
   <label
     use:tippy={{
       content: () => getMessage('useExperimentalAlgorithmTooltip'),

@@ -20,10 +20,10 @@
 
 import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
-export default async function(): Promise<void> {
-    await browserOrChrome.storage.local.set({
-        // Let's not change the UI for users who already installed the extension
-        // prior to the introduction of this setting.
-        advancedMode: true,
-    })
+export default async function (): Promise<void> {
+  await browserOrChrome.storage.local.set({
+    // Let's not change the UI for users who already installed the extension
+    // prior to the introduction of this setting.
+    advancedMode: true,
+  });
 }
