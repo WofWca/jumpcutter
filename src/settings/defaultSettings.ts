@@ -26,18 +26,28 @@ import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 import { isMobile } from '@/helpers/isMobile';
 
+// Start with a below-middle value to let the user get a feel
+// for how the extension behaves without being too disruptive,
+// and then let them crank it up if they feel like it.
+// The value of 50 should be optimal for most users (based on my feeling).
+const simpleSliderDefaultVal = 33;
+
 const ElementPlaybackControllerStretchingSpecificDefaults = {
-  volumeThreshold: 0.005,
+  // If you decide to change these values,
+  // remember to also update them in `popup/App.svelte`.
+  volumeThreshold: 0.001 + simpleSliderDefaultVal * 0.00015,
   marginBefore: 0,
-  marginAfter: 0.100,
+  marginAfter: 0.03 + 0.0020 * (100 - simpleSliderDefaultVal),
 } as const;
 
 export const defaultSettings: Readonly<Settings> = {
   volumeThreshold: ElementPlaybackControllerStretchingSpecificDefaults.volumeThreshold,
-  previousVolumeThreshold:  0.005,
+  previousVolumeThreshold:  ElementPlaybackControllerStretchingSpecificDefaults.volumeThreshold,
   silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
-  silenceSpeedRaw:         2.5,
-  previousSilenceSpeedRaw: 2.5,
+  // If you decide to change these values,
+  // remember to also update them in `popup/App.svelte`.
+  silenceSpeedRaw:         1.5 + simpleSliderDefaultVal * 0.020,
+  previousSilenceSpeedRaw: 1.5 + simpleSliderDefaultVal * 0.020,
   // Argument for `soundedSpeed !== 1`:
   // * It reminds the user that the extension is enabled, so he's not confused by media getting seeked seemingly
   // randomly.
@@ -250,4 +260,7 @@ export const defaultSettings: Readonly<Settings> = {
   enableDesyncCorrection: browserHasAudioDesyncBug,
 
   onPlaybackRateChangeFromOtherScripts: 'updateSoundedSpeed',
+
+  advancedMode: false,
+  simpleSlider: simpleSliderDefaultVal,
 };
