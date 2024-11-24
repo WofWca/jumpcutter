@@ -62,4 +62,32 @@ export const enum HotkeyAction {
   DECREASE_VOLUME = 'volume-',
 }
 
+export const HotkeyAction_INCREASE_VOLUME = HotkeyAction.INCREASE_VOLUME;
+export const HotkeyAction_DECREASE_VOLUME = HotkeyAction.DECREASE_VOLUME;
+
+export const HotkeyAction_INCREASE_VOLUME_THRESHOLD = HotkeyAction.INCREASE_VOLUME_THRESHOLD;
+export const HotkeyAction_DECREASE_VOLUME_THRESHOLD = HotkeyAction.DECREASE_VOLUME_THRESHOLD;
+export const HotkeyAction_TOGGLE_VOLUME_THRESHOLD = HotkeyAction.TOGGLE_VOLUME_THRESHOLD;
+export const HotkeyAction_SET_VOLUME_THRESHOLD = HotkeyAction.SET_VOLUME_THRESHOLD;
+
+export const HotkeyAction_INCREASE_SOUNDED_SPEED = HotkeyAction.INCREASE_SOUNDED_SPEED;
+export const HotkeyAction_DECREASE_SOUNDED_SPEED = HotkeyAction.DECREASE_SOUNDED_SPEED;
+export const HotkeyAction_TOGGLE_SOUNDED_SPEED = HotkeyAction.TOGGLE_SOUNDED_SPEED;
+export const HotkeyAction_SET_SOUNDED_SPEED = HotkeyAction.SET_SOUNDED_SPEED;
+
+export const HotkeyAction_INCREASE_SILENCE_SPEED = HotkeyAction.INCREASE_SILENCE_SPEED;
+export const HotkeyAction_DECREASE_SILENCE_SPEED = HotkeyAction.DECREASE_SILENCE_SPEED;
+export const HotkeyAction_TOGGLE_SILENCE_SPEED = HotkeyAction.TOGGLE_SILENCE_SPEED;
+export const HotkeyAction_SET_SILENCE_SPEED = HotkeyAction.SET_SILENCE_SPEED;
+
+export const HotkeyAction_INCREASE_MARGIN_BEFORE = HotkeyAction.INCREASE_MARGIN_BEFORE;
+export const HotkeyAction_DECREASE_MARGIN_BEFORE = HotkeyAction.DECREASE_MARGIN_BEFORE;
+export const HotkeyAction_TOGGLE_MARGIN_BEFORE = HotkeyAction.TOGGLE_MARGIN_BEFORE;
+export const HotkeyAction_SET_MARGIN_BEFORE = HotkeyAction.SET_MARGIN_BEFORE;
+
+export const HotkeyAction_INCREASE_MARGIN_AFTER = HotkeyAction.INCREASE_MARGIN_AFTER;
+export const HotkeyAction_DECREASE_MARGIN_AFTER = HotkeyAction.DECREASE_MARGIN_AFTER;
+export const HotkeyAction_TOGGLE_MARGIN_AFTER = HotkeyAction.TOGGLE_MARGIN_AFTER;
+export const HotkeyAction_SET_MARGIN_AFTER = HotkeyAction.SET_MARGIN_AFTER;
+
 export const HotkeyAction_TOGGLE_PAUSE = HotkeyAction.TOGGLE_PAUSE
