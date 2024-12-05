@@ -393,7 +393,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     // same (although for a brief moment), despite the soundedSpeed actually never being `=== 1`.
     || (settings && settings.soundedSpeed !== 1);
   // TODO DRY
-    $: timeSavedOnlyOneNumberIsShown =
+  $: timeSavedOnlyOneNumberIsShown =
     !timeSavedPlaybackRateEquivalentsAreDifferent
     && settings?.timeSavedAveragingMethod === 'exponential';
 
@@ -552,10 +552,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               <span>{getMessage('overTheLast', mmSs(settings.timeSavedAveragingWindowLength))}.</span>
             {/if}
           </p>
-            {#if !timeSavedOnlyOneNumberIsShown}
-                <p>{getMessage('numbersMeanings')}</p>
-            {/if}
-        <p>{getMessage('numbersMeanings')}</p>
+          {#if !timeSavedOnlyOneNumberIsShown}
+              <p>{getMessage('numbersMeanings')}</p>
+          {/if}
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
             <li
               style={timeSavedOnlyOneNumberIsShown ? 'list-style:none;' : ''}
