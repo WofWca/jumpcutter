@@ -35,7 +35,7 @@
     "hh-mm-ss": "^1.2.0",
     "lodash": "^4.17.21",
     "tippy.js": "^6.3.7",
-    "tone": "^14.7.77"
+    "tone": "~14.7.77"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",

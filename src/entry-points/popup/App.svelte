@@ -57,6 +57,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       | 'popupChartJumpPeriod'
       | 'dontAttachToCrossOriginMedia'
       | 'popupAlwaysShowOpenLocalFileLink'
+      | 'advancedMode'
+      | 'simpleSlider'
+      | 'onPlaybackRateChangeFromOtherScripts'
     >
     & ReturnType<Parameters<typeof createKeydownListener>[1]>
     & Parameters<typeof changeAlgorithmAndMaybeRelatedSettings>[0]
@@ -398,6 +401,41 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   $: controllerTypeAlwaysSounded = latestTelemetryRecord?.controllerType === ControllerKind_ALWAYS_SOUNDED;
 
   const displayNewBadgeOnExperimentalAlgorithm = new Date() < new Date('2024-09-30');
+
+  function onAdvancedModeChange(isOn: boolean) {
+    settingsKeysToSaveToStorage.add('advancedMode');
+    throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks();
+
+    if (!isOn) {
+      updateSettingsLocalCopyAndStorage({
+        experimentalControllerType: ControllerKind_STRETCHING,
+        marginBefore: 0,
+        // However, it's not very nice to change this setting,
+        // because it can only be changed back from the options page.
+        silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
+      })
+
+      // Set the settings according to the `simpleSlider`'s value.
+      onSimpleSliderInput();
+    }
+  }
+  function onSimpleSliderInput() {
+    settingsKeysToSaveToStorage.add('simpleSlider');
+    throttledSaveUnsavedSettingsToStorageAndTriggerCallbacks();
+
+    updateSettingsLocalCopyAndStorage({
+      // If you decide to change these values,
+      // remember to also update them in `defaultSettings.ts`.
+      // When adjusting the values, keep in mind that _each_ of them
+      // affects how much we skip, that is adjusting even just one of them
+      // would make the extension skip more,
+      // and adjusting all of them at the same time would make it skip
+      // even more. So, keep them within sane, moderate limits.
+      volumeThreshold: 0.001 + settings.simpleSlider * 0.00015,
+      silenceSpeedRaw: 1.5 + settings.simpleSlider * 0.020,
+      marginAfter: 0.03 + 0.0020 * (100 - settings.simpleSlider)
+    })
+  }
 </script>
 
 <svelte:window
@@ -436,6 +474,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     }}
   >⚙️</button>
   <div class="others__wrapper">
+    {#if settings.advancedMode}
     <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
     <span
       class="others__item"
@@ -463,6 +502,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         style="width: 6rem;"
       ></meter>
     </span>
+    {:else}
+    <div style="flex-grow: 1"></div>
+    {/if}
+
+    <!-- TODO in "simple mode" the toolip's content is cut clipped. -->
     <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
     <button
       type="button"
@@ -689,6 +733,28 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   {/if}
   </div>
   </div>
+
+  {#if !settings.advancedMode}
+  <label
+    style="
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+    "
+  >
+    <div style="display: flex; justify-content: space-between;">
+      <div>{getMessage("skipLess")}</div>
+      <div>{getMessage("skipMore")}</div>
+    </div>
+    <input
+      type="range"
+      min="0"
+      max="100"
+      bind:value={settings.simpleSlider}
+      on:input={onSimpleSliderInput}
+    />
+  </label>
+  {:else}
   <label
     use:tippy={{
       content: () => getMessage('useExperimentalAlgorithmTooltip'),
@@ -758,6 +824,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
+  {/if}
+  {#if (
+    settings.advancedMode
+    || settings.onPlaybackRateChangeFromOtherScripts !== 'updateSoundedSpeed'
+  )}
   <datalist id="sounded-speed-datalist">
     <option>1</option>
   </datalist>
@@ -773,6 +844,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
+  {/if}
+  {#if settings.advancedMode}
   <RangeSlider
     label="⏩ {getMessage('silenceSpeed')} ({silenceSpeedLabelClarification})"
     fractionalDigits={2}
@@ -815,16 +888,41 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       theme: tippyThemeMyTippyAndPreLine,
     }}
   />
-  {#if settings.popupAlwaysShowOpenLocalFileLink}
-    <!-- svelte-ignore a11y-missing-attribute --->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <a
-      class="capitalize-first-letter"
-      {...openLocalFileLinkProps}
-      on:click={onClickOpenLocalFileLink}
-      style="display: inline-block; margin-top: 1rem;"
-    >📂 {getMessage('openLocalFile')}</a>
   {/if}
+  <div
+    style="
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    "
+  >
+    {#if settings.popupAlwaysShowOpenLocalFileLink}
+      <!-- svelte-ignore a11y-missing-attribute --->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <a
+        class="capitalize-first-letter"
+        {...openLocalFileLinkProps}
+        on:click={onClickOpenLocalFileLink}
+        style="margin-top: 1rem;"
+      >📂 {getMessage('openLocalFile')}</a>
+    {/if}
+    <label
+      style="
+        display: inline-flex;
+        align-items: center;
+        margin-top: 1rem;
+      "
+    >
+      <input
+        type="checkbox"
+        style="margin: 0px 0.5rem 0px 0px;"
+        bind:checked={settings.advancedMode}
+        on:change={e => onAdvancedModeChange(e.currentTarget.checked)}
+      />
+      {getMessage("popupAdvancedMode")}
+    </label>
+  </div>
 {/await}
 
 <style>

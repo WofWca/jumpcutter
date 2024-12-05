@@ -151,6 +151,9 @@ export interface Settings {
   onPlaybackRateChangeFromOtherScripts: 'prevent' | 'updateSoundedSpeed' | 'doNothing',
 
   __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
+
+  advancedMode: boolean,
+  simpleSlider: number,
 }
 
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
