@@ -553,7 +553,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             {/if}
           </p>
           {#if !timeSavedOnlyOneNumberIsShown}
-              <p>{getMessage('numbersMeanings')}</p>
+            <p>{getMessage('numbersMeanings')}</p>
           {/if}
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
             <li
