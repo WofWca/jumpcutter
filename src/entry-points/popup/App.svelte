@@ -370,10 +370,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return min < x && x < max;
   }
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
-  $: estimatedRemainingDuration = settingsLoaded &&
-                                  r?.elementRemainingIntrinsicDuration &&
-                                  r?.elementRemainingIntrinsicDuration != Infinity
-    ? mmSs((r?.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings?.soundedSpeed)
+  $: estimatedRemainingDuration = settings &&
+                                  r?.elementRemainingIntrinsicDuration != undefined &&
+                                  r.elementRemainingIntrinsicDuration < Infinity
+    ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
     : undefined;
   $: timeSavedPlaybackRateEquivalentsAreDifferent =
     // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
@@ -572,11 +572,15 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             {/if}
           </ol>
 
-          {#if estimatedRemainingDuration}
+          {#if estimatedRemainingDuration &&
+               // 10.000 hour sanity check
+               estimatedRemainingDuration < (10000*60*60)
+          }
               <p
                 style="margin-bottom: 0.25rem;"
-              >{getMessage('estimatedRemainingDuration')}<br>
-                  <li>{estimatedRemainingDuration}</li>
+              >
+              {getMessage('estimatedRemainingDuration')}<br>
+              {mmSs(estimatedRemainingDuration)}
               </p>
           {/if}
 
