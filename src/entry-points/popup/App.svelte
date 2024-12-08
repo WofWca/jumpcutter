@@ -370,6 +370,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return min < x && x < max;
   }
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+  $: estimatedRemainingDuration = settings &&
+                                  r?.elementRemainingIntrinsicDuration != undefined &&
+                                  r.elementRemainingIntrinsicDuration < Infinity
+    ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
+    : undefined;
   $: timeSavedPlaybackRateEquivalentsAreDifferent =
     // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
     // jump between being the same and being different even if you don't change soundedSpeed.
@@ -566,6 +571,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               {/if}
             {/if}
           </ol>
+
+          {#if estimatedRemainingDuration &&
+               // 10.000 hour sanity check
+               estimatedRemainingDuration < (10000*60*60)
+          }
+              <p
+                style="margin-bottom: 0.25rem;"
+              >
+              {getMessage('estimatedRemainingDuration')}<br>
+              {mmSs(estimatedRemainingDuration)}
+              </p>
+          {/if}
+
           <p
             style="margin-bottom: 0.25rem;"
           >{getMessage('timeSavedPercentage')}<br>
