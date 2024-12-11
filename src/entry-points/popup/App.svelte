@@ -391,6 +391,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   $: timeSavedOnlyOneNumberIsShown =
     !timeSavedPlaybackRateEquivalentsAreDifferent
     && settings?.timeSavedAveragingMethod === 'exponential';
+  $: estimatedRemainingDuration = settings &&
+                                  r?.elementRemainingIntrinsicDuration != undefined &&
+                                  r.elementRemainingIntrinsicDuration < Infinity
+    ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
+    : undefined;
 
   function onUseExperimentalAlgorithmInput(e: Event) {
     const newControllerType = (e.target as HTMLInputElement).checked
@@ -566,6 +571,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               {/if}
             {/if}
           </ol>
+
+          {#if estimatedRemainingDuration != undefined &&
+               // 10,000 hour sanity check
+               estimatedRemainingDuration < (10000*60*60)
+          }
+              <p
+                style="margin-bottom: 0.25rem;"
+              >
+              {getMessage('estimatedRemainingDuration')}<br>
+              {mmSs(estimatedRemainingDuration)}
+              </p>
+          {/if}
+
           <p
             style="margin-bottom: 0.25rem;"
           >{getMessage('timeSavedPercentage')}<br>

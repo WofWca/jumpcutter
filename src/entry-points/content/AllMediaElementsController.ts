@@ -57,6 +57,11 @@ export type TelemetryMessage =
     elementLikelyCorsRestricted: boolean,
     elementCurrentSrc?: string,
     createMediaElementSourceCalledForElement: boolean,
+     /**
+     * Remember that this could be `Infinity` for live streams,
+     * and if `.duration` is otherwise unknown.
+     */
+    elementRemainingIntrinsicDuration: number,
   };
 
 function executeNonSettingsActions(
@@ -330,6 +335,7 @@ export default class AllMediaElementsController {
             elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
             // TODO check if the map lookup is too slow to do it several times per second.
             createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
+            elementRemainingIntrinsicDuration: this.activeMediaElement.duration - this.activeMediaElement.currentTime,
           };
           port.postMessage(telemetryMessage);
         };
