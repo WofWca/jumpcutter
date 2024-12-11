@@ -572,7 +572,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             {/if}
           </ol>
 
-          {#if estimatedRemainingDuration &&
+          {#if estimatedRemainingDuration != undefined &&
                // 10.000 hour sanity check
                estimatedRemainingDuration < (10000*60*60)
           }
