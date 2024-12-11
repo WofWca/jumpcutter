@@ -65,6 +65,9 @@
 	"comparedToIntrinsic": {
 		"message": "compared to normal (intrinsic)"
 	},
+	"estimatedRemainingDuration": {
+		"message": "Estimated remaining real-time duration:"
+	},
 	"noSuitableElement": {
 		"message": "Could not find a suitable media element on the page"
 	},
