@@ -347,12 +347,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return num.toFixed(2);
   }
   const dummyTimeSavedValues = [
-    formatTimeSaved(1),
-    formatTimeSaved(1), // TODO use `getAbsoluteClampedSilenceSpeed`?
-  ] as [string, string];
+    1,
+    1, // TODO use `getAbsoluteClampedSilenceSpeed`?
+  ] as [number, number];
   function getTimeSavedPlaybackRateEquivalents(
     r: TelemetryMessage | undefined
-  ): [comparedToSounded: string, comparedToIntrinsic: string] {
+  ): [comparedToSounded: number, comparedToIntrinsic: number] {
     if (!r) {
       return dummyTimeSavedValues;
     }
@@ -362,14 +362,18 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       return dummyTimeSavedValues;
     }
     return [
-      formatTimeSaved(r.wouldHaveLastedIfSpeedWasSounded / lastedActually),
-      formatTimeSaved(r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually),
+      r.wouldHaveLastedIfSpeedWasSounded / lastedActually,
+      r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually,
     ]
   }
   function beetween(min: number, x: number, max: number): boolean {
     return min < x && x < max;
   }
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+  $: timeSavedPlaybackRateEquivalentsFmt = [
+    formatTimeSaved(timeSavedPlaybackRateEquivalents[0]),
+    formatTimeSaved(timeSavedPlaybackRateEquivalents[1]),
+  ] as [string, string];
   $: timeSavedPlaybackRateEquivalentsAreDifferent =
     // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
     // jump between being the same and being different even if you don't change soundedSpeed.
@@ -527,7 +531,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       }}
     >
       <span>⏱️</span>
-      <span>{timeSavedPlaybackRateEquivalents[0]}</span>
+      <span>{timeSavedPlaybackRateEquivalentsFmt[0]}</span>
       {#if settings.timeSavedAveragingMethod !== 'exponential'}
         <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
       {/if}
@@ -535,7 +539,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       of those who use `soundedSpeed=1` -->
       {#if timeSavedPlaybackRateEquivalentsAreDifferent}
         <span>/</span>
-        <span>{timeSavedPlaybackRateEquivalents[1]}</span>
+        <span>{timeSavedPlaybackRateEquivalentsFmt[1]}</span>
         {#if settings.timeSavedAveragingMethod !== 'exponential'}
           <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
         {/if}
@@ -558,13 +562,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
             <li
               style={timeSavedOnlyOneNumberIsShown ? 'list-style:none;' : ''}
-            >{timeSavedPlaybackRateEquivalents[0]} – {getMessage('timeSavedComparedToSounded')}</li>
+            >{timeSavedPlaybackRateEquivalentsFmt[0]} – {getMessage('timeSavedComparedToSounded')}</li>
             {#if settings.timeSavedAveragingMethod !== 'exponential'}
               <li>{timeSavedComparedToSoundedSpeedAbs} – {getMessage('timeSavedComparedToSoundedAbs')}</li>
               <li>{wouldHaveLastedIfSpeedWasSounded} – {getMessage('wouldHaveLastedIfSpeedWasSounded')}</li>
             {/if}
             {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-              <li>{timeSavedPlaybackRateEquivalents[1]} – {getMessage('timeSavedComparedToIntrinsic')}</li>
+              <li>{timeSavedPlaybackRateEquivalentsFmt[1]} – {getMessage('timeSavedComparedToIntrinsic')}</li>
               {#if settings.timeSavedAveragingMethod !== 'exponential'}
                 <li>{timeSavedComparedToIntrinsicSpeedAbs} – {getMessage('timeSavedComparedToIntrinsicAbs')}</li>
                 <li>{wouldHaveLastedIfSpeedWasIntrinsic} – {getMessage('wouldHaveLastedIfSpeedWasIntrinsic')}</li>
