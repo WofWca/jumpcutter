@@ -455,5 +455,8 @@
 	},
 	"skipMore": {
 		"message": "Preskoči više"
+	},
+	"estimatedRemainingDuration": {
+		"message": "Procijenjeno preostalo trajanje u stvarnom vremenu:"
 	}
 }
