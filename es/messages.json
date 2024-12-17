@@ -455,5 +455,8 @@
 	},
 	"skipLess": {
 		"message": "Omitir menos"
+	},
+	"estimatedRemainingDuration": {
+		"message": "Duración estimada del tiempo real restante:"
 	}
 }
