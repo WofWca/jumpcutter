@@ -119,7 +119,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
               type="button"
               on:click={e => removeBinding(bindingInd)}
               aria-label="{getMessage('removeBinding')}"
-            >🗑️</button>
+            >
+              <img src="../imgs/trash.svg" alt="{getMessage('removeBinding')}">
+            </button>
           </td>
         </tr>
       {/each}
@@ -129,5 +131,37 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     type="button"
     on:click={addNewBinding}
     aria-label="{getMessage('addBinding')}"
-  >➕</button>
+  >
+    <img src="../imgs/plus.svg" alt="{getMessage('addBinding')}">
+  </button>
 </div>
+
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --btn-bg-color: #333;
+    --btn-hover-bg-color: #555;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --btn-bg-color: #ddd;
+    --btn-hover-bg-color: #bbb;
+  }
+}
+
+button {
+  border: none;
+  border-radius: 5px;
+  background-color: var(--btn-bg-color);
+}
+
+button img {
+  vertical-align: middle;
+}
+
+button:hover:enabled {
+  background-color: var(--btn-hover-bg-color);
+}
+</style>
