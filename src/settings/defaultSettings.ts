@@ -205,7 +205,9 @@ export const defaultSettings: Readonly<Settings> = {
 
   popupSoundedSpeedMin: 0.25,
   popupSoundedSpeedMax: 4, // BUILD_DEFINITIONS.BROWSER === 'gecko' ? getGeckoLikelyMaxNonMutedPlaybackRate()
-  popupSoundedSpeedStep: 0.25,
+  // YouTube has a slider where they use a step of 0.05,
+  // let's keep this in line so that people feel at home.
+  popupSoundedSpeedStep: 0.05,
 
   popupSilenceSpeedRawMin: 1,
   // See the comment in `getAbsoluteClampedSilenceSpeed` definition on why `max` is different
@@ -214,7 +216,7 @@ export const defaultSettings: Readonly<Settings> = {
     // But if the browser gets upgraded, this will remain at 4. Doesn't matter?
     ? Math.min(8, getGeckoLikelyMaxNonMutedPlaybackRate())
     : 8,
-  popupSilenceSpeedRawStep: 0.25,
+  popupSilenceSpeedRawStep: 0.05,
 
   popupMarginBeforeMin: 0,
   popupMarginBeforeMax: 0.5,
