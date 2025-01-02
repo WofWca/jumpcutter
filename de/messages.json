@@ -111,5 +111,146 @@
 	},
 	"contact": {
 		"message": "Kontakt"
+	},
+	"max": {
+		"message": "Max."
+	},
+	"chartSpeed": {
+		"message": "Bewegungsgeschwindigkeit"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "Entspricht der aktuellen Videogeschwindigkeit"
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"about": {
+		"message": "Über"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "Zeitersparnis im Vergleich zur Wiedergabe des Videos mit normaler (intrinsischer) Geschwindigkeit"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Wenn die Wiedergaberate durch andere Skripte verändert wird"
+	},
+	"applyTo": {
+		"message": "Anwenden auf"
+	},
+	"applyToOnly": {
+		"message": "nur $type$-Elemente",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"applyToBoth": {
+		"message": "Sowohl Video- als auch Audioelemente"
+	},
+	"omitMutedElements": {
+		"message": "Nicht auf stummgeschaltete Medienelemente anwenden"
+	},
+	"chat": {
+		"message": "Chat"
+	},
+	"hasErrors": {
+		"message": "Fehler gefunden"
+	},
+	"value": {
+		"message": "Wert"
+	},
+	"removeBinding": {
+		"message": "Bindung entfernen"
+	},
+	"chartSpeedRealTime": {
+		"message": "Konstant (Echtzeit)"
+	},
+	"min": {
+		"message": "Min."
+	},
+	"skipMore": {
+		"message": "Mehr überspringen"
+	},
+	"more": {
+		"message": "Mehr"
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "Zeitersparnis im Vergleich zum Abspielen des Videos in normaler Geschwindigkeit"
+	},
+	"audio": {
+		"message": "Audio"
+	},
+	"loading": {
+		"message": "Wird geladen"
+	},
+	"general": {
+		"message": "Allgemein"
+	},
+	"none": {
+		"message": "Keine"
+	},
+	"rewind": {
+		"message": "Zurückspulen (Sekunden)"
+	},
+	"increaseVolume": {
+		"message": "Lautstärke erhöhen (%)"
+	},
+	"action": {
+		"message": "Aktion"
+	},
+	"popup": {
+		"message": "Popup"
+	},
+	"edit": {
+		"message": "Bearbeiten"
+	},
+	"chartLengthInSeconds": {
+		"message": "Länge in Sekunden"
+	},
+	"chartWidthPx": {
+		"message": "Breite (Pixel)"
+	},
+	"chartHeightPx": {
+		"message": "Höhe (Pixel)"
+	},
+	"donate": {
+		"message": "Spenden"
+	},
+	"saving": {
+		"message": "Wird gespeichert…"
+	},
+	"skipLess": {
+		"message": "Weniger überspringen"
+	},
+	"popupAdvancedMode": {
+		"message": "Erweiterte Einstellungen"
+	},
+	"advance": {
+		"message": "Vorspulen (Sekunden)"
+	},
+	"decreaseVolume": {
+		"message": "Lautstärke verringern (%)"
+	},
+	"showErrors": {
+		"message": "Fehler anzeigen"
+	},
+	"saved": {
+		"message": "Gespeichert"
+	},
+	"input": {
+		"message": "Eingabe"
+	},
+	"helpTranslate": {
+		"message": "Beim Übersetzen helfen"
+	},
+	"license": {
+		"message": "Lizenz"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Entspricht der aktuellen Videogeschwindigkeit, relativ zur Klanggeschwindigkeit"
+	},
+	"step": {
+		"message": "Schritt"
 	}
 }
