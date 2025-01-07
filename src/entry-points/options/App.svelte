@@ -420,38 +420,40 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         <section>
           <h4>{getMessage('rangeSlidersAttributes')}</h4>
           <p>{getMessage('rangeSlidersAttributesNote')}</p>
-          <table style="margin: 0.75rem 0;">
-            <thead>
-              <th>{getMessage('input')}</th>
-              {#each [
-                getMessage('min'),
-                getMessage('step'),
-                getMessage('max'),
-              ] as l}
-                <th>{l}</th>
-              {/each}
-            </thead>
-            <tbody>
-              {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
-                <tr>
-                  <td>{rangeInputSettingNameCapitalized.l}</td>
-                  {#each rangeInputAttrs as attr}
-                    <td>
-                      <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
-                      Or use a checkbox that sets it to "any"? -->
-                      <input
-                        style="width: 14ch"
-                        type="number"
-                        step="any"
-                        min={attr === 'Step' ? Number.MIN_VALUE : ''}
-                        bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
-                      />
-                    </td>
-                  {/each}
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+          <div style="overflow-x: auto;">
+            <table style="margin: 0.75rem 0;">
+              <thead>
+                <th>{getMessage('input')}</th>
+                {#each [
+                  getMessage('min'),
+                  getMessage('step'),
+                  getMessage('max'),
+                ] as l}
+                  <th>{l}</th>
+                {/each}
+              </thead>
+              <tbody>
+                {#each rangeInputSettingsNamesCapitalized as rangeInputSettingNameCapitalized}
+                  <tr>
+                    <td>{rangeInputSettingNameCapitalized.l}</td>
+                    {#each rangeInputAttrs as attr}
+                      <td>
+                        <!-- TODO is the way we handle 'Step' ok? Maybe we should just convert 0 to `"any"`?
+                        Or use a checkbox that sets it to "any"? -->
+                        <input
+                          style="width: 14ch"
+                          type="number"
+                          step="any"
+                          min={attr === 'Step' ? Number.MIN_VALUE : ''}
+                          bind:value={settings[`popup${rangeInputSettingNameCapitalized.v}${attr}`]}
+                        />
+                      </td>
+                    {/each}
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         {#if settings.enableHotkeys} <!-- TODO Are you sure this needs to be hidden? -->
