@@ -697,6 +697,10 @@ main {
 }
 footer {
   padding: 0 var(--main-padding);
+
+  /* To account for the status bar. */
+  padding-bottom: 40px;
+
   text-align: end;
 
   max-width: var(--content-max-width);
@@ -713,8 +717,13 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0.625rem 0;
 }
 .status-bar {
-  position: sticky;
+  /* `sticky` sounds tempting, but on mobile it behaves weird,
+  it gets in the middle of the screen.
+  See https://github.com/WofWca/jumpcutter/pull/191 */
+  position: fixed;
+
   bottom: 0;
+  width: 100%;
   padding: 0.125rem var(--main-padding);
   background-color: white;
   border-top: 1px solid gray;
