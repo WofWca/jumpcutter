@@ -42,6 +42,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     padding: 0.5rem;
     display: grid;
     grid-template-columns: auto auto;
+    overflow-x: auto;
   }
   .container:not(:last-child) {
     border-bottom: 1px gray solid;
