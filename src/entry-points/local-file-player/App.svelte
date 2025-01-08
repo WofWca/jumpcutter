@@ -129,7 +129,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
                 {file.name}
               </button>
               <!-- TODO `aria-label` with actual text? -->
-              <button on:click={() => onDeleteFile(ind)}>
+              <button
+                on:click={() => onDeleteFile(ind)}
+                aria-label="❌"
+              >
                 <img src="../imgs/trash.svg" alt="delete">
               </button>
             </div>
