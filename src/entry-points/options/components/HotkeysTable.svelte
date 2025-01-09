@@ -161,7 +161,7 @@ button img {
   vertical-align: middle;
 }
 
-button:hover:enabled {
+button:hover:enabled, button:focus:enabled {
   background-color: var(--btn-hover-bg-color);
 }
 </style>

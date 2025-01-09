@@ -185,7 +185,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     background-color: var(--btn-bg-color);
   }
 
-  button:hover:enabled {
+  button:hover:enabled, button:focus:enabled {
     background-color: var(--btn-hover-bg-color);
   }
 
