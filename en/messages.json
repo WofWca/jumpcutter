@@ -458,5 +458,17 @@
 	},
 	"showErrors": {
 		"message": "Show errors"
+	},
+	"increaseSettingValue": {
+		"message": "Increase"
+	},
+	"decreaseSettingValue": {
+		"message": "Decrease"
+	},
+	"setSettingValue": {
+		"message": "Set"
+	},
+	"toggleSettingValue": {
+		"message": "Toggle"
 	}
 }
