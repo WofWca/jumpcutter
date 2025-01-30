@@ -66,7 +66,7 @@
 		"message": "Vitesse du silence"
 	},
 	"volume": {
-		"message": "Volume"
+		"message": "Volume\nIl ne s'agit pas de l'intensité sonore mais de son taux d'amplification, comme sur la TV"
 	},
 	"timeSavedComparedToIntrinsic": {
 		"message": "en moyenne, la vitesse de lecture effective de la vidéo par rapport à la vitesse normale (intrinsèque)"
@@ -255,5 +255,77 @@
 	},
 	"popupAdvancedMode": {
 		"message": "Paramètres avancés"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Méthode de spécification de la vitesse du silence"
+	},
+	"rangeSlidersAttributes": {
+		"message": "La gamme d'attributs des curseurs"
+	},
+	"step": {
+		"message": "Échelon"
+	},
+	"max": {
+		"message": "Max"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "Identique à la vitesse de la vidéo actuelle"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Identique à la vitesse actuelle de la vidéo, concernant les parties non sautées"
+	},
+	"silenceSkippingWontWork": {
+		"message": "les sauts de silence ne fonctionnent pas correctement"
+	},
+	"chartWidthPx": {
+		"message": "Largeur (pixels)"
+	},
+	"marginAfterTooltip": {
+		"message": "Similaire à l'option \"marge avant\". Combien de temps avant l'accélération après que le que le son ai diminué et qu'il y ai du silence (passage à la vitesse du silence défini).\nIl s'agit essentiellement de conserver des pauses dans le discours, au moins dans une certaine mesure, afin que les mots ne soient pas mélangés et que l'on puisse entendre clairement les dernières lettres d'une phrase.\nÀ l'inverse de l'option \"marge avant\" cette option ne cause aucun délai et de distortion du son (mais cela ne veut pas dire que ces paramètres sont interchangeables)."
+	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "Je souhaite contrôler la vitesse de lecture (vitesse du son) via l'interface utilisateur du site web ou via d'autres extensions, et pas seulement celle-ci. Cela mettra à jour la vitesse du son chaque fois que la vitesse de lecture sera modifiée."
+	},
+	"skipLess": {
+		"message": "Sauter moins"
+	},
+	"skipMore": {
+		"message": "Sauter plus"
+	},
+	"more": {
+		"message": "Plus"
+	},
+	"couldGetMuted": {
+		"message": "Il pourrait devenir silencieux si attaché"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Lorsque la vitesse de lecture est modifiée par d'autres scripts"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Aucune de ces options. Ignorer simplement les changements de vitesse de lecture provenant d'autres scripts."
+	},
+	"chartSpeed": {
+		"message": "Vitesse de déplacement"
+	},
+	"min": {
+		"message": "Min"
+	},
+	"estimatedRemainingDuration": {
+		"message": "Temps réel restant estimé :"
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "Sur certains sites web que je visite, la vitesse de lecture est modifiée de manière inattendue. Ne les laissez pas modifier la vitesse de lecture définie par cette extension."
+	},
+	"chartJumpPeriod": {
+		"message": "Période de saut, %. Cette valeur est exprimée en tant que fraction de la longueur de la carte. Régler à 0 pour un mouvement fluide (pas de sauts)."
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Sachez que les navigateurs ne prennent pas en charge les taux de lecture au-delà d'une certaine limite.\nÀ la rédaction de ce texte, cette limite est de 16 pour Chromium (Chrome, Edge) et de 8 (par défaut) pour Gecko (Firefox)."
+	},
+	"chartHeightPx": {
+		"message": "Hauteur (pixels)"
+	},
+	"chartSpeedRealTime": {
+		"message": "Constante (en temps réel)"
 	}
 }
