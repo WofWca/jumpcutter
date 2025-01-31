@@ -42,7 +42,7 @@
 		"message": "par rapport à la normale (intrinsèque)"
 	},
 	"noSuitableElement": {
-		"message": "Impossible de trouver un élément multimédia approprié sur la page"
+		"message": "Impossible de trouver d'élément multimédia pertinent sur la page"
 	},
 	"retry": {
 		"message": "Réessayer"
@@ -75,7 +75,7 @@
 		"message": "Déposez un ou plusieurs fichiers ici\nou cliquez pour sélectionner"
 	},
 	"extensionDescription": {
-		"message": "Sauter les parties silencieuses des vidéos, en temps réel"
+		"message": "Regardez des vidéos jusqu'à 2x plus rapidement en sautant automatiquement les longues pauses entre les phrases"
 	},
 	"timeSavedComparedToSounded": {
 		"message": "en moyenne la vitesse de lecture effective de la vidéo par rapport à la vitesse sondée"
@@ -143,7 +143,7 @@
 		"message": "Activer/Couper le son"
 	},
 	"switch": {
-		"message": "Activer/Désactiver"
+		"message": "changer"
 	},
 	"addBinding": {
 		"message": "Ajouter un nouveau raccourci"
@@ -239,13 +239,13 @@
 		"message": "Aucun"
 	},
 	"silenceSpeedTooltipRelativeNote": {
-		"message": "\nNotez que cette valeur comme un multiplicateur de la vitesse sonore. Par exemple, si la vitesse sonore est de 1,5 et la vitesse de silence est de 2, la valeur absolue résultante sera de 3. Vous pouvez modifier ce comportement dans la page des options."
+		"message": "\nNotez que cette valeur est exprimée sous la forme de multiplicateur de la vitesse des parties non silencieuses. Par exemple, si la vitesse des parties non silencieuses est de 1,5 et la vitesse des parties silencieuses de 2, la valeur absolue résultante sera de 3. Vous pouvez modifier ce comportement sur la page des options."
 	},
 	"tryAttachAnyway": {
 		"message": "Essayer quand même"
 	},
 	"useExperimentalAlgorithmTooltip": {
-		"message": "➕ 🆕 Fonctionne désormais sur la majorité des sites\n➕ Autoriser le saut de morceaux silencieux au lieu de les lire à une vitesse supérieure.\n➕ Pas de retard, de délai ou de désynchronisation.\n➖ Peut perturber la lecture sur certains sites.\n➖ Le graphique n'affichera pas le volume réel sur les morceaux silencieux (il indiquera simplement 0)."
+		"message": "➕ 🆕 Fonctionne désormais sur la majorité des sites !\n➕ Permets de directement sauter les parties silencieuses au lieu de les lire à une vitesse supérieure.\n➕ Pas de retard, de délai ou de désynchronisation.\n➖ Peut perturber la lecture sur certains sites.\n➖ Le graphique n'affichera pas le volume réel sur les parties silencieux (il indiquera simplement 0)."
 	},
 	"marginBeforeTooltip": {
 		"message": "Délai, en secondes, avant le retour à la vitesse standard si nous rencontrons une séquence sonore lors d'un silence.\nCela vise à garantir que vous puissiez entendre correctement les premières lettres prononcées.\n\n⚠️ Notez que des valeurs non nulles entraîneront une distortion audio lors du passage de la vitesse silencieuse à la vitesse sonore, et ajouteront un retard audio constant équivalent à la valeur de ce paramètre. Ces inconvénients ne s'appliquent pas si vous utilisez l'algorithme expérimental."
@@ -272,7 +272,7 @@
 		"message": "Identique à la vitesse de la vidéo actuelle"
 	},
 	"chartSpeedSoundedSpeedTime": {
-		"message": "Identique à la vitesse actuelle de la vidéo, concernant les parties non sautées"
+		"message": "Identique à la vitesse actuelle de la vidéo, concernant les parties non silencieuses"
 	},
 	"silenceSkippingWontWork": {
 		"message": "les sauts de silence ne fonctionnent pas correctement"
@@ -327,5 +327,133 @@
 	},
 	"chartSpeedRealTime": {
 		"message": "Constante (en temps réel)"
+	},
+	"saving": {
+		"message": "Enrengistrement…"
+	},
+	"helpTranslate": {
+		"message": "Aider à la traduction"
+	},
+	"input": {
+		"message": "Propriété"
+	},
+	"iconBadge": {
+		"message": "Badge d'icône de l'extension"
+	},
+	"license": {
+		"message": "Licence"
+	},
+	"runSnowflakeBridge": {
+		"message": "Aider les internautes à contourner la censure en installant simplement une (autre) extension"
+	},
+	"openPopup": {
+		"message": "Ouvrir le popup"
+	},
+	"chartLengthInSeconds": {
+		"message": "Longueur en secondes"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Désactiver les touches de raccourci lorsque le clavier est en cours d'utilisation"
+	},
+	"autofocusEnabledInput": {
+		"message": "Automatiquement sélectionner la case \"$enableCheckboxLabel$\" lors de l'ouverture du popup",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "Résultat pondérés de la durée actuelle : $length$ secondes",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
+	},
+	"downloadFromSync": {
+		"message": "Appliquer les paramètres depuis l'espace de stockage synchronisé"
+	},
+	"uploadToSync": {
+		"message": "Synchroniser les paramètres dans l'espace de stockage synchronisé"
+	},
+	"about": {
+		"message": "À propos"
+	},
+	"chat": {
+		"message": "Discuter"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Méthode de calcul de la moyenne"
+	},
+	"popupSpecificHotkeys": {
+		"message": "Raccourcis spécifiques à la pop-up"
+	},
+	"saved": {
+		"message": "Données enregistrées"
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Afficher le lien \"$openLocalFileLabel$\"",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Ne prendre en compte que les N dernières secondes de lecture"
+	},
+	"donate": {
+		"message": "Faire un don"
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (c'est-à-dire par rapport à la vitesse normale (intrinsèque) des médias)"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Moyenne générale (sans décroissance)"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Utiliser des paramètres de saut de silence distincts pour les différents algorithmes (en rapport avec le paramètre \"$useExperimentalAlgorithmLabel$\")",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"hotkeysNotes": {
+		"message": "Les touches de modification (Ctrl, Shift, etc.) sont prises en charge.\nPlusieurs actions peuvent être liées à une seule touche. Cela permet de créer des « profils ».\nLa différence entre les actions \"$switch$\" et \"=\" (aussi \"définir\") c'est que \"$switch$\" permet de basculer la valeur entre la valeur précédente et l'argument de la touche de raccourci, tandis que \"définir\" la fixe toujours à la valeur de l'argument.\nLes touches de raccourci sont également actives lorsque la fenêtre contextuelle est ouverte.",
+		"placeholders": {
+			"switch": {
+				"content": "$1",
+				"example": "switch"
+			}
+		}
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "Pondération de la période de lecture la plus récente"
+	},
+	"meta": {
+		"message": "Données"
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Ne prendre en compte que les données les plus récentes (décroissance exponentielle)"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Valeur à afficher par défaut"
+	},
+	"popup": {
+		"message": "Pop-up"
 	}
 }
