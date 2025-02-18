@@ -1,1 +1,471 @@
-{}
+{
+	"extensionDescription": {
+		"message": "Katso videoita jopa kaksi kertaa nopeammin ohittamalla automaattisesti pitkät tauot lauseiden välissä"
+	},
+	"enable": {
+		"message": "Ota käyttöön"
+	},
+	"more": {
+		"message": "Lisää"
+	},
+	"openLocalFile": {
+		"message": "avaa paikallinen tiedosto"
+	},
+	"timeSavedPercentage": {
+		"message": "Vastaava ajansäästöprosentti:"
+	},
+	"volumeThreshold": {
+		"message": "Alin puheen voimakkuus"
+	},
+	"fileInputLabel": {
+		"message": "Pudota yksi tai useampi tiedosto tähän\ntai valitse napsauttamalla"
+	},
+	"hotkeys": {
+		"message": "Pikanäppäimet"
+	},
+	"rewind": {
+		"message": "Kelaa taaksepäin (sekuntia)"
+	},
+	"popupSpecificHotkeys": {
+		"message": "Ponnahdusikkunakohtaiset pikanäppäimet"
+	},
+	"badgeWhatSettingToDisplayByDefault": {
+		"message": "Oletuksena näytettävä arvon asetus"
+	},
+	"min": {
+		"message": "Min"
+	},
+	"toggleExtension": {
+		"message": "Laajennus päälle/pois"
+	},
+	"silenceSpeed": {
+		"message": "Hiljaisuuden nopeus"
+	},
+	"hotkey": {
+		"message": "Pikanäppäin"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Keskiarvon laskemismenetelmä"
+	},
+	"increaseSettingValue": {
+		"message": "Kasvata"
+	},
+	"toggleSettingValue": {
+		"message": "Päälle/pois"
+	},
+	"action": {
+		"message": "Toiminta"
+	},
+	"value": {
+		"message": "Arvo"
+	},
+	"removeBinding": {
+		"message": "Poista sitominen"
+	},
+	"rangeSlidersAttributes": {
+		"message": "Alueen liukusäätimien määritteet"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Poista pikanäppäimet käytöstä, kun syöte on kohdistettuna"
+	},
+	"timeSavedAveragingMethodAllTime": {
+		"message": "Kaikkien aikojen keskiarvo (ei vaimenemista)"
+	},
+	"timeSavedDataWeightDecayTimeConstant": {
+		"message": "Tuloksena olevien tietojen painon puolielämä: $length$ sekuntia",
+		"placeholders": {
+			"length": {
+				"content": "$1",
+				"example": "138.83"
+			}
+		}
+	},
+	"meta": {
+		"message": "Meta"
+	},
+	"about": {
+		"message": "Tietoa"
+	},
+	"hasErrors": {
+		"message": "Virheitä löydetty"
+	},
+	"license": {
+		"message": "Lisenssi"
+	},
+	"saved": {
+		"message": "Tallennettu"
+	},
+	"showErrors": {
+		"message": "Näytä virheet"
+	},
+	"chat": {
+		"message": "Pikaeskustelu"
+	},
+	"silenceSpeedTooltip": {
+		"message": "Nopeus, jolla soitamme hiljaisia osia.\nKaaviossa tällä nopeudella soitetuilla osilla on punainen 🥥 tausta.$relativeNote$\n⚠️ Jos tämä arvo on erittäin korkea (> ~4), lauseiden alkua voi myös alkaa ohittaa (se on kuin \"Marginaali ennen\" on pienempi).",
+		"placeholders": {
+			"relativeNote": {
+				"content": "$1"
+			}
+		}
+	},
+	"absolute": {
+		"message": "täydellinen"
+	},
+	"marginBefore": {
+		"message": "Marginaali ennen"
+	},
+	"marginAfter": {
+		"message": "Marginaali jälkeen"
+	},
+	"omitMutedElements": {
+		"message": "Älä sovella sitä mykistettyihin mediaelementteihin"
+	},
+	"edit": {
+		"message": "Muokkaa"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Ohita verkkosivuston pikanäppäimet"
+	},
+	"popup": {
+		"message": "Ponnahdusikkuna"
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Ota huomioon vain toiston viimeiset N sekuntia"
+	},
+	"uploadToSync": {
+		"message": "Uloslataa asetukset tallennustilan synkronoimiseksi"
+	},
+	"downloadFromSync": {
+		"message": "Sovella synkronointitallennustilan asetukset"
+	},
+	"skipMore": {
+		"message": "Ohita enemmän"
+	},
+	"timeSaved": {
+		"message": "Aika säästetty tieto"
+	},
+	"volume": {
+		"message": "Äänenvoimakkuus\nSe ei ole materiaalin nykyinen äänenvoimakkuus, vaan sen vahvistuskerroin, kuten televisiossa"
+	},
+	"numbersMeanings": {
+		"message": "Numeroiden merkitykset (järjestyksessä):"
+	},
+	"popupAdvancedMode": {
+		"message": "Edistyneet asetukset"
+	},
+	"timeSavedComparedToSounded": {
+		"message": "kuinka paljon nopeammin video toistetaan keskimäärin äänen nopeuteen verrattuna"
+	},
+	"timeSavedComparedToSoundedAbs": {
+		"message": "säästetty aika verrattuna vain videon toistamiseen ääninopeudella"
+	},
+	"wouldHaveLastedIfSpeedWasSounded": {
+		"message": "kuinka kauan toisto kestäisi ääninopeudella hiljaisuutta ohittamatta"
+	},
+	"timeSavedComparedToIntrinsic": {
+		"message": "kuinka paljon nopeammin video toistetaan keskimäärin normaaliin (ominais-) nopeuteen verrattuna"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "säästetty aika verrattuna vain videon toistamiseen normaalilla (ominais-) nopeudella"
+	},
+	"comparedToSounded": {
+		"message": "verrattuna ääneen"
+	},
+	"retry": {
+		"message": "Yritä uudelleen"
+	},
+	"comparedToIntrinsic": {
+		"message": "verrattuna normaaliin (ominaiseen)"
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "kuinka kauan toisto kestäisi normaalilla (ominais-) nopeudella, hiljaisuutta ohittamatta"
+	},
+	"loading": {
+		"message": "Ladataan"
+	},
+	"suggestOpenLocalFile": {
+		"message": "Haluatko **$openLocalFile$**?",
+		"placeholders": {
+			"openLocalFile": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"refreshIfMuted": {
+		"message": "Virkistä sivu, jos media mykistettiin"
+	},
+	"or": {
+		"message": "Tai"
+	},
+	"soundedSpeed": {
+		"message": "Säännöllinen nopeus"
+	},
+	"tryOpeningDirectly": {
+		"message": "Yritä avata se suoraan"
+	},
+	"tryAttachAnyway": {
+		"message": "Yritä liittää joka tapauksessa"
+	},
+	"silenceSpeedTooltipRelativeNote": {
+		"message": "\nHuomaa, että se on määritetty ääninopeuden kertoimeksi, joten esim. jos ääninopeus on 1,5 ja hiljaisuuden nopeus on 2, tuloksena saatava itseisarvo on 3. Voit muuttaa tätä toimintaa asetussivulla."
+	},
+	"soundedSpeedTooltip": {
+		"message": "Nopeus, jolla toistamme videon, kun se EI ole hiljainen, \"normaali\" nopeus.\nKaaviossa tällä nopeudella soitetuilla osilla on vihreä 🟩 tausta."
+	},
+	"relativeToSounded": {
+		"message": "suhteessa äänen nopeuteen"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Aina kun muut skriptit muuttavat toistonopeutta"
+	},
+	"general": {
+		"message": "Yleinen"
+	},
+	"updateSoundedSpeedWheneverItChangesOnWebsite": {
+		"message": "Haluan hallita toistonopeutta (ääninopeutta) verkkosivuston käyttöliittymän tai muiden laajennusten, ei vain tämän, kautta. Tämä päivittää ääninopeuden aina, kun toistonopeus muuttuu."
+	},
+	"none": {
+		"message": "Ei mitään"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Ei mikään yllä olevista. Ohita muiden skriptien toistonopeuden muutokset."
+	},
+	"applyToBoth": {
+		"message": "Sekä video- että äänielementit"
+	},
+	"applyToOnly": {
+		"message": "vain $type$ -elementit",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "Joillakin vierailemillani verkkosivustoilla toistonopeus muuttuu odottamattomalla tavalla. Älä anna niiden muuttaa tämän laajennuksen määrittämää toistonopeutta."
+	},
+	"absoluteSilenceSpeedClarification": {
+		"message": " (tunnetaan myös suhteessa normaaliin (ominais-) medianopeuteen)"
+	},
+	"enableHotkeys": {
+		"message": "Ota pikanäppäimet käyttöön"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Käytä erillisiä hiljaisuuden ohitusasetuksia eri algoritmeille (liittyy asetukseen \"$useExperimentalAlgorithmLabel$\")",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"hotkeysNotes": {
+		"message": "Muokkausnäppäimiä (Ctrl, Vaihto, jne.) tuetaan.\nYhdelle avaimelle voidaan sitoa useita toimintoja. Tätä voidaan käyttää \"profiilien\" luomiseen.\nEro \"$switch$\" ja \"=\" (tunnetaan myös \"set\":nä) toimintojen välillä on se, että \"$switch$\" vaihtaa arvon edellisen arvon ja pikanäppäimen argumentin välillä, kun taas \"set\" asettaa sen aina argumentin arvoon.\nPikanäppäimet ovat aktiivisia myös ponnahdusikkunan ollessa auki.",
+		"placeholders": {
+			"switch": {
+				"content": "$1",
+				"example": "switch"
+			}
+		}
+	},
+	"togglePause": {
+		"message": "Keskeytä/Kumoa keskeytys"
+	},
+	"advance": {
+		"message": "Eteen (sekunteina)"
+	},
+	"toggleMute": {
+		"message": "Mykistä/kumoa mykistys"
+	},
+	"decreaseVolume": {
+		"message": "Pienennä äänenvoimakkuutta (%)"
+	},
+	"increaseVolume": {
+		"message": "Lisää äänenvoimakkuutta (%)"
+	},
+	"chartLengthInSeconds": {
+		"message": "Pituus sekunteina"
+	},
+	"chartWidthPx": {
+		"message": "Leveys (pikseleinä)"
+	},
+	"chartHeightPx": {
+		"message": "Korkeus (pikseleinä)"
+	},
+	"max": {
+		"message": "Maks"
+	},
+	"chartSpeedRealTime": {
+		"message": "Jatkuva (reaaliaikainen)"
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Näytä \"$openLocalFileLabel$\" -linkki",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"timeSavedAveragingMethodExponential": {
+		"message": "Ota huomioon vain uusimmat tiedot (eksponentiaalinen vaimeneminen)"
+	},
+	"iconBadge": {
+		"message": "Laajennuksen kuvakenimiö"
+	},
+	"timeSavedExponentialAveragingLatestDataWeight": {
+		"message": "Viimeisimmän toistojakson keskimääräinen paino"
+	},
+	"skipLess": {
+		"message": "Ohita vähemmän"
+	},
+	"overTheLast": {
+		"message": "Viimeisen $duration$ aikana",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"donate": {
+		"message": "Lahjoita"
+	},
+	"noSuitableElement": {
+		"message": "Sopivaa mediaelementtiä ei löytynyt sivulta"
+	},
+	"estimatedRemainingDuration": {
+		"message": "Arvioitu jäljellä oleva reaaliaikainen kesto:"
+	},
+	"alsoSearchFor": {
+		"message": "Etsi myös $type$-elementit",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "audio"
+			}
+		}
+	},
+	"changeElementSearchCriteria": {
+		"message": "Muuta hakuehtoja…"
+	},
+	"contentScriptFail": {
+		"message": "Sisältökomentosarjaa ei voitu suorittaa tällä sivulla"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Käytä kokeellista algoritmia"
+	},
+	"useExperimentalAlgorithmTooltip": {
+		"message": "➕ 🆕 Toimii nyt useimmilla verkkosivustoilla!\n➕ Mahdollistaa hiljaisten osien ohittamisen kokonaan sen sijaan, että niitä toistetaan nopeammin.\n➕ Ei äänen vääristymiä tai viiveitä.\n➖ Saattaa rikkoa toistoon liittyviä toimintoja joillakin verkkosivustoilla.\n➖ Kaavio ei näytä todellista äänenvoimakkuutta hiljaisilla osilla (se näyttää vain 0 sen sijaan)."
+	},
+	"audio": {
+		"message": "audio"
+	},
+	"video": {
+		"message": "video"
+	},
+	"mediaUnsupported": {
+		"message": "Tätä mediaa ei **todennäköisesti** tueta – $consequences$.",
+		"placeholders": {
+			"consequences": {
+				"content": "$1",
+				"example": "it could get muted if we attach to it"
+			}
+		}
+	},
+	"couldGetMuted": {
+		"message": "se voi mykistyä, jos kiinnitämme siihen"
+	},
+	"silenceSkippingWontWork": {
+		"message": "hiljaisuuden ohittaminen ei toimi kunnolla"
+	},
+	"switch": {
+		"message": "vaihda"
+	},
+	"resetToDefaults": {
+		"message": "Palauta oletusasetukset"
+	},
+	"chart": {
+		"message": "Kaavio"
+	},
+	"chartJumpPeriod": {
+		"message": "Hyppyjakso, %. Ilmaistuna kaavion pituuden murto-osa. Aseta arvoksi 0 sujuvaa liikettä varten (ei hyppyjä)."
+	},
+	"chartSpeed": {
+		"message": "Liikkeen nopeus"
+	},
+	"chartSpeedIntrinsicTime": {
+		"message": "Sama kuin nykyinen videonopeus"
+	},
+	"step": {
+		"message": "Vaihe"
+	},
+	"input": {
+		"message": "Syöte"
+	},
+	"helpTranslate": {
+		"message": "Auta kääntämään"
+	},
+	"runSnowflakeBridge": {
+		"message": "Auta muita kiertämään sensuuri yksinkertaisesti asentamalla (toinen) laajennus"
+	},
+	"saving": {
+		"message": "Tallennetaan…"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Kun nykyinen äänenvoimakkuus on tämän arvon alapuolella, nopeuta.\nKaaviossa tämä on punainen 🟥 vaakaviiva. Sininen 🟦 viiva on nykyinen äänenvoimakkuus, joten kun sininen viiva on punaisen alapuolella, se katsotaan hiljaiseksi."
+	},
+	"marginBeforeTooltip": {
+		"message": "Kun se on tällä hetkellä hiljaa ja sitten kohtaamme kovan osan, kuinka monta sekuntia ennen sitä meidän täytyy hidastaa (vaihtaa ääninopeuteen).\nTällä pyritään lähinnä varmistamaan, että kuulet selvästi ensimmäiset kirjaimet, kun joku alkaa puhua.\n\n⚠️ Huomaa, että nollasta poikkeavat arvot aiheuttavat äänen VÄÄRISTYMÄÄ, kun vaihdat äänettömästä ääninopeuteen, JA lisäävät tämän asetuksen arvoa vastaavan jatkuvan äänen viiveen. Nämä haitat eivät päde, jos käytät \"kokeilualgoritmia\"."
+	},
+	"marginAfterTooltip": {
+		"message": "Tämä on samanlainen kuin \"marginaali ennen\". Kun se oli voimakas ja sitten hiljainen, kuinka monta sekuntia meidän täytyy odottaa ennen kuin kiihdytämme (vaihda hiljaisuusnopeuteen).\nTämä on lähinnä taukojen pitäämiseksi puheessa ainakin jossain määrin, jotta sanat eivät mene sekaisin ja että kuulet selvästi lauseen viimeiset kirjaimet.\nToisin kuin \"marginaali ennen\", tämä ei aiheuta äänen vääristymiä ja viiveitä (mutta se ei tarkoita, että nämä asetukset ovat keskenään vaihdettavissa)."
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Huomaa, että selaimet eivät tue tietyn rajan ylittävää toistonopeutta.\nKirjoitushetkellä se on 16 Chromiumille (Chrome, Edge) ja 8 (oletuksena) Geckolle (Firefox)."
+	},
+	"applyTo": {
+		"message": "Sovella tähän"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Hiljaisuuden nopeuden määrittelymenetelmä"
+	},
+	"openPopup": {
+		"message": "Avaa ponnahdusikkuna"
+	},
+	"autofocusEnabledInput": {
+		"message": "Kohdista \"$enableCheckboxLabel$\" -valintaruutu automaattisesti, kun ponnahdusikkuna avautuu",
+		"placeholders": {
+			"enableCheckboxLabel": {
+				"content": "$1",
+				"example": "Enable"
+			}
+		}
+	},
+	"contact": {
+		"message": "Yhteystiedot"
+	},
+	"chartSpeedSoundedSpeedTime": {
+		"message": "Sama kuin nykyinen videon nopeus suhteessa äänen nopeuteen"
+	},
+	"decreaseSettingValue": {
+		"message": "Pienennä"
+	},
+	"setSettingValue": {
+		"message": "Aseta"
+	},
+	"addBinding": {
+		"message": "Lisää uusi pikanäppäin"
+	}
+}
