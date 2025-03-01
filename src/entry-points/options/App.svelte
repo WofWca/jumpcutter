@@ -138,6 +138,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   ]
   const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
     { v: 'none', l: `❌ ${getMessage('none')}`, },
+    { v: 'timeSaved', l: `⏱️🧮 ${getMessage('timeSaved')}`, },
     { v: 'soundedSpeed', l: `🗣️▶️ ${getMessage('soundedSpeed')}`, },
     { v: 'silenceSpeedRaw', l: `🙊⏩ ${getMessage('silenceSpeed')}`, },
     { v: 'volumeThreshold', l: `🔉🎚️ ${getMessage('volumeThreshold')}`, },

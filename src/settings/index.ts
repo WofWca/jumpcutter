@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2025  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -144,7 +144,17 @@ export interface Settings {
   timeSavedExponentialAveragingLatestDataWeight: number,
 
   // TODO should we add other options for this setting?
-  badgeWhatSettingToDisplayByDefault: 'none' | 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold',
+  /**
+   * Despite the name of the variable saying "setting",
+   * this could also be "timeSaved", which is not a setting.
+   * The same applies to the i18n string.
+   */
+  badgeWhatSettingToDisplayByDefault:
+    | 'none'
+    | 'timeSaved'
+    | 'soundedSpeed'
+    | 'silenceSpeedRaw'
+    | 'volumeThreshold',
 
   enableDesyncCorrection: boolean,
 

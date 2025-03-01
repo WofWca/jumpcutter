@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2023, 2025  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -25,7 +25,11 @@
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 import { onCommand as onCommandWhenReady } from './browserHotkeysListener';
-import { initIconAndBadge, updateIconAndBadge } from './iconAndBadgeUpdater';
+import {
+  initIconAndBadge,
+  onNewTimeSavedInfo,
+  updateIconAndBadge
+} from './iconAndBadgeUpdater';
 import { storage } from '@/settings/_storage';
 import {
   ControllerKind_CLONING,
@@ -150,6 +154,52 @@ browserOrChrome.storage.onChanged.addListener(async (...args) => {
   }
 
   await onStorageChanged(...args);
+});
+
+browserOrChrome.runtime.onConnect.addListener(port => {
+  if (port.name !== 'timeSavedBadgeText') {
+    console.warn(
+      'received connection, but port name is unknown. Ignoring.',
+      port.name
+    );
+    // port.disconnect()
+    return;
+  }
+
+  const senderTabId = port.sender?.tab?.id;
+  if (senderTabId == undefined) {
+    console.warn(`received ${port.name}, but tab.id is not set. Ignoring`);
+    // port.disconnect()
+    return
+  }
+
+  let settings: undefined | Awaited<typeof settingsP> = undefined
+  port.onMessage.addListener(async (timeSavedString) => {
+    if (typeof timeSavedString !== 'string') {
+      console.warn(
+        port.name,
+        'sent a message',
+        timeSavedString,
+        'but we expected a string',
+      );
+      return;
+    }
+
+    if (settings == undefined) {
+      settings = await settingsP
+    }
+
+    if (settings.badgeWhatSettingToDisplayByDefault !== 'timeSaved') {
+      console.warn(
+        'Received timeSavedBadgeText message, but `settings.badgeWhatSettingToDisplayByDefault` is',
+        settings.badgeWhatSettingToDisplayByDefault,
+        'This is expected if the setting value got changed but the page has not been reloaded'
+      )
+      return
+    }
+
+    onNewTimeSavedInfo(senderTabId, timeSavedString)
+  })
 });
 
 async function updateMediaSourceCloningScriptRegistered(
