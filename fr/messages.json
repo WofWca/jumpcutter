@@ -455,5 +455,17 @@
 	},
 	"popup": {
 		"message": "Pop-up"
+	},
+	"increaseSettingValue": {
+		"message": "Augmenter"
+	},
+	"decreaseSettingValue": {
+		"message": "Diminuer"
+	},
+	"toggleSettingValue": {
+		"message": "Alterner"
+	},
+	"setSettingValue": {
+		"message": "Ajuster"
 	}
 }
