@@ -173,7 +173,7 @@
 		"message": "Bu, \"önceki pay\"ına benzer. Sesli olup sonra sessizleştiğinde hızlanma (sessiz hıza geçme) için kaç saniye beklememiz gerekiyor.\nBu çoğunlukla, sözcüklerin birbirine karışmaması için konuşmada en azından bir dereceye kadar duraklamalar yapmak ve bir cümledeki son harfleri net bir şekilde duyabilmenizi sağlamak içindir.\n\"Önceki pay\"ın aksine bu, ses bozulmasına ve gecikmesine neden olmaz (ancak bu, bu ayarların birbirinin yerine geçebileceği anlamına gelmez)."
 	},
 	"fileInputLabel": {
-		"message": "Bir veya birkaç dosyayı buraya bırakın veya seçmek için tıklayın"
+		"message": "Bir veya birkaç dosyayı buraya bırakın\nveya seçmek için tıklayın"
 	},
 	"general": {
 		"message": "Genel"
@@ -431,5 +431,23 @@
 	},
 	"popupAdvancedMode": {
 		"message": "Gelişmiş ayarlar"
+	},
+	"chat": {
+		"message": "Sohbet"
+	},
+	"skipMore": {
+		"message": "Daha fazlasını atla"
+	},
+	"increaseSettingValue": {
+		"message": "Arttırmak"
+	},
+	"decreaseSettingValue": {
+		"message": "Azaltmak"
+	},
+	"setSettingValue": {
+		"message": "Ayarlamak"
+	},
+	"toggleSettingValue": {
+		"message": "Geçiş"
 	}
 }
