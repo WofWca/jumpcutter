@@ -32,13 +32,13 @@ let devErrorShown = false;
  */
 class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   _lastLoudSampleTime: AudioContextTime;
-  _lastTimePostedSilenceStart: boolean;
+  _lastEmitedEventIsSilenceStartEvent: boolean;
   constructor(options: any) {
     super(options);
     const initialDuration = options.processorOptions?.initialDuration ?? 0;
     this._lastLoudSampleTime = currentTime - initialDuration;
     const thresholdSamples = sampleRate * options.parameterData.durationThreshold;
-    this._lastTimePostedSilenceStart = this.isPastDurationThreshold(thresholdSamples);
+    this._lastEmitedEventIsSilenceStartEvent = this.isPastDurationThreshold(thresholdSamples);
   }
   static get parameterDescriptors() {
     return [
@@ -100,18 +100,21 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         // > to allow the size of the audio blocks to be changed
         // > depending on circumstances
         this._lastLoudSampleTime = currentTime;
-        if (this._lastTimePostedSilenceStart) {
+        if (this._lastEmitedEventIsSilenceStartEvent) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
           const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_END, currentTime];
           this.port.postMessage(m);
-          this._lastTimePostedSilenceStart = false;
+          this._lastEmitedEventIsSilenceStartEvent = false;
         }
       } else {
-        if (!this._lastTimePostedSilenceStart && this.isPastDurationThreshold(parameters.durationThreshold[0])) {
+        if (
+          !this._lastEmitedEventIsSilenceStartEvent
+          && this.isPastDurationThreshold(parameters.durationThreshold[0])
+        ) {
           // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
           const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_START, currentTime];
           this.port.postMessage(m);
-          this._lastTimePostedSilenceStart = true;
+          this._lastEmitedEventIsSilenceStartEvent = true;
         }
       }
     }
