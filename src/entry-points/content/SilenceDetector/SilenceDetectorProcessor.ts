@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2025  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -94,6 +94,12 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
         // TODO refactor: it is not quite corrent to use `currentTime` the time must actually depend on `sampleI`.
         // This gives an error of up to 128/44100=2.9ms. Consider using `currentFrame` and `sampleRate` instead.
         // https://webaudio.github.io/web-audio-api/#ref-for-dom-baseaudiocontext-current-frame-slot%E2%91%A0
+        // However, what we care about the most is how quickly we send an event
+        // to change the playback rate (in case of the stretching controller),
+        // and this error doesn't matter here.
+        // Otherwise, an error of 2.9ms will be easily compensated
+        // by margin before / after.
+        //
         // In addition, quantums might have a size different from 128:
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process
         // > However, plans are already in place to revise the specification
