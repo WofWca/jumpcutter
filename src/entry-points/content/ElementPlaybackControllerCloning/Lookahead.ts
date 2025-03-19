@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2021, 2022, 2023  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2021, 2022, 2023, 2025  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -512,7 +512,10 @@ export default class Lookahead {
         starts[closestFutureEndI],
         ends[closestFutureEndI],
       ];
-      return [nextSilenceRange, false];
+      return [
+        nextSilenceRange,
+        false, // isPending
+      ];
     }
 
     {
@@ -538,7 +541,7 @@ export default class Lookahead {
     if (time < pendingSilenceRangeEnd) {
       return [
         [silenceSince + this.settings.marginAfter, pendingSilenceRangeEnd],
-        true,
+        true, // isPending
       ];
     }
     }
