@@ -31,13 +31,18 @@ let devErrorShown = false;
  * last `durationThreshold`, or `SILENCE_END` when a single sample above `volumeThreshold` is found.
  */
 class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
-  _lastLoudSampleTime: AudioContextTime;
+  _lastLoudSampleInd: AudioContextTime;
   _lastEmitedEventIsSilenceStartEvent: boolean;
   constructor(options: any) {
     super(options);
     const initialDuration = options.processorOptions?.initialDuration ?? 0;
-    this._lastLoudSampleTime = currentTime - initialDuration;
-    this._lastEmitedEventIsSilenceStartEvent = false;
+
+    // There is not really one particular sample, only a frame,
+    // so let's consider the start of the current frame that one sample.
+    const currSampleInd = currentFrame;
+
+    this._lastLoudSampleInd = currSampleInd - initialDuration * sampleRate;
+    this._lastEmitedEventIsSilenceStartEvent = false
   }
   static get parameterDescriptors() {
     return [
@@ -58,8 +63,8 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
   }
 
   // Just so we don't mess up `>=` and `>` somewhere.
-  isPastDurationThreshold(durationThreshold: number) {
-    return currentTime >= this._lastLoudSampleTime + durationThreshold;
+  isPastDurationThreshold(saimpleInd: number, durationThresholdSamples: number) {
+    return saimpleInd >= this._lastLoudSampleInd + durationThresholdSamples;
   }
 
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
@@ -70,7 +75,10 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
       if (!assumeSoundedWhenUnknown) {
         throw new Error('The below code assumes video parts to be sounded when it is unknown');
       }
-      this._lastLoudSampleTime = currentTime;
+      // This technically should be `currentFrame + currentFrameIncrement - 1`,
+      // but we don't have a way to get the latter, and it doesn't matter
+      // too much here.
+      this._lastLoudSampleInd = currentFrame;
       return this.keepAlive;
     }
 
@@ -86,38 +94,30 @@ class SilenceDetectorProcessor extends WorkaroundAudioWorkletProcessor {
 
     const channel = input[0];
     const numSamples = input[0].length;
+    const durationThresholdSamples = parameters.durationThreshold[0] * sampleRate;
     for (let sampleI = 0; sampleI < numSamples; sampleI++) {
+      const sampleIGlobal = currentFrame + sampleI;
       const sample = channel[sampleI];
       const sampleIsLoud = sample >= volumeThreshold;
       if (sampleIsLoud) {
-        // TODO refactor: it is not quite corrent to use `currentTime` the time must actually depend on `sampleI`.
-        // This gives an error of up to 128/44100=2.9ms. Consider using `currentFrame` and `sampleRate` instead.
-        // https://webaudio.github.io/web-audio-api/#ref-for-dom-baseaudiocontext-current-frame-slot%E2%91%A0
-        // However, what we care about the most is how quickly we send an event
-        // to change the playback rate (in case of the stretching controller),
-        // and this error doesn't matter here.
-        // Otherwise, an error of 2.9ms will be easily compensated
-        // by margin before / after.
-        //
-        // In addition, quantums might have a size different from 128:
-        // https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process
-        // > However, plans are already in place to revise the specification
-        // > to allow the size of the audio blocks to be changed
-        // > depending on circumstances
-        this._lastLoudSampleTime = currentTime;
+        this._lastLoudSampleInd = sampleIGlobal;
         if (this._lastEmitedEventIsSilenceStartEvent) {
-          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_END, currentTime];
+          const m: SilenceDetectorMessage = [
+            SilenceDetectorEventType.SILENCE_END,
+            sampleIGlobal / sampleRate,
+          ];
           this.port.postMessage(m);
           this._lastEmitedEventIsSilenceStartEvent = false;
         }
       } else {
         if (
           !this._lastEmitedEventIsSilenceStartEvent
-          && this.isPastDurationThreshold(parameters.durationThreshold[0])
+          && this.isPastDurationThreshold(sampleIGlobal, durationThresholdSamples)
         ) {
-          // console.log('lastStart:', this._lastTimePostedSilenceStart, this._lastLoudSampleTime, currentTime - this._lastLoudSampleTime);
-          const m: SilenceDetectorMessage = [SilenceDetectorEventType.SILENCE_START, currentTime];
+          const m: SilenceDetectorMessage = [
+            SilenceDetectorEventType.SILENCE_START,
+            sampleIGlobal / sampleRate,
+          ];
           this.port.postMessage(m);
           this._lastEmitedEventIsSilenceStartEvent = true;
         }
