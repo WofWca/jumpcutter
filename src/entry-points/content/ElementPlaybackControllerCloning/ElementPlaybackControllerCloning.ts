@@ -666,7 +666,11 @@ export default class Controller {
         return ifNeedForceSeekThenSeekElse(WhatToDo.NOTHING);
       }
 
-      const expectedMinimumSetTimeoutDelay = 1 / 60; // TODO determine this dynamically, as with `expectedSeekDuration`.
+      // `setTimeout` interval is not just the frame rate of the PC,
+      // and it can be very short. 240 should be sane,
+      // but let's not decrease it too much.
+      // TODO determine this dynamically, as with `expectedSeekDuration`.
+      const expectedMinimumSetTimeoutDelay = 1 / 240;
       // TODO but maybe otherwise we could simply use a smaller value of silenceSpeed instead of not speeding up
       // at all?
       // TODO improvement: or maybe it's wrong? Does knowing setTimeout period let us predict when
