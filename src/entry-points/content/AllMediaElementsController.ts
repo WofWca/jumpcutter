@@ -57,7 +57,7 @@ export type TelemetryMessage =
     elementLikelyCorsRestricted: boolean,
     elementCurrentSrc?: string,
     createMediaElementSourceCalledForElement: boolean,
-     /**
+    /**
      * Remember that this could be `Infinity` for live streams,
      * and if `.duration` is otherwise unknown.
      */
