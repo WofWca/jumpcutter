@@ -56,7 +56,15 @@ function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
   return false;
 }
 
-type LookaheadSettings = Pick<ExtensionSettings, 'volumeThreshold' | 'marginBefore' | 'marginAfter'>;
+type LookaheadSettings = Pick<
+  ExtensionSettings,
+  'volumeThreshold' | 'marginBefore' | 'marginAfter'
+> & {
+  /**
+   * @see {@link ControllerSettings.isOppositeDay}
+   */
+  isOppositeDay: boolean
+};
 
 // The `maxPlaybackRate` could change in the future, to something like 64, so let's cap it at
 // this value. Because higher playback rate is more processing-heavy (things may start lagging)
@@ -76,6 +84,10 @@ export default class Lookahead {
    * the volume threshold, no margin before or margin after involved.
    */
   silenceSince: MediaTime | undefined;
+  /**
+   * This is only used when `isOppositeDay === true`.
+   */
+  loudSince: MediaTime | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
   // silenceRanges: Array<[start: Time, end: Time]> = []; // Array is not the fastest data structure for this application.
@@ -124,6 +136,8 @@ export default class Lookahead {
     this._destroyedPromise.then(() =>
       clone.removeEventListener("error", this.onClonePlaybackError)
     );
+
+    this.loudSince = clone.currentTime;
 
     if (isCloneElementAndAudioContextReusable) {
       this._destroyedPromise.then(() => {
@@ -237,7 +251,18 @@ export default class Lookahead {
           // The bigger `silenceDetector.durationThreshold` is, the bigger is the error.
           // Same applies to the `SILENCE_END` case below.
           const silenceStartAtIntrinsicTime = clone.currentTime - intrinsicTimePassedSinceSilenceStart;
+
+          if (this.settings.isOppositeDay) {
+            assertDev(this.loudSince != undefined, 'Weird, this.loudSince is undefined');
+            // We're actually pushing a "loud" range.
+            this.pushNewSilenceRange(
+              this.loudSince - this.settings.marginBefore,
+              silenceStartAtIntrinsicTime + this.settings.marginAfter,
+            )
+          }
+
           this.silenceSince = silenceStartAtIntrinsicTime;
+          this.loudSince = undefined;
         } else {
           assertDev(this.silenceSince != undefined,
             'Thought `this.silenceSince` to be set because SilenceDetector was '
@@ -246,12 +271,16 @@ export default class Lookahead {
             realTimePassedSinceEvent + volumeSmoothingCausedDelay;
           const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * clone.playbackRate;
           const silenceEndAtIntrinsicTime = clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
-          this.pushNewSilenceRange(
-            this.silenceSince + this.settings.marginAfter,
-            silenceEndAtIntrinsicTime - this.settings.marginBefore,
-          );
+
+          if (!this.settings.isOppositeDay) {
+            this.pushNewSilenceRange(
+              this.silenceSince + this.settings.marginAfter,
+              silenceEndAtIntrinsicTime - this.settings.marginBefore,
+            );
+          }
 
           this.silenceSince = undefined;
+          this.loudSince = silenceEndAtIntrinsicTime;
         }
       }
     }));
@@ -327,6 +356,8 @@ export default class Lookahead {
       const currentlySilence = this.silenceSince != undefined;
       if (currentlySilence) {
         this.silenceSince = originalElementTime;
+      } else {
+        this.loudSince = originalElementTime
       }
     }
     // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
@@ -520,7 +551,10 @@ export default class Lookahead {
 
     {
     // If there is a pending nextSilenceRange
-    const { silenceSince } = this;
+    const silenceSince = this.settings.isOppositeDay
+      ? this.loudSince
+      : this.silenceSince;
+
     const currentlySilence = silenceSince != undefined;
     if (!currentlySilence) {
       return undefined;

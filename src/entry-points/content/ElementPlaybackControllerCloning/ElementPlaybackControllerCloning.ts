@@ -59,6 +59,13 @@ export type ControllerSettings =
     | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,
+    /**
+     * Whether we should be skipping sounded (loud) parts
+     * instead of silent parts.
+     *
+     * This is only supported by the cloning controller.
+     */
+    isOppositeDay: boolean
   };
 
 export interface TelemetryRecord {
@@ -456,6 +463,13 @@ export default class Controller {
       [silenceStart, silenceEnd],
       isTheUpcomingSilenceRangeStillPending,
     ] = maybeUpcomingSilenceRange;
+
+    if (this.settings.isOppositeDay) {
+      if (isTheUpcomingSilenceRangeStillPending) {
+        return
+      }
+    }
+
     // The fact that `isUpcomingSilenceRangeStillPending`
     // TODO improvement: would it be maybe better to also just do nothing if the next silence range
     // is too far, and `setTimeout` only when it gets closer (so `if (seekInRealTime > 10) return;`?
@@ -807,6 +821,7 @@ export default class Controller {
         newSettings.volumeThreshold !== oldSettings.volumeThreshold
         || newSettings.marginBefore !== oldSettings.marginBefore
         || newSettings.marginAfter !== oldSettings.marginAfter
+        || newSettings.isOppositeDay !== oldSettings.isOppositeDay
       )
     if (lookaheadSettingsChanged) {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.

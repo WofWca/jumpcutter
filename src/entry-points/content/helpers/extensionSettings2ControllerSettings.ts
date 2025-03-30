@@ -19,6 +19,7 @@
  */
 
 import type { Settings as ExtensionSettings } from '@/settings';
+import { OppositeDayMode } from '@/settings';
 import type { ControllerSettings } from
   '../ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import { getAbsoluteClampedSilenceSpeed } from '@/settings';
@@ -33,5 +34,7 @@ export default function extensionSettings2ControllerSettings(extensionSettings: 
     enableDesyncCorrection: extensionSettings.enableDesyncCorrection,
 
     silenceSpeed: getAbsoluteClampedSilenceSpeed(extensionSettings),
+
+    isOppositeDay: extensionSettings.oppositeDayMode === OppositeDayMode.ON
   };
 }

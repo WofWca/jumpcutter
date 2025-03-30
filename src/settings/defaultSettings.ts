@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { enabledSettingDefaultValue } from './';
+import { enabledSettingDefaultValue, OppositeDayMode } from './';
 import type { Settings } from './';
 import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
@@ -265,4 +265,6 @@ export const defaultSettings: Readonly<Settings> = {
 
   advancedMode: false,
   simpleSlider: simpleSliderDefaultVal,
+
+  oppositeDayMode: OppositeDayMode.UNDISCOVERED,
 };

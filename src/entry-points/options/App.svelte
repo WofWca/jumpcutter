@@ -25,7 +25,16 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
   import { cloneDeepJson, assertDev, assertNever, getMessage } from '@/helpers';
-  import { defaultSettings, filterOutLocalStorageOnlySettings, getSettings, setSettings, Settings } from '@/settings';
+  import {
+    defaultSettings,
+    filterOutLocalStorageOnlySettings,
+    getSettings,
+    OppositeDayMode_HIDDEN_BY_USER,
+    OppositeDayMode_OFF,
+    OppositeDayMode_UNDISCOVERED,
+    setSettings,
+    Settings,
+  } from "@/settings";
   import debounce from 'lodash/debounce';
   import {
     getDecayTimeConstant as getTimeSavedDataWeightDecayTimeConstant
@@ -466,6 +475,22 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           label="☑️ {getMessage('autofocusEnabledInput', getMessage('enable'))}"
           bind:checked={settings.popupAutofocusEnabledInput}
         />
+        {#if settings.oppositeDayMode !== OppositeDayMode_UNDISCOVERED}
+          <!-- TODO translate -->
+          <CheckboxField
+            label='🔀 Show the "Opposite day" checkbox'
+            checked={settings.oppositeDayMode !== OppositeDayMode_HIDDEN_BY_USER}
+            on:change={e => {
+              assertDev(e.currentTarget instanceof HTMLInputElement);
+
+              if (e.currentTarget.checked) {
+                settings.oppositeDayMode = OppositeDayMode_OFF;
+              } else {
+                settings.oppositeDayMode = OppositeDayMode_HIDDEN_BY_USER;
+              }
+            }}
+          />
+        {/if}
         <CheckboxField
           label="🔗 {getMessage('alwaysShowOpenLocalFileLink', getMessage('openLocalFile'))}"
           bind:checked={settings.popupAlwaysShowOpenLocalFileLink}

@@ -34,6 +34,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       type="checkbox"
       {...$$restProps}
       bind:checked
+      on:input
+      on:change
     >
   </label>
 </div>

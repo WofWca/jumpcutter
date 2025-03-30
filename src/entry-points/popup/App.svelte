@@ -25,6 +25,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     ControllerKind_CLONING, ControllerKind_STRETCHING, changeAlgorithmAndMaybeRelatedSettings,
     PopupAdjustableRangeInputsCapitalized,
     ControllerKind_ALWAYS_SOUNDED,
+    OppositeDayMode_ON,
+    OppositeDayMode_OFF,
+    OppositeDayMode_HIDDEN_BY_USER,
+    OppositeDayMode_UNDISCOVERED,
   } from '@/settings';
   import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
@@ -90,6 +94,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       | 'onPlaybackRateChangeFromOtherScripts'
       | 'hotkeys'
       | 'popupSpecificHotkeys'
+      | 'oppositeDayMode'
     >
     & ReturnType<Parameters<typeof createKeydownListener>[1]>
     & Parameters<typeof changeAlgorithmAndMaybeRelatedSettings>[0]
@@ -157,6 +162,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
   } | undefined;
 
+  let resolveFirstTelemetryReceivedP: () => void;
+  const firstTelemetryReceivedP = new Promise<void>(r => resolveFirstTelemetryReceivedP = r);
   let latestTelemetryRecord: TelemetryMessage | undefined;
   const telemetryUpdatePeriod = 0.02;
   let disconnect: undefined | (() => void);
@@ -199,6 +206,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             return;
           }
           latestTelemetryRecord = msg as TelemetryMessage;
+          resolveFirstTelemetryReceivedP();
         });
         let telemetryTimeoutId: ReturnType<typeof setTimeout>;
         (function sendGetTelemetryAndScheduleAnother() {
@@ -536,6 +544,65 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       });
     });
   }
+
+  let oppositeDayModeIsDiscoverable = false;
+  (async () => {
+    // Reveal the opposite day mode if the conditions are good.
+
+    const now = new Date();
+    const is1stOfApril = now.getDate() === 1 && now.getMonth() === 3;
+    if (!is1stOfApril) {
+      return
+    }
+
+    const settings = await settingsPromise;
+    if (settings.oppositeDayMode !== OppositeDayMode_UNDISCOVERED) {
+      // Already revealed, no need to do anything.
+      return
+    }
+    // TODO perf: dyamically import whatever is below.
+
+    await firstTelemetryReceivedP;
+    assertDev(latestTelemetryRecord);
+
+    // The opposite day mode is not as fun on the stretching controller.
+    // Only the cloning one is fun, because it entirely skips "silence".
+    if (latestTelemetryRecord.controllerType !== ControllerKind_CLONING) {
+      return;
+    }
+
+    const timeSavedData = latestTelemetryRecord;
+
+    // TODO fix: ahhh, this could be an exponentially decayed value,
+    // it's not correct to just look at the absolute value.
+    if (timeSavedData.wouldHaveLastedIfSpeedWasSounded < 2 * 60) {
+      // Let's not turn on the opposite day mode yet,
+      // it's too early to judge the average silence percentage
+      // of the video.
+      return
+    }
+
+    const timeSavedPercentage =
+      timeSavedData.timeSavedComparedToSoundedSpeed /
+      timeSavedData.wouldHaveLastedIfSpeedWasSounded;
+    if (timeSavedPercentage < 0.20) {
+      // If there is too little silence, we would have to skip too much,
+      // and the cloning algorithm won't be able too keep up
+      // playing the clone video. It won't be able to find the next
+      // loud part in time, so we'd have to still play some
+      // loud parts, which would ruin the effect.
+      return
+    }
+
+    const remainingDuration = latestTelemetryRecord.elementRemainingIntrinsicDuration;
+    if (Number.isNaN(remainingDuration) || remainingDuration < 5 * 60) {
+      // Less than 5 minutes left, can't have much fun.
+      return
+    }
+
+    oppositeDayModeIsDiscoverable = true;
+  })();
+
 </script>
 
 <svelte:window
@@ -910,6 +977,35 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     {/if}
     <span>&nbsp;{getMessage('useExperimentalAlgorithm')}</span>
   </label>
+  {#if (
+    // The opposite day mode only applies to the cloning controller.
+    settings.experimentalControllerType === ControllerKind_CLONING
+    && (
+      settings.oppositeDayMode === OppositeDayMode_UNDISCOVERED
+        ? oppositeDayModeIsDiscoverable
+        : settings.oppositeDayMode !== OppositeDayMode_HIDDEN_BY_USER
+    )
+  )}
+    <br>
+    <label
+      style="margin-top: 1rem; display: inline-flex; align-items: center;"
+    >
+      <input
+        checked={settings.oppositeDayMode === OppositeDayMode_ON}
+        on:change={e => {
+          updateSettingsLocalCopyAndStorage({
+            oppositeDayMode: e.currentTarget.checked
+              ? OppositeDayMode_ON
+              : OppositeDayMode_OFF
+          })
+        }}
+        type="checkbox"
+        style="margin: 0 0.5rem 0 0;"
+      >
+      <!-- TODO translation -->
+      <span>🔀 Opposite day</span>
+    </label>
+  {/if}
   {#if latestTelemetryRecord?.clonePlaybackError}
     <p>
       <!-- This usually happens when the user has activated the experimental

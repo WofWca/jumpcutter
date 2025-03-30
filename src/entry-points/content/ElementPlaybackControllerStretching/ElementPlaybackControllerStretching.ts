@@ -78,6 +78,13 @@ export type ControllerSettings =
     | 'enableDesyncCorrection'
   > & {
     silenceSpeed: number,
+    /**
+     * Whether we should be skipping sounded (loud) parts
+     * instead of silent parts.
+     *
+     * This is only supported by the cloning controller.
+     */
+    isOppositeDay: boolean
   };
 
 export interface TelemetryRecord {
