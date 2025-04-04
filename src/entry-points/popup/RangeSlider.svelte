@@ -79,5 +79,4 @@ TODO. -->
   input:active::-webkit-slider-thumb {
     transform: scale(1.1);
   }
-
 </style>
