@@ -71,12 +71,12 @@ TODO. -->
   input {
     flex-grow: 1;
   }
+  input:active::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
   .number-representation {
     /* So they don't chane width when thir value changes. */
     min-width: var(--number-representation-min-width);
     text-align: end;
-  }
-  input:active::-webkit-slider-thumb {
-    transform: scale(1.1);
   }
 </style>
