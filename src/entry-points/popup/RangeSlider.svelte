@@ -76,4 +76,8 @@ TODO. -->
     min-width: var(--number-representation-min-width);
     text-align: end;
   }
+  input::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+  }
+
 </style>
