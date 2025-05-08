@@ -47,4 +47,16 @@
     <rect x="26" y="15" width="2" height="2" rx="0.5" />
     <rect x="29" y="14" width="2" height="4" rx="0.5" />
   </g>
+
+  <g
+    stroke-width="1"
+  >
+    <!-- <line x1="16" x2="16" y1="0" y2="32"
+      stroke="white"
+    /> -->
+    <line x1="16" x2="16" y1="0" y2="32"
+      stroke="black"
+      stroke-dasharray="2 1"
+    />
+  </g>
 </svg>
