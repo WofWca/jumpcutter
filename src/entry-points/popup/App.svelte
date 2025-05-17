@@ -35,8 +35,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
   import {
     HotkeyAction,
-    HotkeyAction_INCREASE_VOLUME,
-    HotkeyAction_DECREASE_VOLUME,
     HotkeyAction_INCREASE_VOLUME_THRESHOLD,
     HotkeyAction_DECREASE_VOLUME_THRESHOLD,
     HotkeyAction_TOGGLE_VOLUME_THRESHOLD,
@@ -67,6 +65,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import { isMobile } from '@/helpers/isMobile';
   import type { Props as TippyProps } from 'tippy.js';
   import TimeSaved from './TimeSaved.svelte';
+  import VolumeIndicator from './VolumeIndicator.svelte';
 
   // See ./popup.css. Would be cool to do this at build-time
   if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
@@ -569,49 +568,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   >⚙️</button>
   <div class="others__wrapper">
     {#if settings.advancedMode}
-    <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
-    <span
-      class="others__item"
-      use:tippy={{
-        content: () => {
-          let tooltip = getMessage('volume');
-          const hotkeysString =
-            getActionString(
-              HotkeyAction_INCREASE_VOLUME,
-              getMessage("increaseSettingValue")
-            )
-            + getActionString(
-              HotkeyAction_DECREASE_VOLUME,
-              getMessage("decreaseSettingValue")
-            );
-          if (hotkeysString) {
-            tooltip += '\n' + hotkeysString;
-          }
-
-          return tooltip;
-        },
-        theme: tippyThemeMyTippyAndPreLine,
-      }}
-    >
-      <!-- `min-width` because the emojis have different widths, so it remains constant. -->
-      <span
-        style="display: inline-block; min-width: 2.5ch;"
-      >{(() => {
-        if (!latestTelemetryRecord) return '🔉';
-        const vol = latestTelemetryRecord.elementVolume;
-        if (vol < 0.001) return '🔇';
-        if (vol < 1/3) return '🔈';
-        if (vol < 2/3) return '🔉';
-        return '🔊';
-      })()}</span>
-      <!-- TODO how about we replace it with a range input. -->
-      <meter
-        min="0"
-        max="1"
-        value={latestTelemetryRecord?.elementVolume ?? 0}
-        style="width: 6rem;"
-      ></meter>
-    </span>
+      <VolumeIndicator {latestTelemetryRecord} {getActionString}/>
     {:else}
     <div style="flex-grow: 1"></div>
     {/if}
