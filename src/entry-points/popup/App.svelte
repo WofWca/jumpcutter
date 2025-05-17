@@ -530,51 +530,63 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   on:keydown={keydownListener}
 />
 {#await settingsPromise then _}
-  <div style="display: flex; justify-content: center;">
-    <!-- TODO style: when `toggleExtensionTooltip == undefined`,
-    the tooltip is just empty. -->
-    <label
-      class="enabled-input"
-      use:tippy={toggleExtensionTooltip}
-    >
-      <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
-      DRY? With `{...myBind}` or something?
-      Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
-      Maybe it's more proper to not rely on `bind:` -->
-      <input
-        bind:checked={settings.enabled}
-        on:change={createOnInputListener('enabled')}
-        type="checkbox"
-        autofocus={settings.popupAutofocusEnabledInput}
-      >
-      <span>{getMessage('enable')}</span>
-    </label>
+  <div style="display: flex; justify-content: space-between;">
+    <div>
+      <div style="margin-bottom: 5px;">
+        <!-- TODO style: when `toggleExtensionTooltip == undefined`,
+        the tooltip is just empty. -->
+        <label
+        style="
+        display: inline-flex;
+        align-items: center;
+        "
+          use:tippy={toggleExtensionTooltip}
+        >
+          <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
+          DRY? With `{...myBind}` or something?
+          Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
+          Maybe it's more proper to not rely on `bind:` -->
+          <input
+            bind:checked={settings.enabled}
+            on:change={createOnInputListener('enabled')}
+            type="checkbox"
+            autofocus={settings.popupAutofocusEnabledInput}
+          >
+          <span>{getMessage('enable')}</span>
+        </label>
+      </div>
+      {#if settings.advancedMode}
+      <div>
+        <VolumeIndicator {latestTelemetryRecord} {getActionString}/>
+      </div>
+      {/if}
+    </div>
+    <div style="text-align: right;">
+      {#if settings.advancedMode}
+      <div style="margin-bottom: 5px;">
+        <!-- TODO but this is technically a button. Is this ok? -->
+        <button
+          on:click={() => {
+            browserOrChrome.runtime.openOptionsPage();
+            if (isMobile) {
+              // The options tab gets opened, but it's not visible
+              // because the popup stays open. Let's close it.
+              window.close();
+            }
+          }}
+          use:tippy={{
+            content: () => getMessage('more'),
+            theme: 'my-tippy',
+          }}
+        >⚙️</button>
+      </div>
+      {/if}
+      <div>
+        <TimeSaved {latestTelemetryRecord} {settings}/>
+      </div>
+    </div>
   </div>
-  <!-- TODO but this is technically a button. Is this ok? -->
-  <button
-    id="options-button"
-    on:click={() => {
-      browserOrChrome.runtime.openOptionsPage();
-      if (isMobile) {
-        // The options tab gets opened, but it's not visible
-        // because the popup stays open. Let's close it.
-        window.close();
-      }
-    }}
-    use:tippy={{
-      content: () => getMessage('more'),
-      theme: 'my-tippy',
-    }}
-  >⚙️</button>
-  <div class="others__wrapper">
-    {#if settings.advancedMode}
-      <VolumeIndicator {latestTelemetryRecord} {getActionString}/>
-    {:else}
-    <div style="flex-grow: 1"></div>
-    {/if}
 
-    <TimeSaved {latestTelemetryRecord} {settings}/> 
-  </div>
   <!-- TODO transitions? -->
   <div
     style={
@@ -1016,32 +1028,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     margin-top: 1rem;
   }
 
-  .enabled-input {
-    margin: 1.75rem 0;
-    display: flex;
-    align-items: center;
-    font-size: 2rem;
-  }
-  .enabled-input > input {
-    width: 2rem;
-    height: 2rem;
-  }
-  .enabled-input > span {
-    margin: 0 0.5rem;
-  }
-
-  .others__wrapper {
-    display: flex;
-    justify-content: space-between;
-    /* In case chart size is smol. */
-    flex-wrap: wrap;
-    margin: 0.25rem -0.25rem;
-  }
-  .others__item {
-    margin: 0.25rem;
-    white-space: nowrap;
-  }
-
   /* Global because otherwise it's not applied. I think it's fine as we have to specify the theme explicitly anyway. */
   :global(.tippy-box[data-theme~='my-tippy']) {
     font-size: inherit;
@@ -1055,14 +1041,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     justify-content: center;
     align-items: center;
     text-align: center;
-  }
-
-  #options-button {
-    position: absolute;
-    padding: 0;
-    top: 0.75rem;
-    right: 0.75rem;
-    font-size: 1.5rem;
   }
 
   .capitalize-first-letter::first-letter {
