@@ -1028,6 +1028,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     margin-top: 1rem;
   }
 
+  label {
+    user-select: none;
+  }
+
   /* Global because otherwise it's not applied. I think it's fine as we have to specify the theme explicitly anyway. */
   :global(.tippy-box[data-theme~='my-tippy']) {
     font-size: inherit;
