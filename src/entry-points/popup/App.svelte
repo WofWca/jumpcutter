@@ -35,8 +35,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
   import {
     HotkeyAction,
-    HotkeyAction_INCREASE_VOLUME,
-    HotkeyAction_DECREASE_VOLUME,
     HotkeyAction_INCREASE_VOLUME_THRESHOLD,
     HotkeyAction_DECREASE_VOLUME_THRESHOLD,
     HotkeyAction_TOGGLE_VOLUME_THRESHOLD,
@@ -63,10 +61,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
-  import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { assertDev, getMessage } from '@/helpers';
   import { isMobile } from '@/helpers/isMobile';
   import type { Props as TippyProps } from 'tippy.js';
+  import TimeSaved from './TimeSaved.svelte';
+  import VolumeIndicator from './VolumeIndicator.svelte';
 
   // See ./popup.css. Would be cool to do this at build-time
   if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
@@ -331,7 +330,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const tippyThemeMyTippy = 'my-tippy';
   const tippyThemeMyTippyAndPreLine = tippyThemeMyTippy + ' white-space-pre-line';
 
-  let timeSavedTooltipContentEl: HTMLElement;
 
   $: silenceSpeedLabelClarification = settings?.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
     ? getMessage('relativeToSounded')
@@ -361,83 +359,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       });
       window.close();
     };
-
-  function mmSs(s: number): string {
-    return fromS(Math.round(s), 'mm:ss');
-  }
-
-  $: r = latestTelemetryRecord;
-  // TODO I'd prefer to use something like [`with`](https://github.com/sveltejs/svelte/pull/4601)
-  $: timeSavedComparedToSoundedSpeedPercent =
-    (!r ? 0 : 100 * r.timeSavedComparedToSoundedSpeed / (r.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
-  $: timeSavedComparedToSoundedSpeedAbs =
-    mmSs(r?.timeSavedComparedToSoundedSpeed ?? 0);
-  $: wouldHaveLastedIfSpeedWasSounded =
-    mmSs(r?.wouldHaveLastedIfSpeedWasSounded ?? 0);
-  $: timeSavedComparedToIntrinsicSpeedPercent =
-    (!r ? 0 : 100 * r.timeSavedComparedToIntrinsicSpeed / (r.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
-  $: timeSavedComparedToIntrinsicSpeedAbs =
-    mmSs(r?.timeSavedComparedToIntrinsicSpeed ?? 0);
-  $: wouldHaveLastedIfSpeedWasIntrinsic =
-    mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
-
-  function formatTimeSaved(num: number) {
-    return num.toFixed(2);
-  }
-  const dummyTimeSavedValues = [
-    1,
-    1, // TODO use `getAbsoluteClampedSilenceSpeed`?
-  ] as [number, number];
-  function getTimeSavedPlaybackRateEquivalents(
-    r: TelemetryMessage | undefined
-  ): [comparedToSounded: number, comparedToIntrinsic: number] {
-    if (!r) {
-      return dummyTimeSavedValues;
-    }
-    // `r.wouldHaveLastedIfSpeedWasIntrinsic - r.timeSavedComparedToIntrinsicSpeed` would be equivalent.
-    const lastedActually = r.wouldHaveLastedIfSpeedWasSounded - r.timeSavedComparedToSoundedSpeed;
-    if (lastedActually === 0) {
-      return dummyTimeSavedValues;
-    }
-    return [
-      r.wouldHaveLastedIfSpeedWasSounded / lastedActually,
-      r.wouldHaveLastedIfSpeedWasIntrinsic / lastedActually,
-    ]
-  }
-  function beetween(min: number, x: number, max: number): boolean {
-    return min < x && x < max;
-  }
-  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
-  $: timeSavedPlaybackRateEquivalentsFmt = [
-    formatTimeSaved(timeSavedPlaybackRateEquivalents[0]),
-    formatTimeSaved(timeSavedPlaybackRateEquivalents[1]),
-  ] as [string, string];
-  $: timeSavedPlaybackRateEquivalentsAreDifferent =
-    // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
-    // jump between being the same and being different even if you don't change soundedSpeed.
-    // Not simply doing a strict comparison (`!==`) because otherwise if you changed soundedSpeed for even
-    // a moment, it would never stop showing both numbers.
-    !beetween(
-      1 / 1.02,
-      (
-        (r?.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)
-        / (r?.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)
-      ),
-      1.02,
-    )
-    // Also need to look at this because if `soundedSpeed` was > 1 at first and then it changed to < 1, there will
-    // be a point where `wouldHaveLastedIfSpeedWasSounded` and `wouldHaveLastedIfSpeedWasIntrinsic` will become the
-    // same (although for a brief moment), despite the soundedSpeed actually never being `=== 1`.
-    || (settings && settings.soundedSpeed !== 1);
-  // TODO DRY
-  $: timeSavedOnlyOneNumberIsShown =
-    !timeSavedPlaybackRateEquivalentsAreDifferent
-    && settings?.timeSavedAveragingMethod === 'exponential';
-  $: estimatedRemainingDuration = settings &&
-                                  r?.elementRemainingIntrinsicDuration != undefined &&
-                                  r.elementRemainingIntrinsicDuration < Infinity
-    ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
-    : undefined;
 
   function onUseExperimentalAlgorithmInput(e: Event) {
     const newControllerType = (e.target as HTMLInputElement).checked
@@ -609,179 +530,64 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   on:keydown={keydownListener}
 />
 {#await settingsPromise then _}
-  <div style="display: flex; justify-content: center;">
-    <!-- TODO style: when `toggleExtensionTooltip == undefined`,
-    the tooltip is just empty. -->
-    <label
-      class="enabled-input"
-      use:tippy={toggleExtensionTooltip}
-    >
-      <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
-      DRY? With `{...myBind}` or something?
-      Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
-      Maybe it's more proper to not rely on `bind:` -->
-      <input
-        bind:checked={settings.enabled}
-        on:change={createOnInputListener('enabled')}
-        type="checkbox"
-        autofocus={settings.popupAutofocusEnabledInput}
-      >
-      <span>{getMessage('enable')}</span>
-    </label>
-  </div>
-  <!-- TODO but this is technically a button. Is this ok? -->
-  <button
-    id="options-button"
-    on:click={() => {
-      browserOrChrome.runtime.openOptionsPage();
-      if (isMobile) {
-        // The options tab gets opened, but it's not visible
-        // because the popup stays open. Let's close it.
-        window.close();
-      }
-    }}
-    use:tippy={{
-      content: () => getMessage('more'),
-      theme: 'my-tippy',
-    }}
-  >⚙️</button>
-  <div class="others__wrapper">
-    {#if settings.advancedMode}
-    <!-- TODO work on accessibility for the volume indicator. https://atomiks.github.io/tippyjs/v6/accessibility. -->
-    <span
-      class="others__item"
-      use:tippy={{
-        content: () => {
-          let tooltip = getMessage('volume');
-          const hotkeysString =
-            getActionString(
-              HotkeyAction_INCREASE_VOLUME,
-              getMessage("increaseSettingValue")
-            )
-            + getActionString(
-              HotkeyAction_DECREASE_VOLUME,
-              getMessage("decreaseSettingValue")
-            );
-          if (hotkeysString) {
-            tooltip += '\n' + hotkeysString;
-          }
-
-          return tooltip;
-        },
-        theme: tippyThemeMyTippyAndPreLine,
-      }}
-    >
-      <!-- `min-width` because the emojis have different widths, so it remains constant. -->
-      <span
-        style="display: inline-block; min-width: 2.5ch;"
-      >{(() => {
-        if (!latestTelemetryRecord) return '🔉';
-        const vol = latestTelemetryRecord.elementVolume;
-        if (vol < 0.001) return '🔇';
-        if (vol < 1/3) return '🔈';
-        if (vol < 2/3) return '🔉';
-        return '🔊';
-      })()}</span>
-      <!-- TODO how about we replace it with a range input. -->
-      <meter
-        min="0"
-        max="1"
-        value={latestTelemetryRecord?.elementVolume ?? 0}
-        style="width: 6rem;"
-      ></meter>
-    </span>
-    {:else}
-    <div style="flex-grow: 1"></div>
-    {/if}
-
-    <!-- TODO in "simple mode" the toolip's content is cut clipped. -->
-    <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
-    <button
-      type="button"
-      class="others__item"
-      style="border: none; padding: 0; background: unset; font: inherit;"
-      use:tippy={{
-        content: timeSavedTooltipContentEl,
-        theme: 'my-tippy',
-        placement: 'bottom',
-        hideOnClick: false,
-      }}
-    >
-      <span>⏱️</span>
-      <span>{timeSavedPlaybackRateEquivalentsFmt[0]}</span>
-      {#if settings.timeSavedAveragingMethod !== 'exponential'}
-        <span>({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span>
-      {/if}
-      <!-- Don't need to confuse the user with another number if they're equal anyway, especially they're one
-      of those who use `soundedSpeed=1` -->
-      {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-        <span>/</span>
-        <span>{timeSavedPlaybackRateEquivalentsFmt[1]}</span>
-        {#if settings.timeSavedAveragingMethod !== 'exponential'}
-          <span>({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span>
-        {/if}
-      {/if}
-
-      <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
-      <!-- TODO the contents are quite big and some locales (e.g. `ru`) may not fit in the default popup size. -->
-      <div style="display:none">
-        <div bind:this={timeSavedTooltipContentEl}>
-          <p style="margin-top: 0.25rem;">
-            <span>{getMessage('timeSaved')}.</span>
-            {#if settings.timeSavedAveragingMethod === 'exponential'}
-              <br>
-              <span>{getMessage('overTheLast', mmSs(settings.timeSavedAveragingWindowLength))}.</span>
-            {/if}
-          </p>
-          {#if !timeSavedOnlyOneNumberIsShown}
-            <p>{getMessage('numbersMeanings')}</p>
-          {/if}
-          <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
-            <li
-              style={timeSavedOnlyOneNumberIsShown ? 'list-style:none;' : ''}
-            >{timeSavedPlaybackRateEquivalentsFmt[0]} – {getMessage('timeSavedComparedToSounded')}</li>
-            {#if settings.timeSavedAveragingMethod !== 'exponential'}
-              <li>{timeSavedComparedToSoundedSpeedAbs} – {getMessage('timeSavedComparedToSoundedAbs')}</li>
-              <li>{wouldHaveLastedIfSpeedWasSounded} – {getMessage('wouldHaveLastedIfSpeedWasSounded')}</li>
-            {/if}
-            {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-              <li>{timeSavedPlaybackRateEquivalentsFmt[1]} – {getMessage('timeSavedComparedToIntrinsic')}</li>
-              {#if settings.timeSavedAveragingMethod !== 'exponential'}
-                <li>{timeSavedComparedToIntrinsicSpeedAbs} – {getMessage('timeSavedComparedToIntrinsicAbs')}</li>
-                <li>{wouldHaveLastedIfSpeedWasIntrinsic} – {getMessage('wouldHaveLastedIfSpeedWasIntrinsic')}</li>
-              {/if}
-            {/if}
-          </ol>
-
-          {#if estimatedRemainingDuration != undefined &&
-               // 10,000 hour sanity check
-               estimatedRemainingDuration < (10000*60*60)
-          }
-              <p
-                style="margin-bottom: 0.25rem;"
-              >
-              {getMessage('estimatedRemainingDuration')}<br>
-              {mmSs(estimatedRemainingDuration)}
-              </p>
-          {/if}
-
-          <p
-            style="margin-bottom: 0.25rem;"
-          >{getMessage('timeSavedPercentage')}<br>
-          {timeSavedComparedToSoundedSpeedPercent}
-          {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-            / {timeSavedComparedToIntrinsicSpeedPercent}
-          {/if}
-          ({getMessage('comparedToSounded')}{
-          #if timeSavedPlaybackRateEquivalentsAreDifferent}
-            {' / '}{getMessage('comparedToIntrinsic')}{
-          /if
-          }).
-          </p>
-        </div>
+  <div style="display: flex; justify-content: space-between;">
+    <div>
+      <div style="margin-bottom: 5px;">
+        <!-- TODO style: when `toggleExtensionTooltip == undefined`,
+        the tooltip is just empty. -->
+        <label
+        style="
+        display: inline-flex;
+        align-items: center;
+        "
+          use:tippy={toggleExtensionTooltip}
+        >
+          <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
+          DRY? With `{...myBind}` or something?
+          Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
+          Maybe it's more proper to not rely on `bind:` -->
+          <input
+            bind:checked={settings.enabled}
+            on:change={createOnInputListener('enabled')}
+            type="checkbox"
+            autofocus={settings.popupAutofocusEnabledInput}
+          >
+          <span>{getMessage('enable')}</span>
+        </label>
       </div>
-    </button>
+      {#if settings.advancedMode}
+      <div>
+        <VolumeIndicator {latestTelemetryRecord} {getActionString}/>
+      </div>
+      {/if}
+    </div>
+    <div style="text-align: right;">
+      {#if settings.advancedMode}
+      <div style="margin-bottom: 5px;">
+          <!-- TODO but this is technically a button. Is this ok? -->
+          <button
+            on:click={() => {
+              browserOrChrome.runtime.openOptionsPage();
+              if (isMobile) {
+                // The options tab gets opened, but it's not visible
+                // because the popup stays open. Let's close it.
+                window.close();
+              }
+            }}
+            use:tippy={{
+              content: () => getMessage('more'),
+              theme: 'my-tippy',
+            }}
+          >⚙️</button>
+      </div>
+      {/if}
+      <div>
+        <TimeSaved {latestTelemetryRecord} {settings}/>
+      </div>
+    </div>
+    
   </div>
+  
   <!-- TODO transitions? -->
   <div
     style={
@@ -1198,7 +1004,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         {...openLocalFileLinkProps}
         on:click={onClickOpenLocalFileLink}
         style="margin-top: 1rem;"
-      >📂 {getMessage('openLocalFile')}</a>
+      >{getMessage('openLocalFile')}</a>
     {/if}
     <label
       style="
@@ -1223,30 +1029,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     margin-top: 1rem;
   }
 
-  .enabled-input {
-    margin: 1.75rem 0;
-    display: flex;
-    align-items: center;
-    font-size: 2rem;
-  }
-  .enabled-input > input {
-    width: 2rem;
-    height: 2rem;
-  }
-  .enabled-input > span {
-    margin: 0 0.5rem;
-  }
-
-  .others__wrapper {
-    display: flex;
-    justify-content: space-between;
-    /* In case chart size is smol. */
-    flex-wrap: wrap;
-    margin: 0.25rem -0.25rem;
-  }
-  .others__item {
-    margin: 0.25rem;
-    white-space: nowrap;
+  label {
+    user-select: none;
   }
 
   /* Global because otherwise it's not applied. I think it's fine as we have to specify the theme explicitly anyway. */
@@ -1262,14 +1046,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     justify-content: center;
     align-items: center;
     text-align: center;
-  }
-
-  #options-button {
-    position: absolute;
-    padding: 0;
-    top: 0.75rem;
-    right: 0.75rem;
-    font-size: 1.5rem;
   }
 
   .capitalize-first-letter::first-letter {
