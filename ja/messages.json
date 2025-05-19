@@ -96,7 +96,7 @@
 		"message": "スキップ時の速度"
 	},
 	"tryOpeningDirectly": {
-		"message": "直接動画を開く"
+		"message": "動画を直接開く"
 	},
 	"marginAfter": {
 		"message": "通常速度が終わるまでの余白"
@@ -446,5 +446,26 @@
 	},
 	"popupAdvancedMode": {
 		"message": "高度な設定"
+	},
+	"skipMore": {
+		"message": "スキップを増加"
+	},
+	"skipLess": {
+		"message": "スキップを減少"
+	},
+	"toggleSettingValue": {
+		"message": "切り替え"
+	},
+	"estimatedRemainingDuration": {
+		"message": "推定された残りの実再生時間:"
+	},
+	"increaseSettingValue": {
+		"message": "上昇"
+	},
+	"decreaseSettingValue": {
+		"message": "下降"
+	},
+	"setSettingValue": {
+		"message": "設定"
 	}
 }
