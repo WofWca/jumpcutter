@@ -458,5 +458,17 @@
 	},
 	"estimatedRemainingDuration": {
 		"message": "Duración estimada del tiempo real restante:"
+	},
+	"decreaseSettingValue": {
+		"message": "Disminuir"
+	},
+	"setSettingValue": {
+		"message": "Establecer"
+	},
+	"increaseSettingValue": {
+		"message": "Aumentar"
+	},
+	"toggleSettingValue": {
+		"message": "Alternar"
 	}
 }
