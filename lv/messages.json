@@ -1,1 +1,122 @@
-{}
+{
+	"enable": {
+		"message": "Iespējot"
+	},
+	"or": {
+		"message": "Vai"
+	},
+	"openLocalFile": {
+		"message": "atvērt vietējo datni"
+	},
+	"preventOtherScriptsFromChangingPlaybackRate": {
+		"message": "Dažās vietnēs atskaņošanas ātrums mainās negaidīti. Neļaut vietnēm mainīt šī paplašinājuma iestatīto atskaņošanas ātrumu."
+	},
+	"volume": {
+		"message": "Skaļums\nTas nav pašreizējais skaļums, bet tā pastiprinājums, kā televizorā"
+	},
+	"video": {
+		"message": "video"
+	},
+	"timeSaved": {
+		"message": "Ietaupītā laika informācija"
+	},
+	"wheneverPlaybackRateChangesFromOtherScripts": {
+		"message": "Ja atskaņošanas ātrumu maina citi skripti"
+	},
+	"timeSavedPercentage": {
+		"message": "Ietaupītais laiks procentos:"
+	},
+	"retry": {
+		"message": "Mēģināt vēlreiz"
+	},
+	"volumeThreshold": {
+		"message": "Minimālais skaļuma slieksnis"
+	},
+	"silenceSpeed": {
+		"message": "Atskaņošanas ātrums klusuma brīžos"
+	},
+	"showErrors": {
+		"message": "Parādīt kļūdas"
+	},
+	"hasErrors": {
+		"message": "Atrastas kļūdas"
+	},
+	"skipMore": {
+		"message": "Izlaist vairāk"
+	},
+	"overTheLast": {
+		"message": "Pēdējās $duration$",
+		"placeholders": {
+			"duration": {
+				"content": "$1",
+				"example": "15:00"
+			}
+		}
+	},
+	"numbersMeanings": {
+		"message": "Skaitļu nozīme (secībā):"
+	},
+	"changeElementSearchCriteria": {
+		"message": "Mainīt meklēšanas kritērijus…"
+	},
+	"audio": {
+		"message": "audio"
+	},
+	"loading": {
+		"message": "Ielādē"
+	},
+	"refreshIfMuted": {
+		"message": "Ja pazūd skaņa, atkārtoti ielādējiet lapu"
+	},
+	"general": {
+		"message": "Vispārīgie"
+	},
+	"applyTo": {
+		"message": "Pielietot"
+	},
+	"omitMutedElements": {
+		"message": "Nepielietot elementiem ar izslēgtu skaņu"
+	},
+	"applyToBoth": {
+		"message": "abiem - gan video, gan audio elementiem"
+	},
+	"enableHotkeys": {
+		"message": "Iespējot īsinājumtaustiņus"
+	},
+	"resetToDefaults": {
+		"message": "Atiestatīt iestatījumus uz to noklusējuma vērtībām"
+	},
+	"doNothingWheneverPlaybackRateChanges": {
+		"message": "Nekas no iepriekš minētā. Vienkārši ignorēt, ja citi skripti maina atskaņošanas ātrumu."
+	},
+	"skipLess": {
+		"message": "Izlaist mazāk"
+	},
+	"popupAdvancedMode": {
+		"message": "Papildu iestatījumi"
+	},
+	"applyToOnly": {
+		"message": "tikai $type$ elementiem",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "video"
+			}
+		}
+	},
+	"alsoSearchFor": {
+		"message": "Meklēt arī $type$ elementus",
+		"placeholders": {
+			"type": {
+				"content": "$1",
+				"example": "audio"
+			}
+		}
+	},
+	"estimatedRemainingDuration": {
+		"message": "Aprēķinātais atlikušais faktiskais atskaņošanas ilgums:"
+	},
+	"soundedSpeed": {
+		"message": "Normālais atskaņošanas ātrums"
+	}
+}
