@@ -118,5 +118,187 @@
 	},
 	"soundedSpeed": {
 		"message": "Normālais atskaņošanas ātrums"
+	},
+	"advance": {
+		"message": "Patīt uz priekšu (sekundes)"
+	},
+	"rewind": {
+		"message": "Attīt atpakaļ (sekundes)"
+	},
+	"increaseVolume": {
+		"message": "Palielināt skaļumu (%)"
+	},
+	"action": {
+		"message": "Darbība"
+	},
+	"edit": {
+		"message": "Rediģēt"
+	},
+	"chartWidthPx": {
+		"message": "Platums (pikseļi)"
+	},
+	"popupSpecificHotkeys": {
+		"message": "Uznirstošie īpašie īsinājumtaustiņi"
+	},
+	"silenceSpeedSpecificationMethod": {
+		"message": "Atskaņošanas ātruma aprēķināšanas metode klusuma brīžos"
+	},
+	"rangeSlidersAttributesNote": {
+		"message": "Ņemiet vērā, ka pārlūki neatbalsta atskaņošanas ātrumu, kas pārsniedz noteiktu robežu.\nChromium (Chrome, Edge utt.) pārlūkiem tas ir 16 un Gecko (Firefox) pārlūkiem - 8 (pēc noklusējuma). Vai tagad šīs vērtības ir aktuālas? Iespējams. Kad pēdējo reizi pārbaudīju, tad bija tādas."
+	},
+	"toggleExtension": {
+		"message": "Ieslēgt vai izslēgt paplašinājumu"
+	},
+	"noSuitableElement": {
+		"message": "Nevarēja atrast atbilstošu multivides elementu lapā"
+	},
+	"marginAfter": {
+		"message": "Pēc skaņas rezerve"
+	},
+	"wouldHaveLastedIfSpeedWasIntrinsic": {
+		"message": "cik ilgi atskaņotu normālā (iepriekšdefinētā) atskaņošanas ātrumā, NEIZLAIŽOT klusuma brīžus"
+	},
+	"more": {
+		"message": "Vēl"
+	},
+	"contentScriptFail": {
+		"message": "Nevarēja palaist satura skriptu šajā lapā"
+	},
+	"overrideWebsiteHotkeys": {
+		"message": "Ignorēt vietnes īsinājumtaustiņus"
+	},
+	"decreaseVolume": {
+		"message": "Samazināt skaļumu (%)"
+	},
+	"hotkeys": {
+		"message": "Īsinājumtaustiņi"
+	},
+	"hotkey": {
+		"message": "Īsinājumtaustiņš"
+	},
+	"useSeparateMarginSettingsForDifferentAlgorithms": {
+		"message": "Izmantot atšķirīgus klusuma brīža izlaišanas iestatījumus dažādiem algoritmiem (spēkā, ja izmanto \"$useExperimentalAlgorithmLabel$\")",
+		"placeholders": {
+			"marginBeforeLabel": {
+				"content": "$1",
+				"example": "margin before"
+			},
+			"marginAfterLabel": {
+				"content": "$2",
+				"example": "margin after"
+			},
+			"useExperimentalAlgorithmLabel": {
+				"content": "$3",
+				"example": "Use experimental algorithm"
+			}
+		}
+	},
+	"togglePause": {
+		"message": "Pauze/atskaņot"
+	},
+	"toggleMute": {
+		"message": "Izslēgt/ieslēgt skaņu"
+	},
+	"value": {
+		"message": "Vērtība"
+	},
+	"removeBinding": {
+		"message": "Noņemt īsinājumtaustiņu"
+	},
+	"addBinding": {
+		"message": "Pievienot jaunu īsinājumtaustiņu"
+	},
+	"chart": {
+		"message": "Grafiks"
+	},
+	"chartLengthInSeconds": {
+		"message": "Ilgums sekundēs"
+	},
+	"chartHeightPx": {
+		"message": "Augstums (pikseļi)"
+	},
+	"min": {
+		"message": "Minim."
+	},
+	"max": {
+		"message": "Maks."
+	},
+	"step": {
+		"message": "Solis"
+	},
+	"rangeSlidersAttributes": {
+		"message": "Diapazona slīdņu atribūti"
+	},
+	"alwaysShowOpenLocalFileLink": {
+		"message": "Rādīt \"$openLocalFileLabel$\" saiti",
+		"placeholders": {
+			"openLocalFileLabel": {
+				"content": "$1",
+				"example": "open a local file"
+			}
+		}
+	},
+	"timeSavedAveragingWindowLength": {
+		"message": "Ņemt vērā tikai pēdējās N atskaņošanas sekundes"
+	},
+	"about": {
+		"message": "Par"
+	},
+	"license": {
+		"message": "Licence"
+	},
+	"helpTranslate": {
+		"message": "Palīdziet iztulkot"
+	},
+	"saved": {
+		"message": "Saglabāti"
+	},
+	"timeSavedComparedToIntrinsicAbs": {
+		"message": "ietaupītais laiks, salīdzinot ar video atskaņošanu normālā (iepriekšdefinētā) ātrumā"
+	},
+	"tryAttachAnyway": {
+		"message": "Tomēr mēģināt pievienot"
+	},
+	"tryOpeningDirectly": {
+		"message": "Mēģināt atvērt tieši"
+	},
+	"volumeThresholdTooltip": {
+		"message": "Ja pašreizējais video skaļums ir zemāks, mazāks par šo vērtību, paātriniet video atskaņošanas ātrumu.\nGrafikā tā (skaļuma slieksnis) ir sarkanā 🟥 horizontālā līnija. Zilais 🟦 grafiks — pašreizējais video skaļums. Kad zilais grafiks ir zem sarkanās līnijas, to uzskata par klusuma brīdi."
+	},
+	"marginBefore": {
+		"message": "Pirms skaņas rezerve"
+	},
+	"fileInputLabel": {
+		"message": "Velciet un nometiet vienu vai vairākas datnes šeit\nvai noklikšķiniet, lai atlasītu"
+	},
+	"none": {
+		"message": "Nekādu"
+	},
+	"timeSavedAveragingMethod": {
+		"message": "Vidējās vērtības aprēķināšanas metode"
+	},
+	"iconBadge": {
+		"message": "Paplašinājuma ikonas nozīmīte"
+	},
+	"donate": {
+		"message": "Ziedot"
+	},
+	"useExperimentalAlgorithm": {
+		"message": "Izmantot eksperimentālo algoritmu"
+	},
+	"contact": {
+		"message": "Sazināties ar mums"
+	},
+	"saving": {
+		"message": "Saglabā…"
+	},
+	"increaseSettingValue": {
+		"message": "Palielināt"
+	},
+	"decreaseSettingValue": {
+		"message": "Samazināt"
+	},
+	"setSettingValue": {
+		"message": "Iestatīt"
 	}
 }
