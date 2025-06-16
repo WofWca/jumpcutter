@@ -257,11 +257,15 @@ export const defaultSettings: Readonly<Settings> = {
   timeSavedAveragingWindowLength: 600,
   timeSavedExponentialAveragingLatestDataWeight: 0.95,
 
-  badgeWhatSettingToDisplayByDefault: 'soundedSpeed',
+  // This used to be 'soundedSpeed', but since
+  // `onPlaybackRateChangeFromOtherScripts` defaults to
+  // 'updateSoundedSpeed', then showing the playback rate is not really useful,
+  // and perhaps confusing and distracting.
+  // See related: https://github.com/WofWca/jumpcutter/issues/33
+  badgeWhatSettingToDisplayByDefault: 'none',
+  onPlaybackRateChangeFromOtherScripts: 'updateSoundedSpeed',
 
   enableDesyncCorrection: browserHasAudioDesyncBug,
-
-  onPlaybackRateChangeFromOtherScripts: 'updateSoundedSpeed',
 
   advancedMode: false,
   simpleSlider: simpleSliderDefaultVal,
