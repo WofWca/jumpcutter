@@ -3,13 +3,15 @@
   import { getMessage } from "@/helpers";
   import { TelemetryMessage } from "../content/AllMediaElementsController";
   import {
+    HotkeyAction,
     HotkeyAction_INCREASE_VOLUME,
     HotkeyAction_DECREASE_VOLUME,
   } from "@/hotkeys";
 
   const tippyThemeMyTippyAndPreLine = "my-tippy white-space-pre-line";
 
-  export let getActionString: Function;
+  type GetActionStringFunc = (actionId: HotkeyAction, actionName: string) => string;
+  export let getActionString: GetActionStringFunc;
   export let latestTelemetryRecord: TelemetryMessage | undefined;
 </script>
 

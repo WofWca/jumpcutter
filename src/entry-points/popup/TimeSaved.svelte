@@ -3,10 +3,12 @@
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
   import { getMessage } from "@/helpers";
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
+  import type { Settings } from "@/settings";
+
+  type RequiredSettings = Pick<Settings, "soundedSpeed" | "timeSavedAveragingMethod" | "timeSavedAveragingWindowLength">
 
   export let latestTelemetryRecord: TelemetryMessage | undefined;
-  // TODO add type
-  export let settings;
+  export let settings: RequiredSettings;
 
   let timeSavedTooltipContentEl: HTMLElement;
 
