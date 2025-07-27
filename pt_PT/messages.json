@@ -396,5 +396,23 @@
 	},
 	"popupAdvancedMode": {
 		"message": "Definições avançadas"
+	},
+	"estimatedRemainingDuration": {
+		"message": "Duração estimada, em tempo real:"
+	},
+	"contact": {
+		"message": "Contactar"
+	},
+	"increaseSettingValue": {
+		"message": "Aumentar"
+	},
+	"decreaseSettingValue": {
+		"message": "Diminuir"
+	},
+	"setSettingValue": {
+		"message": "Definir"
+	},
+	"toggleSettingValue": {
+		"message": "Alternar"
 	}
 }
