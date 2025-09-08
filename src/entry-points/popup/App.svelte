@@ -531,8 +531,14 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 />
 {#await settingsPromise then _}
   <div style="display: flex; justify-content: space-between;">
-    <div>
-      <div style="margin-bottom: 5px;">
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      "
+    >
+      <div style="margin-bottom: 0.375rem;">
         <!-- TODO style: when `toggleExtensionTooltip == undefined`,
         the tooltip is just empty. -->
         <label
@@ -556,14 +562,22 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         </label>
       </div>
       {#if settings.advancedMode}
-      <div>
+      <div style="margin-bottom: 0.375rem;">
         <VolumeIndicator {latestTelemetryRecord} {getActionString}/>
       </div>
       {/if}
     </div>
-    <div style="text-align: right;">
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        text-align: right;
+      "
+    >
       {#if settings.advancedMode}
-      <div style="margin-bottom: 5px;">
+      <div style="margin-bottom: 0.375rem;">
         <!-- TODO but this is technically a button. Is this ok? -->
         <button
           on:click={() => {
@@ -581,7 +595,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         >⚙️</button>
       </div>
       {/if}
-      <div>
+      <div style="margin-bottom: 0.375rem;">
         <TimeSaved {latestTelemetryRecord} {settings}/>
       </div>
     </div>
