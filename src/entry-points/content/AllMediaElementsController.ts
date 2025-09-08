@@ -657,88 +657,87 @@ export default class AllMediaElementsController {
     // TODO feat: don't require page reload for this settings change
     // to take effect.
     if (this.settings.badgeWhatSettingToDisplayByDefault === 'timeSaved') {
-      let timeSavedPort_:
-        undefined | ReturnType<typeof browserOrChrome.runtime.connect>
-      const getTimeSavedPort = () => {
-        if (timeSavedPort_ == undefined) {
-          // TODO fix: this may connect to two destinations:
-          // "local file player" if it's open
-          // (when `.connect()` gets executed on another website),
-          // and the background script.
-          // In such a case in Chromium `onDisconnect` will not fire
-          // when the background script gets unloaded,
-          // as long as the local file player is open.
-          // This results in the badge not getting updated.
-          // See
-          // - https://bugzilla.mozilla.org/show_bug.cgi?id=1465514
-          // - https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#lifecycle
-          // - https://developer.chrome.com/docs/extensions/develop/concepts/messaging#port-lifetime
-          timeSavedPort_ = browserOrChrome.runtime.connect({
-            name: 'timeSavedBadgeText'
-          })
+      (async () => {
+        let timeSavedPort_:
+          undefined | ReturnType<typeof browserOrChrome.runtime.connect>
+        const getTimeSavedPort = () => {
+          if (timeSavedPort_ == undefined) {
+            // TODO fix: this may connect to two destinations:
+            // "local file player" if it's open
+            // (when `.connect()` gets executed on another website),
+            // and the background script.
+            // In such a case in Chromium `onDisconnect` will not fire
+            // when the background script gets unloaded,
+            // as long as the local file player is open.
+            // This results in the badge not getting updated.
+            // See
+            // - https://bugzilla.mozilla.org/show_bug.cgi?id=1465514
+            // - https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#lifecycle
+            // - https://developer.chrome.com/docs/extensions/develop/concepts/messaging#port-lifetime
+            timeSavedPort_ = browserOrChrome.runtime.connect({
+              name: 'timeSavedBadgeText'
+            })
 
-          // The port might get disconnected by the remote party,
-          // i.e. the background script getting shut down.
-          // In this case we'll want to open another port.
-          timeSavedPort_.onDisconnect.addListener(() => {
-            timeSavedPort_ = undefined
-          })
+            // The port might get disconnected by the remote party,
+            // i.e. the background script getting shut down.
+            // In this case we'll want to open another port.
+            timeSavedPort_.onDisconnect.addListener(() => {
+              timeSavedPort_ = undefined
+            })
+          }
+          return timeSavedPort_
         }
-        return timeSavedPort_
-      }
-      this._onDetachFromActiveElementCallbacks.push(() => {
-        timeSavedPort_?.disconnect()
-        timeSavedPort_ = undefined
-      });
+        this._onDetachFromActiveElementCallbacks.push(() => {
+          timeSavedPort_?.disconnect()
+          timeSavedPort_ = undefined
+        });
 
-      let lastSentTimeSavedValue: undefined | string = undefined;
+        let lastSentTimeSavedValue: undefined | string = undefined;
 
-      const maybeSendTimeSavedInfo = () => {
-        if (!this.timeSavedTracker) {
-          return;
+        const timeSavedTracker = await timeSavedTrackerPromise
+        const maybeSendTimeSavedInfo = () => {
+          const {
+            wouldHaveLastedIfSpeedWasSounded,
+            timeSavedComparedToSoundedSpeed
+          } = timeSavedTracker.timeSavedData;
+          // Time calculation from `getTimeSavedPlaybackRateEquivalents`.
+          // TODO feat: an option to show speed compared to sounded speed,
+          // and maybe percentage, or absolute value.
+          const timeSaved = (
+            wouldHaveLastedIfSpeedWasSounded /
+            (wouldHaveLastedIfSpeedWasSounded - timeSavedComparedToSoundedSpeed)
+          ).toFixed(2);
+
+          if (lastSentTimeSavedValue !== timeSaved) {
+            getTimeSavedPort().postMessage(timeSaved);
+            lastSentTimeSavedValue = timeSaved;
+          }
+
+          el.removeEventListener('timeupdate', maybeSendTimeSavedInfo)
+          attachListenerAfterIdle()
         }
 
-        const {
-          wouldHaveLastedIfSpeedWasSounded,
-          timeSavedComparedToSoundedSpeed
-        } = this.timeSavedTracker.timeSavedData;
-        // Time calculation from `getTimeSavedPlaybackRateEquivalents`.
-        // TODO feat: an option to show speed compared to sounded speed,
-        // and maybe percentage, or absolute value.
-        const timeSaved = (
-          wouldHaveLastedIfSpeedWasSounded /
-          (wouldHaveLastedIfSpeedWasSounded - timeSavedComparedToSoundedSpeed)
-        ).toFixed(2);
-
-        if (lastSentTimeSavedValue !== timeSaved) {
-          getTimeSavedPort().postMessage(timeSaved);
-          lastSentTimeSavedValue = timeSaved;
+        let idleCallbackCancelled = false
+        this._onDetachFromActiveElementCallbacks.push(() => {
+          idleCallbackCancelled = true
+        });
+        const attachListener_ = () => {
+          if (idleCallbackCancelled) {
+            return
+          }
+          el.addEventListener('timeupdate', maybeSendTimeSavedInfo);
+        }
+        const attachListenerAfterIdle = () => {
+          requestIdleCallbackPolyfill(attachListener_)
         }
 
-        el.removeEventListener('timeupdate', maybeSendTimeSavedInfo)
         attachListenerAfterIdle()
-      }
-
-      let idleCallbackCancelled = false
-      this._onDetachFromActiveElementCallbacks.push(() => {
-        idleCallbackCancelled = true
-      });
-      const attachListener_ = () => {
-        if (idleCallbackCancelled) {
-          return
-        }
-        el.addEventListener('timeupdate', maybeSendTimeSavedInfo);
-      }
-      const attachListenerAfterIdle = () => {
-        requestIdleCallbackPolyfill(attachListener_)
-      }
-
-      attachListenerAfterIdle()
-      this._onDetachFromActiveElementCallbacks.push(() => {
-        el.removeEventListener('timeupdate', maybeSendTimeSavedInfo)
-      });
-      // Note that we don't remove the listener
-      // when the setting value gets changed.
+        this._onDetachFromActiveElementCallbacks.push(() => {
+          el.removeEventListener('timeupdate', maybeSendTimeSavedInfo)
+        });
+        // Note that we don't remove the listener
+        // when the setting value gets changed.
+      })();
     }
 
     await controllerP;
