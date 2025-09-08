@@ -128,13 +128,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const onPlaybackRateChangeFromOtherScriptsOptions:
     Array<{ v: Settings['onPlaybackRateChangeFromOtherScripts'], l: string }>
     = [
-      { v: 'updateSoundedSpeed', l: `= ${getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}` },
-      { v: 'prevent', l: `✋ ${getMessage('preventOtherScriptsFromChangingPlaybackRate')}` },
-      { v: 'doNothing', l: `🧘 ${getMessage('doNothingWheneverPlaybackRateChanges')}` },
+      { v: 'updateSoundedSpeed', l: `${getMessage('updateSoundedSpeedWheneverItChangesOnWebsite')}` },
+      { v: 'prevent', l: `${getMessage('preventOtherScriptsFromChangingPlaybackRate')}` },
+      { v: 'doNothing', l: `${getMessage('doNothingWheneverPlaybackRateChanges')}` },
     ];
   const silenceSpeedSpecificationMethodOptions: Array<{ v: Settings['silenceSpeedSpecificationMethod'], l: string }> = [
-    { v: 'relativeToSoundedSpeed', l: `✖️ ${getMessage('relativeToSounded')}` },
-    { v: 'absolute', l: `= ${getMessage('absolute')}${getMessage('absoluteSilenceSpeedClarification')}` },
+    { v: 'relativeToSoundedSpeed', l: `${getMessage('relativeToSounded')}` },
+    { v: 'absolute', l: `${getMessage('absolute')}${getMessage('absoluteSilenceSpeedClarification')}` },
   ]
   const badgeWhatSettingToDisplayByDefaultOptions: Array<{ v: Settings['badgeWhatSettingToDisplayByDefault'], l: string }> = [
     { v: 'none', l: `❌ ${getMessage('none')}`, },
@@ -249,7 +249,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       <section>
         <h3>{getMessage('general')}</h3>
         <fieldset>
-          <legend>▶️👀 {getMessage('wheneverPlaybackRateChangesFromOtherScripts')}</legend>
+          <legend><b>{getMessage('wheneverPlaybackRateChangesFromOtherScripts')}</b></legend>
           {#each onPlaybackRateChangeFromOtherScriptsOptions as { v, l }}
             <input
               type="radio"
@@ -283,11 +283,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           </select>
         </InputFieldBase>
         <CheckboxField
-          label="🔇❌ {getMessage('omitMutedElements')}"
+          label="{getMessage('omitMutedElements')}"
           bind:checked={settings.omitMutedElements}
         />
         <InputFieldBase
-          label="🙊= {getMessage('silenceSpeedSpecificationMethod')}"
+          label="{getMessage('silenceSpeedSpecificationMethod')}"
           let:id
         >
           <select
@@ -304,7 +304,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <!-- When `browserHasAudioDesyncBug === false`, the value
           of this setting has no effect, so there is no point in showing it -->
           <CheckboxField
-            label="👫 {getMessage('enableDesyncCorrection')}"
+            label="{getMessage('enableDesyncCorrection')}"
             bind:checked={settings.enableDesyncCorrection}
           />
         {/if}
@@ -313,7 +313,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         but some languages still do, so we need to keep all 3 substitutions
         until that changes. -->
         <CheckboxField
-          label="🔄 {getMessage('useSeparateMarginSettingsForDifferentAlgorithms', [
+          label="{getMessage('useSeparateMarginSettingsForDifferentAlgorithms', [
             getMessage('marginBefore'),
             getMessage('marginAfter'),
             getMessage('useExperimentalAlgorithm'),
@@ -707,6 +707,13 @@ However, in Gecko the whole page is stretched, so the scroll is outside of the d
 </div>
 
 <style>
+@media (prefers-color-scheme: dark) {
+  :global(body) {
+    background: #111;
+    color: #ddd;
+  }
+}
+
 :global(body) {
   margin: 0;
   --main-padding: 1rem;
