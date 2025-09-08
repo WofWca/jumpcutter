@@ -714,10 +714,26 @@ export default class AllMediaElementsController {
           getTimeSavedPort().postMessage(timeSaved);
           lastSentTimeSavedValue = timeSaved;
         }
+
+        el.removeEventListener('timeupdate', maybeSendTimeSavedInfo)
+        attachListenerAfterIdle()
       }
-      // TODO perf: try to think of a more appropriate trigger
-      // for `maybeSendTimeSavedInfo` instead of 'timeupdate'.
-      el.addEventListener('timeupdate', maybeSendTimeSavedInfo);
+
+      let idleCallbackCancelled = false
+      this._onDetachFromActiveElementCallbacks.push(() => {
+        idleCallbackCancelled = true
+      });
+      const attachListener_ = () => {
+        if (idleCallbackCancelled) {
+          return
+        }
+        el.addEventListener('timeupdate', maybeSendTimeSavedInfo);
+      }
+      const attachListenerAfterIdle = () => {
+        requestIdleCallbackPolyfill(attachListener_)
+      }
+
+      attachListenerAfterIdle()
       this._onDetachFromActiveElementCallbacks.push(() => {
         el.removeEventListener('timeupdate', maybeSendTimeSavedInfo)
       });
