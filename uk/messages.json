@@ -361,7 +361,7 @@
 		"message": "Постійний (у режимі реального часу)"
 	},
 	"rangeSlidersAttributes": {
-		"message": "Атрибути повзунків діапазону"
+		"message": "Атрибути повзунків"
 	},
 	"rangeSlidersAttributesNote": {
 		"message": "Майте на увазі, що браузери не підтримують швидкість відтворення вище певного ліміту.\nНа момент написання статті це 16 для Chromium (Chrome, Edge) та 8 (за замовчуванням) для Gecko (Firefox)."
@@ -374,12 +374,6 @@
 	},
 	"step": {
 		"message": "Крок"
-	},
-	"input": {
-		"message": "Ведення"
-	},
-	"disableHotkeysWhileInputFocused": {
-		"message": "Вимкнути гарячі клавіші, коли вхід перебуває у фокусі"
 	},
 	"autofocusEnabledInput": {
 		"message": "Автоматично фокусувати прапорець \"$enableCheckboxLabel$\", коли відкривається спливаюче вікно",
@@ -438,9 +432,6 @@
 	"downloadFromSync": {
 		"message": "Застосувати налаштування зі сховища синхронізації"
 	},
-	"uploadToSync": {
-		"message": "Завантаження налаштувань для синхронізації сховища"
-	},
 	"about": {
 		"message": "Про нас"
 	},
@@ -458,9 +449,6 @@
 	},
 	"decreaseSettingValue": {
 		"message": "Зменшення"
-	},
-	"toggleSettingValue": {
-		"message": "Перемикач"
 	},
 	"more": {
 		"message": "Більше"
