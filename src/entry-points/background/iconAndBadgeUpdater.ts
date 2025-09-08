@@ -22,10 +22,7 @@ import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import type { Settings, MyStorageChanges } from '@/settings';
 import { assertDev } from '@/helpers';
 
-/**
- * Sets the _global_ badge (as opposed to tab-specific).
- */
-function setBadge(text: string, color: string) {
+function setGlobalBadge(text: string, color: string) {
   browserOrChrome.action.setBadgeBackgroundColor({ color });
   browserOrChrome.action.setBadgeText({ text });
 }
@@ -34,7 +31,7 @@ type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw'
 function settingToBadgeParams<T extends SupportedSettings>(
   settingName: T,
   value: Settings[T]
-): Parameters<typeof setBadge>
+): Parameters<typeof setGlobalBadge>
 {
   switch (settingName) {
     // TODO refactor: DRY colors? Though here they're darker anyway, to account for the white text.
@@ -81,7 +78,7 @@ function setBadgeToDefault(settings: Settings) {
     }
   } else {
     const settingName = settings.badgeWhatSettingToDisplayByDefault;
-    setBadge(...settingToBadgeParams(settingName, settings[settingName]));
+    setGlobalBadge(...settingToBadgeParams(settingName, settings[settingName]));
   }
 }
 let setBadgeToDefaultTimeout: number | null = null;
@@ -106,7 +103,8 @@ async function temporarelySetBadge(text: string, color: string, settings: Settin
       }
 
       // TODO perf: maybe we should just store the "time saved" values locally,
-      // to avoid this async operation, so that we can `setBadge()` faster?
+      // to avoid this async operation, so that we can
+      // `setBadgesetBadge()` faster?
       await Promise.all([
         browserOrChrome.action.getBadgeText({ tabId }),
         browserOrChrome.action.getBadgeBackgroundColor({ tabId }),
@@ -131,7 +129,7 @@ async function temporarelySetBadge(text: string, color: string, settings: Settin
     }
   }
   // Only do this _after_ `getBadgeText` and `getBadgeBackgroundColor`.
-  setBadge(text, color);
+  setGlobalBadge(text, color);
 
   if (setBadgeToDefaultTimeout != null) {
     clearTimeout(setBadgeToDefaultTimeout);
