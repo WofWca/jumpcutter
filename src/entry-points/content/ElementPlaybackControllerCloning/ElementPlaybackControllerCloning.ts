@@ -41,6 +41,7 @@ import {
   setDefaultPlaybackRateAndRememberIt,
 } from '../playbackRateChangeTracking';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
+import requestIdlePromise from '../helpers/requestIdlePromise';
 
 type Time = AnyTime;
 
@@ -440,6 +441,7 @@ export default class Controller {
     }
 
     await Promise.all(toAwait);
+    await requestIdlePromise({ timeout: 2000 })
     this.initialized = true;
     this._resolveInitPromise(this);
 

@@ -46,6 +46,7 @@ import {
   setDefaultPlaybackRateAndRememberIt,
 } from '../playbackRateChangeTracking';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
+import requestIdlePromise from '../helpers/requestIdlePromise';
 
 
 // Assuming normal speech speed. Looked here https://en.wikipedia.org/wiki/Sampling_(signal_processing)#Sampling_rate
@@ -329,6 +330,7 @@ export default class Controller {
       });
       volumeFilter.connect(this._analyzerIn!);
       const silenceDetector = await silenceDetectorP;
+      await requestIdlePromise({ timeout: 5000 })
       volumeFilter.connect(silenceDetector);
     }));
     toDestinationChainLastConnectedLink.connect(audioContext.destination);
@@ -461,6 +463,7 @@ export default class Controller {
     }
 
     await Promise.all(toAwait);
+    await requestIdlePromise({ timeout: 2000 })
 
     this.initialized = true;
     this._resolveInitPromise(this);

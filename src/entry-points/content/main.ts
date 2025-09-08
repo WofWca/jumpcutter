@@ -21,6 +21,7 @@
 import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settings';
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import requestIdlePromise from './helpers/requestIdlePromise';
 
 (async function () { // Just for top-level `await`
 
@@ -29,6 +30,7 @@ async function importAndInit() {
     /* webpackExports: ['default'] */
     './init'
   )).default
+  await requestIdlePromise({ timeout: 5000 })
   init();
 }
 

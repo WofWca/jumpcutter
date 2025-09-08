@@ -32,6 +32,7 @@ import {
   getOrCreateMediaElementSourceAndUpdateMap
 } from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
 import { getFinalCloneElement } from './getFinalCloneElement';
+import requestIdlePromise from '../helpers/requestIdlePromise';
 
 // A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,
 // but I think this is a bit faster.
@@ -122,6 +123,7 @@ export default class Lookahead {
 
     // TODO perf: don't await here, schedule other async operations.
     const [clone, isFallbackElement] = await cloneElementP;
+    await requestIdlePromise({ timeout: 2000 })
     /**
      * Whether the same element can be used between `Lookahead` instantiations and stuff.
      * Otherwise it's disposable and we don't care what happens to it once we stop needing it.
@@ -315,6 +317,7 @@ export default class Lookahead {
 
     // It's a bit weird that it's not at the very bottom of the function. TODO?
     await Promise.all(toAwait);
+    await requestIdlePromise({ timeout: 2000 })
 
     // TODO perf: also need to seek if the clone started playing a processed range.
     // TODO perf: but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
@@ -630,7 +633,6 @@ export default class Lookahead {
   }
   public async destroy(): Promise<void> {
     await this.ensureInit();
-
     this._resolveDestroyedPromise();
   }
 }

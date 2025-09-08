@@ -26,6 +26,7 @@ import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import watchAllElements from './watchAllElements';
+import requestIdlePromise from './helpers/requestIdlePromise';
 
 const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsController) => allMediaElementsController
   ? allMediaElementsController.broadcastStatus()
@@ -85,6 +86,7 @@ export default async function init(): Promise<void> {
     tagNames.push('AUDIO');
   }
 
+  await requestIdlePromise({ timeout: 5000 })
   const stopWatchingElements = watchAllElements(
     tagNames,
     newElements => ensureInitAllMediaElementsController().then(allMediaElementsController => {
