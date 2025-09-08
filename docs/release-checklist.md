@@ -1,5 +1,5 @@
 1. Pull `src/_locales` from the Weblate repo.
-2. Add new contributors to `src/_locales/LICENSE_NOTICES`. To make sure you didn't miss anyone, check if `git shortlog --summary --email | wc -l` outputs a number that is ~~1 smaller than~~ the same as (one user used two different names) the number of lines in the coppyright notice (to account for Anonymous).
+2. Add new contributors to `src/_locales/LICENSE_NOTICES`. `git shortlog --summary --email --after=<previous_release_commit>` will help. To make sure you didn't miss anyone, check if `git shortlog --summary --email | wc -l` outputs a number that is ~~1 smaller than~~ the same as (one user used two different names) the number of lines in the coppyright notice (to account for Anonymous).
 4. If new languages were added, check if their language code works alright in the browsers.
 5. Commit `.gitmodules`
 6. Bump version in `src/manifest_base.json`
