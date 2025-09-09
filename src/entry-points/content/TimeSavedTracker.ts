@@ -246,7 +246,7 @@ export default class TimeSavedTracker {
   // from time saved, and not just the ones' that were initiated by
   // a Controller for now? Though if the user seeks to an unbuffered area it's gonna take a long time...
   /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
-  public onControllerCausedSeek(seekDelta: TimeDelta, seekDurationRealTime: TimeDelta): void {
+  public onSilenceSkippingSeek(seekDelta: TimeDelta, seekDurationRealTime: TimeDelta): void {
     // Looks like this call can be skipped if `this._averagingMethod === 'all-time'`. TODO?
     this._appendLastSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
 

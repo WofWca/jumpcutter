@@ -730,7 +730,7 @@ export default class Controller {
 
       // TODO it's wrong to pass only the `expectedSeekDuration` instead of the real one, but it's better
       // than passing 0.
-      this.timeSavedTracker?.onControllerCausedSeek(seekTo - currentTime, expectedSeekDuration);
+      this.timeSavedTracker?.onSilenceSkippingSeek(seekTo - currentTime, expectedSeekDuration);
 
       this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
     } else if (whatToDo === WhatToDo.SPEEDUP) {
