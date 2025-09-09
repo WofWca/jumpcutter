@@ -82,7 +82,7 @@ function setBadgeToDefault(settings: Settings) {
   }
 }
 let setBadgeToDefaultTimeout: number | null = null;
-async function temporarelySetBadge(text: string, color: string, settings: Settings) {
+async function temporarilySetBadge(text: string, color: string, settings: Settings) {
   const tabsMayHaveTabSpecificBadges =
     settings.badgeWhatSettingToDisplayByDefault == 'timeSaved';
   const isBadgeTemporarilyOverridden = setBadgeToDefaultTimeout != null
@@ -186,7 +186,7 @@ export function updateIconAndBadge(
   for (const settingName of orderedSetingsNames) {
     const currSettingChange = changes[settingName];
     if (currSettingChange) {
-      temporarelySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), newSettings);
+      temporarilySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), newSettings);
       break;
     }
   }
