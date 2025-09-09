@@ -452,5 +452,20 @@
 	},
 	"more": {
 		"message": "Більше"
+	},
+	"setSettingValue": {
+		"message": "Встановити"
+	},
+	"toggleSettingValue": {
+		"message": "Перемкнути"
+	},
+	"input": {
+		"message": "Параметри"
+	},
+	"disableHotkeysWhileInputFocused": {
+		"message": "Вимкнути гарячі клавіші, коли поле введення активне"
+	},
+	"uploadToSync": {
+		"message": "Завантажити налаштування до синхронізованого сховища"
 	}
 }
