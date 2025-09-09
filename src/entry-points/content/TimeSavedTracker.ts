@@ -20,7 +20,7 @@
 
 import { Settings, MyStorageChanges, settingsChanges2NewValues } from "@/settings";
 import { addPlaybackStopListener, addPlaybackResumeListener, isPlaybackActive, closestNonNormalSpeed } from './helpers';
-import type { TimeDelta } from "@/helpers";
+import { assertNever, type TimeDelta } from "@/helpers";
 
 /**
  * Not a typical stopwatch, but close.
@@ -164,7 +164,7 @@ export default class TimeSavedTracker {
 
   // non-null assertion because it doesn't check if they're assigned inside functions called withing the constructor.
   // TODO?
-  private _averagingMethod!: Settings['timeSavedAveragingMethod'];
+  private _averagingMethod!: AveragingMethod;
   private _latestDataLength!: number;
   private _latestDataWeight!: number;
   private _decayTimeConstant!: number;
@@ -203,7 +203,7 @@ export default class TimeSavedTracker {
       currSnippetWouldHaveLastedIfSpeedWasIntrinsic,
     ] = getSnippetTimeSavedInfo(currSnippetDuration, speedDuringLastSnippet, soundedSpeedDuringLastSnippet);
 
-    if (this._averagingMethod === 'exponential') { // TODO perf: perform this check only when it changes.
+    if (this._averagingMethod === AveragingMethod.EXPONENTIAL) { // TODO perf: perform this check only when it changes.
       const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayTimeConstant);
       // TODO show the math behind this formula. And the ones above maybe.
       const currentSnippetIntegralDecayMultiplier = this._decayTimeConstant * (1 - decayMultiplier)
@@ -278,7 +278,19 @@ export default class TimeSavedTracker {
       timeSavedExponentialAveragingLatestDataWeight,
     }: Partial<Settings>
   ) {
-    this._averagingMethod = timeSavedAveragingMethod ?? this._averagingMethod;
+    if (timeSavedAveragingMethod != undefined) {
+      switch (timeSavedAveragingMethod) {
+        case 'all-time': {
+          this._averagingMethod = AveragingMethod.ALL_TIME
+          break
+        }
+        case 'exponential': {
+          this._averagingMethod = AveragingMethod.EXPONENTIAL
+          break 
+        }
+        default: assertNever(timeSavedAveragingMethod)
+      }
+    }
     if (timeSavedAveragingWindowLength !== undefined || timeSavedExponentialAveragingLatestDataWeight !== undefined) {
       this._latestDataLength = timeSavedAveragingWindowLength ?? this._latestDataLength;
       this._latestDataWeight = timeSavedExponentialAveragingLatestDataWeight ?? this._latestDataWeight;
@@ -317,4 +329,9 @@ export default class TimeSavedTracker {
       wouldHaveLastedIfSpeedWasIntrinsic,
     };
   }
+}
+
+const enum AveragingMethod {
+  ALL_TIME,
+  EXPONENTIAL,
 }
