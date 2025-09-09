@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2021, 2022, 2025  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -204,8 +204,9 @@ export default class TimeSavedTracker {
     ] = getSnippetTimeSavedInfo(currSnippetDuration, speedDuringLastSnippet, soundedSpeedDuringLastSnippet);
 
     if (this._averagingMethod === AveragingMethod.EXPONENTIAL) { // TODO perf: perform this check only when it changes.
+      // The math behind these calculations can be found in
+      // https://github.com/WofWca/jumpcutter-my-notes/blob/11fc94d4854286242b23ad790e8a232505694f53/Time%20Saved%20paper/Time%20saved.pdf
       const decayMultiplier = Math.E**(- variablesUpdatedAgo / this._decayTimeConstant);
-      // TODO show the math behind this formula. And the ones above maybe.
       const currentSnippetIntegralDecayMultiplier = this._decayTimeConstant * (1 - decayMultiplier)
 
       const getNewDecayedTotal = (accumulatedValue: number, currentSnippetValue: number) =>

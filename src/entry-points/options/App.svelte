@@ -538,7 +538,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             max={1 - 1e-9}
           />
           <!-- TODO hh:mm:ss? -->
-          <!-- TODO explain math? -->
+          <!-- The math behind this can be found in
+          https://github.com/WofWca/jumpcutter-my-notes/blob/11fc94d4854286242b23ad790e8a232505694f53/Time%20Saved%20paper/Time%20saved.pdf
+          (Weight half-life section)-->
           <p>
             <output>{
               getMessage(
