@@ -460,7 +460,7 @@
 		"message": "Перемкнути"
 	},
 	"input": {
-		"message": "Параметри"
+		"message": "Поле введення"
 	},
 	"disableHotkeysWhileInputFocused": {
 		"message": "Вимкнути гарячі клавіші, коли поле введення активне"
