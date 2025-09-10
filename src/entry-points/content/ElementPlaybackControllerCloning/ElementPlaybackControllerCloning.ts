@@ -191,8 +191,7 @@ export default class Controller {
 
   lookahead?: Lookahead;
   clonePlaybackError = false;
-
-  public timeSavedTracker?: TimeSavedTracker;
+  private timeSavedTracker?: TimeSavedTracker;
 
   seekDurationProphet: SeekDurationProphet;
 
