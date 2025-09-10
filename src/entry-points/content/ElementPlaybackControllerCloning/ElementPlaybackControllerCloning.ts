@@ -191,7 +191,6 @@ export default class Controller {
 
   lookahead?: Lookahead;
   clonePlaybackError = false;
-  private timeSavedTracker?: TimeSavedTracker;
 
   seekDurationProphet: SeekDurationProphet;
 
@@ -207,7 +206,7 @@ export default class Controller {
   constructor(
     element: HTMLMediaElement,
     controllerSettings: ControllerSettings,
-    timeSavedTracker: TimeSavedTracker | Promise<TimeSavedTracker | undefined> | undefined,
+    private onSilenceSkippingSeek: TimeSavedTracker['onSilenceSkippingSeek'],
   ) {
     this.element = element;
     this.settings = controllerSettings;
@@ -220,12 +219,6 @@ export default class Controller {
     );
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
-
-    if (timeSavedTracker instanceof Promise) {
-      timeSavedTracker.then(tracker => this.timeSavedTracker = tracker);
-    } else {
-      this.timeSavedTracker = timeSavedTracker;
-    }
 
     const seekDurationProphet = this.seekDurationProphet = new SeekDurationProphet(element);
     this._destroyedPromise.then(() => seekDurationProphet.destroy());
@@ -728,7 +721,7 @@ export default class Controller {
 
       // TODO it's wrong to pass only the `expectedSeekDuration` instead of the real one, but it's better
       // than passing 0.
-      this.timeSavedTracker?.onSilenceSkippingSeek(seekTo - currentTime, expectedSeekDuration);
+      this.onSilenceSkippingSeek(seekTo - currentTime, expectedSeekDuration);
 
       this._lastSilenceSkippingSeek = [seekScheduledTo, seekTo];
     } else if (whatToDo === WhatToDo.SPEEDUP) {

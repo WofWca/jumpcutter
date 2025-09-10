@@ -267,7 +267,7 @@ export default class AllMediaElementsController {
               el,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               extensionSettings2ControllerSettings(this.settings!),
-              this.timeSavedTracker,
+              (...args) => this.timeSavedTracker?.onSilenceSkippingSeek(...args),
             ]
           );
           controller.init();
@@ -476,9 +476,6 @@ export default class AllMediaElementsController {
     await this.ensureLoadSettings();
     assertDev(this.settings)
 
-    let resolveTimeSavedTrackerPromise: (timeSavedTracker: TimeSavedTracker) => void;
-    const timeSavedTrackerPromise = new Promise<TimeSavedTracker>(r => resolveTimeSavedTrackerPromise = r);
-
     const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
     const onMaybeSourceChange = () => {
       this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
@@ -500,7 +497,7 @@ export default class AllMediaElementsController {
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extensionSettings2ControllerSettings(this.settings!),
-        timeSavedTrackerPromise,
+        (...args) => this.timeSavedTracker?.onSilenceSkippingSeek(...args),
       ]
     ).then(async controller => {
       this.controller = controller;
@@ -515,7 +512,7 @@ export default class AllMediaElementsController {
     }
 
     // TODO an option to disable it.
-    (async () => {
+    const timeSavedTrackerPromise = (async () => {
       const TimeSavedTracker = (await import(
         /* webpackExports: ['default'] */
         './TimeSavedTracker'
@@ -530,8 +527,7 @@ export default class AllMediaElementsController {
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      resolveTimeSavedTrackerPromise!(timeSavedTracker);
+      return timeSavedTracker
     })();
 
     {
