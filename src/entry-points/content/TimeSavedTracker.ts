@@ -149,6 +149,14 @@ export function getDecayTimeConstant(latestDataIntegralWeight: number, latestDat
   return latestDataPeriod / Math.log(latestDataWeightIsGreaterBy + 1);
 }
 
+type TimeSavedTrackerRelevantSettings = Pick<
+  Settings,
+  | "soundedSpeed"
+  | "timeSavedAveragingMethod"
+  | "timeSavedAveragingWindowLength"
+  | "timeSavedExponentialAveragingLatestDataWeight"
+>;
+
 export default class TimeSavedTracker {
   private _currentElementSpeed: number;
   private _lastHandledSoundedSpeed: number;
@@ -170,7 +178,7 @@ export default class TimeSavedTracker {
   private _decayTimeConstant!: number;
   constructor (
     private readonly element: HTMLMediaElement,
-    settings: Settings,
+    settings: TimeSavedTrackerRelevantSettings,
     addOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
     removeOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
   ) {
@@ -277,7 +285,7 @@ export default class TimeSavedTracker {
       timeSavedAveragingMethod,
       timeSavedAveragingWindowLength,
       timeSavedExponentialAveragingLatestDataWeight,
-    }: Partial<Settings>
+    }: Partial<TimeSavedTrackerRelevantSettings>
   ) {
     if (timeSavedAveragingMethod != undefined) {
       switch (timeSavedAveragingMethod) {
