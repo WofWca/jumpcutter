@@ -129,87 +129,87 @@
       >
     {/if}
   {/if}
+</button>
 
-  <!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
-  <!-- TODO the contents are quite big and some locales (e.g. `ru`) may not fit in the default popup size. -->
-  <div style="display:none">
-    <div bind:this={timeSavedTooltipContentEl}>
-      <p style="margin-top: 0.25rem;">
-        <span>{getMessage("timeSaved")}.</span>
-        {#if settings.timeSavedAveragingMethod === "exponential"}
-          <br />
-          <span
-            >{getMessage(
-              "overTheLast",
-              mmSs(settings.timeSavedAveragingWindowLength),
-            )}.</span
-          >
-        {/if}
-      </p>
-      {#if !timeSavedOnlyOneNumberIsShown}
-        <p>{getMessage("numbersMeanings")}</p>
+<!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
+<!-- TODO the contents are quite big and some locales (e.g. `ru`) may not fit in the default popup size. -->
+<div style="display:none">
+  <div bind:this={timeSavedTooltipContentEl}>
+    <p style="margin-top: 0.25rem;">
+      <span>{getMessage("timeSaved")}.</span>
+      {#if settings.timeSavedAveragingMethod === "exponential"}
+        <br />
+        <span
+          >{getMessage(
+            "overTheLast",
+            mmSs(settings.timeSavedAveragingWindowLength),
+          )}.</span
+        >
       {/if}
-      <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
-        <li style={timeSavedOnlyOneNumberIsShown ? "list-style:none;" : ""}>
-          {timeSavedPlaybackRateEquivalentsFmt[0]} – {getMessage(
-            "timeSavedComparedToSounded",
+    </p>
+    {#if !timeSavedOnlyOneNumberIsShown}
+      <p>{getMessage("numbersMeanings")}</p>
+    {/if}
+    <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
+      <li style={timeSavedOnlyOneNumberIsShown ? "list-style:none;" : ""}>
+        {timeSavedPlaybackRateEquivalentsFmt[0]} – {getMessage(
+          "timeSavedComparedToSounded",
+        )}
+      </li>
+      {#if settings.timeSavedAveragingMethod !== "exponential"}
+        <li>
+          {timeSavedComparedToSoundedSpeedAbs} – {getMessage(
+            "timeSavedComparedToSoundedAbs",
+          )}
+        </li>
+        <li>
+          {wouldHaveLastedIfSpeedWasSounded} – {getMessage(
+            "wouldHaveLastedIfSpeedWasSounded",
+          )}
+        </li>
+      {/if}
+      {#if timeSavedPlaybackRateEquivalentsAreDifferent}
+        <li>
+          {timeSavedPlaybackRateEquivalentsFmt[1]} – {getMessage(
+            "timeSavedComparedToIntrinsic",
           )}
         </li>
         {#if settings.timeSavedAveragingMethod !== "exponential"}
           <li>
-            {timeSavedComparedToSoundedSpeedAbs} – {getMessage(
-              "timeSavedComparedToSoundedAbs",
+            {timeSavedComparedToIntrinsicSpeedAbs} – {getMessage(
+              "timeSavedComparedToIntrinsicAbs",
             )}
           </li>
           <li>
-            {wouldHaveLastedIfSpeedWasSounded} – {getMessage(
-              "wouldHaveLastedIfSpeedWasSounded",
+            {wouldHaveLastedIfSpeedWasIntrinsic} – {getMessage(
+              "wouldHaveLastedIfSpeedWasIntrinsic",
             )}
           </li>
         {/if}
-        {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-          <li>
-            {timeSavedPlaybackRateEquivalentsFmt[1]} – {getMessage(
-              "timeSavedComparedToIntrinsic",
-            )}
-          </li>
-          {#if settings.timeSavedAveragingMethod !== "exponential"}
-            <li>
-              {timeSavedComparedToIntrinsicSpeedAbs} – {getMessage(
-                "timeSavedComparedToIntrinsicAbs",
-              )}
-            </li>
-            <li>
-              {wouldHaveLastedIfSpeedWasIntrinsic} – {getMessage(
-                "wouldHaveLastedIfSpeedWasIntrinsic",
-              )}
-            </li>
-          {/if}
-        {/if}
-      </ol>
-
-      {#if
-          estimatedRemainingDuration != undefined
-          // 10,000 hour sanity check
-          && estimatedRemainingDuration < 10000 * 60 * 60
-      }
-        <p style="margin-bottom: 0.25rem;">
-          {getMessage("estimatedRemainingDuration")}<br />
-          {mmSs(estimatedRemainingDuration)}
-        </p>
       {/if}
+    </ol>
 
+    {#if
+        estimatedRemainingDuration != undefined
+        // 10,000 hour sanity check
+        && estimatedRemainingDuration < 10000 * 60 * 60
+    }
       <p style="margin-bottom: 0.25rem;">
-        {getMessage("timeSavedPercentage")}<br />
-        {timeSavedComparedToSoundedSpeedPercent}
-        {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-          / {timeSavedComparedToIntrinsicSpeedPercent}
-        {/if}
-        ({getMessage(
-          "comparedToSounded",
-        )}{#if timeSavedPlaybackRateEquivalentsAreDifferent}
-          {" / "}{getMessage("comparedToIntrinsic")}{/if}).
+        {getMessage("estimatedRemainingDuration")}<br />
+        {mmSs(estimatedRemainingDuration)}
       </p>
-    </div>
+    {/if}
+
+    <p style="margin-bottom: 0.25rem;">
+      {getMessage("timeSavedPercentage")}<br />
+      {timeSavedComparedToSoundedSpeedPercent}
+      {#if timeSavedPlaybackRateEquivalentsAreDifferent}
+        / {timeSavedComparedToIntrinsicSpeedPercent}
+      {/if}
+      ({getMessage(
+        "comparedToSounded",
+      )}{#if timeSavedPlaybackRateEquivalentsAreDifferent}
+        {" / "}{getMessage("comparedToIntrinsic")}{/if}).
+    </p>
   </div>
-</button>
+</div>
