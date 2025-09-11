@@ -100,11 +100,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     & Parameters<typeof rangeInputSettingNameToAttrs>[1];
   let settings: RequiredSettings;
 
-  let settingsLoaded = false;
   let settingsPromise = getSettings();
   settingsPromise.then(s => {
     settings = s;
-    settingsLoaded = true;
   })
   function assignNewSettings(newValues: Partial<RequiredSettings>) {
     for (const [k_, v] of Object.entries(newValues)) {
