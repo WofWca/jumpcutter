@@ -160,12 +160,14 @@ type TimeSavedTrackerRelevantSettings = Pick<
 export default class TimeSavedTracker {
   private _currentElementSpeed: number;
   private _lastHandledSoundedSpeed: number;
+
   // These are true for the moment when the speed was last changed, they're not updated continuously.
   // See the `getTimeSavedData` method. TODO reflect this in their names?
   private _timeSavedComparedToSoundedSpeed = 0;
   private _timeSavedComparedToIntrinsicSpeed = 0;
   private _wouldHaveLastedIfSpeedWasSounded = 0;
   private _wouldHaveLastedIfSpeedWasIntrinsic = 0;
+
   private _playbackStopwatch: MediaElementPlaybackStopwatch;
   public destroy!: () => void;
   private _destroyedPromise = new Promise<void>(r => this.destroy = r);
@@ -202,7 +204,7 @@ export default class TimeSavedTracker {
     this._currentElementSpeed = element.playbackRate;
   }
   /**
-   * @param variablesUpdatedAgo see the comment above `_timeSavedComparedToSoundedSpeed`
+   * @param variablesUpdatedAgo see the comment above {@link _timeSavedComparedToSoundedSpeed}
    */
   private _getTimeSavedData(
     variablesUpdatedAgo: number,
@@ -245,7 +247,18 @@ export default class TimeSavedTracker {
       ];
     }
   }
-  private _appendLastSnippetData(speedDuring: number, soundedSpeedDuring: number) {
+  /**
+   * As was mentioned, we do not update
+   * {@link _timeSavedComparedToSoundedSpeed},
+   * {@link _timeSavedComparedToIntrinsicSpeed},
+   * {@link _wouldHaveLastedIfSpeedWasSounded} and
+   * {@link _wouldHaveLastedIfSpeedWasIntrinsic}
+   * continuously. This is what "pending" refers to.
+   * Invoking this function makes the above mentioned values reflect reality,
+   * i.e. they would become equivalent to what {@link timeSavedData}
+   * would return immediately after calling this function.
+   */
+  private _appendPendingSnippetData(speedDuring: number, soundedSpeedDuring: number) {
     const snippetRealtimeDuration = this._playbackStopwatch.getTimeAndReset();
     const [
       timeSavedComparedToSoundedSpeed,
@@ -264,7 +277,7 @@ export default class TimeSavedTracker {
   /** Useful when `silenceSpeed` is infinite, as opposed to `_onElementSpeedChange`. */
   public onSilenceSkippingSeek(seekDelta: TimeDelta, seekDurationRealTime: TimeDelta): void {
     // Looks like this call can be skipped if `this._averagingMethod === 'all-time'`. TODO?
-    this._appendLastSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
+    this._appendPendingSnippetData(this._currentElementSpeed, this._lastHandledSoundedSpeed);
 
     // Instead of the following, it would be more semantically correct to call `_appendLastSnippetData` a second
     // time, but it can't handle its `speedDuring` argument being `=== Infinity`.
@@ -284,7 +297,7 @@ export default class TimeSavedTracker {
     if (prevSpeed === currentElementSpeed) {
       return;
     }
-    this._appendLastSnippetData(prevSpeed, this._lastHandledSoundedSpeed);
+    this._appendPendingSnippetData(prevSpeed, this._lastHandledSoundedSpeed);
     this._currentElementSpeed = currentElementSpeed;
   }
   private _setStateAccordingToNewSettings(
@@ -318,7 +331,7 @@ export default class TimeSavedTracker {
     const prevSoundedSpeed = this._lastHandledSoundedSpeed;
     // TODO if the element is currently at sounded speed, `_onElementSpeedChange` will also get called at the same
     // moment, which is not very efficient.
-    this._appendLastSnippetData(this._currentElementSpeed, prevSoundedSpeed);
+    this._appendPendingSnippetData(this._currentElementSpeed, prevSoundedSpeed);
     this._lastHandledSoundedSpeed = newSoundedSpeed;
   }
   public get timeSavedData() {
