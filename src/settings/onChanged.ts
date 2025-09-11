@@ -30,7 +30,7 @@ type NativeOnChangedListener = (
   // areaName: chrome.storage.AreaName,
   areaName: typeof mainStorageAreaName | string,
 ) => void;
-const srcListenerToWrapperListener = new WeakMap<MyOnChangedListener, NativeOnChangedListener>();
+const listener2RemoveListener = new WeakMap<MyOnChangedListener, () => void>();
 export function createWrapperListener(listener: MyOnChangedListener): NativeOnChangedListener {
   return (changes, areaName) => {
     if (areaName !== mainStorageAreaName) return;
@@ -52,16 +52,18 @@ export function createWrapperListener(listener: MyOnChangedListener): NativeOnCh
  */
 export function addOnStorageChangedListener(listener: MyOnChangedListener): void {
   const actualListener = createWrapperListener(listener);
-  srcListenerToWrapperListener.set(listener, actualListener);
   browserOrChrome.storage.onChanged.addListener(actualListener);
+  const removeListener = () =>
+    browserOrChrome.storage.onChanged.removeListener(actualListener)
+  listener2RemoveListener.set(listener, removeListener)
 }
 export function removeOnStorageChangedListener(listener: MyOnChangedListener): void {
-  const actualListener = srcListenerToWrapperListener.get(listener);
-  if (!actualListener) {
+  const removeListener = listener2RemoveListener.get(listener);
+  if (!removeListener) {
     if (IS_DEV_MODE) {
       console.warn('Did not remove listener because it\'s already not attached');
     }
     return;
   }
-  browserOrChrome.storage.onChanged.removeListener(actualListener);
+  removeListener()
 }
