@@ -665,13 +665,11 @@ export default class AllMediaElementsController {
     // to take effect.
     let sendingTimeSavedMessagesForBadgeP: undefined | Promise<void>
     if (this.settings.badgeWhatSettingToDisplayByDefault === 'timeSaved') {
-      let resolveStopPromise: () => void
-      const stopPromise = new Promise<void>(r => resolveStopPromise = r)
-      onDetach(() => resolveStopPromise())
-      const onStop = (callback: () => void) => stopPromise.then(callback)
-
-      sendingTimeSavedMessagesForBadgeP =
-        startSendingTimeSavedMessagesForBadge(el, timeSavedTrackerPromise, onStop);
+      sendingTimeSavedMessagesForBadgeP = startSendingTimeSavedMessagesForBadge(
+        el,
+        timeSavedTrackerPromise,
+        onDetach
+      );
     }
 
     await controllerP;
