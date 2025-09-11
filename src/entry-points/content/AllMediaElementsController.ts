@@ -177,10 +177,10 @@ export default class AllMediaElementsController {
   private basicSettingsP: Promise<Pick<Settings, 'omitMutedElements'>>;
   private basicSettings: Awaited<typeof this.basicSettingsP> | undefined;
   private _resolveDestroyedPromise!: () => void;
-  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
-  // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElementCallbacks`,
+  // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElement`,
   // it will be called in `destroy`.
-  private _onDetachFromActiveElementCallbacks: Array<() => void> = [];
+  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
+  private _onDetachFromActiveElement?: () => void;
 
   constructor() {
     if (IS_DEV_MODE) {
@@ -210,14 +210,14 @@ export default class AllMediaElementsController {
     }
   }
   private detachFromActiveElement() {
-    // TODO It is possible to call this function before the `_onDetachFromActiveElementCallbacks` array has been filled
-    // and `controller` has been assigned.
+    // TODO It is possible to call this function before `this.controller` has been assigned.
+    //
     // Also keep in mind that it's possible to never attached to any elements at all, even if `onNewMediaElements()`
     // has been called (see that function).
     this.controller?.destroy();
     this.controller = undefined;
-    this._onDetachFromActiveElementCallbacks.forEach(cb => cb());
-    this._onDetachFromActiveElementCallbacks = [];
+    this._onDetachFromActiveElement?.();
+    this._onDetachFromActiveElement = undefined;
   }
 
   public broadcastStatus(): void {
@@ -466,12 +466,24 @@ export default class AllMediaElementsController {
     }
     this.activeMediaElement = el;
 
-    assertDev(this._onDetachFromActiveElementCallbacks.length === 0, 'I think `_onDetachFromActiveElementCallbacks` '
-      + `should be empty here. Instead it it is ${this._onDetachFromActiveElementCallbacks.length} items long`);
+    assertDev(this._onDetachFromActiveElement === undefined, 'I think `_onDetachFromActiveElement` '
+      + `should be \`undefined\` here. Instead it is ${this._onDetachFromActiveElement}`);
+    const onDetachCallbacks: Array<() => void> = []
+    let onDetach = (callback: () => void) => {
+      onDetachCallbacks.push(callback)
+    }
+    this._onDetachFromActiveElement = () => {
+      onDetachCallbacks.forEach(cb => cb());
+      this._onDetachFromActiveElement = undefined
+
+      // We have been ordered to detach from the element.
+      // From now on just invoke the cleanup callbacks immediately.
+      onDetach = (callback) => callback()
+    }
 
     // Currently this is technically not required since `this.activeMediaElement` is immediately reassigned
     // in the line above after the `detachFromActiveElement` call.
-    this._onDetachFromActiveElementCallbacks.push(() => this.activeMediaElement = undefined);
+    onDetach(() => this.activeMediaElement = undefined);
 
     await this.ensureLoadSettings();
     assertDev(this.settings)
@@ -489,7 +501,7 @@ export default class AllMediaElementsController {
     // without firing the 'loadstart' event.
     // So this is reliable.
     el.addEventListener('loadstart', onMaybeSourceChange, { passive: true });
-    this._onDetachFromActiveElementCallbacks.push(() => el.removeEventListener('loadstart', onMaybeSourceChange));
+    onDetach(() => el.removeEventListener('loadstart', onMaybeSourceChange));
 
     const controllerP = importAndCreateController(
       getAppropriateControllerType(this.settings, elCrossOrigin),
@@ -524,7 +536,7 @@ export default class AllMediaElementsController {
         this.settings!,
         addOnStorageChangedListener,
       );
-      this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
+      onDetach(() => timeSavedTracker.destroy());
 
       return timeSavedTracker
     })();
@@ -644,7 +656,7 @@ export default class AllMediaElementsController {
       // `onPlaybackRateChangeFromOtherScripts === 'doNothing'`, and then attach it when
       // this gets changed.
       el.addEventListener('ratechange', ratechangeListener, listenerOptions);
-      this._onDetachFromActiveElementCallbacks.push(
+      onDetach(
         () => el.removeEventListener('ratechange', ratechangeListener, listenerOptions)
       );
     }
@@ -655,7 +667,7 @@ export default class AllMediaElementsController {
     if (this.settings.badgeWhatSettingToDisplayByDefault === 'timeSaved') {
       let resolveStopPromise: () => void
       const stopPromise = new Promise<void>(r => resolveStopPromise = r)
-      this._onDetachFromActiveElementCallbacks.push(() => resolveStopPromise())
+      onDetach(() => resolveStopPromise())
       const onStop = (callback: () => void) => stopPromise.then(callback)
 
       sendingTimeSavedMessagesForBadgeP =
