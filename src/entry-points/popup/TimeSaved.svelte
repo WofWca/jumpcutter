@@ -6,8 +6,17 @@
   import type { Settings } from "@/settings";
 
   type RequiredSettings = Pick<Settings, "soundedSpeed" | "timeSavedAveragingMethod" | "timeSavedAveragingWindowLength">
+  type RequiredTelemetry = Pick<
+    TelemetryMessage,
+    | 'elementRemainingIntrinsicDuration'
 
-  export let latestTelemetryRecord: TelemetryMessage | undefined;
+    | 'timeSavedComparedToSoundedSpeed'
+    | 'timeSavedComparedToIntrinsicSpeed'
+    | 'wouldHaveLastedIfSpeedWasSounded'
+    | 'wouldHaveLastedIfSpeedWasIntrinsic'
+  >
+
+  export let latestTelemetryRecord: RequiredTelemetry | undefined;
   export let settings: RequiredSettings;
 
   let timeSavedTooltipContentEl: HTMLElement;
@@ -39,7 +48,7 @@
     1, // TODO use `getAbsoluteClampedSilenceSpeed`?
   ] as [number, number];
   function getTimeSavedPlaybackRateEquivalents(
-    r: TelemetryMessage | undefined
+    r: RequiredTelemetry | undefined
   ): [comparedToSounded: number, comparedToIntrinsic: number] {
     if (!r) {
       return dummyTimeSavedValues;
