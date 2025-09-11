@@ -21,7 +21,7 @@
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
   Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
-  removeOnStorageChangedListener, settingsChanges2NewValues,
+  settingsChanges2NewValues,
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
@@ -198,8 +198,8 @@ export default class AllMediaElementsController {
     const reactToStorageChanges = (changes: MyStorageChanges) => {
       this.reactToSettingsNewValues(settingsChanges2NewValues(changes));
     }
-    addOnStorageChangedListener(reactToStorageChanges);
-    this._destroyedPromise.then(() => removeOnStorageChangedListener(reactToStorageChanges));
+    const removeListener = addOnStorageChangedListener(reactToStorageChanges);
+    this._destroyedPromise.then(removeListener);
   }
   private destroy() {
     this.detachFromActiveElement();
@@ -523,7 +523,6 @@ export default class AllMediaElementsController {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.settings!,
         addOnStorageChangedListener,
-        removeOnStorageChangedListener,
       );
       this._onDetachFromActiveElementCallbacks.push(() => timeSavedTracker.destroy());
 

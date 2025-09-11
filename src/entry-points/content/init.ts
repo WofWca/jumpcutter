@@ -20,7 +20,7 @@
 
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
-  addOnStorageChangedListener, removeOnStorageChangedListener, MyStorageChanges, getSettings
+  addOnStorageChangedListener, MyStorageChanges, getSettings
 } from '@/settings';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
@@ -68,14 +68,13 @@ export default async function init(): Promise<void> {
   browserOrChrome.runtime.onMessage.addListener(onMessage);
   // So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
   broadcastStatus2(allMediaElementsController);
-  const onSettingsChanged = (changes: MyStorageChanges) => {
+  const removeListener = addOnStorageChangedListener((changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
       browserOrChrome.runtime.onMessage.removeListener(onMessage);
       stopWatchingElements();
-      removeOnStorageChangedListener(onSettingsChanged);
+      removeListener();
     }
-  }
-  addOnStorageChangedListener(onSettingsChanged);
+  });
 
   const { applyTo } = await settingsP;
   const tagNames: Array<'VIDEO' | 'AUDIO'> = [];

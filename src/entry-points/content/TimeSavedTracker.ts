@@ -179,17 +179,24 @@ export default class TimeSavedTracker {
   constructor (
     private readonly element: HTMLMediaElement,
     settings: TimeSavedTrackerRelevantSettings,
-    addOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
-    removeOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => void,
+    addOnSettingsChangedListener: (listener: (changes: MyStorageChanges) => void) => (() => void),
   ) {
     this._lastHandledSoundedSpeed = settings.soundedSpeed;
     this._setStateAccordingToNewSettings(settings);
     this._playbackStopwatch = new MediaElementPlaybackStopwatch(this.element);
-    addOnSettingsChangedListener(this._onSettingsChange);
+    const removeListerner = addOnSettingsChangedListener((changes: MyStorageChanges) => {
+      const soundedSpeedChange = changes.soundedSpeed;
+      if (soundedSpeedChange) {
+        this._onSoundedSpeedChange(soundedSpeedChange.newValue!);
+      }
+
+      const newValues = settingsChanges2NewValues(changes); // TODO perf: only assign relevant keys?
+      this._setStateAccordingToNewSettings(newValues);
+    });
     element.addEventListener('ratechange', this._onElementSpeedChange, { passive: true });
     this._destroyedPromise.then(() => {
       this._playbackStopwatch.destroy();
-      removeOnSettingsChangedListener(this._onSettingsChange);
+      removeListerner();
       element.removeEventListener('ratechange', this._onElementSpeedChange);
     });
     this._currentElementSpeed = element.playbackRate;
@@ -306,15 +313,6 @@ export default class TimeSavedTracker {
       // How long in seconds it will take `decayMultiplier` to change by e.
       this._decayTimeConstant = getDecayTimeConstant(this._latestDataWeight, this._latestDataLength);
     }
-  }
-  private _onSettingsChange = (changes: MyStorageChanges) => {
-    const soundedSpeedChange = changes.soundedSpeed;
-    if (soundedSpeedChange) {
-      this._onSoundedSpeedChange(soundedSpeedChange.newValue!);
-    }
-
-    const newValues = settingsChanges2NewValues(changes); // TODO perf: only assign relevant keys?
-    this._setStateAccordingToNewSettings(newValues);
   }
   private _onSoundedSpeedChange(newSoundedSpeed: number) {
     const prevSoundedSpeed = this._lastHandledSoundedSpeed;

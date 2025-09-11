@@ -49,13 +49,18 @@ export function createWrapperListener(listener: MyOnChangedListener): NativeOnCh
 /**
  * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
  * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
+ * 
+ * @returns `removeListener` function, as a convenience.
+ * It's equivalent to `() => removeOnStorageChangedListener(listener)`.
  */
-export function addOnStorageChangedListener(listener: MyOnChangedListener): void {
+export function addOnStorageChangedListener(listener: MyOnChangedListener): () => void {
   const actualListener = createWrapperListener(listener);
   browserOrChrome.storage.onChanged.addListener(actualListener);
   const removeListener = () =>
     browserOrChrome.storage.onChanged.removeListener(actualListener)
   listener2RemoveListener.set(listener, removeListener)
+
+  return removeListener
 }
 export function removeOnStorageChangedListener(listener: MyOnChangedListener): void {
   const removeListener = listener2RemoveListener.get(listener);
