@@ -137,7 +137,11 @@ especially accessibility-wise. -->
     }
       <p style="margin-bottom: 0.25rem;">
         {getMessage("estimatedRemainingDuration")}<br />
-        {mmSs(estimatedRemainingDuration)}
+        {mmSs(estimatedRemainingDuration)}<br />
+        <!-- Note that this doesn't update when the video is paused. -->
+        {new Date(
+          Date.now() + estimatedRemainingDuration * 1000
+        ).toLocaleTimeString()}
       </p>
     {/if}
   </div>
