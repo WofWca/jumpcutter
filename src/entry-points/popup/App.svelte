@@ -590,6 +590,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             content: () => getMessage('more'),
             theme: 'my-tippy',
           }}
+          style="padding: 0;"
         >⚙️</button>
       </div>
       {/if}
