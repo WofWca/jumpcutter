@@ -51,8 +51,8 @@ type SomeController =
 
 export type TelemetryMessage =
   SomeController['telemetry']
-  & TimeSavedTracker['timeSavedData']
   & {
+    sessionTimeSaved: TimeSavedTracker['timeSavedData'],
     controllerType: ControllerKind,
     elementLikelyCorsRestricted: boolean,
     elementCurrentSrc?: string,
@@ -328,7 +328,7 @@ export default class AllMediaElementsController {
           const elementLikelyCorsRestricted = this.activeMediaElementSourceIsCrossOrigin;
           const telemetryMessage: TelemetryMessage = {
             ...this.controller.telemetry,
-            ...this.timeSavedTracker.timeSavedData,
+            sessionTimeSaved: this.timeSavedTracker.timeSavedData,
             controllerType: (this.controller.constructor as any).controllerType,
             elementLikelyCorsRestricted,
             // `undefined` for performance.

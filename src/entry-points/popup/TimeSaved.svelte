@@ -10,10 +10,7 @@
     TelemetryMessage,
     | 'elementRemainingIntrinsicDuration'
 
-    | 'timeSavedComparedToSoundedSpeed'
-    | 'timeSavedComparedToIntrinsicSpeed'
-    | 'wouldHaveLastedIfSpeedWasSounded'
-    | 'wouldHaveLastedIfSpeedWasIntrinsic'
+    | 'sessionTimeSaved'
   >
 
   export let latestTelemetryRecord: RequiredTelemetry | undefined;
@@ -26,19 +23,20 @@
   }
 
   $: r = latestTelemetryRecord;
+  $: s = latestTelemetryRecord?.sessionTimeSaved;
   // TODO I'd prefer to use something like [`with`](https://github.com/sveltejs/svelte/pull/4601)
   $: timeSavedComparedToSoundedSpeedPercent =
-    (!r ? 0 : 100 * r.timeSavedComparedToSoundedSpeed / (r.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
+    (!s ? 0 : 100 * s.timeSavedComparedToSoundedSpeed / (s.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToSoundedSpeedAbs =
-    mmSs(r?.timeSavedComparedToSoundedSpeed ?? 0);
+    mmSs(s?.timeSavedComparedToSoundedSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasSounded =
-    mmSs(r?.wouldHaveLastedIfSpeedWasSounded ?? 0);
+    mmSs(s?.wouldHaveLastedIfSpeedWasSounded ?? 0);
   $: timeSavedComparedToIntrinsicSpeedPercent =
-    (!r ? 0 : 100 * r.timeSavedComparedToIntrinsicSpeed / (r.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
+    (!s ? 0 : 100 * s.timeSavedComparedToIntrinsicSpeed / (s.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToIntrinsicSpeedAbs =
-    mmSs(r?.timeSavedComparedToIntrinsicSpeed ?? 0);
+    mmSs(s?.timeSavedComparedToIntrinsicSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasIntrinsic =
-    mmSs(latestTelemetryRecord?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
+    mmSs(s?.wouldHaveLastedIfSpeedWasIntrinsic ?? 0);
 
   function formatTimeSaved(num: number) {
     return num.toFixed(2);
@@ -48,7 +46,7 @@
     1, // TODO use `getAbsoluteClampedSilenceSpeed`?
   ] as [number, number];
   function getTimeSavedPlaybackRateEquivalents(
-    r: RequiredTelemetry | undefined
+    r: RequiredTelemetry['sessionTimeSaved'] | undefined
   ): [comparedToSounded: number, comparedToIntrinsic: number] {
     if (!r) {
       return dummyTimeSavedValues;
@@ -66,7 +64,7 @@
   function beetween(min: number, x: number, max: number): boolean {
     return min < x && x < max;
   }
-  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(latestTelemetryRecord);
+  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(s);
   $: timeSavedPlaybackRateEquivalentsFmt = [
     formatTimeSaved(timeSavedPlaybackRateEquivalents[0]),
     formatTimeSaved(timeSavedPlaybackRateEquivalents[1]),
@@ -79,8 +77,8 @@
     !beetween(
       1 / 1.02,
       (
-        (r?.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)
-        / (r?.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)
+        (s?.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)
+        / (s?.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)
       ),
       1.02,
     )

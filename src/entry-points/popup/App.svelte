@@ -490,7 +490,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       return;
     }
 
-    const timeSavedData = latestTelemetryRecord;
+    const timeSavedData = latestTelemetryRecord.sessionTimeSaved;
 
     // TODO fix: ahhh, this could be an exponentially decayed value,
     // it's not correct to just look at the absolute value.
