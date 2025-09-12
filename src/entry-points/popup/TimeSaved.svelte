@@ -24,7 +24,6 @@
 
   $: r = latestTelemetryRecord;
   $: s = latestTelemetryRecord?.sessionTimeSaved;
-  // TODO I'd prefer to use something like [`with`](https://github.com/sveltejs/svelte/pull/4601)
   $: timeSavedComparedToSoundedSpeedPercent =
     (!s ? 0 : 100 * s.timeSavedComparedToSoundedSpeed / (s.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
   $: timeSavedComparedToSoundedSpeedAbs =
