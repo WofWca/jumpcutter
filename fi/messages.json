@@ -155,19 +155,19 @@
 		"message": "Edistyneet asetukset"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "kuinka paljon nopeammin video toistetaan keskimäärin äänen nopeuteen verrattuna"
+		"message": "Kuinka paljon nopeammin video toistetaan keskimäärin äänen nopeuteen verrattuna"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "säästetty aika verrattuna vain videon toistamiseen ääninopeudella"
+		"message": "Säästetty aika verrattuna vain videon toistamiseen ääninopeudella"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "kuinka kauan toisto kestäisi ääninopeudella hiljaisuutta ohittamatta"
+		"message": "Kuinka kauan toisto kestäisi ääninopeudella hiljaisuutta ohittamatta"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "kuinka paljon nopeammin video toistetaan keskimäärin normaaliin (ominais-) nopeuteen verrattuna"
+		"message": "Kuinka paljon nopeammin video toistetaan keskimäärin normaaliin (ominais-) nopeuteen verrattuna"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "säästetty aika verrattuna vain videon toistamiseen normaalilla (ominais-) nopeudella"
+		"message": "Säästetty aika verrattuna vain videon toistamiseen normaalilla (ominais-) nopeudella"
 	},
 	"comparedToSounded": {
 		"message": "verrattuna ääneen"
@@ -179,7 +179,7 @@
 		"message": "verrattuna normaaliin (ominaiseen)"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "kuinka kauan toisto kestäisi normaalilla (ominais-) nopeudella, hiljaisuutta ohittamatta"
+		"message": "Kuinka kauan toisto kestäisi normaalilla (ominais-) nopeudella, hiljaisuutta ohittamatta"
 	},
 	"loading": {
 		"message": "Ladataan"

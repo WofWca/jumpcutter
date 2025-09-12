@@ -39,22 +39,22 @@
 		"message": "Numbers' meanings (in order):"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "on average how much faster the video is effectively playing compared to sounded speed"
+		"message": "On average how much faster the video is effectively playing compared to sounded speed"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "on average how much faster the video is effectively playing compared to normal (intrinsic) speed"
+		"message": "On average how much faster the video is effectively playing compared to normal (intrinsic) speed"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "time saved compared to just playing the video at sounded speed"
+		"message": "Time saved compared to just playing the video at sounded speed"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "time saved compared to just playing the video at normal (intrinsic) speed"
+		"message": "Time saved compared to just playing the video at normal (intrinsic) speed"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "how long playback would take at sounded speed WITHOUT skipping silence"
+		"message": "How long playback would take at sounded speed WITHOUT skipping silence"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "how long playback would take at normal (intrinsic) speed WITHOUT skipping silence"
+		"message": "How long playback would take at normal (intrinsic) speed WITHOUT skipping silence"
 	},
 	"timeSavedPercentage": {
 		"message": "Equivalent time saved percentage:"

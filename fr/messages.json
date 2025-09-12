@@ -21,16 +21,16 @@
 		"message": "Significations des nombres (dans l’ordre) :"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "gain de temps par rapport à la lecture de la vidéo à vitesse normale"
+		"message": "Gain de temps par rapport à la lecture de la vidéo à vitesse normale"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "temps gagné par rapport à la lecture de la vidéo à la vitesse normale (intrinsèque)"
+		"message": "Temps gagné par rapport à la lecture de la vidéo à la vitesse normale (intrinsèque)"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "le temps que prendrait la lecture à la vitesse du son SANS sauter de silence"
+		"message": "Le temps que prendrait la lecture à la vitesse du son SANS sauter de silence"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "le temps que prendrait la lecture à la vitesse normale (intrinsèque) SANS sauter de silence"
+		"message": "Le temps que prendrait la lecture à la vitesse normale (intrinsèque) SANS sauter de silence"
 	},
 	"timeSavedPercentage": {
 		"message": "Pourcentage de temps gagné équivalent :"
@@ -69,7 +69,7 @@
 		"message": "Volume\nIl ne s'agit pas de l'intensité sonore mais de son taux d'amplification, comme sur la TV"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "en moyenne, la vitesse de lecture effective de la vidéo par rapport à la vitesse normale (intrinsèque)"
+		"message": "En moyenne, la vitesse de lecture effective de la vidéo par rapport à la vitesse normale (intrinsèque)"
 	},
 	"fileInputLabel": {
 		"message": "Déposez un ou plusieurs fichiers ici\nou cliquez pour sélectionner"
@@ -78,7 +78,7 @@
 		"message": "Regardez des vidéos jusqu'à 2x plus rapidement en sautant automatiquement les longues pauses entre les phrases"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "en moyenne la vitesse de lecture effective de la vidéo par rapport à la vitesse sondée"
+		"message": "En moyenne la vitesse de lecture effective de la vidéo par rapport à la vitesse sondée"
 	},
 	"mediaUnsupported": {
 		"message": "Ce média est **probablement** non pris en charge — $consequences$.",

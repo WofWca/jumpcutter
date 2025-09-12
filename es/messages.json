@@ -21,7 +21,7 @@
 		"message": "Significado de los números (en orden):"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "cuanto tardaría la reproducción a la velocidad normal SIN saltarse el silencio"
+		"message": "Cuanto tardaría la reproducción a la velocidad normal SIN saltarse el silencio"
 	},
 	"timeSavedPercentage": {
 		"message": "Porcentaje equivalente a tiempo ahorrado:"
@@ -111,7 +111,7 @@
 		}
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "cuanto tardaría la reproduccion a velocidad normal (intrínseca) SIN saltarse lo silencios"
+		"message": "Cuanto tardaría la reproduccion a velocidad normal (intrínseca) SIN saltarse lo silencios"
 	},
 	"changeElementSearchCriteria": {
 		"message": "Cambiar criterio de búsqueda…"
@@ -120,7 +120,7 @@
 		"message": "comparado a con sonido"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "tiempo ahorrado comparado a solo ver el video a velocidad normal (intrínseca)"
+		"message": "Tiempo ahorrado comparado a solo ver el video a velocidad normal (intrínseca)"
 	},
 	"soundedSpeed": {
 		"message": "Velocidad normal"
@@ -162,7 +162,7 @@
 		"message": "Vea vídeos hasta dos veces más rápido saltándose automáticamente las pausas largas entre frases"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "en promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
+		"message": "En promedio, cuánto más rápido se reproduce efectivamente el video, en comparación con la velocidad del sonido"
 	},
 	"donate": {
 		"message": "Donar"
@@ -290,7 +290,7 @@
 		"message": "\nNótese que es específicado como un multiplicador de la velocidad normal, entonces por ejemplo: si la velocidad normal es 1.5 y la velocidad del silencio es 2, el valor del resultado absoluto será 3. Puedes cambiar este comportamiento en la página de las opciones."
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "en promedio cuanto más rápido el vídeo está efectivamente siendo reproducido en comparación a la velocidad normal (intrínseca)"
+		"message": "En promedio cuanto más rápido el vídeo está efectivamente siendo reproducido en comparación a la velocidad normal (intrínseca)"
 	},
 	"marginBeforeTooltip": {
 		"message": "Cuando está en silencio actualmente y luego encontramos una parte con sonido, cuántos segundos antes de esto necesitamos desacelerar (cambiar a la velocidad normal).\nEsto es mayormente para asegurar que puedas escuchar claramente las primeras letras cuando alguien empiece a hablar.\n\n⚠️ Nótese que valores diferentes de cero causarán DISTORSIÓN del audio cuando se cambie de velocidad del silencio a la normal Y añadirá constante RETRASO de audio equivalente al valor de este ajuste. Estás desventajas no aplican si usas el \"algoritmo experimental\"."
@@ -406,7 +406,7 @@
 		"message": "Insignia del icono de la extensión"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "tiempo ahorrado comparado a solo reproducir el video a la velocidad normal"
+		"message": "Tiempo ahorrado comparado a solo reproducir el video a la velocidad normal"
 	},
 	"timeSavedAveragingMethodExponential": {
 		"message": "Solo tomar en cuenta los últimos datos (caída exponencial)"

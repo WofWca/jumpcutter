@@ -150,10 +150,10 @@
 		"message": "Significados dos números (em ordem):"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "em média o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade sonora"
+		"message": "Em média o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade sonora"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "em média quanto o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade normal (intrínseca)"
+		"message": "Em média quanto o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade normal (intrínseca)"
 	},
 	"timeSavedPercentage": {
 		"message": "Porcentagem equivalente ao tempo economizado:"
@@ -177,13 +177,13 @@
 		}
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "tempo salvo em comparação com apenas reproduzir o vídeo em velocidade sonora"
+		"message": "Tempo salvo em comparação com apenas reproduzir o vídeo em velocidade sonora"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "tempo salvo em comparação com apenas reproduzir o vídeo na velocidade normal (intrínseca)"
+		"message": "Tempo salvo em comparação com apenas reproduzir o vídeo na velocidade normal (intrínseca)"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "quanto tempo a reprodução levaria numa velocidade normal (intrínseca) SEM PULAR o silêncio"
+		"message": "Quanto tempo a reprodução levaria numa velocidade normal (intrínseca) SEM PULAR o silêncio"
 	},
 	"loading": {
 		"message": "Carregando"
@@ -386,7 +386,7 @@
 		"message": "Sobre"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
+		"message": "Quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
 	},
 	"hotkeysNotes": {
 		"message": "As teclas modificadoras (Ctrl, Shift, etc.) são suportadas.\nVárias ações podem ser vinculadas a uma única tecla. Isso pode ser utilizado para criar \"profiles\".\nA diferença entre as ações \"$switch$\" e \"=\" (a.k.a \"set\") é que \"$switch$\" alterna entre ambos o valor anterior e o argumento do atalho, enquanto \"set\" sempre ira se definir ao valor do argumento.\nOs atalhos também estarão ativos quando o pop-up estiver aberto.",

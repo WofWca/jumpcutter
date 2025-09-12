@@ -156,7 +156,7 @@
 		"message": "Pēc skaņas rezerve"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "cik ilgi atskaņotu normālā (iepriekšdefinētā) atskaņošanas ātrumā, NEIZLAIŽOT klusuma brīžus"
+		"message": "Cik ilgi atskaņotu normālā (iepriekšdefinētā) atskaņošanas ātrumā, NEIZLAIŽOT klusuma brīžus"
 	},
 	"more": {
 		"message": "Vēl"
@@ -254,7 +254,7 @@
 		"message": "Saglabāti"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "ietaupītais laiks, salīdzinot ar video atskaņošanu normālā (iepriekšdefinētā) ātrumā"
+		"message": "Ietaupītais laiks, salīdzinot ar video atskaņošanu normālā (iepriekšdefinētā) ātrumā"
 	},
 	"tryAttachAnyway": {
 		"message": "Tomēr mēģināt pievienot"

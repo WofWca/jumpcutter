@@ -92,13 +92,13 @@
 		"message": "Hubungi kami"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "rata-rata seberapa cepat video diputar secara efektif dibandingkan dengan kecepatan suara"
+		"message": "Rata-rata seberapa cepat video diputar secara efektif dibandingkan dengan kecepatan suara"
 	},
 	"numbersMeanings": {
 		"message": "Arti angka (secara berurutan):"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "rata-rata seberapa cepat video diputar secara efektif dibandingkan dengan kecepatan normal (intrinsik)"
+		"message": "Rata-rata seberapa cepat video diputar secara efektif dibandingkan dengan kecepatan normal (intrinsik)"
 	},
 	"timeSavedPercentage": {
 		"message": "Persentase penghematan waktu yang setara:"

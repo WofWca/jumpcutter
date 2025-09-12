@@ -352,19 +352,19 @@
 		"message": "Ušteđeno vrijeme"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "u prosjeku koliko brže se video stvarno reproducira u usporedbi s normalnom brzinom"
+		"message": "U prosjeku koliko brže se video stvarno reproducira u usporedbi s normalnom brzinom"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "u prosjeku koliko brže se video stvarno reproducira u usporedbi s normalnom (nepromijenjenom) brzinom"
+		"message": "U prosjeku koliko brže se video stvarno reproducira u usporedbi s normalnom (nepromijenjenom) brzinom"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "ušteđeno vrijeme u usporedbi s reprodukcijom videa s normalnom brzinom"
+		"message": "Ušteđeno vrijeme u usporedbi s reprodukcijom videa s normalnom brzinom"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "ušteđeno vrijeme u usporedbi s reprodukcijom videa normalnom (nepromijenjenom) brzinom"
+		"message": "Ušteđeno vrijeme u usporedbi s reprodukcijom videa normalnom (nepromijenjenom) brzinom"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "koliko bi dugo trajala reprodukcija normalnom (nepromijenjenom) brzinom BEZ preskakanja tišine"
+		"message": "Koliko bi dugo trajala reprodukcija normalnom (nepromijenjenom) brzinom BEZ preskakanja tišine"
 	},
 	"timeSavedPercentage": {
 		"message": "Ekvivalentni postotak ušteđenog vremena:"
@@ -373,7 +373,7 @@
 		"message": "u usporedbi s normalnom"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "koliko bi dugo trajala reprodukcija normalnom brzinom BEZ preskakanja tišine"
+		"message": "Koliko bi dugo trajala reprodukcija normalnom brzinom BEZ preskakanja tišine"
 	},
 	"noSuitableElement": {
 		"message": "Nije bilo moguće pronaći odgovarajući medijski element na stranici"

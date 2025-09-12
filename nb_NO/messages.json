@@ -33,16 +33,16 @@
 		"message": "Fant ikke passende mediaelement på siden"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "tid spart sammenlignet med å spille videoen i lydmessig hastighet"
+		"message": "Tid spart sammenlignet med å spille videoen i lydmessig hastighet"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "tid spart sammenlignet med å spille videoen i normal (iboende) hastighet"
+		"message": "Tid spart sammenlignet med å spille videoen i normal (iboende) hastighet"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "hvor lenge avspilling ville tatt i lydmessig hastighet UTEN å hoppe over stillhet"
+		"message": "Hvor lenge avspilling ville tatt i lydmessig hastighet UTEN å hoppe over stillhet"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "hvor lenge avspilling ville tatt i normal (iboende) hastighet UTEN å hoppe over stillhet"
+		"message": "Hvor lenge avspilling ville tatt i normal (iboende) hastighet UTEN å hoppe over stillhet"
 	},
 	"timeSavedPercentage": {
 		"message": "Ekvivalent prosentvis spart tid:"
@@ -135,10 +135,10 @@
 		"message": "Bruk eksperimentell algoritme"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "i gjennomsnitt hvor mye raskere videoen effektivt spilles sammenlignet med lydmessig hastighet"
+		"message": "I gjennomsnitt hvor mye raskere videoen effektivt spilles sammenlignet med lydmessig hastighet"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "i gjennomsnitt hvor mye raskere videoen effektivt spilles sammenlignet med normal (iboende) hastighet"
+		"message": "I gjennomsnitt hvor mye raskere videoen effektivt spilles sammenlignet med normal (iboende) hastighet"
 	},
 	"alsoSearchFor": {
 		"message": "Søk etter $type$-elementer også",

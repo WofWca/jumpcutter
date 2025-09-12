@@ -3,7 +3,7 @@
 		"message": "Ativado"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "quanto tempo a reprodução levaria numa velocidade normal (intrínseca) SEM PULAR o silêncio"
+		"message": "Quanto tempo a reprodução levaria numa velocidade normal (intrínseca) SEM PULAR o silêncio"
 	},
 	"silenceSpeed": {
 		"message": "Velocidade do silêncio"
@@ -69,19 +69,19 @@
 		"message": "Significados dos números (em ordem):"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "em média quanto o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade normal (intrínseca)"
+		"message": "Em média quanto o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade normal (intrínseca)"
 	},
 	"timeSavedComparedToSounded": {
-		"message": "em média o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade sonora"
+		"message": "Em média o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade sonora"
 	},
 	"timeSavedComparedToSoundedAbs": {
-		"message": "tempo poupado em comparação com apenas reproduzir o vídeo em velocidade sonora"
+		"message": "Tempo poupado em comparação com apenas reproduzir o vídeo em velocidade sonora"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "tempo poupado em comparação com apenas reproduzir o vídeo na velocidade normal (intrínseca)"
+		"message": "Tempo poupado em comparação com apenas reproduzir o vídeo na velocidade normal (intrínseca)"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
-		"message": "quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
+		"message": "Quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
 	},
 	"timeSavedPercentage": {
 		"message": "Percentagem equivalente ao tempo economizado:"
