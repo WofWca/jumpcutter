@@ -19,7 +19,7 @@
   export let latestTelemetryRecord: RequiredTelemetry | undefined;
   export let settings: RequiredSettings;
 
-  let timeSavedTooltipContentEl: HTMLElement;
+  let generalTooltipContentEl: HTMLElement;
 
   function mmSs(s: number): string {
     return fromS(Math.round(s), 'mm:ss');
@@ -88,128 +88,145 @@
     // be a point where `wouldHaveLastedIfSpeedWasSounded` and `wouldHaveLastedIfSpeedWasIntrinsic` will become the
     // same (although for a brief moment), despite the soundedSpeed actually never being `=== 1`.
     || (settings && settings.soundedSpeed !== 1);
-  // TODO DRY
-  $: timeSavedOnlyOneNumberIsShown =
-    !timeSavedPlaybackRateEquivalentsAreDifferent
-    && settings?.timeSavedAveragingMethod === 'exponential';
   $: estimatedRemainingDuration = settings &&
                                   r?.elementRemainingIntrinsicDuration != undefined &&
                                   r.elementRemainingIntrinsicDuration < Infinity
     ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
     : undefined;
+
+  $: maybeOverTheLastLine =
+    settings.timeSavedAveragingMethod === "exponential"
+      ? `\n${getMessage(
+          "overTheLast",
+          mmSs(settings.timeSavedAveragingWindowLength)
+        )}`
+      : "";
+
+  const commonTippyProps = {
+    theme: "my-tippy white-space-pre-line",
+    placement: "bottom",
+    hideOnClick: false,
+  } as const
 </script>
 
-<!-- TODO in "simple mode" the toolip's content is cut clipped. -->
+<!-- TODO perf: it would be cool to disable reactivity when the tooltips are closed. -->
 <!-- Why button? So the tooltip can be accessed with no pointer device. Any better ideas? -->
 <button
   type="button"
-  style="border: none; padding: 0; background: unset; font: inherit;"
   use:tippy={{
-    content: timeSavedTooltipContentEl,
-    theme: "my-tippy",
-    placement: "bottom",
-    hideOnClick: false,
+    ...commonTippyProps,
+    content: generalTooltipContentEl,
   }}
 >
   <span>⏱️</span>
-  <span>{timeSavedPlaybackRateEquivalentsFmt[0]}</span>
-  {#if settings.timeSavedAveragingMethod !== "exponential"}
-    <span
-      >({timeSavedComparedToSoundedSpeedAbs} / {wouldHaveLastedIfSpeedWasSounded})</span
-    >
-  {/if}
-  <!-- Don't need to confuse the user with another number if they're equal anyway, especially they're one
-      of those who use `soundedSpeed=1` -->
-  {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-    <span>/</span>
-    <span>{timeSavedPlaybackRateEquivalentsFmt[1]}</span>
-    {#if settings.timeSavedAveragingMethod !== "exponential"}
-      <span
-        >({timeSavedComparedToIntrinsicSpeedAbs} / {wouldHaveLastedIfSpeedWasIntrinsic})</span
-      >
-    {/if}
-  {/if}
 </button>
-
-<!-- TODO for performance it would be cool to disable reactivity when the tooltip is closed. -->
-<!-- TODO the contents are quite big and some locales (e.g. `ru`) may not fit in the default popup size. -->
+<!-- TODO this is a little stupid that we have a tooltip for a clock emoji,
+especially accessibility-wise. -->
 <div style="display:none">
-  <div bind:this={timeSavedTooltipContentEl}>
+  <div bind:this={generalTooltipContentEl}>
     <p style="margin-top: 0.25rem;">
       <span>{getMessage("timeSaved")}.</span>
-      {#if settings.timeSavedAveragingMethod === "exponential"}
-        <br />
-        <span
-          >{getMessage(
-            "overTheLast",
-            mmSs(settings.timeSavedAveragingWindowLength),
-          )}.</span
-        >
-      {/if}
     </p>
-    {#if !timeSavedOnlyOneNumberIsShown}
-      <p>{getMessage("numbersMeanings")}</p>
-    {/if}
-    <ol style="padding-left: 2ch; margin-bottom: 0.25rem">
-      <li style={timeSavedOnlyOneNumberIsShown ? "list-style:none;" : ""}>
-        {timeSavedPlaybackRateEquivalentsFmt[0]} – {getMessage(
-          "timeSavedComparedToSounded",
-        )}
-      </li>
-      {#if settings.timeSavedAveragingMethod !== "exponential"}
-        <li>
-          {timeSavedComparedToSoundedSpeedAbs} – {getMessage(
-            "timeSavedComparedToSoundedAbs",
-          )}
-        </li>
-        <li>
-          {wouldHaveLastedIfSpeedWasSounded} – {getMessage(
-            "wouldHaveLastedIfSpeedWasSounded",
-          )}
-        </li>
-      {/if}
-      {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-        <li>
-          {timeSavedPlaybackRateEquivalentsFmt[1]} – {getMessage(
-            "timeSavedComparedToIntrinsic",
-          )}
-        </li>
-        {#if settings.timeSavedAveragingMethod !== "exponential"}
-          <li>
-            {timeSavedComparedToIntrinsicSpeedAbs} – {getMessage(
-              "timeSavedComparedToIntrinsicAbs",
-            )}
-          </li>
-          <li>
-            {wouldHaveLastedIfSpeedWasIntrinsic} – {getMessage(
-              "wouldHaveLastedIfSpeedWasIntrinsic",
-            )}
-          </li>
-        {/if}
-      {/if}
-    </ol>
 
+    <!-- Adding getMessage("overTheLast") here might be "correct",
+    but it's perhaps confusing for just the "estimatedRemainingDuration" -->
     {#if
-        estimatedRemainingDuration != undefined
-        // 10,000 hour sanity check
-        && estimatedRemainingDuration < 10000 * 60 * 60
+      estimatedRemainingDuration != undefined
+      // 10,000 hour sanity check
+      && estimatedRemainingDuration < 10000 * 60 * 60
     }
       <p style="margin-bottom: 0.25rem;">
         {getMessage("estimatedRemainingDuration")}<br />
         {mmSs(estimatedRemainingDuration)}
       </p>
     {/if}
-
-    <p style="margin-bottom: 0.25rem;">
-      {getMessage("timeSavedPercentage")}<br />
-      {timeSavedComparedToSoundedSpeedPercent}
-      {#if timeSavedPlaybackRateEquivalentsAreDifferent}
-        / {timeSavedComparedToIntrinsicSpeedPercent}
-      {/if}
-      ({getMessage(
-        "comparedToSounded",
-      )}{#if timeSavedPlaybackRateEquivalentsAreDifferent}
-        {" / "}{getMessage("comparedToIntrinsic")}{/if}).
-    </p>
   </div>
 </div>
+
+<button
+  type="button"
+  use:tippy={{
+    ...commonTippyProps,
+    content:
+      getMessage("timeSavedComparedToSounded") +
+      maybeOverTheLastLine +
+      '\n\n' +
+      getMessage("timeSavedPercentage") + ' ' +
+      timeSavedComparedToSoundedSpeedPercent,
+  }}
+>
+  <span>{timeSavedPlaybackRateEquivalentsFmt[0]}</span>
+</button>
+
+{#if settings.timeSavedAveragingMethod !== "exponential"}
+  (<button
+    type="button"
+    use:tippy={{
+      ...commonTippyProps,
+      content: getMessage("timeSavedComparedToSoundedAbs"),
+    }}
+  >
+    <span>{timeSavedComparedToSoundedSpeedAbs}</span>
+  </button>
+  /
+  <button
+    type="button"
+    use:tippy={{
+      ...commonTippyProps,
+      content: getMessage("wouldHaveLastedIfSpeedWasSounded"),
+    }}
+  >
+    <span>{wouldHaveLastedIfSpeedWasSounded}</span>
+  </button>)
+{/if}
+
+
+<!-- Don't need to confuse the user with another number if they're equal anyway, especially they're one
+of those who use `soundedSpeed=1` -->
+{#if timeSavedPlaybackRateEquivalentsAreDifferent}
+  <span>/</span>
+  <button
+    type="button"
+    use:tippy={{
+      ...commonTippyProps,
+      content:
+        getMessage("timeSavedComparedToIntrinsic") +
+        maybeOverTheLastLine +
+        '\n\n' +
+        getMessage("timeSavedPercentage") + ' ' +
+        timeSavedComparedToIntrinsicSpeedPercent,
+    }}
+  >
+    <span>{timeSavedPlaybackRateEquivalentsFmt[1]}</span>
+  </button>
+  {#if settings.timeSavedAveragingMethod !== "exponential"}
+    (<button
+      type="button"
+      use:tippy={{
+        ...commonTippyProps,
+        content: getMessage("timeSavedComparedToIntrinsicAbs"),
+      }}
+    >
+      <span>{timeSavedComparedToIntrinsicSpeedAbs}</span>
+    </button>
+    /
+    <button
+      type="button"
+      use:tippy={{
+        ...commonTippyProps,
+        content: getMessage("wouldHaveLastedIfSpeedWasIntrinsic"),
+      }}
+    >
+      <span>{wouldHaveLastedIfSpeedWasIntrinsic}</span>
+    </button>)
+  {/if}
+{/if}
+
+<style>
+  button {
+    border: none;
+    padding: 0;
+    background: unset;
+    font: inherit;
+  }
+</style>
