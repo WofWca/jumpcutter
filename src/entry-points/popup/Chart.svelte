@@ -830,6 +830,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     <meter
       aria-label='volume'
       value={lastVolume}
+      low={volumeThreshold}
       max={meterMaxValue}
     />
     <span
