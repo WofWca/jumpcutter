@@ -4,6 +4,8 @@
   import { getMessage } from "@/helpers";
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
   import type { Settings } from "@/settings";
+  import { tweened } from "svelte/motion";
+  import { linear as EasingLinear } from "svelte/easing";
 
   type RequiredSettings = Pick<Settings, "soundedSpeed" | "timeSavedAveragingMethod" | "timeSavedAveragingWindowLength">
   type RequiredTelemetry = Pick<
@@ -63,6 +65,7 @@
   function beetween(min: number, x: number, max: number): boolean {
     return min < x && x < max;
   }
+  // let timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(s);
   $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(s);
   $: timeSavedPlaybackRateEquivalentsFmt = [
     formatTimeSaved(timeSavedPlaybackRateEquivalents[0]),
@@ -85,10 +88,42 @@
     // be a point where `wouldHaveLastedIfSpeedWasSounded` and `wouldHaveLastedIfSpeedWasIntrinsic` will become the
     // same (although for a brief moment), despite the soundedSpeed actually never being `=== 1`.
     || (settings && settings.soundedSpeed !== 1);
+
+  // Always using all-time average woud be a better way
+  // to make the "estimated end time" less jumpy. But this works too.
+  const tweenedEffectivePlaybackRateComparedToSounded = tweened<number>(
+    undefined,
+    {
+      duration: 20_000,
+      easing: EasingLinear,
+    }
+  )
+  $: {
+    // Otherwise it's a dummy "1.00" value.
+    if (r) {
+      $tweenedEffectivePlaybackRateComparedToSounded =
+        timeSavedPlaybackRateEquivalents[0];
+
+      // TODO reset tweening when the video is paused.
+      // Note that `r.elementPlaybackActive` won't work, because it's false
+      // during a seek.
+
+      // tweenedEffectivePlaybackRateComparedToSounded.set(
+      //   timeSavedPlaybackRateEquivalents[0],
+      //   {
+      //     // Tweening while paused is weird and confusing.
+      //     duration: !r.elementPlaybackActive
+      //       ? 50
+      //       : undefined, // default
+      //   }
+      // )
+    }
+  }
+
   $: estimatedRemainingDuration = settings &&
                                   r?.elementRemainingIntrinsicDuration != undefined &&
                                   r.elementRemainingIntrinsicDuration < Infinity
-    ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
+    ? (r.elementRemainingIntrinsicDuration / $tweenedEffectivePlaybackRateComparedToSounded) / settings.soundedSpeed
     : undefined;
 
   $: maybeOverTheLastLine =
