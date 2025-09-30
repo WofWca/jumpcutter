@@ -26,6 +26,9 @@
 	"timeSaved": {
 		"message": "Time saved info"
 	},
+	"timeSavedSinceInstallation": {
+		"message": "Total time saved since installation"
+	},
 	"overTheLast": {
 		"message": "Over the last $duration$",
 		"placeholders": {
