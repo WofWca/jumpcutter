@@ -334,6 +334,9 @@ export default class TimeSavedTracker {
     this._appendPendingSnippetData(this._currentElementSpeed, prevSoundedSpeed);
     this._lastHandledSoundedSpeed = newSoundedSpeed;
   }
+  /**
+   * The values are in seconds.
+   */
   public get timeSavedData() {
     const currentSnippetDuration = this._playbackStopwatch.time;
     const [
