@@ -38,14 +38,20 @@
 
   $: r = latestTelemetryRecord;
   $: s = latestTelemetryRecord?.sessionTimeSaved;
+  $: timeSavedComparedToSoundedSpeedFraction = s != undefined
+    ? s.timeSavedComparedToSoundedSpeed / (s.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)
+    : undefined
   $: timeSavedComparedToSoundedSpeedPercent =
-    (!s ? 0 : 100 * s.timeSavedComparedToSoundedSpeed / (s.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)).toFixed(1) + '%';
+    (100 * (timeSavedComparedToSoundedSpeedFraction ?? 0)).toFixed(1) + '%';
   $: timeSavedComparedToSoundedSpeedAbs =
     mmSs(s?.timeSavedComparedToSoundedSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasSounded =
     mmSs(s?.wouldHaveLastedIfSpeedWasSounded ?? 0);
+  $: timeSavedComparedToIntrinsicSpeedFraction = s != undefined
+    ? s.timeSavedComparedToIntrinsicSpeed / (s.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)
+    : undefined
   $: timeSavedComparedToIntrinsicSpeedPercent =
-    (!s ? 0 : 100 * s.timeSavedComparedToIntrinsicSpeed / (s.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)).toFixed(1) + '%';
+    (100 * (timeSavedComparedToIntrinsicSpeedFraction ?? 0)).toFixed(1) + '%';
   $: timeSavedComparedToIntrinsicSpeedAbs =
     mmSs(s?.timeSavedComparedToIntrinsicSpeed ?? 0);
   $: wouldHaveLastedIfSpeedWasIntrinsic =
