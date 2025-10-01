@@ -257,6 +257,11 @@ export const defaultSettings: Readonly<Settings> = {
   timeSavedAveragingWindowLength: 600,
   timeSavedExponentialAveragingLatestDataWeight: 0.95,
 
+  lifetimeTimeSavedComparedToSoundedSpeed: 0,
+  lifetimeTimeSavedComparedToIntrinsicSpeed: 0,
+  lifetimeWouldHaveLastedIfSpeedWasSounded: 0,
+  lifetimeWouldHaveLastedIfSpeedWasIntrinsic: 0,
+
   // This used to be 'soundedSpeed', but since
   // `onPlaybackRateChangeFromOtherScripts` defaults to
   // 'updateSoundedSpeed', then showing the playback rate is not really useful,

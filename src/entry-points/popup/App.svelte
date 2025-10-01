@@ -94,6 +94,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       | 'hotkeys'
       | 'popupSpecificHotkeys'
       | 'oppositeDayMode'
+
+      | 'lifetimeTimeSavedComparedToSoundedSpeed'
+      | 'lifetimeTimeSavedComparedToIntrinsicSpeed'
+      | 'lifetimeWouldHaveLastedIfSpeedWasSounded'
+      | 'lifetimeWouldHaveLastedIfSpeedWasIntrinsic'
     >
     & ReturnType<Parameters<typeof createKeydownListener>[1]>
     & Parameters<typeof changeAlgorithmAndMaybeRelatedSettings>[0]

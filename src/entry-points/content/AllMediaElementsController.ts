@@ -25,6 +25,7 @@ import {
 } from '@/settings';
 import { clamp, assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
+import requestIdlePromise from './helpers/requestIdlePromise';
 import type ElementPlaybackControllerStretching from
   './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
@@ -53,6 +54,7 @@ export type TelemetryMessage =
   SomeController['telemetry']
   & {
     sessionTimeSaved: TimeSavedTracker['timeSavedData'],
+    lifetimeTimeSaved: TimeSavedTracker['timeSavedData'],
     controllerType: ControllerKind,
     elementLikelyCorsRestricted: boolean,
     elementCurrentSrc?: string,
@@ -170,7 +172,13 @@ export default class AllMediaElementsController {
   private handledMutedElements = new WeakSet<HTMLMediaElement>();
   elementLastActivatedAt: number | undefined;
   controller: SomeController | undefined;
+
+  // TODO refactor: rename this var? Since there are now 2 time saved trackers.
+  // And other such variables.
   timeSavedTracker: TimeSavedTracker | undefined;
+  private onSilenceSkippingSeek?: TimeSavedTracker['onSilenceSkippingSeek'];
+  private getLifetimeTimeSaved?: () => TimeSavedTracker['timeSavedData']
+
   private settings: Settings | undefined;
   // This is so we don't have to load all the settings keys just for basic functionality.
   // This is pretty stupid. Maybe it could be soumehow refactored to look less stupid.
@@ -267,7 +275,7 @@ export default class AllMediaElementsController {
               el,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               extensionSettings2ControllerSettings(this.settings!),
-              (...args) => this.timeSavedTracker?.onSilenceSkippingSeek(...args),
+              (...args) => this.onSilenceSkippingSeek?.(...args),
             ]
           );
           controller.init();
@@ -320,7 +328,11 @@ export default class AllMediaElementsController {
           requestIdleCallbackPolyfill(setShouldRespondToNextRequestToTrue);
           setTimeout(setShouldRespondToNextRequestToTrue, 200);
 
-          if (!this.controller?.initialized || !this.timeSavedTracker) {
+          if (
+            !this.controller?.initialized
+            || !this.timeSavedTracker
+            || !this.getLifetimeTimeSaved
+          ) {
             return;
           }
           assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
@@ -329,6 +341,7 @@ export default class AllMediaElementsController {
           const telemetryMessage: TelemetryMessage = {
             ...this.controller.telemetry,
             sessionTimeSaved: this.timeSavedTracker.timeSavedData,
+            lifetimeTimeSaved: this.getLifetimeTimeSaved(),
             controllerType: (this.controller.constructor as any).controllerType,
             elementLikelyCorsRestricted,
             // `undefined` for performance.
@@ -509,7 +522,7 @@ export default class AllMediaElementsController {
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extensionSettings2ControllerSettings(this.settings!),
-        (...args) => this.timeSavedTracker?.onSilenceSkippingSeek(...args),
+        (...args) => this.onSilenceSkippingSeek?.(...args),
       ]
     ).then(async controller => {
       this.controller = controller;
@@ -523,12 +536,21 @@ export default class AllMediaElementsController {
       hotkeyListenerP = this.ensureInitHotkeyListener();
     }
 
+    let onSilenceSkippingSeek1: typeof this.onSilenceSkippingSeek
+    let onSilenceSkippingSeek2: typeof this.onSilenceSkippingSeek
+    this.onSilenceSkippingSeek = (...args) => {
+      onSilenceSkippingSeek1?.(...args)
+      onSilenceSkippingSeek2?.(...args)
+    }
+    onDetach(() => this.onSilenceSkippingSeek = undefined);
+
+    const TimeSavedTrackerPromise = import(
+      /* webpackExports: ['default'] */
+      './TimeSavedTracker'
+    );
     // TODO an option to disable it.
     const timeSavedTrackerPromise = (async () => {
-      const TimeSavedTracker = (await import(
-        /* webpackExports: ['default'] */
-        './TimeSavedTracker'
-      )).default;
+      const TimeSavedTracker = (await TimeSavedTrackerPromise).default
       await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
       const timeSavedTracker = this.timeSavedTracker = new TimeSavedTracker(
         el,
@@ -538,8 +560,65 @@ export default class AllMediaElementsController {
       );
       onDetach(() => timeSavedTracker.destroy());
 
+      onSilenceSkippingSeek1 =
+        timeSavedTracker.onSilenceSkippingSeek.bind(timeSavedTracker);
+
       return timeSavedTracker
     })();
+
+    // TODO an option to disable it.
+    const trackLifetimeTimeSaved = true
+    if (trackLifetimeTimeSaved) {
+      const importP = import(
+        /* webpackExports: ['default'] */
+        './lifetimeTimeSaved'
+      );
+      (async () => {
+        const startTrackingLifetimeTimeSaved = (await importP).default
+        const TimeSavedTracker = (await TimeSavedTrackerPromise).default
+        await controllerP; // Same as above
+        // Note that this will delay all telemetry.
+        await requestIdlePromise({ timeout: 10_000 })
+
+        const {
+          getLifetimeTimeSaved,
+          onSilenceSkippingSeek
+        } = startTrackingLifetimeTimeSaved(
+          el,
+          this.settings!,
+          (newSettingsValues) => {
+            setSettings(newSettingsValues);
+
+            // We could have called `this.reactToSettingsNewValues` instead,
+            // but let's not do that for performance,
+            // because it's not interested in the changes
+            // to these "time saved" values.
+            Object.assign(this.settings!, newSettingsValues);
+          },
+          TimeSavedTracker,
+          onDetach,
+        )
+        onSilenceSkippingSeek2 = onSilenceSkippingSeek
+
+        this.getLifetimeTimeSaved = getLifetimeTimeSaved
+        onDetach(() => {
+          if (this.getLifetimeTimeSaved !== getLifetimeTimeSaved) {
+            // Note that this is not the only place that would be affected
+            // by such a race condition.
+            IS_DEV_MODE &&
+              console.warn(
+                "Race condition: this.getLifetimeTimeSaved !== getLifetimeTimeSaved",
+                this.getLifetimeTimeSaved,
+                getLifetimeTimeSaved,
+                "maybe we tried to attach to an element before detaching from the previous one"
+              );
+
+            return;
+          }
+          this.getLifetimeTimeSaved = undefined;
+        });
+      })();
+    }
 
     {
       // TODO perf: dynamically import this.

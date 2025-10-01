@@ -20,6 +20,9 @@
 
 import { HotkeyBinding } from '@/hotkeys';
 import { ControllerKind } from './ControllerKind';
+// For JSDoc.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
 
 // It is impossible to explicitly set `experimentalControllerType` to `ControllerKind.ALWAYS_SOUNDED`.
 // See `AllMediaElementsController.ts`.
@@ -142,6 +145,15 @@ export interface Settings {
    * `timeSavedAveragingWindowLength` has weight of as little as `1 - <this value>`).
    */
   timeSavedExponentialAveragingLatestDataWeight: number,
+
+  // Yes, these are not "settings".
+  /**
+   * @see {@link TimeSavedTracker}.
+   */
+  lifetimeTimeSavedComparedToSoundedSpeed: number
+  lifetimeTimeSavedComparedToIntrinsicSpeed: number
+  lifetimeWouldHaveLastedIfSpeedWasSounded: number
+  lifetimeWouldHaveLastedIfSpeedWasIntrinsic: number
 
   // TODO should we add other options for this setting?
   /**
