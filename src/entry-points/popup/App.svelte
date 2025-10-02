@@ -64,7 +64,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import { assertDev, getMessage } from '@/helpers';
   import { isMobile } from '@/helpers/isMobile';
   import type { Props as TippyProps } from 'tippy.js';
-  import TimeSaved from './TimeSaved.svelte';
   import VolumeIndicator from './VolumeIndicator.svelte';
 
   // See ./popup.css. Would be cool to do this at build-time
@@ -600,7 +599,18 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       </div>
       {/if}
       <div style="margin-bottom: 0.375rem;">
-        <TimeSaved {latestTelemetryRecord} {settings}/>
+        {#await import(
+          /* webpackExports: ['default'] */
+          /* webpackPreload: true */
+          './TimeSaved.svelte'
+        )}
+          <div style="filter: blur(0.7px);">
+            <span>⏱️ 8.88 / 8.88</span><br>
+            88:88:88.88
+          </div>
+        {:then { default: TimeSaved }}
+          <TimeSaved {latestTelemetryRecord} {settings}/>
+        {/await}
       </div>
     </div>
   </div>
