@@ -143,7 +143,7 @@
   $: timeSavedPlaybackRateEquivalentsFmt = [
     formatTimeSaved(timeSavedPlaybackRateEquivalents[0]),
     formatTimeSaved(timeSavedPlaybackRateEquivalents[1]),
-  ] as [string, string];
+  ] as const;
   $: timeSavedPlaybackRateEquivalentsAreDifferent =
     // Can't compare `timeSavedPlaybackRateEquivalents[0]` and `[1]` because due to rounding they can
     // jump between being the same and being different even if you don't change soundedSpeed.
