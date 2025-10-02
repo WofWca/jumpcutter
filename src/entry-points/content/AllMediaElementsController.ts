@@ -63,6 +63,11 @@ export type TelemetryMessage =
      * Remember that this could be `Infinity` for live streams,
      * and if `.duration` is otherwise unknown.
      */
+    elementIntrinsicDuration: number,
+    /**
+     * This could also be `Infinity`
+     * @see {@linkcode elementIntrinsicDuration}.
+     */
     elementRemainingIntrinsicDuration: number,
   };
 
@@ -348,6 +353,7 @@ export default class AllMediaElementsController {
             elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
             // TODO check if the map lookup is too slow to do it several times per second.
             createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
+            elementIntrinsicDuration: this.activeMediaElement.duration,
             elementRemainingIntrinsicDuration: this.activeMediaElement.duration - this.activeMediaElement.currentTime,
           };
           port.postMessage(telemetryMessage);
