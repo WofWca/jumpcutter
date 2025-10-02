@@ -121,10 +121,18 @@
     1, // TODO use `getAbsoluteClampedSilenceSpeed`?
   ] as [number, number];
   function getTimeSavedPlaybackRateEquivalents(
-    r: RequiredTelemetry['sessionTimeSaved'] | undefined
+    r: RequiredTelemetry['sessionTimeSaved'] | undefined,
+    settings: RequiredSettings
   ): [comparedToSounded: number, comparedToIntrinsic: number] {
     if (!r) {
-      return dummyTimeSavedValues;
+      const dummyEffectiveSpeed = 1;
+      return [
+        dummyEffectiveSpeed,
+        // Be clever and default to the sounded speed.
+        dummyEffectiveSpeed * settings.soundedSpeed,
+        // TODO use `getAbsoluteClampedSilenceSpeed`? wait what did I mean
+        // by this comment? Did I mean sounded speed?
+      ];
     }
     // `r.wouldHaveLastedIfSpeedWasIntrinsic - r.timeSavedComparedToIntrinsicSpeed` would be equivalent.
     const lastedActually = r.wouldHaveLastedIfSpeedWasSounded - r.timeSavedComparedToSoundedSpeed;
@@ -139,7 +147,10 @@
   function beetween(min: number, x: number, max: number): boolean {
     return min < x && x < max;
   }
-  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(s);
+  $: timeSavedPlaybackRateEquivalents = getTimeSavedPlaybackRateEquivalents(
+    s,
+    settings
+  );
   $: timeSavedPlaybackRateEquivalentsFmt = [
     formatTimeSaved(timeSavedPlaybackRateEquivalents[0]),
     formatTimeSaved(timeSavedPlaybackRateEquivalents[1]),
