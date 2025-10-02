@@ -102,9 +102,9 @@ browserOrChrome.runtime.onInstalled.addListener(async details => {
 });
 
 // `commands` API is currently not supported by Gecko for Android.
-browserOrChrome.commands?.onCommand?.addListener?.(async (...args) => {
+browserOrChrome.commands?.onCommand?.addListener?.(async (command) => {
   await postInstallStorageChangesDoneP;
-  onCommandWhenReady(...args);
+  onCommandWhenReady(command);
 });
 
 let mayThisOnStorageChangeEventBeCausedByPostInstallScriptP: Promise<boolean> | boolean

@@ -38,11 +38,11 @@
     "tone": "~14.7.77"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.268",
-    "@types/firefox-webext-browser": "^120.0.3",
+    "@types/chrome": "^0.1.18",
+    "@types/firefox-webext-browser": "^120.0.5",
     "@types/hh-mm-ss": "^1.2.3",
-    "@types/lodash": "^4.17.4",
-    "@types/node": "^20.12.12",
+    "@types/lodash": "^4.17.20",
+    "@types/node": "^24.6.2",
     "@typescript-eslint/eslint-plugin": "^7.9.0",
     "@typescript-eslint/parser": "^7.9.0",
     "clean-webpack-plugin": "^4.0.0",
@@ -56,9 +56,9 @@
     "svelte-loader": "^3.2.0",
     "svelte-preprocess": "^5.1.4",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.5",
+    "typescript": "^5.8.3",
     "webpack": "^5.91.0",
     "webpack-bundle-analyzer": "^4.10.2",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^6.0.1"
   }
 }
