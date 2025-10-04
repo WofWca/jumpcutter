@@ -45,7 +45,7 @@
 		"message": "Sessizliği ATLAMADAN normal (gerçek) hızda oynatma ne kadar sürer"
 	},
 	"timeSavedPercentage": {
-		"message": "Eşdeğer zaman tasarrufu yüzdesi:"
+		"message": "Zaman tasarrufu yüzdesi"
 	},
 	"comparedToSounded": {
 		"message": "Ses ile karşılaştırıldığında"

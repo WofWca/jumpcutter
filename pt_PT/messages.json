@@ -84,7 +84,7 @@
 		"message": "Quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
 	},
 	"timeSavedPercentage": {
-		"message": "Percentagem equivalente ao tempo economizado:"
+		"message": "Percentagem ao tempo economizado"
 	},
 	"comparedToSounded": {
 		"message": "em comparação com a sonora"

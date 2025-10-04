@@ -33,7 +33,7 @@
 		"message": "Le temps que prendrait la lecture à la vitesse normale (intrinsèque) SANS sauter de silence"
 	},
 	"timeSavedPercentage": {
-		"message": "Pourcentage de temps gagné équivalent :"
+		"message": "Pourcentage de temps gagné"
 	},
 	"comparedToSounded": {
 		"message": "par rapport au son"

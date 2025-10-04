@@ -367,7 +367,7 @@
 		"message": "Koliko bi dugo trajala reprodukcija normalnom (nepromijenjenom) brzinom BEZ preskakanja tišine"
 	},
 	"timeSavedPercentage": {
-		"message": "Ekvivalentni postotak ušteđenog vremena:"
+		"message": "Postotak ušteđenog vremena"
 	},
 	"comparedToSounded": {
 		"message": "u usporedbi s normalnom"

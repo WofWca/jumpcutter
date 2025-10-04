@@ -27,7 +27,7 @@
 		"message": "与有声片段速率相比，视频的有效播放速度平均快多少"
 	},
 	"timeSavedPercentage": {
-		"message": "等效节省时间百分比："
+		"message": "等效节省时间百分比"
 	},
 	"comparedToSounded": {
 		"message": "相比于有声片段"

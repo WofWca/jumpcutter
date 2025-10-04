@@ -156,7 +156,7 @@
 		"message": "Em média quanto o quão rápido o vídeo está efetivamente tocando em comparação com a velocidade normal (intrínseca)"
 	},
 	"timeSavedPercentage": {
-		"message": "Porcentagem equivalente ao tempo economizado:"
+		"message": "Porcentagem ao tempo economizado"
 	},
 	"comparedToSounded": {
 		"message": "em comparação com a sonora"

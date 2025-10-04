@@ -24,7 +24,7 @@
 		"message": "Cuanto tardaría la reproducción a la velocidad normal SIN saltarse el silencio"
 	},
 	"timeSavedPercentage": {
-		"message": "Porcentaje equivalente a tiempo ahorrado:"
+		"message": "Porcentaje a tiempo ahorrado"
 	},
 	"audio": {
 		"message": "audio"

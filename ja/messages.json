@@ -178,7 +178,7 @@
 		"message": "通常時速度と比較してどれだけ速く効率的にビデオが再生されたかの平均"
 	},
 	"timeSavedPercentage": {
-		"message": "時間節約率:"
+		"message": "時間節約率"
 	},
 	"comparedToIntrinsic": {
 		"message": "等速の通常速度と比較"

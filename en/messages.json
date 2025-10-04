@@ -41,6 +41,9 @@
 	"numbersMeanings": {
 		"message": "Numbers' meanings (in order):"
 	},
+	"timeSavedSavingMinutesOutOfEveryHour": {
+		"message": "How many minutes you are saving out of every hour"
+	},
 	"timeSavedComparedToSounded": {
 		"message": "On average how much faster the video is effectively playing compared to sounded speed"
 	},
@@ -60,7 +63,7 @@
 		"message": "How long playback would take at 1x (normal, intrinsic) speed WITHOUT skipping silence"
 	},
 	"timeSavedPercentage": {
-		"message": "Equivalent time saved percentage:"
+		"message": "Time saved percentage"
 	},
 	"comparedToSounded": {
 		"message": "compared to sounded"
