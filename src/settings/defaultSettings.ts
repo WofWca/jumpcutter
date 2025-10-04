@@ -253,6 +253,14 @@ export const defaultSettings: Readonly<Settings> = {
     },
   ],
 
+  // The 'minutesOutOfHour' representation should be the most palpable,
+  // direct, simple, for users.
+  // It's not a somewhat abstract "effective playback rate"
+  // and not a percentage which you always have to multiply by something
+  // to get a meaningful value.
+  // With minutesOutOfHour
+  timeSavedRepresentation: 'minutesOutOfHour',
+
   timeSavedAveragingMethod: 'exponential',
   timeSavedAveragingWindowLength: 600,
   timeSavedExponentialAveragingLatestDataWeight: 0.95,
