@@ -136,6 +136,10 @@ export interface Settings {
   // TODO refactor use `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
   popupSpecificHotkeys: HotkeyBinding[],
 
+  timeSavedRepresentation:
+    | 'minutesOutOfHour'
+    | 'percentage'
+    | 'effectivePlaybackRate',
   timeSavedAveragingMethod: 'all-time' | 'exponential',
   // This may not be the most accurate name for an exponential averaging window. TODO refactor?
   timeSavedAveragingWindowLength: number,

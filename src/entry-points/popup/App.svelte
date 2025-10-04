@@ -61,7 +61,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   } from '@/hotkeys';
   import type createKeydownListener from './hotkeys';
   import throttle from 'lodash/throttle';
-  import { assertDev, getMessage } from '@/helpers';
+  import { assertDev, assertNever, getMessage } from '@/helpers';
   import { isMobile } from '@/helpers/isMobile';
   import type { Props as TippyProps } from 'tippy.js';
   import VolumeIndicator from './VolumeIndicator.svelte';
@@ -78,6 +78,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       | 'popupAutofocusEnabledInput'
       | 'enableHotkeys'
       | 'silenceSpeedSpecificationMethod'
+      | 'timeSavedRepresentation'
       | 'timeSavedAveragingMethod'
       | 'timeSavedAveragingWindowLength'
       | 'popupChartWidthPx'
@@ -468,6 +469,16 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     });
   }
 
+  $: timeSavedDummyVal =
+    settings == undefined
+    || settings.timeSavedRepresentation === 'minutesOutOfHour'
+      ? '88.8'
+      : settings.timeSavedRepresentation === 'effectivePlaybackRate'
+      ? '8.88'
+      : settings.timeSavedRepresentation === 'percentage'
+      ? '88.8%'
+      : assertNever(settings.timeSavedRepresentation) || ''
+
   let oppositeDayModeIsDiscoverable = false;
   (async () => {
     // Reveal the opposite day mode if the conditions are good.
@@ -605,11 +616,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           './TimeSaved.svelte'
         )}
           <div style="filter: blur(0.7px);">
-            <span>⏱️ 8.88 / 8.88</span><br>
+            <span>⏱️ {timeSavedDummyVal}</span>
+            {#if settings.soundedSpeed !== 1}
+              <span>/ {timeSavedDummyVal}</span>
+            {/if}
+            <br>
             88:88:88.88
           </div>
         {:then { default: TimeSaved }}
-          <TimeSaved {latestTelemetryRecord} {settings}/>
+          <TimeSaved
+            {latestTelemetryRecord}
+            {settings}
+            onSettingsChange={updateSettingsLocalCopyAndStorage}
+          />
         {/await}
       </div>
     </div>

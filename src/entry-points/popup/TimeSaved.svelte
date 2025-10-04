@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tippyActionAsyncPreload as tippy } from "./tippyAction";
   import { fromS } from 'hh-mm-ss'; // TODO it could be lighter. Make a MR or merge it directly and modify.
-  import { getMessage } from "@/helpers";
+  import { assertNever, getMessage } from "@/helpers";
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
   import type { Settings } from "@/settings";
   import { tweened } from "svelte/motion";
@@ -10,6 +10,7 @@
   type RequiredSettings = Pick<
     Settings,
     | "soundedSpeed"
+    | "timeSavedRepresentation"
     | "timeSavedAveragingMethod"
     | "timeSavedAveragingWindowLength"
 
@@ -29,6 +30,7 @@
 
   export let latestTelemetryRecord: RequiredTelemetry | undefined;
   export let settings: RequiredSettings;
+  export let onSettingsChange: (newValues: Partial<RequiredSettings>) => void
 
   let generalTooltipContentEl: HTMLElement;
 
@@ -178,6 +180,38 @@
     ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
     : undefined;
 
+
+  const enum SoundedOrIntrinsic {
+    Sounded,
+    Intrinsic,
+  }
+  function getMaybeComparedToLine(
+    settings: RequiredSettings,
+    soundedOrIntrinsic: SoundedOrIntrinsic,
+  ): string {
+    if (settings.timeSavedRepresentation === 'effectivePlaybackRate') {
+      // The "compared to" is already present in the tooltip,
+      // no need to say it once again.
+      return ''
+    }
+    if (!timeSavedPlaybackRateEquivalentsAreDifferent) {
+      // Since only one value is displayed, we don't need to be super verbose.
+      // Just say "you're saving this much time" and that's it.
+      return ''
+    }
+    return (
+      '\n' +
+      getMessage(
+        // TODO these strings will probably need to be changed up a little,
+        // will need to remove the "time saved" part?
+        // Rather, new strings need to be created
+        // and old ones marked as read-only.
+        soundedOrIntrinsic === SoundedOrIntrinsic.Sounded
+          ? 'timeSavedComparedToSoundedAbs'
+          : 'timeSavedComparedToIntrinsicAbs'
+      )
+    )
+  }
   $: maybeOverTheLastLine =
     settings.timeSavedAveragingMethod === "exponential"
       ? `\n${getMessage(
@@ -185,6 +219,74 @@
           mmSs(settings.timeSavedAveragingWindowLength)
         )}`
       : "";
+
+  function cycleRepresentation() {
+    const oldToNewMap = {
+      minutesOutOfHour: 'percentage',
+      percentage: 'effectivePlaybackRate',
+      effectivePlaybackRate: 'minutesOutOfHour',
+    } as const
+    onSettingsChange({
+      timeSavedRepresentation: oldToNewMap[settings.timeSavedRepresentation],
+    })
+  }
+
+  function formatSavingMinutesOutOfHour(timeSavedFration: number | undefined): string {
+    // This representation is perhaps more easily understandable,
+    // but it's too jumpy, which draws too much attention.
+    // This value should be basically static,
+    // unlike the "cumulative / total" time saved.
+    // return timeSavedFration != undefined
+    //   ? mmSs(timeSavedFration * 60 * 60)
+    //   : '00:00'
+
+    return timeSavedFration != undefined
+      ? (timeSavedFration * 60)
+        .toFixed(1)
+        // .padStart(4, '0')
+        // .toFixed(0)
+        // .padStart(2, '0')
+      : '00.0'
+  }
+
+  $: representation = settings.timeSavedRepresentation === 'minutesOutOfHour'
+    ? ({
+        value: {
+          sounded: formatSavingMinutesOutOfHour(
+            timeSavedComparedToSoundedSpeedFraction
+          ),
+          intrinsic: formatSavingMinutesOutOfHour(
+            timeSavedComparedToIntrinsicSpeedFraction
+          ),
+        },
+        tooltip: {
+          sounded:   getMessage("timeSavedSavingMinutesOutOfEveryHour"),
+          intrinsic: getMessage("timeSavedSavingMinutesOutOfEveryHour"),
+        },
+      } as const)
+    : settings.timeSavedRepresentation === "effectivePlaybackRate"
+    ? ({
+        value: {
+          sounded: timeSavedPlaybackRateEquivalentsFmt[0],
+          intrinsic: timeSavedPlaybackRateEquivalentsFmt[1],
+        },
+        tooltip: {
+          sounded:   getMessage("timeSavedComparedToSounded"),
+          intrinsic: getMessage("timeSavedComparedToIntrinsic"),
+        },
+      } as const)
+    : settings.timeSavedRepresentation === "percentage"
+    ? ({
+        value: {
+          sounded: timeSavedComparedToSoundedSpeedPercent,
+          intrinsic: timeSavedComparedToIntrinsicSpeedPercent,
+        },
+        tooltip: {
+          sounded:   getMessage("timeSavedPercentage"),
+          intrinsic: getMessage("timeSavedPercentage"),
+        },
+      } as const)
+    : assertNever(settings.timeSavedRepresentation)
 
   const commonTippyProps = {
     theme: "my-tippy white-space-pre-line",
@@ -236,14 +338,14 @@ especially accessibility-wise. -->
   use:tippy={{
     ...commonTippyProps,
     content:
-      getMessage("timeSavedComparedToSounded") +
-      maybeOverTheLastLine +
-      '\n\n' +
-      getMessage("timeSavedPercentage") + ' ' +
-      timeSavedComparedToSoundedSpeedPercent,
+      representation.tooltip.sounded +
+      getMaybeComparedToLine(settings, SoundedOrIntrinsic.Sounded) +
+      maybeOverTheLastLine
   }}
+
+  on:click={cycleRepresentation}
 >
-  <span>{timeSavedPlaybackRateEquivalentsFmt[0]}</span>
+  <span>{representation.value.sounded}</span>
 </button>
 
 {#if settings.timeSavedAveragingMethod !== "exponential"}
@@ -278,14 +380,14 @@ of those who use `soundedSpeed=1` -->
     use:tippy={{
       ...commonTippyProps,
       content:
-        getMessage("timeSavedComparedToIntrinsic") +
-        maybeOverTheLastLine +
-        '\n\n' +
-        getMessage("timeSavedPercentage") + ' ' +
-        timeSavedComparedToIntrinsicSpeedPercent,
+        representation.tooltip.intrinsic  +
+        getMaybeComparedToLine(settings, SoundedOrIntrinsic.Intrinsic) +
+        maybeOverTheLastLine
     }}
+
+    on:click={cycleRepresentation}
   >
-    <span>{timeSavedPlaybackRateEquivalentsFmt[1]}</span>
+    <span>{representation.value.intrinsic}</span>
   </button>
   {#if settings.timeSavedAveragingMethod !== "exponential"}
     (<button
