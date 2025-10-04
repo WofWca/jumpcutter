@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Watch videos up to 2x faster by automatically skipping long pauses between sentences"
+		"message": "Skips silence in videos: watch them up to 2x faster"
 	},
 	"enable": {
 		"message": "Enable"
@@ -45,19 +45,19 @@
 		"message": "On average how much faster the video is effectively playing compared to sounded speed"
 	},
 	"timeSavedComparedToIntrinsic": {
-		"message": "On average how much faster the video is effectively playing compared to normal (intrinsic) speed"
+		"message": "On average how much faster the video is effectively playing compared to 1x (normal, intrinsic) speed"
 	},
 	"timeSavedComparedToSoundedAbs": {
 		"message": "Time saved compared to just playing the video at sounded speed"
 	},
 	"timeSavedComparedToIntrinsicAbs": {
-		"message": "Time saved compared to just playing the video at normal (intrinsic) speed"
+		"message": "Time saved compared to just playing the video at 1x (normal, intrinsic) speed"
 	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "How long playback would take at sounded speed WITHOUT skipping silence"
 	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
-		"message": "How long playback would take at normal (intrinsic) speed WITHOUT skipping silence"
+		"message": "How long playback would take at 1x (normal, intrinsic) speed WITHOUT skipping silence"
 	},
 	"timeSavedPercentage": {
 		"message": "Equivalent time saved percentage:"
@@ -66,7 +66,7 @@
 		"message": "compared to sounded"
 	},
 	"comparedToIntrinsic": {
-		"message": "compared to normal (intrinsic)"
+		"message": "compared to 1x (normal, intrinsic)"
 	},
 	"estimatedRemainingDuration": {
 		"message": "Estimated remaining real-time duration:"
@@ -233,7 +233,7 @@
 		"message": "Silence speed specification method"
 	},
 	"absoluteSilenceSpeedClarification": {
-		"message": " (a.k.a. relative to normal (intrinsic) media speed)"
+		"message": " (a.k.a. relative to 1x (normal, intrinsic) media speed)"
 	},
 	"enableDesyncCorrection": {
 		"message": "Enable correction of audio-video desynchronization (side effect: for the most part unnoticeable stutter every minute or so)"
