@@ -44,6 +44,7 @@ import {
   lastPlaybackRateSetByThisExtensionMap, lastDefaultPlaybackRateSetByThisExtensionMap,
   setPlaybackRateAndRememberIt
 } from './playbackRateChangeTracking';
+import { getTimeSavedComparedToSoundedSpeedFraction } from '@/helpers/timeSavedMath';
 
 type SomeController =
   ElementPlaybackControllerStretching
@@ -746,6 +747,8 @@ export default class AllMediaElementsController {
     if (this.settings.badgeWhatSettingToDisplayByDefault === 'timeSaved') {
       sendingTimeSavedMessagesForBadgeP = startSendingTimeSavedMessagesForBadge(
         el,
+        this.settings,
+        addOnStorageChangedListener,
         timeSavedTrackerPromise,
         onDetach
       );
@@ -879,8 +882,16 @@ export default class AllMediaElementsController {
   }
 }
 
+/**
+ * @param settings A live, constantly updated object that is in sync with
+ * `browser.storage`.
+ */
 async function startSendingTimeSavedMessagesForBadge(
   el: HTMLMediaElement,
+  settings: Pick<Settings, 'timeSavedRepresentation'>,
+  addOnSettingsChangedListener: (
+    listener: (changes: MyStorageChanges) => void
+  ) => (() => void),
   timeSavedTrackerPromise: Promise<TimeSavedTracker>,
   onStop: (callback: () => void) => void,
 ) {
@@ -922,17 +933,40 @@ async function startSendingTimeSavedMessagesForBadge(
 
   const timeSavedTracker = await timeSavedTrackerPromise
   const maybeSendTimeSavedInfo = () => {
-    const {
-      wouldHaveLastedIfSpeedWasSounded,
-      timeSavedComparedToSoundedSpeed
-    } = timeSavedTracker.timeSavedData;
-    // Time calculation from `getTimeSavedPlaybackRateEquivalents`.
-    // TODO feat: an option to show speed compared to sounded speed,
-    // and maybe percentage, or absolute value.
-    const timeSaved = (
-      wouldHaveLastedIfSpeedWasSounded /
-      (wouldHaveLastedIfSpeedWasSounded - timeSavedComparedToSoundedSpeed)
-    ).toFixed(2);
+    let timeSaved: string
+    // Time calculations from `TimeSaved.svelte`.
+    // TODO feat: an option to show speed compared to intrinsic speed,
+    // or absolute value.
+    switch (settings.timeSavedRepresentation) {
+      case 'minutesOutOfHour': {
+        const fraction = getTimeSavedComparedToSoundedSpeedFraction(
+          timeSavedTracker.timeSavedData
+        )
+
+        timeSaved = (fraction * 60).toFixed(1);
+        break;
+      }
+      case 'effectivePlaybackRate': {
+        const {
+          wouldHaveLastedIfSpeedWasSounded,
+          timeSavedComparedToSoundedSpeed
+        } = timeSavedTracker.timeSavedData;
+
+        timeSaved = (
+          wouldHaveLastedIfSpeedWasSounded /
+          (wouldHaveLastedIfSpeedWasSounded - timeSavedComparedToSoundedSpeed)
+        ).toFixed(2);
+        break;
+      }
+      case 'percentage': {
+        const fraction = getTimeSavedComparedToSoundedSpeedFraction(
+          timeSavedTracker.timeSavedData
+        )
+
+        timeSaved = (fraction * 100).toFixed(1) + '%';
+        break;
+      }
+    }
 
     if (lastSentTimeSavedValue !== timeSaved) {
       getTimeSavedPort().postMessage(timeSaved);
@@ -961,4 +995,11 @@ async function startSendingTimeSavedMessagesForBadge(
   });
   // Note that we don't remove the listener
   // when the setting value gets changed.
+
+  const removeStorageListener = addOnSettingsChangedListener((changes) => {
+    if (changes.timeSavedRepresentation != undefined) {
+      maybeSendTimeSavedInfo()
+    }
+  })
+  onStop(removeStorageListener)
 }
