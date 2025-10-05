@@ -23,7 +23,7 @@ import {
   Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
   settingsChanges2NewValues,
 } from '@/settings';
-import { clamp, assertNever, assertDev } from '@/helpers';
+import { assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
 import requestIdlePromise from './helpers/requestIdlePromise';
 import type ElementPlaybackControllerStretching from
@@ -32,8 +32,6 @@ import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCl
 import type ElementPlaybackControllerAlwaysSounded from './ElementPlaybackControllerAlwaysSounded';
 import type TimeSavedTracker from './TimeSavedTracker';
 import extensionSettings2ControllerSettings from './helpers/extensionSettings2ControllerSettings';
-import { HotkeyAction, HotkeyBinding } from '@/hotkeys';
-import type { keydownEventToActions } from '@/hotkeys';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
 import debounce from 'lodash/debounce';
@@ -44,6 +42,7 @@ import {
   lastPlaybackRateSetByThisExtensionMap, lastDefaultPlaybackRateSetByThisExtensionMap,
   setPlaybackRateAndRememberIt
 } from './playbackRateChangeTracking';
+import executeNonSettingsActions from './nonSettingsUserActions';
 
 type SomeController =
   ElementPlaybackControllerStretching
@@ -65,28 +64,6 @@ export type TelemetryMessage =
      */
     elementRemainingIntrinsicDuration: number,
   };
-
-function executeNonSettingsActions(
-  el: HTMLMediaElement,
-  nonSettingsActions: Exclude<ReturnType<typeof keydownEventToActions>, undefined>[1]
-) {
-  for (const action of nonSettingsActions) {
-    switch (action.action) {
-      case HotkeyAction.REWIND: el.currentTime -= (action as HotkeyBinding<HotkeyAction.REWIND>).actionArgument; break;
-      case HotkeyAction.ADVANCE: el.currentTime += (action as HotkeyBinding<HotkeyAction.ADVANCE>).actionArgument; break;
-      case HotkeyAction.TOGGLE_PAUSE: el.paused ? el.play() : el.pause(); break;
-      case HotkeyAction.TOGGLE_MUTE: el.muted = !el.muted; break;
-      case HotkeyAction.INCREASE_VOLUME:
-      case HotkeyAction.DECREASE_VOLUME: {
-        const unitVector = action.action === HotkeyAction.INCREASE_VOLUME ? 1 : -1;
-        const toAdd = unitVector * (action as HotkeyBinding<HotkeyAction.INCREASE_VOLUME>).actionArgument / 100;
-        el.volume = clamp(el.volume + toAdd, 0, 1);
-        break;
-      }
-      default: assertNever(action.action);
-    }
-  }
-}
 
 let allMediaElementsControllerActive = false;
 
@@ -382,76 +359,26 @@ export default class AllMediaElementsController {
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
   private async _initHotkeyListener() {
-    const hotkeysModule = await import(
-      /* webpackExports: ['keydownEventToActions', 'eventTargetIsInput'] */
-      '@/hotkeys'
-    );
-    const keydownEventToActions = hotkeysModule.keydownEventToActions;
-    const eventTargetIsInput = hotkeysModule.eventTargetIsInput;
-    // TODO how about put this into './hotkeys.ts' in the form of a curried function that takes arguments that look
-    // something like `getSettings: () => Settings`?
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (eventTargetIsInput(e)) return;
-      assertDev(this.settings);
-      const actions = keydownEventToActions(e, this.settings);
-      if (!actions) {
-        return;
-      }
-      const [ settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys ] = actions;
-
-      // Works because `useCapture` of `addEventListener` is `true`. However, it's not guaranteed to work on every
-      // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow. Maybe attach it before
-      // website's listeners get attached, by adding a `"run_at": "document_start"` content script.
-      // https://github.com/igrigorik/videospeed/blob/56eb7a08459d6746a0019b0b0c4edf974c022114/inject.js#L592-L596
-      if (overrideWebsiteHotkeys) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
-      // Nothing critical, but not great for performance.
-      // How about we only update the`settings` object synchronously (so sequential changes can be made, as
-      // `keydownEventToActions` depends on it), but do not take any action until the onChanged event fires?
-      // Better yet, rewrite settings changes with messages API already so the script that made the change doesn't
-      // have to react to its own settings changes because it doesn't receive its own settings update message.
-      this.reactToSettingsNewValues(settingsNewValues);
-      setSettings(settingsNewValues);
-
-      executeNonSettingsActions(this.activeMediaElement!, nonSettingsActions);
-    };
-    // You might ask "Why don't you just use the native [commands API](https://developer.chrome.com/apps/commands)?"
-    // And the answer is – you may be right. But here's a longer version:
-    // * Our hotkeys are different from hotkeys you might have seen in videogames in the fact that ours are mostyly
-    //   associated with an argument. Native hotkeys don't have this feature. We might have just strapped arguments to
-    // native hotkeys on the options page, but it'd be a bit confusing.
-    // * Docs say, "An extension can have many commands but only 4 suggested keys can be specified". Our extension has
-    // quite a lot of hotkeys, each user would have to manually bind each of them.
-    // * Native hotkeys are global to the browser, so it's quite nice when our hotkeys are only active when the
-    // extension is enabled (with `enabled` setting) and is attached to a video.
-    // * What gains are there? Would performance overhead be that much lower? Would it be lower at all?
-    // * Keeps opportunities for more fine-grained control.
-    // * Because I haven't considered it thorougly enough.
-    //
-    // Adding the listener to `document` instead of `video` because some websites (like YouTube) use custom players,
-    // which wrap around a video element, which is not ever supposed to be in focus.
-    assertDev(this.settings);
-    // Why not always attach with `useCapture = true`? For performance.
-    // TODO but if the user changed `overrideWebsiteHotkeys` for some binding, an extension reload will
-    // be required. React to settings changes?
-    if (this.settings.hotkeys.some(binding => binding.overrideWebsiteHotkeys)) {
-      // `useCapture` is true because see `overrideWebsiteHotkeys`.
-      document.addEventListener('keydown', handleKeydown, true);
-      this._destroyedPromise.then(() => document.removeEventListener('keydown', handleKeydown, true));
-    } else {
-      // Deferred because it's not top priority. But maybe it should be?
-      // Yes, it would mean that the `if (overrideWebsiteHotkeys) {` inside `handleKeydown` will always
-      // be false.
-      const handleKeydownDeferred =
-        (...args: Parameters<typeof handleKeydown>) => setTimeout(handleKeydown, undefined, ...args);
-      document.addEventListener('keydown', handleKeydownDeferred, { passive: true });
-      this._destroyedPromise.then(() => document.removeEventListener('keydown', handleKeydownDeferred));
-    }
-    // this.hotkeyListenerAttached = true;
+    assertDev(this.settings)
+    const initHotkeyListener = (await import(
+      /* webpackExports: ['default'] */
+      './hotkeys'
+    )).default;
+    await initHotkeyListener({
+      getSettings: () => this.settings!,
+      setSettings: (newSettings) => {
+        // TODO but this will cause `reactToSettingsNewValues` to get called twice – immediately and on storage change.
+        // Nothing critical, but not great for performance.
+        // How about we only update the`settings` object synchronously (so sequential changes can be made, as
+        // `keydownEventToActions` depends on it), but do not take any action until the onChanged event fires?
+        // Better yet, rewrite settings changes with messages API already so the script that made the change doesn't
+        // have to react to its own settings changes because it doesn't receive its own settings update message.
+        this.reactToSettingsNewValues(newSettings);
+        setSettings(newSettings);
+      },
+      getActiveMediaElement: () => this.activeMediaElement,
+      onStop: (callback) => this._destroyedPromise.then(callback),
+    })
   }
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
