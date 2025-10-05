@@ -42,7 +42,7 @@ import {
   lastPlaybackRateSetByThisExtensionMap, lastDefaultPlaybackRateSetByThisExtensionMap,
   setPlaybackRateAndRememberIt
 } from './playbackRateChangeTracking';
-import executeNonSettingsActions from './nonSettingsUserActions';
+import type executeNonSettingsActionsT from './nonSettingsUserActions';
 
 type SomeController =
   ElementPlaybackControllerStretching
@@ -270,6 +270,8 @@ export default class AllMediaElementsController {
   }
 
   private onConnect = (port: browser.runtime.Port | chrome.runtime.Port) => {
+    let executeNonSettingsActions: undefined | typeof executeNonSettingsActionsT
+
     let listener: (msg: unknown) => void;
     switch (port.name) {
       case 'telemetry': {
@@ -332,10 +334,17 @@ export default class AllMediaElementsController {
         break;
       }
       case 'nonSettingsActions': {
-        listener = (msg: unknown) => {
-          if (this.activeMediaElement) {
-            executeNonSettingsActions(this.activeMediaElement, msg as Parameters<typeof executeNonSettingsActions>[1]);
+        listener = async (msg: unknown) => {
+          if (this.activeMediaElement == undefined) {
+            return
           }
+          if (executeNonSettingsActions == undefined) {
+            executeNonSettingsActions = (await import(
+              /* webpackExports: ['default'] */
+              './nonSettingsUserActions'
+            )).default
+          }
+          executeNonSettingsActions(this.activeMediaElement, msg as Parameters<typeof executeNonSettingsActions>[1]);
         };
         break;
       }
