@@ -205,15 +205,12 @@
     }
     return (
       '\n' +
-      getMessage(
-        // TODO these strings will probably need to be changed up a little,
-        // will need to remove the "time saved" part?
-        // Rather, new strings need to be created
-        // and old ones marked as read-only.
-        soundedOrIntrinsic === SoundedOrIntrinsic.Sounded
-          ? 'timeSavedComparedToSoundedAbs'
-          : 'timeSavedComparedToIntrinsicAbs'
-      )
+      (soundedOrIntrinsic === SoundedOrIntrinsic.Sounded
+        ? getMessage(
+            'comparedToSoundedWithoutSkipping',
+            `${settings.soundedSpeed}x`,
+          )
+        : getMessage('comparedToIntrinsicWithoutSkipping'))
     )
   }
   $: maybeOverTheLastLine =
@@ -357,6 +354,8 @@ especially accessibility-wise. -->
     type="button"
     use:tippy={{
       ...commonTippyProps,
+      // TODO consider utilizing `comparedToSoundedWithoutSkipping`
+      // and removing / archiving the `timeSavedComparedToSoundedAbs` string.
       content: getMessage("timeSavedComparedToSoundedAbs"),
     }}
   >
