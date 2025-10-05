@@ -262,7 +262,7 @@ export const defaultSettings: Readonly<Settings> = {
   timeSavedRepresentation: 'minutesOutOfHour',
 
   timeSavedAveragingMethod: 'exponential',
-  timeSavedAveragingWindowLength: 600,
+  timeSavedAveragingWindowLength: 900,
   timeSavedExponentialAveragingLatestDataWeight: 0.95,
 
   lifetimeTimeSavedComparedToSoundedSpeed: 0,
