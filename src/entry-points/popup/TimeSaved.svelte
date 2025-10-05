@@ -21,6 +21,7 @@
   >;
   type RequiredTelemetry = Pick<
     TelemetryMessage,
+    | 'elementIntrinsicDuration'
     | 'elementRemainingIntrinsicDuration'
 
     | 'sessionTimeSaved'
@@ -178,6 +179,14 @@
     ? (r.elementRemainingIntrinsicDuration / timeSavedPlaybackRateEquivalents[0]) / settings.soundedSpeed
     : undefined;
 
+  $: estimatedTimeToBeSavedOnThisVideo =
+    settings &&
+    r?.elementIntrinsicDuration != undefined &&
+    r.elementIntrinsicDuration < Infinity &&
+    timeSavedComparedToSoundedSpeedFraction != undefined
+      ? (r.elementIntrinsicDuration / settings.soundedSpeed) * timeSavedComparedToSoundedSpeedFraction
+      : undefined;
+
   $: maybeOverTheLastLine =
     settings.timeSavedAveragingMethod === "exponential"
       ? `\n${getMessage(
@@ -212,6 +221,28 @@ especially accessibility-wise. -->
       <span>{getMessage("timeSaved")}.</span>
     </p>
 
+    
+    {#if
+      estimatedTimeToBeSavedOnThisVideo != undefined
+      // 10,000 hour sanity check
+      && estimatedTimeToBeSavedOnThisVideo < 10000 * 60 * 60
+    }
+      <p style="margin-bottom: 0.25rem;">
+      <!-- <p style="margin: 0.25rem 0;"> -->
+        <!-- TODO i18n -->
+        <!-- After watching this video, you will have saved<br /> -->
+        <!-- Time you will have saved after watching this video<br /> -->
+        {'Estimated time you will have saved on this video'}<br />
+        <!-- {'Time you have saved on this video'}<br /> -- when remaining duration is low -->
+        <!-- {'Time you will have saved on this video'}<br /> -->
+        <!-- {'Time you will have saved on this video'}<br /> -->
+        <span>{mmSs(estimatedTimeToBeSavedOnThisVideo)}</span>
+        <!-- TODO `estimatedTimeToBeSavedOnThisVideo` is dependent
+        on `soundedSpeed`, but the percentage does not,
+        so it might not make sense to users. -->
+        <span>({timeSavedComparedToSoundedSpeedPercent})</span>
+      </p>
+    {/if}
     <!-- Adding getMessage("overTheLast") here might be "correct",
     but it's perhaps confusing for just the "estimatedRemainingDuration" -->
     {#if
@@ -219,7 +250,7 @@ especially accessibility-wise. -->
       // 10,000 hour sanity check
       && estimatedRemainingDuration < 10000 * 60 * 60
     }
-      <p style="margin-bottom: 0.25rem;">
+      <p style="margin: 0.25rem 0;">
         {getMessage("estimatedRemainingDuration")}<br />
         {mmSs(estimatedRemainingDuration)}<br />
         <!-- Note that this doesn't update when the video is paused. -->
