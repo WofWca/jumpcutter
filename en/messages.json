@@ -68,6 +68,18 @@
 	"comparedToSounded": {
 		"message": "compared to sounded"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Compared to simply playing the video at $speed$ (sounded) speed without skipping silence",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Compared to simply playing the video at 1x (normal, intrinsic) speed without skipping silence"
+	},
 	"comparedToIntrinsic": {
 		"message": "compared to 1x (normal, intrinsic)"
 	},

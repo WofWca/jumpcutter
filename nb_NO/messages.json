@@ -38,6 +38,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Tid spart sammenlignet med å spille videoen i normal (iboende) hastighet"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Tid spart sammenlignet med å spille videoen i lydmessig hastighet ($speed$) uten å hoppe over stillhet",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Tid spart sammenlignet med å spille videoen i 1x (normal, iboende) hastighet uten å hoppe over stillhet"
+	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "Hvor lenge avspilling ville tatt i lydmessig hastighet UTEN å hoppe over stillhet"
 	},

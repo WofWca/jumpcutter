@@ -80,6 +80,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Tempo poupado em comparação com apenas reproduzir o vídeo na velocidade normal (intrínseca)"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Tempo poupado em comparação com apenas reproduzir o vídeo em velocidade sonora ($speed$) sem pular o silêncio",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Tempo poupado em comparação com apenas reproduzir o vídeo na velocidade 1x (normal, intrínseca) sem pular o silêncio"
+	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "Quanto tempo a reprodução levaria numa velocidade sonora SEM PULAR o silêncio"
 	},

@@ -169,6 +169,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Säästetty aika verrattuna vain videon toistamiseen normaalilla (ominais-) nopeudella"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Verrattuna vain videon toistamiseen ääninopeudella ($speed$), hiljaisuutta ohittamatta",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Verrattuna vain videon toistamiseen 1x normaalilla (ominais-) nopeudella, hiljaisuutta ohittamatta"
+	},
 	"comparedToSounded": {
 		"message": "verrattuna ääneen"
 	},

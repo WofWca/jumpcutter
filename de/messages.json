@@ -178,6 +178,18 @@
 	"timeSavedComparedToSoundedAbs": {
 		"message": "Zeitersparnis im Vergleich zum Abspielen des Videos in normaler Geschwindigkeit"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Zeitersparnis im Vergleich zum Abspielen des Videos in normaler Geschwindigkeit ($speed$)",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Zeitersparnis im Vergleich zur Wiedergabe des Videos mit 1x (normaler, intrinsischer) Geschwindigkeit"
+	},
 	"audio": {
 		"message": "Audio"
 	},

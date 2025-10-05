@@ -74,6 +74,18 @@
 	"timeSavedComparedToSoundedAbs": {
 		"message": "通常時速度での再生と比較して節約した時間"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "通常時速度での再生と比較して節約した時間",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "等速の再生速度での再生と比較して節約した時間"
+	},
 	"contentScriptFail": {
 		"message": "このページでコンテンツスクリプトを実行できませんでした"
 	},

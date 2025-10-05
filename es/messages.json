@@ -408,6 +408,18 @@
 	"timeSavedComparedToSoundedAbs": {
 		"message": "Tiempo ahorrado comparado a solo reproducir el video a la velocidad normal"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Comparado a solo reproducir el video a la velocidad normal ($speed$) sin saltarse el silencio",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Comparado a solo ver el video a velocidad normal (intrínseca) sin saltarse el silencio"
+	},
 	"timeSavedAveragingMethodExponential": {
 		"message": "Solo tomar en cuenta los últimos datos (caída exponencial)"
 	},

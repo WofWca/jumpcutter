@@ -26,6 +26,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Temps gagné par rapport à la lecture de la vidéo à la vitesse normale (intrinsèque)"
 	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Temps gagné par rapport à la lecture de la vidéo à la vitesse 1x (normale, intrinsèque) sans sauter de silence"
+	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Gain de temps par rapport à la lecture de la vidéo à vitesse normale ($speed$) sans sauter de silence",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "Le temps que prendrait la lecture à la vitesse du son SANS sauter de silence"
 	},

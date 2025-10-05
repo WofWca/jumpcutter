@@ -35,6 +35,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Зекономлений час порівняно з простим відтворенням відео зі швидкістю 1x (звичайна, власна)"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Щодо просто програвання на \"швидкості на гучних частинах\" ($speed$) без промотування тиші",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Порівняно з простим відтворенням відео зі швидкістю 1x (звичайна, власна) без промотування тиші"
+	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "Скільки часу зайняло б програвання відео на \"швидкості на гучних частинах\" БЕЗ промотування тиші"
 	},

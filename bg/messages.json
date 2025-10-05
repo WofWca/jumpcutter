@@ -50,6 +50,18 @@
 	"timeSavedComparedToSoundedAbs": {
 		"message": "Спестено време в сравнение с възпроизвеждането на видеото със скоростта на звучене"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "В сравнение с възпроизвеждането на видеото със скоростта на звучене ($speed$) без прескачане на тишината",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "В сравнение с възпроизвеждането на видеото с 1x (нормална, собствена) скорост без прескачане на тишината"
+	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
 		"message": "Колко време ще отнеме възпроизвеждането с нормална (собствена) скорост БЕЗ прескачане на тишината"
 	},

@@ -363,6 +363,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Ušteđeno vrijeme u usporedbi s reprodukcijom videa normalnom (nepromijenjenom) brzinom"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Ušteđeno vrijeme u usporedbi s reprodukcijom videa s normalnom brzinom ($speed$) bez preskakanja tišine",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Ušteđeno vrijeme u usporedbi s reprodukcijom videa normalnom (nepromijenjenom) brzinom bez preskakanja tišine"
+	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
 		"message": "Koliko bi dugo trajala reprodukcija normalnom (nepromijenjenom) brzinom BEZ preskakanja tišine"
 	},

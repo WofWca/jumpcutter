@@ -426,6 +426,18 @@
 	"timeSavedComparedToSoundedAbs": {
 		"message": "காணொளியை ஒலித்த வேகத்தில் விளையாடுவதோடு ஒப்பிடும்போது நேரம் சேமிக்கப்பட்டது"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "காணொளியை ஒலித்த வேகத்தில் விளையாடுவதோடு ஒப்பிடும்போது நேரம் சேமிக்கப்பட்டது",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "இயல்பான (உள்ளார்ந்த) வேகத்தில் காணொளியை விளையாடுவதோடு ஒப்பிடும்போது நேரம் சேமிக்கப்பட்டது"
+	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "அமைதியைத் தவிர்க்காமல் மீட்பொலித்தல் எவ்வளவு நேரம் எடுக்கும்"
 	},

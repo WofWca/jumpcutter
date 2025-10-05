@@ -256,6 +256,9 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Ietaupītais laiks, salīdzinot ar video atskaņošanu normālā (iepriekšdefinētā) ātrumā"
 	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Ietaupītais laiks, salīdzinot ar video atskaņošanu 1x (normālā, iepriekšdefinētā) ātrumā"
+	},
 	"tryAttachAnyway": {
 		"message": "Tomēr mēģināt pievienot"
 	},

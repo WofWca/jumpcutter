@@ -238,6 +238,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "已节省的时间（同完全以1x标准速率播放的时间对比）"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "已节省的时间（同完全以有声片段速率播放的时间对比）",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "已节省的时间（同完全以1x标准速率播放的时间对比）"
+	},
 	"wouldHaveLastedIfSpeedWasIntrinsic": {
 		"message": "在不跳过无声片段的情况下，以1x标准播放速率播放需要多长时间"
 	},

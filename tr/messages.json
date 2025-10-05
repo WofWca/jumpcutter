@@ -38,6 +38,18 @@
 	"timeSavedComparedToIntrinsicAbs": {
 		"message": "Videoyu normal (gerçek) hızda oynatmaya kıyasla kazanılan zaman"
 	},
+	"comparedToSoundedWithoutSkipping": {
+		"message": "Videoyu sadece ses hızında oynatmaya kıyasla kazanılan zaman",
+		"placeholders": {
+			"speed": {
+				"content": "$1",
+				"example": "1.5x"
+			}
+		}
+	},
+	"comparedToIntrinsicWithoutSkipping": {
+		"message": "Videoyu 1x (normal, gerçek) hızda oynatmaya kıyasla kazanılan zaman"
+	},
 	"wouldHaveLastedIfSpeedWasSounded": {
 		"message": "Sessizliği ATLAMADAN ses hızında oynatma ne kadar sürer"
 	},
