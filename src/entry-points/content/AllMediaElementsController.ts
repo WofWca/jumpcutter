@@ -749,6 +749,7 @@ export default class AllMediaElementsController {
           /* webpackExports: ['startSendingTimeSavedMessagesForBadge'] */
           './badgeTimeSaved'
         )).startSendingTimeSavedMessagesForBadge;
+        await requestIdlePromise({ timeout: 20_000 })
 
         await startSendingTimeSavedMessagesForBadge(
           el,
