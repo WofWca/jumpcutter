@@ -1,5 +1,6 @@
 import { addOnStorageChangedListener, type Settings } from "@/settings";
 import type TimeSavedTracker from "./TimeSavedTracker";
+import { getTimeSavedComparedToIntrinsicSpeedFraction, getTimeSavedComparedToSoundedSpeedFraction } from "@/helpers/timeSavedMath";
 
 /**
  * Starts tracking how much time we're saving on {@linkcode el},
@@ -187,8 +188,7 @@ function isSessionTimeSavedSane(
   startedTrackingAtMs: number
 ): boolean {
   const timeSavedComparedtoSoundedFraction =
-    saved.timeSavedComparedToSoundedSpeed /
-    (saved.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE);
+    getTimeSavedComparedToSoundedSpeedFraction(saved);
   if (
     timeSavedComparedtoSoundedFraction > 0.95 ||
     timeSavedComparedtoSoundedFraction < -0.5
@@ -196,8 +196,7 @@ function isSessionTimeSavedSane(
     return false;
   }
   const timeSavedComparedtoIntrinsicFraction =
-    saved.timeSavedComparedToIntrinsicSpeed /
-    (saved.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE);
+    getTimeSavedComparedToIntrinsicSpeedFraction(saved);
   if (
     // Sanity margin for intrinsic speed values is greater
     // than for sounded speed, because the fraction is greater

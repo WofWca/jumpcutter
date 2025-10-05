@@ -6,6 +6,10 @@
   import type { Settings } from "@/settings";
   import { tweened } from "svelte/motion";
   import { linear as EasingLinear } from "svelte/easing";
+  import {
+    getTimeSavedComparedToIntrinsicSpeedFraction,
+    getTimeSavedComparedToSoundedSpeedFraction,
+  } from "@/helpers/timeSavedMath";
 
   type RequiredSettings = Pick<
     Settings,
@@ -41,7 +45,7 @@
   $: r = latestTelemetryRecord;
   $: s = latestTelemetryRecord?.sessionTimeSaved;
   $: timeSavedComparedToSoundedSpeedFraction = s != undefined
-    ? s.timeSavedComparedToSoundedSpeed / (s.wouldHaveLastedIfSpeedWasSounded || Number.MIN_VALUE)
+    ? getTimeSavedComparedToSoundedSpeedFraction(s)
     : undefined
   $: timeSavedComparedToSoundedSpeedPercent =
     (100 * (timeSavedComparedToSoundedSpeedFraction ?? 0)).toFixed(1) + '%';
@@ -50,7 +54,7 @@
   $: wouldHaveLastedIfSpeedWasSounded =
     mmSs(s?.wouldHaveLastedIfSpeedWasSounded ?? 0);
   $: timeSavedComparedToIntrinsicSpeedFraction = s != undefined
-    ? s.timeSavedComparedToIntrinsicSpeed / (s.wouldHaveLastedIfSpeedWasIntrinsic || Number.MIN_VALUE)
+    ? getTimeSavedComparedToIntrinsicSpeedFraction(s)
     : undefined
   $: timeSavedComparedToIntrinsicSpeedPercent =
     (100 * (timeSavedComparedToIntrinsicSpeedFraction ?? 0)).toFixed(1) + '%';
