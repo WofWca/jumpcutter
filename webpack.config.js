@@ -224,6 +224,7 @@ module.exports = env => {
           { context: 'src/entry-points', from: 'popup/*.(html|css)', to: 'popup/[name][ext]' },
           { context: 'src/entry-points', from: 'options/*.(html|css)', to: 'options/[name][ext]' },
           { context: 'src/entry-points', from: 'local-file-player/*.(html|css)', to: 'local-file-player/[name][ext]' },
+          { context: 'src', from: 'imgs/*', to: 'imgs/[name][ext]'},
         ],
       }),
       new (require('webpack-bundle-analyzer').BundleAnalyzerPlugin)({

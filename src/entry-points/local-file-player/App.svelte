@@ -122,13 +122,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <li>
             <div class="file-wrapper">
               <button
+              style="flex-grow: 1;"
               on:click={() => playFile(ind)}
               disabled={ind === currFileInd}
               >
                 {file.name}
               </button>
               <!-- TODO `aria-label` with actual text? -->
-              <button on:click={() => onDeleteFile(ind)}> ❌ </button>
+              <button
+                on:click={() => onDeleteFile(ind)}
+                aria-label="❌"
+              >
+                <img src="../imgs/trash.svg" alt="delete">
+              </button>
             </div>
           </li>
         {/each}
@@ -152,9 +158,39 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <style>
   @media (prefers-color-scheme: dark) {
     :global(body) {
-      background: #222;
+      background: #111;
       color: #ddd;
     }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --btn-bg-color: #222;
+      --btn-hover-bg-color: #555;
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --btn-bg-color: #ddd;
+      --btn-hover-bg-color: #bbb;
+    }
+  }
+
+  button {
+    margin: 2px;
+    border: none;
+    border-radius: 5px;
+    height: 35px;
+    background-color: var(--btn-bg-color);
+  }
+
+  button:hover:enabled, button:focus:enabled {
+    background-color: var(--btn-hover-bg-color);
+  }
+
+  button img {
+    vertical-align: middle;
   }
 
   .video-and-file-input {
