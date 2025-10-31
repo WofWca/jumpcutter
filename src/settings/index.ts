@@ -91,6 +91,10 @@ export interface Settings {
 
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
+  popupSpecificHotkeys: HotkeyBinding[],
+
+  // Per-site behavior: list of allowed host patterns (e.g., ["youtube.com", "*.example.com"])
+  allowedHosts: string[],
 
   /**
    * In case input controls and hotkeys are intersecting in popup.

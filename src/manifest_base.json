@@ -13,15 +13,7 @@
       "128": "icons/icon-big-padded.svg-128.png"
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content/main.js"],
-      "all_frames": true,
-      "run_at": "document_idle",
-      "match_about_blank": true
-    }
-  ],
+  "content_scripts": [],
   "host_permissions": ["http://*/*", "https://*/*"],
   "web_accessible_resources": [
     {

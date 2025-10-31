@@ -193,9 +193,18 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     ? 'https://addons.mozilla.org/firefox/addon/torproject-snowflake/'
     : 'https://chrome.google.com/webstore/detail/snowflake/mafpmfcccpbjnhfhjnllmmalhifmlcie';
 
-  let contactEmailHref: string | null = BUILD_DEFINITIONS.CONTACT_EMAIL
-    ? `mailto:${BUILD_DEFINITIONS.CONTACT_EMAIL}`
-    : null;
+  let allowedHostsText: string = '';
+
+  function updateAllowedHostsText() {
+    allowedHostsText = settings.allowedHosts.join(', ');
+  }
+
+  function parseAllowedHostsText() {
+    const hosts = allowedHostsText.split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    settings.allowedHosts = hosts;
+  }
   ((async () => {
     if (!BUILD_DEFINITIONS.CONTACT_EMAIL) {
       return null;
@@ -320,6 +329,23 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           ])}"
           bind:checked={settings.useSeparateMarginSettingsForDifferentAlgorithms}
         />
+      </section>
+      <section>
+        <h3>🌐 Per-Site Behavior</h3>
+        <p>Enable Jump Cutter only on specific websites by listing their host patterns below (comma-separated, e.g., "youtube.com, *.example.com"). Leave empty to disable per-site filtering.</p>
+        <InputFieldBase
+          label="Allowed Hosts"
+          let:id
+        >
+          <textarea
+            {id}
+            bind:value={allowedHostsText}
+            on:input={parseAllowedHostsText}
+            placeholder="youtube.com, vimeo.com, *.netflix.com"
+            rows="3"
+            style="width: 100%;"
+          ></textarea>
+        </InputFieldBase>
       </section>
       <section>
         <h3>{getMessage('hotkeys')}</h3>
@@ -505,6 +531,33 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           />
         </section>
       </section>
+
+      <section>
+        <h3>💸 Donate</h3>
+        <p>Support the development of Jump Cutter!</p>
+        <div style="margin: 0.5rem 0;">
+          <a
+            target="_blank"
+            href="https://antiwarcommittee.info/en/sunrise/#help"
+            rel="external noopener noreferrer"
+          >🌅 Anti-War Committee</a>
+        </div>
+        <div style="margin: 0.5rem 0;">
+          <a
+            target="_blank"
+            href="monero:88yzE5FbDoMVLXUXkbJXVHjNpP5S3xkMaTwBSxmetBDvQMbecMtVCXnQ44W6WRYsPGCPoAYp74ER9aDgBLYDGAAiSt2wu8a?tx_amount=0.050000000000&recipient_name=WofWca%20(https%3A//github.com/WofWca)&tx_description=Donation%20for%20Jump%20Cutter%20extension%20development"
+            rel="external noopener noreferrer"
+          >🪙 Monero (XMR)</a>
+        </div>
+        <div style="margin: 0.5rem 0;">
+          <a
+            target="_blank"
+            href="bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9"
+            rel="external noopener noreferrer"
+          >₿ Bitcoin (BTC)</a>
+        </div>
+      </section>
+
       <section>
         <h3>{getMessage('timeSaved')}</h3>
         <InputFieldBase

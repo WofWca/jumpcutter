@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  test:
+    build: .
+    volumes:
+      # Mount the dist folder for extension loading
+      - ./dist-chromium:/app/dist-chromium
+      # Mount test files
+      - ./tests:/app/tests
+    # Override command to run tests
+    command: yarn playwright test
+    # Optional: if you want to keep the container running for manual inspection
+    # command: tail -f /dev/null

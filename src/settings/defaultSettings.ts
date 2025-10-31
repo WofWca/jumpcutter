@@ -284,4 +284,6 @@ export const defaultSettings: Readonly<Settings> = {
   simpleSlider: simpleSliderDefaultVal,
 
   oppositeDayMode: OppositeDayMode.UNDISCOVERED,
-};
+
+  // Per-site behavior: start with empty list, user can add hosts
+  allowedHosts: [],
