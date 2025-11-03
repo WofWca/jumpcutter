@@ -129,7 +129,6 @@ settingsP.then(s => {
   // FYI the script registration might already be in the desired state
   // since the last time the background script was running.
   updateMediaSourceCloningScriptRegistered(s);
-  updateMainContentScriptRegistered(s);
 })
 const onStorageChanged = createWrapperListener(async changes => {
   const settings = await settingsP;
@@ -139,10 +138,6 @@ const onStorageChanged = createWrapperListener(async changes => {
 
   if (changes.experimentalControllerType || changes.enabled) {
     updateMediaSourceCloningScriptRegistered(settings);
-  }
-
-  if (changes.allowedHosts) {
-    updateMainContentScriptRegistered(settings);
   }
 
   await initIconAndBadgeP;
@@ -293,70 +288,3 @@ async function doesGeckoSupportMatchOriginAsFallback(): Promise<boolean> {
   ).getGeckoMajorVersion();
   return version == undefined || version >= 128;
 }
-
-function generateMatchPatterns(allowedHosts: string[]): string[] {
-  const patterns: string[] = [];
-  for (const host of allowedHosts) {
-    patterns.push(`https://${host}/*`, `http://${host}/*`);
-    if (host.includes('*')) {
-      // Already has wildcard
-      patterns.push(`https://${host}/*`, `http://${host}/*`);
-    } else {
-      // Add subdomain wildcard
-      patterns.push(`https://*.${host}/*`, `http://*.${host}/*`);
-    }
-  }
-  return patterns;
-}
-
-async function updateMainContentScriptRegistered(settings: Pick<Settings, "allowedHosts">) {
-  const needsToBeRegistered = settings.allowedHosts.length > 0;
-  const isRegistered = (
-    await browserOrChrome.scripting.getRegisteredContentScripts({
-      ids: [mainContentScriptId],
-    })
-  ).length > 0;
-
-  if (isRegistered === needsToBeRegistered) {
-    if (IS_DEV_MODE) {
-      console.log(
-        `\`mainContent\` content script is already ${isRegistered ? "" : "un"}registered, keeping it this way`
-      );
-    }
-    return;
-  }
-
-  if (needsToBeRegistered) {
-    IS_DEV_MODE &&
-      console.log("Registering `mainContent` content script for allowed hosts:", settings.allowedHosts);
-
-    const matches = generateMatchPatterns(settings.allowedHosts);
-    await browserOrChrome.scripting.registerContentScripts([
-      {
-        id: mainContentScriptId,
-        matches,
-        js: ["content/main.js"],
-        runAt: "document_idle",
-        persistAcrossSessions: true,
-        allFrames: true,
-        ...(
-          (
-            BUILD_DEFINITIONS.BROWSER === "gecko" &&
-            !(await doesGeckoSupportMatchOriginAsFallback())
-          )
-            ? {}
-            : { matchOriginAsFallback: true }
-        ),
-      },
-    ]);
-  } else {
-    IS_DEV_MODE &&
-      console.log("Unregistering `mainContent` content script");
-
-    await browserOrChrome.scripting.unregisterContentScripts({
-      ids: [mainContentScriptId],
-    });
-  }
-}
-
-const mainContentScriptId = 'mainContent';

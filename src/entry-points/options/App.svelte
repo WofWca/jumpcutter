@@ -193,18 +193,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     ? 'https://addons.mozilla.org/firefox/addon/torproject-snowflake/'
     : 'https://chrome.google.com/webstore/detail/snowflake/mafpmfcccpbjnhfhjnllmmalhifmlcie';
 
-  let allowedHostsText: string = '';
-
-  function updateAllowedHostsText() {
-    allowedHostsText = settings.allowedHosts.join(', ');
-  }
-
-  function parseAllowedHostsText() {
-    const hosts = allowedHostsText.split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-    settings.allowedHosts = hosts;
-  }
+  let contactEmailHref: string | null = BUILD_DEFINITIONS.CONTACT_EMAIL
+    ? `mailto:${BUILD_DEFINITIONS.CONTACT_EMAIL}`
+    : null;
   ((async () => {
     if (!BUILD_DEFINITIONS.CONTACT_EMAIL) {
       return null;
@@ -329,23 +320,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           ])}"
           bind:checked={settings.useSeparateMarginSettingsForDifferentAlgorithms}
         />
-      </section>
-      <section>
-        <h3>🌐 Per-Site Behavior</h3>
-        <p>Enable Jump Cutter only on specific websites by listing their host patterns below (comma-separated, e.g., "youtube.com, *.example.com"). Leave empty to disable per-site filtering.</p>
-        <InputFieldBase
-          label="Allowed Hosts"
-          let:id
-        >
-          <textarea
-            {id}
-            bind:value={allowedHostsText}
-            on:input={parseAllowedHostsText}
-            placeholder="youtube.com, vimeo.com, *.netflix.com"
-            rows="3"
-            style="width: 100%;"
-          ></textarea>
-        </InputFieldBase>
       </section>
       <section>
         <h3>{getMessage('hotkeys')}</h3>

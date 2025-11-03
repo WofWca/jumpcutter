@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright (C) 2020, 2021, 2022  WofWca <wofwca@protonmail.com>
+ * Copyright (C) 2020, 2021, 2022, 2025  WofWca <wofwca@protonmail.com>
  *
  * This file is part of Jump Cutter Browser Extension.
  *
@@ -22,6 +22,66 @@ import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settin
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
+import { watchAllElements } from './watchAllElements';
+import { AllMediaElementsController } from './AllMediaElementsController';
+
+// Per-tab overlay for controlling Jump Cutter
+function createOverlay() {
+  const overlay = document.createElement('div');
+  overlay.id = 'jumpcutter-overlay';
+  overlay.innerHTML = `
+    <button id="jumpcutter-toggle" title="Toggle Jump Cutter for this tab">🚀</button>
+  `;
+  overlay.style.cssText = `
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 2147483647;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.3s;
+  `;
+  document.body.appendChild(overlay);
+
+  const toggleBtn = overlay.querySelector('#jumpcutter-toggle') as HTMLButtonElement;
+  const tabId = `jumpcutter-${window.location.hostname}-${Date.now()}`; // Unique per tab/page load
+
+  // Load state from sessionStorage
+  const isEnabled = sessionStorage.getItem(tabId) !== 'disabled';
+
+  updateToggleButton(toggleBtn, isEnabled);
+
+  toggleBtn.addEventListener('click', () => {
+    const newEnabled = !isEnabled;
+    sessionStorage.setItem(tabId, newEnabled ? 'enabled' : 'disabled');
+    updateToggleButton(toggleBtn, newEnabled);
+    // TODO: Communicate to content script to enable/disable jumping
+    // For now, just visual feedback
+  });
+
+  // Auto-hide after 3 seconds
+  setTimeout(() => overlay.style.opacity = '0.5', 3000);
+  overlay.addEventListener('mouseenter', () => overlay.style.opacity = '1');
+  overlay.addEventListener('mouseleave', () => overlay.style.opacity = '0.5');
+}
+
+function updateToggleButton(btn: HTMLButtonElement, enabled: boolean) {
+  btn.textContent = enabled ? '🚀' : '⏸️';
+  btn.title = enabled ? 'Jump Cutter enabled for this tab' : 'Jump Cutter disabled for this tab';
+  btn.style.background = enabled ? 'rgba(0, 128, 0, 0.8)' : 'rgba(128, 0, 0, 0.8)';
+}
+
+// Initialize only if not already present
+if (!document.getElementById('jumpcutter-overlay')) {
+  createOverlay();
+}
+
+watchAllElements(AllMediaElementsController.create);
 
 (async function () { // Just for top-level `await`
 
