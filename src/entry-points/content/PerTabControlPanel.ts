@@ -99,33 +99,15 @@ export class PerTabControlPanel {
     this.container.style.left = `${this.position.x}px`;
     this.container.style.top = `${this.position.y}px`;
     
-    // Create header with buttons
-    const header = document.createElement('div');
-    header.id = 'jumpcutter-panel-header';
-    
-    // Toggle button
+    // Create single collapsible button
     this.toggleButton = document.createElement('button');
-    this.toggleButton.id = 'jumpcutter-toggle-btn';
+    this.toggleButton.id = 'jumpcutter-main-btn';
     this.toggleButton.className = 'jumpcutter-btn';
-    this.updateToggleButton();
+    this.updateMainButton();
     this.toggleButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggle();
-    });
-    
-    // Expand/collapse button
-    this.expandButton = document.createElement('button');
-    this.expandButton.id = 'jumpcutter-expand-btn';
-    this.expandButton.className = 'jumpcutter-btn';
-    this.expandButton.innerHTML = this.isExpanded ? '▼' : '▶';
-    this.expandButton.title = this.isExpanded ? 'Collapse panel' : 'Expand panel';
-    this.expandButton.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleExpanded();
     });
-    
-    header.appendChild(this.toggleButton);
-    header.appendChild(this.expandButton);
     
     // Create expandable panel
     this.panel = document.createElement('div');
@@ -134,13 +116,13 @@ export class PerTabControlPanel {
     this.createPanelContent();
     
     // Setup drag handlers
-    this.setupDragHandlers(header);
+    this.setupDragHandlers(this.toggleButton);
     
     // Apply styles
     this.applyStyles();
     
     // Assemble and add to page
-    this.container.appendChild(header);
+    this.container.appendChild(this.toggleButton);
     this.container.appendChild(this.panel);
     document.body.appendChild(this.container);
     
@@ -195,8 +177,8 @@ export class PerTabControlPanel {
       </div>
       
       <div class="jumpcutter-control-buttons">
-        <button id="jc-open-options" class="jumpcutter-action-btn">⚙️ Full Options</button>
-        <button id="jc-reset-settings" class="jumpcutter-action-btn">↺ Reset</button>
+        <button id="jc-toggle-enabled" class="jumpcutter-action-btn">${this.isEnabled ? '⏸️ Disable' : '▶️ Enable'}</button>
+        <button id="jc-open-options" class="jumpcutter-action-btn">⚙️ Options</button>
       </div>
     `;
     
@@ -257,6 +239,12 @@ export class PerTabControlPanel {
       this.settings.marginAfter = value;
     });
     
+    // Toggle enabled button
+    const toggleEnabled = this.panel.querySelector('#jc-toggle-enabled') as HTMLButtonElement;
+    toggleEnabled?.addEventListener('click', () => {
+      this.toggle();
+    });
+    
     // Open options
     const openOptions = this.panel.querySelector('#jc-open-options') as HTMLButtonElement;
     openOptions?.addEventListener('click', () => {
@@ -287,16 +275,16 @@ export class PerTabControlPanel {
     });
   }
 
-  private setupDragHandlers(header: HTMLElement): void {
-    header.addEventListener('mousedown', (e) => {
-      // Don't start drag if clicking on buttons
-      if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+  private setupDragHandlers(dragElement: HTMLElement): void {
+    dragElement.addEventListener('mousedown', (e) => {
+      // Don't start drag if it's the button click
+      if (this.isExpanded) return; // Only allow drag when collapsed
       
       this.isDragging = true;
       const rect = this.container!.getBoundingClientRect();
       this.dragOffset.x = e.clientX - rect.left;
       this.dragOffset.y = e.clientY - rect.top;
-      header.style.cursor = 'grabbing';
+      dragElement.style.cursor = 'grabbing';
       e.preventDefault();
     });
 
@@ -320,23 +308,36 @@ export class PerTabControlPanel {
     document.addEventListener('mouseup', () => {
       if (this.isDragging) {
         this.isDragging = false;
-        header.style.cursor = 'grab';
+        dragElement.style.cursor = 'grab';
         this.saveState();
       }
     });
   }
 
-  private updateToggleButton(): void {
+  private updateMainButton(): void {
     if (!this.toggleButton) return;
     
+    if (this.isExpanded) {
+      this.toggleButton.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      `;
+      this.toggleButton.title = 'Close panel';
+      this.toggleButton.classList.add('expanded');
+    } else {
+      const icon = this.isEnabled ? '🚀' : '⏸️';
+      const status = this.isEnabled ? 'ON' : 'OFF';
+      this.toggleButton.innerHTML = `<span class="icon">${icon}</span><span class="status">Jump Cutter ${status}</span>`;
+      this.toggleButton.title = 'Click to open controls';
+      this.toggleButton.classList.remove('expanded');
+    }
+    
     if (this.isEnabled) {
-      this.toggleButton.innerHTML = '🚀';
-      this.toggleButton.title = 'Jump Cutter is ON - Click to disable';
       this.toggleButton.classList.add('enabled');
       this.toggleButton.classList.remove('disabled');
     } else {
-      this.toggleButton.innerHTML = '⏸️';
-      this.toggleButton.title = 'Jump Cutter is OFF - Click to enable';
       this.toggleButton.classList.remove('enabled');
       this.toggleButton.classList.add('disabled');
     }
@@ -344,21 +345,23 @@ export class PerTabControlPanel {
 
   private toggle(): void {
     this.isEnabled = !this.isEnabled;
-    this.updateToggleButton();
+    this.updateMainButton();
     this.saveState();
     
     if (this.onToggleCallback) {
       this.onToggleCallback(this.isEnabled);
     }
+    
+    // Update the toggle button in panel if it exists
+    const toggleBtn = document.querySelector('#jc-toggle-enabled') as HTMLButtonElement;
+    if (toggleBtn) {
+      toggleBtn.textContent = this.isEnabled ? '⏸️ Disable' : '▶️ Enable';
+    }
   }
 
   private toggleExpanded(): void {
     this.isExpanded = !this.isExpanded;
-    
-    if (this.expandButton) {
-      this.expandButton.innerHTML = this.isExpanded ? '▼' : '▶';
-      this.expandButton.title = this.isExpanded ? 'Collapse panel' : 'Expand panel';
-    }
+    this.updateMainButton();
     
     if (this.panel) {
       this.panel.style.display = this.isExpanded ? 'block' : 'none';
@@ -378,59 +381,67 @@ export class PerTabControlPanel {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           font-size: 14px;
           user-select: none;
-          background: rgba(30, 30, 30, 0.95);
-          backdrop-filter: blur(10px);
-          border-radius: 12px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-          color: white;
-          min-width: 80px;
         }
 
-        #jumpcutter-panel-header {
-          display: flex;
-          gap: 8px;
-          padding: 8px;
-          cursor: grab;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #jumpcutter-panel-header:active {
-          cursor: grabbing;
-        }
-
-        .jumpcutter-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          border: none;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          font-size: 18px;
-          cursor: pointer;
-          transition: all 0.2s ease;
+        #jumpcutter-main-btn {
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 8px;
+          padding: 10px 16px;
+          border-radius: 24px;
+          border: none;
+          background: rgba(30, 30, 30, 0.9);
+          backdrop-filter: blur(10px);
+          color: white;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          white-space: nowrap;
         }
 
-        .jumpcutter-btn:hover {
-          background: rgba(255, 255, 255, 0.2);
+        #jumpcutter-main-btn:hover {
           transform: scale(1.05);
+          box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
         }
 
-        .jumpcutter-btn.enabled {
+        #jumpcutter-main-btn.enabled {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .jumpcutter-btn.disabled {
-          background: rgba(100, 100, 100, 0.5);
+        #jumpcutter-main-btn.disabled {
+          background: rgba(80, 80, 80, 0.9);
+        }
+
+        #jumpcutter-main-btn.expanded {
+          border-radius: 12px 12px 0 0;
+          width: 48px;
+          height: 48px;
+          padding: 0;
+          justify-content: center;
+        }
+
+        #jumpcutter-main-btn .icon {
+          font-size: 20px;
+        }
+
+        #jumpcutter-main-btn .status {
+          font-size: 13px;
+          opacity: 0.95;
         }
 
         #jumpcutter-panel-content {
-          padding: 12px;
+          padding: 16px;
           width: 280px;
           max-height: 400px;
           overflow-y: auto;
+          background: rgba(30, 30, 30, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 0 0 12px 12px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+          color: white;
+          margin-top: -1px;
         }
 
         .jumpcutter-control-group {
