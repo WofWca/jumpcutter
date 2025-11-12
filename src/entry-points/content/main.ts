@@ -62,10 +62,17 @@ perTabControl.createOverlay(async (enabled: boolean) => {
 // Check global enabled state
 const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
 const globalSettings = (await browserOrChrome.storage[mainStorageAreaName].get(keys)) as Settings;
-const globalEnabled = globalSettings.enabled;
+const globalEnabled = globalSettings.enabled !== false; // Default to true if not set
+
+console.log('[JumpCutter] Initialization:', {
+  globalEnabled,
+  perTabEnabled: perTabControl.getEnabled(),
+  url: window.location.href
+});
 
 // Only initialize if both global and per-tab are enabled
 if (globalEnabled && perTabControl.getEnabled()) {
+  console.log('[JumpCutter] Starting initialization...');
   importAndInit();
 }
 // Listen for global enabled state changes

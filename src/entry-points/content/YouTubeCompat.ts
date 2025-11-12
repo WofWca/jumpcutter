@@ -57,36 +57,9 @@ export class YouTubeCompat {
   public static applyWorkarounds(video: HTMLVideoElement): void {
     if (!this.isYouTube()) return;
 
-    // Prevent YouTube from detecting rapid playback rate changes
-    const originalPlaybackRate = Object.getOwnPropertyDescriptor(
-      HTMLMediaElement.prototype,
-      'playbackRate'
-    );
-
-    if (originalPlaybackRate) {
-      let lastSetTime = 0;
-      const minInterval = 100; // Minimum ms between rate changes
-
-      Object.defineProperty(video, 'playbackRate', {
-        get() {
-          return originalPlaybackRate.get?.call(this) || 1;
-        },
-        set(value: number) {
-          const now = Date.now();
-          const limits = YouTubeCompat.getSpeedLimits();
-          
-          // Clamp value to YouTube's limits
-          value = Math.max(limits.min, Math.min(value, limits.max));
-          
-          // Throttle rate changes to prevent detection
-          if (now - lastSetTime >= minInterval) {
-            originalPlaybackRate.set?.call(this, value);
-            lastSetTime = now;
-          }
-        },
-        configurable: true
-      });
-    }
+    // Don't modify playback rate property on YouTube
+    // Let the extension work through the normal API
+    console.log('[JumpCutter] YouTube detected, using conservative approach');
   }
 
   /**

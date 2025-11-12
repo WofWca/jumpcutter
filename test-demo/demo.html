@@ -113,14 +113,17 @@
         <p class="subtitle">Test the extension with this YouTube video containing speech and silence</p>
         
         <div class="video-container">
-            <!-- YouTube video with clear speech and silence patterns -->
-            <iframe 
-                src="https://www.youtube.com/embed/aqz-KE-bpKQ" 
-                title="YouTube video player" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-            </iframe>
+            <!-- Local video file for testing without YouTube restrictions -->
+            <video controls id="test-video">
+                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                <source src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        
+        <div style="margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+            <strong>Note:</strong> Using a test video file instead of YouTube embed to avoid referrer policy issues.
+            For YouTube testing, use the actual YouTube tab that opens alongside this demo.
         </div>
 
         <div class="instructions">

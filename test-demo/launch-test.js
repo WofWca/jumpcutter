@@ -22,10 +22,10 @@ async function launchTest() {
   console.log('✅ Chrome launched!');
   console.log('');
   
-  // Open demo page with embedded YouTube video
+  // Open demo page via HTTP server (required for extension to load)
   const demoPage = await context.newPage();
-  await demoPage.goto(`file://${path.resolve(__dirname, 'demo.html')}`);
-  console.log('📺 Demo page opened');
+  await demoPage.goto('http://localhost:3003/demo.html');
+  console.log('📺 Demo page opened (make sure to run: npx serve -s test-demo -l 3003)');
   
   // Open actual YouTube for testing
   const youtubePage = await context.newPage();
