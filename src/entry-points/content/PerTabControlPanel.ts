@@ -11,7 +11,8 @@
  */
 
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import { Settings, getSettings, setSettings } from '@/settings';
+import { getSettings, setSettings, Settings } from '@/settings';
+import { YouTubeCompat } from './YouTubeCompat';
 
 export interface PerTabPanelState {
   enabled: boolean;
@@ -135,20 +136,24 @@ export class PerTabControlPanel {
   private createPanelContent(): void {
     if (!this.panel) return;
     
+    // Get speed limits based on current site
+    const limits = YouTubeCompat.getSpeedLimits();
+    const adjustedSettings = YouTubeCompat.getAdjustedSettings(this.settings);
+    
     this.panel.innerHTML = `
       <div class="jumpcutter-control-group">
         <label>
           <span>🔊 Sounded Speed</span>
-          <input type="range" id="jc-sounded-speed" min="0.5" max="4" step="0.1" value="${this.settings.soundedSpeed || 1}">
-          <span id="jc-sounded-value">${this.settings.soundedSpeed || 1}x</span>
+          <input type="range" id="jc-sounded-speed" min="${limits.min}" max="${limits.max}" step="0.1" value="${adjustedSettings.soundedSpeed}">
+          <span id="jc-sounded-value">${adjustedSettings.soundedSpeed}x</span>
         </label>
       </div>
       
       <div class="jumpcutter-control-group">
         <label>
           <span>🔇 Silence Speed</span>
-          <input type="range" id="jc-silence-speed" min="0.5" max="8" step="0.5" value="${this.settings.silenceSpeedRaw || 2}">
-          <span id="jc-silence-value">${this.settings.silenceSpeedRaw || 2}x</span>
+          <input type="range" id="jc-silence-speed" min="0.5" max="${limits.silenceMax}" step="0.25" value="${adjustedSettings.silenceSpeedRaw}">
+          <span id="jc-silence-value">${adjustedSettings.silenceSpeedRaw}x</span>
         </label>
       </div>
       
@@ -180,6 +185,11 @@ export class PerTabControlPanel {
         <button id="jc-toggle-enabled" class="jumpcutter-action-btn">${this.isEnabled ? '⏸️ Disable' : '▶️ Enable'}</button>
         <button id="jc-open-options" class="jumpcutter-action-btn">⚙️ Options</button>
       </div>
+      ${window.location.hostname.includes('youtube.com') ? `
+        <div class="jumpcutter-youtube-notice">
+          <span>⚠️ YouTube limits: Max 2x speed</span>
+        </div>
+      ` : ''}
     `;
     
     // Add event listeners for controls
@@ -548,6 +558,17 @@ export class PerTabControlPanel {
           z-index: 2147483647 !important;
         }
 
+        .jumpcutter-youtube-notice {
+          margin-top: 12px;
+          padding: 8px 12px;
+          background: rgba(255, 193, 7, 0.1);
+          border: 1px solid rgba(255, 193, 7, 0.3);
+          border-radius: 8px;
+          color: #ffc107;
+          font-size: 12px;
+          text-align: center;
+        }
+
         /* Mobile responsive */
         @media (max-width: 480px) {
           #jumpcutter-panel-content {
@@ -563,6 +584,9 @@ export class PerTabControlPanel {
       `;
       document.head.appendChild(style);
     }
+    
+    // Apply YouTube-specific fixes
+    YouTubeCompat.injectFixes();
   }
 
   public destroy(): void {
