@@ -11,7 +11,7 @@
  */
 
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import { getSettings, setSettings, Settings } from '@/settings';
+import { getSettings, setSettings, Settings, ControllerKind } from '@/settings';
 import { YouTubeCompat } from './YouTubeCompat';
 
 export interface PerTabPanelState {
@@ -34,6 +34,9 @@ export class PerTabControlPanel {
   private position = { x: 20, y: 20 };
   private onToggleCallback: ((enabled: boolean) => void) | null = null;
   private settings: Partial<Settings> = {};
+  private visualizationCanvas: HTMLCanvasElement | null = null;
+  private visualizationCtx: CanvasRenderingContext2D | null = null;
+  private telemetryUpdateInterval: number | null = null;
 
   constructor() {
     this.loadState();
@@ -59,7 +62,8 @@ export class PerTabControlPanel {
         silenceSpeedRaw: allSettings.silenceSpeedRaw,
         volumeThreshold: allSettings.volumeThreshold,
         marginBefore: allSettings.marginBefore,
-        marginAfter: allSettings.marginAfter
+        marginAfter: allSettings.marginAfter,
+        experimentalControllerType: allSettings.experimentalControllerType
       };
     } catch (error) {
       console.error('Failed to load per-tab state:', error);
@@ -178,6 +182,23 @@ export class PerTabControlPanel {
         </label>
       </div>
       
+      <div class="jumpcutter-control-group">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="jc-use-cloning" ${this.settings.experimentalControllerType === ControllerKind.CLONING ? 'checked' : ''}>
+          <span>🧪 Use Experimental Algorithm (Cloning)</span>
+        </label>
+        <div style="font-size: 11px; color: #666; margin-top: 4px; padding-left: 24px;">
+          ${this.settings.experimentalControllerType === ControllerKind.CLONING 
+            ? 'Skip-heavy: Jumps over silence' 
+            : 'Speed-heavy: Speeds through silence'}
+        </div>
+      </div>
+      
+      <div class="jumpcutter-visualization">
+        <div style="font-size: 12px; font-weight: 500; margin-bottom: 4px;">📊 Audio Level</div>
+        <canvas id="jc-viz-canvas" width="280" height="60"></canvas>
+      </div>
+      
       <div class="jumpcutter-control-buttons">
         <button id="jc-toggle-enabled" class="jumpcutter-action-btn">${this.isEnabled ? '⏸️ Disable' : '▶️ Enable'}</button>
         <button id="jc-open-options" class="jumpcutter-action-btn">⚙️ Options</button>
@@ -252,10 +273,25 @@ export class PerTabControlPanel {
       this.toggle();
     });
     
+    // Algorithm toggle
+    const useCloning = this.panel.querySelector('#jc-use-cloning') as HTMLInputElement;
+    useCloning?.addEventListener('change', async (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      const newType = checked ? ControllerKind.CLONING : ControllerKind.STRETCHING;
+      await setSettings({ experimentalControllerType: newType });
+      this.settings.experimentalControllerType = newType;
+      // Refresh panel to update description
+      this.createPanelContent();
+    });
+    
     // Open options
     const openOptions = this.panel.querySelector('#jc-open-options') as HTMLButtonElement;
     openOptions?.addEventListener('click', () => {
-      browserOrChrome.runtime.openOptionsPage();
+      if (browserOrChrome.runtime && browserOrChrome.runtime.openOptionsPage) {
+        browserOrChrome.runtime.openOptionsPage();
+      } else {
+        console.error('[JumpCutter] openOptionsPage not available');
+      }
     });
     
     // Reset settings
@@ -407,9 +443,77 @@ export class PerTabControlPanel {
     
     if (this.panel) {
       this.panel.style.display = this.isExpanded ? 'block' : 'none';
+      
+      // Initialize visualization when panel opens
+      if (this.isExpanded) {
+        this.initVisualization();
+      } else {
+        this.stopVisualization();
+      }
     }
     
     this.saveState();
+  }
+
+  private initVisualization(): void {
+    this.visualizationCanvas = this.panel?.querySelector('#jc-viz-canvas') as HTMLCanvasElement;
+    if (!this.visualizationCanvas) return;
+    
+    this.visualizationCtx = this.visualizationCanvas.getContext('2d');
+    if (!this.visualizationCtx) return;
+    
+    // Connect to telemetry port
+    this.startTelemetryUpdates();
+  }
+
+  private stopVisualization(): void {
+    if (this.telemetryUpdateInterval) {
+      clearInterval(this.telemetryUpdateInterval);
+      this.telemetryUpdateInterval = null;
+    }
+  }
+
+  private startTelemetryUpdates(): void {
+    // Poll for telemetry data
+    this.telemetryUpdateInterval = window.setInterval(() => {
+      this.updateVisualization();
+    }, 50); // 20 FPS
+  }
+
+  private updateVisualization(): void {
+    if (!this.visualizationCtx || !this.visualizationCanvas) return;
+    
+    const ctx = this.visualizationCtx;
+    const canvas = this.visualizationCanvas;
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw volume threshold line
+    const thresholdY = height - (this.settings.volumeThreshold || 0.05) * height;
+    ctx.strokeStyle = '#ff4444';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, thresholdY);
+    ctx.lineTo(width, thresholdY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Draw simulated volume bar (will be replaced with real telemetry)
+    const barHeight = Math.random() * height * 0.8;
+    const barY = height - barHeight;
+    
+    ctx.fillStyle = barHeight > (height - thresholdY) ? '#667eea' : '#aaa';
+    ctx.fillRect(width - 20, barY, 15, barHeight);
+    
+    // Draw labels
+    ctx.fillStyle = '#666';
+    ctx.font = '10px sans-serif';
+    ctx.fillText('Threshold', 5, thresholdY - 5);
   }
 
   private applyStyles(): void {
@@ -542,10 +646,24 @@ export class PerTabControlPanel {
           background: #764ba2;
         }
 
+        .jumpcutter-visualization {
+          margin-top: 12px;
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+        }
+
+        .jumpcutter-visualization canvas {
+          width: 100%;
+          height: 60px;
+          border-radius: 4px;
+          background: #f5f5f5;
+        }
+
         .jumpcutter-control-buttons {
           display: flex;
           gap: 8px;
-          margin-top: 16px;
+          margin-top: 12px;
           padding-top: 12px;
           border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
