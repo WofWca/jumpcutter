@@ -133,10 +133,6 @@ export interface Settings {
   popupMarginAfterMax: number,
   popupMarginAfterStep: number,
 
-  // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys.
-  // TODO refactor use `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
-  popupSpecificHotkeys: HotkeyBinding[],
-
   timeSavedRepresentation:
     | 'minutesOutOfHour'
     | 'percentage'

@@ -21,7 +21,7 @@
       "run_at": "document_idle",
       "match_about_blank": true
     }
-  ],,
+  ],
   "web_accessible_resources": [
     {
       "resources": [

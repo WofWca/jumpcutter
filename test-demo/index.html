@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jump Cutter Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 640px;
+            display: block;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jump Cutter Extension Test Page</h1>
+    <p>This page tests the Jump Cutter extension with per-tab control. The extension should:</p>
+    <ul>
+        <li>Inject into this page automatically</li>
+        <li>Show a draggable overlay button (🚀) in the top-right corner</li>
+        <li>Allow per-tab enabling/disabling via the overlay button</li>
+        <li>When enabled, detect silences in the video and skip them</li>
+    </ul>
+    
+    <h2>Test Video</h2>
+    <video controls id="test-video">
+        <!-- Using a public domain test video from archive.org -->
+        <source src="https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <p><strong>Instructions:</strong></p>
+    <ol>
+        <li>Load the extension in Chrome/Edge</li>
+        <li>Reload this page</li>
+        <li>Look for the 🚀 button in the top-right corner (draggable)</li>
+        <li>Click the button to toggle Jump Cutter on/off for this tab</li>
+        <li>Play the video and observe silence skipping behavior when enabled</li>
+        <li>The button shows 🚀 when enabled, ⏸️ when disabled</li>
+    </ol>
+</body>
+</html>

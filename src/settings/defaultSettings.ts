@@ -284,3 +284,4 @@ export const defaultSettings: Readonly<Settings> = {
   simpleSlider: simpleSliderDefaultVal,
 
   oppositeDayMode: OppositeDayMode.UNDISCOVERED,
+};

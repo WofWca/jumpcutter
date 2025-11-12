@@ -13,17 +13,20 @@
   },
   "homepage": "https://github.com/WofWca/jumpcutter#readme",
   "scripts": {
-    "_abstract-build": "yarn lint && NODE_ENV=production webpack --mode=production",
-    "build:gecko": "yarn run _abstract-build --env browser=gecko",
-    "build:chromium": "yarn run _abstract-build --env browser=chromium",
-    "_abstract-build-and-package": "yarn run build:$BROWSER -- --env noreport && cd dist-$BROWSER && rm -f ../dist-$BROWSER.zip && zip -r ../dist-$BROWSER.zip .",
-    "build-and-package:gecko": "BROWSER=gecko yarn run _abstract-build-and-package",
-    "build-and-package:chromium": "BROWSER=chromium yarn run _abstract-build-and-package",
-    "build-and-package:all": "rm -f dist-*.zip && yarn run build-and-package:gecko & yarn run build-and-package:chromium",
+    "_abstract-build": "npm run lint && NODE_ENV=production webpack --mode=production",
+    "build:gecko": "npm run _abstract-build -- --env browser=gecko",
+    "build:chromium": "npm run _abstract-build -- --env browser=chromium",
+    "_abstract-build-and-package": "npm run build:$BROWSER -- --env noreport && cd dist-$BROWSER && rm -f ../dist-$BROWSER.zip && zip -r ../dist-$BROWSER.zip .",
+    "build-and-package:gecko": "BROWSER=gecko npm run _abstract-build-and-package",
+    "build-and-package:chromium": "BROWSER=chromium npm run _abstract-build-and-package",
+    "build-and-package:all": "rm -f dist-*.zip && npm run build-and-package:gecko & npm run build-and-package:chromium",
     "_abstract-serve": "webpack --mode=development --watch",
-    "serve:gecko": "yarn run _abstract-serve --env browser=gecko",
-    "serve:chromium": "yarn run _abstract-serve --env browser=chromium",
-    "lint": "eslint ./src/"
+    "serve:gecko": "npm run _abstract-serve -- --env browser=gecko",
+    "serve:chromium": "npm run _abstract-serve -- --env browser=chromium",
+    "lint": "eslint ./src/",
+    "test:docker": "docker-compose run --rm test",
+    "test:local": "playwright test",
+    "demo:serve": "npx serve -s demo -l 3000"
   },
   "sideEffects": [
     "./src/{content,popup,background,options,local-file-player}/main.ts",
@@ -38,6 +41,7 @@
     "tone": "~14.7.77"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@types/chrome": "^0.1.18",
     "@types/firefox-webext-browser": "^120.0.5",
     "@types/hh-mm-ss": "^1.2.3",
@@ -50,6 +54,7 @@
     "css-loader": "^7.1.1",
     "eslint": "^8.44.0",
     "minimize-webext-i18n-json": "^2.0.2",
+    "serve": "^14.2.5",
     "style-loader": "^4.0.0",
     "svelte": "~4.2.17",
     "svelte-check": "^3.7.1",
@@ -62,5 +67,3 @@
     "webpack-cli": "^6.0.1"
   }
 }
-test:docker: docker-compose run --rm test
-"demo:serve": "npx serve -s demo -l 3000"
