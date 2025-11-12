@@ -105,10 +105,7 @@ export class PerTabControlPanel {
     this.toggleButton.id = 'jumpcutter-main-btn';
     this.toggleButton.className = 'jumpcutter-btn';
     this.updateMainButton();
-    this.toggleButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleExpanded();
-    });
+    // Don't add click handler here - it's handled in setupDragHandlers
     
     // Create expandable panel
     this.panel = document.createElement('div');
@@ -286,11 +283,19 @@ export class PerTabControlPanel {
   }
 
   private setupDragHandlers(dragElement: HTMLElement): void {
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let hasMoved = false;
+    
     dragElement.addEventListener('mousedown', (e) => {
-      // Don't start drag if it's the button click
-      if (this.isExpanded) return; // Only allow drag when collapsed
+      // Don't start drag if panel is expanded
+      if (this.isExpanded) return;
       
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      hasMoved = false;
       this.isDragging = true;
+      
       const rect = this.container!.getBoundingClientRect();
       this.dragOffset.x = e.clientX - rect.left;
       this.dragOffset.y = e.clientY - rect.top;
@@ -300,6 +305,16 @@ export class PerTabControlPanel {
 
     document.addEventListener('mousemove', (e) => {
       if (!this.isDragging || !this.container) return;
+      
+      // Check if mouse has moved significantly (more than 5 pixels)
+      const moveDistance = Math.sqrt(
+        Math.pow(e.clientX - dragStartX, 2) + 
+        Math.pow(e.clientY - dragStartY, 2)
+      );
+      
+      if (moveDistance > 5) {
+        hasMoved = true;
+      }
       
       const x = e.clientX - this.dragOffset.x;
       const y = e.clientY - this.dragOffset.y;
@@ -315,11 +330,28 @@ export class PerTabControlPanel {
       this.container.style.right = 'auto';
     });
 
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', (e) => {
       if (this.isDragging) {
         this.isDragging = false;
-        dragElement.style.cursor = 'grab';
-        this.saveState();
+        dragElement.style.cursor = 'pointer';
+        
+        // Only save state if we actually moved
+        if (hasMoved) {
+          this.saveState();
+        } else {
+          // If we didn't move, treat it as a click
+          this.toggleExpanded();
+        }
+      }
+    });
+    
+    // Override the click handler to only work when not dragging
+    dragElement.removeEventListener('click', this.toggleExpanded);
+    dragElement.addEventListener('click', (e) => {
+      // Prevent click from firing after drag
+      if (hasMoved) {
+        e.stopPropagation();
+        hasMoved = false;
       }
     });
   }
