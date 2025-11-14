@@ -22,24 +22,20 @@ async function launchTest() {
   console.log('✅ Chrome launched!');
   console.log('');
   
-  // Open demo page via HTTP server (required for extension to load)
-  const demoPage = await context.newPage();
-  await demoPage.goto('http://localhost:3003/demo.html');
-  console.log('📺 Demo page opened (make sure to run: npx serve -s test-demo -l 3003)');
-  
-  // Open actual YouTube for testing
-  const youtubePage = await context.newPage();
-  await youtubePage.goto('https://www.youtube.com/watch?v=aqz-KE-bpKQ');
-  console.log('🎬 YouTube video opened');
+  // Open YouTube video directly - no need for demo page
+  const page = await context.newPage();
+  await page.goto('https://www.youtube.com/watch?v=aqz-KE-bpKQ');
+  console.log('\n🎬 YouTube video opened: Big Buck Bunny');
   
   console.log('');
   console.log('📝 TEST CHECKLIST:');
   console.log('================================');
-  console.log('1. DRAG TEST: Try dragging the button - it should NOT expand');
-  console.log('2. CLICK TEST: Click the button - it should expand/collapse');
-  console.log('3. POPUP LABELS: Click extension icon - check for missing labels');
-  console.log('4. OPTIONS PAGE: Open options - check all labels are visible');
-  console.log('5. VIDEO TEST: Play video and check if silence skipping works');
+  console.log('1. TAB BUTTON: Look for purple tab on right edge of page');
+  console.log('2. DRAG TAB: Drag the tab up/down using the dots (⋮)');
+  console.log('3. CLICK TAB: Click tab to show/hide control panel');
+  console.log('4. PLAY VIDEO: Start the video and watch for silence skipping');
+  console.log('5. DISABLE: Click Disable button - video should play normally');
+  console.log('6. SEEK TEST: While disabled, try seeking - should work without errors');
   console.log('');
   console.log('Press Ctrl+C to close browser');
   
