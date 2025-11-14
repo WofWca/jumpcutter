@@ -37,9 +37,11 @@ export class PerTabControlPanel {
   private visualizationCanvas: HTMLCanvasElement | null = null;
   private visualizationCtx: CanvasRenderingContext2D | null = null;
   private telemetryUpdateInterval: number | null = null;
+  private readonly loadStatePromise: Promise<void>;
+  private lastNotifiedEnabled: boolean | null = null;
 
   constructor() {
-    this.loadState();
+    this.loadStatePromise = this.loadState();
   }
 
   private async loadState(): Promise<void> {
@@ -91,8 +93,10 @@ export class PerTabControlPanel {
     return url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100);
   }
 
-  public createOverlay(onToggle: (enabled: boolean) => void): void {
+  public async createOverlay(onToggle: (enabled: boolean) => void): Promise<void> {
+    await this.loadStatePromise;
     this.onToggleCallback = onToggle;
+    this.lastNotifiedEnabled = null;
 
     if (document.getElementById('jumpcutter-control-panel')) {
       return;
@@ -127,11 +131,16 @@ export class PerTabControlPanel {
     this.container.appendChild(this.toggleButton);
     this.container.appendChild(this.panel);
     document.body.appendChild(this.container);
-    
+
     // Initialize with saved state
-    if (this.onToggleCallback) {
-      this.onToggleCallback(this.isEnabled);
-    }
+    this.notifyToggleState();
+  }
+
+  private notifyToggleState(): void {
+    if (!this.onToggleCallback) return;
+    if (this.lastNotifiedEnabled === this.isEnabled) return;
+    this.lastNotifiedEnabled = this.isEnabled;
+    this.onToggleCallback(this.isEnabled);
   }
 
   private createPanelContent(): void {
@@ -280,8 +289,13 @@ export class PerTabControlPanel {
       const newType = checked ? ControllerKind.CLONING : ControllerKind.STRETCHING;
       await setSettings({ experimentalControllerType: newType });
       this.settings.experimentalControllerType = newType;
-      // Refresh panel to update description
-      this.createPanelContent();
+      // Update description text without rebuilding entire panel
+      const descEl = this.panel?.querySelector('.jumpcutter-control-group:has(#jc-use-cloning) > div') as HTMLDivElement;
+      if (descEl) {
+        descEl.textContent = checked 
+          ? 'Skip-heavy: Jumps over silence' 
+          : 'Speed-heavy: Speeds through silence';
+      }
     });
     
     // Open options
@@ -366,7 +380,7 @@ export class PerTabControlPanel {
       this.container.style.right = 'auto';
     });
 
-    document.addEventListener('mouseup', (e) => {
+    document.addEventListener('mouseup', () => {
       if (this.isDragging) {
         this.isDragging = false;
         dragElement.style.cursor = 'pointer';
@@ -426,10 +440,8 @@ export class PerTabControlPanel {
     this.updateMainButton();
     this.saveState();
     
-    if (this.onToggleCallback) {
-      this.onToggleCallback(this.isEnabled);
-    }
-    
+    this.notifyToggleState();
+
     // Update the toggle button in panel if it exists
     const toggleBtn = document.querySelector('#jc-toggle-enabled') as HTMLButtonElement;
     if (toggleBtn) {
