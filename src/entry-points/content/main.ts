@@ -22,7 +22,7 @@ import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settin
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
-import { PerTabControlPanel } from './PerTabControlPanel';
+import { PerTabControlPanel } from './PerTabControlPanelV2';
 
 (async function () { // Just for top-level `await`
 
