@@ -25,6 +25,13 @@ import requestIdlePromise from './helpers/requestIdlePromise';
 import { PerTabControlPanel } from './PerTabControlPanelV3';
 import { updatePerTabCache } from './perTabState';
 
+// Guard against multiple script injections
+if ((window as any).__jumpCutterInitialized) {
+  console.log('[JumpCutter] Already running, exiting');
+  // Exit early - script already running
+} else {
+  (window as any).__jumpCutterInitialized = true;
+
 (async function () { // Just for top-level `await`
 
 let perTabControl: PerTabControlPanel | null = null;
@@ -123,3 +130,5 @@ browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChange
 });
 
 })();
+
+} // End of else block for multiple injection guard

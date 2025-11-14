@@ -79,7 +79,7 @@ export class PerTabControlPanel {
   public async createOverlay(onToggle: (enabled: boolean) => void): Promise<void> {
     await this.loadStatePromise;
     this.onToggleCallback = onToggle;
-    this.lastNotifiedEnabled = null;
+    // Don't reset lastNotifiedEnabled - keep it to prevent duplicate notifications
 
     if (document.getElementById('jumpcutter-overlay-container')) {
       return;
