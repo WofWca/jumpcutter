@@ -126,24 +126,7 @@ export class PerTabControlPanel {
   }
 
   private setupHoverBehavior(): void {
-    if (!this.container || !this.panel) return;
-
-    const showPanel = () => {
-      if (this.hoverTimeout) {
-        clearTimeout(this.hoverTimeout);
-        this.hoverTimeout = null;
-      }
-      this.panel!.classList.add('visible');
-    };
-
-    const hidePanel = () => {
-      this.hoverTimeout = window.setTimeout(() => {
-        this.panel!.classList.remove('visible');
-      }, 300);
-    };
-
-    this.container.addEventListener('mouseenter', showPanel);
-    this.container.addEventListener('mouseleave', hidePanel);
+    // Hover behavior is now handled by CSS :hover on the container
   }
 
   private updateEdgeButton(): void {
@@ -358,7 +341,7 @@ export class PerTabControlPanel {
         #jumpcutter-control-panel {
           position: fixed;
           top: 50%;
-          right: 0;
+          right: -320px;
           transform: translateY(-50%);
           z-index: 2147483647;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -366,6 +349,11 @@ export class PerTabControlPanel {
           user-select: none;
           display: flex;
           align-items: center;
+          transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #jumpcutter-control-panel:hover {
+          right: 0;
         }
 
         #jumpcutter-edge-btn {
@@ -404,16 +392,6 @@ export class PerTabControlPanel {
           border-radius: 12px 0 0 12px;
           padding: 20px;
           box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
-          transform: translateX(100%);
-          opacity: 0;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          pointer-events: none;
-        }
-
-        #jumpcutter-panel-content.visible {
-          transform: translateX(0);
-          opacity: 1;
-          pointer-events: all;
         }
 
         .jumpcutter-panel-header {
