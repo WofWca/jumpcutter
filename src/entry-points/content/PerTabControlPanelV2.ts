@@ -323,6 +323,7 @@ export class PerTabControlPanel {
     this.updateEdgeButton();
     this.saveState();
     
+    console.log('[JumpCutter] Toggle called, new state:', this.isEnabled);
     this.notifyToggleState();
 
     // Update the toggle button in panel if it exists
@@ -341,57 +342,66 @@ export class PerTabControlPanel {
         #jumpcutter-control-panel {
           position: fixed;
           top: 50%;
-          right: -320px;
+          right: 0;
           transform: translateY(-50%);
           z-index: 2147483647;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           font-size: 14px;
           user-select: none;
-          display: flex;
-          align-items: center;
-          transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        #jumpcutter-control-panel:hover {
-          right: 0;
         }
 
         #jumpcutter-edge-btn {
-          width: 40px;
-          height: 80px;
+          position: absolute;
+          right: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 60px;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 8px 0 0 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          border-radius: 4px 0 0 4px;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+          box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
         }
 
         #jumpcutter-edge-btn.disabled {
           background: linear-gradient(135deg, #868686 0%, #4a4a4a 100%);
         }
 
-        #jumpcutter-edge-btn:hover {
-          width: 50px;
-          box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+        #jumpcutter-control-panel:hover #jumpcutter-edge-btn {
+          width: 8px;
+          box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
         }
 
         #jumpcutter-edge-btn .icon {
-          font-size: 24px;
-          transform: rotate(-90deg);
+          display: none;
         }
 
         #jumpcutter-panel-content {
-          width: 320px;
+          position: absolute;
+          right: 4px;
+          top: 50%;
+          transform: translateY(-50%) translateX(100%);
+          width: 0;
           max-height: 80vh;
-          overflow-y: auto;
+          overflow: hidden;
           background: rgba(30, 30, 30, 0.95);
           backdrop-filter: blur(10px);
           border-radius: 12px 0 0 12px;
-          padding: 20px;
+          padding: 0;
           box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+          opacity: 0;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          pointer-events: none;
+        }
+
+        #jumpcutter-control-panel:hover #jumpcutter-panel-content {
+          width: 320px;
+          padding: 20px;
+          transform: translateY(-50%) translateX(0);
+          opacity: 1;
+          pointer-events: all;
+          overflow-y: auto;
         }
 
         .jumpcutter-panel-header {

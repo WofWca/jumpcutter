@@ -52,9 +52,22 @@ async function deinitialize() {
 // Create per-tab control overlay
 perTabControl = new PerTabControlPanel();
 perTabControl.createOverlay(async (enabled: boolean) => {
+  console.log('[JumpCutter] Per-tab toggle changed to:', enabled);
   if (enabled) {
-    await importAndInit();
+    // Check if global is also enabled before initializing
+    const globalSettings = (await browserOrChrome.storage[mainStorageAreaName].get({ enabled: enabledSettingDefaultValue })) as Settings;
+    if (globalSettings.enabled !== false) {
+      await importAndInit();
+    }
   } else {
+    // Disable by setting the global enabled flag to false temporarily
+    // This will trigger the controller destruction in AllMediaElementsController
+    const currentSettings = (await browserOrChrome.storage[mainStorageAreaName].get({ enabled: enabledSettingDefaultValue })) as Settings;
+    if (currentSettings.enabled !== false) {
+      // Store the original state so we can restore it
+      await browserOrChrome.storage.local.set({ '_perTabDisabled': true });
+      await browserOrChrome.storage[mainStorageAreaName].set({ enabled: false });
+    }
     await deinitialize();
   }
 });
