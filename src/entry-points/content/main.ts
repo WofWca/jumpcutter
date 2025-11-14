@@ -25,12 +25,20 @@ import requestIdlePromise from './helpers/requestIdlePromise';
 import { PerTabControlPanel } from './PerTabControlPanelV3';
 import { updatePerTabCache } from './perTabState';
 
-// Guard against multiple script injections with immediate flag setting
-if ((window as any).__jumpCutterInitialized) {
-  console.log('[JumpCutter] Already running, exiting');
-  throw new Error('Jump Cutter already initialized'); // Throw to completely stop execution
+// Use a more robust guard with immediate synchronous check
+const INIT_KEY = '__jumpCutterInit_' + window.location.href.substring(0, 100);
+if ((window as any)[INIT_KEY]) {
+  console.warn('[JumpCutter] Already running on this page, exiting');
+  // Exit completely - don't run any more code
+  (function() { return; })();
+  throw new Error('Already initialized');
 }
-(window as any).__jumpCutterInitialized = true;
+// Set flag immediately and synchronously
+Object.defineProperty(window, INIT_KEY, {
+  value: true,
+  writable: false,
+  configurable: false
+});
 
 (async function () { // Just for top-level `await`
 

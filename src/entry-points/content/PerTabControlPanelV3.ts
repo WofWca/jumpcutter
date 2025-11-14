@@ -655,6 +655,15 @@ export class PerTabControlPanel {
     const width = canvas.width;
     const height = canvas.height;
     
+    // Check if any video is playing
+    const videos = document.querySelectorAll('video');
+    let hasActiveVideo = false;
+    videos.forEach(video => {
+      if (!video.paused && video.readyState >= 2) {
+        hasActiveVideo = true;
+      }
+    });
+    
     // Clear canvas with fade effect
     ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     ctx.fillRect(0, 0, width, height);
@@ -670,29 +679,35 @@ export class PerTabControlPanel {
     ctx.stroke();
     ctx.setLineDash([]);
     
-    // Draw audio bars
-    const barWidth = width / this.audioData.length;
-    this.audioData.forEach((value, i) => {
-      const barHeight = value * height;
-      const x = i * barWidth;
-      const y = height - barHeight;
+    // Only show bars if video is playing
+    if (hasActiveVideo) {
+      // Draw audio bars
+      const barWidth = width / this.audioData.length;
+      this.audioData.forEach((value, i) => {
+        const barHeight = value * height;
+        const x = i * barWidth;
+        const y = height - barHeight;
+        
+        // Color based on threshold
+        if (value > (this.settings.volumeThreshold || 0.05)) {
+          ctx.fillStyle = 'rgba(102, 126, 234, 0.6)';
+        } else {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        }
+        
+        ctx.fillRect(x, y, barWidth - 1, barHeight);
+      });
       
-      // Color based on threshold
-      if (value > (this.settings.volumeThreshold || 0.05)) {
-        ctx.fillStyle = 'rgba(102, 126, 234, 0.6)';
-      } else {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      // Update data less frequently (every 3 frames)
+      if (!this.vizAnimationId || this.vizAnimationId % 3 === 0) {
+        // Shift data left and add random value for demo
+        // TODO: Replace with real telemetry data
+        this.audioData.shift();
+        this.audioData.push(Math.random() * 0.8);
       }
-      
-      ctx.fillRect(x, y, barWidth - 1, barHeight);
-    });
-    
-    // Update data less frequently (every 3 frames)
-    if (!this.vizAnimationId || this.vizAnimationId % 3 === 0) {
-      // Shift data left and add random value for demo
-      // TODO: Replace with real telemetry data
-      this.audioData.shift();
-      this.audioData.push(Math.random() * 0.8);
+    } else {
+      // No video playing - clear the data
+      this.audioData = new Array(50).fill(0);
     }
     
     // Use setTimeout for slower animation (30fps instead of 60fps)
