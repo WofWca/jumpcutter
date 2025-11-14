@@ -655,13 +655,13 @@ export class PerTabControlPanel {
     const width = canvas.width;
     const height = canvas.height;
     
-    // Clear canvas
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    // Clear canvas with fade effect
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     ctx.fillRect(0, 0, width, height);
     
     // Draw threshold line
     const threshold = (this.settings.volumeThreshold || 0.05) * height;
-    ctx.strokeStyle = 'rgba(255, 68, 68, 0.5)';
+    ctx.strokeStyle = 'rgba(255, 68, 68, 0.3)';
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
@@ -679,20 +679,26 @@ export class PerTabControlPanel {
       
       // Color based on threshold
       if (value > (this.settings.volumeThreshold || 0.05)) {
-        ctx.fillStyle = 'rgba(102, 126, 234, 0.8)';
+        ctx.fillStyle = 'rgba(102, 126, 234, 0.6)';
       } else {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
       }
       
       ctx.fillRect(x, y, barWidth - 1, barHeight);
     });
     
-    // Shift data left and add random value for demo
-    // TODO: Replace with real telemetry data
-    this.audioData.shift();
-    this.audioData.push(Math.random() * 0.8);
+    // Update data less frequently (every 3 frames)
+    if (!this.vizAnimationId || this.vizAnimationId % 3 === 0) {
+      // Shift data left and add random value for demo
+      // TODO: Replace with real telemetry data
+      this.audioData.shift();
+      this.audioData.push(Math.random() * 0.8);
+    }
     
-    this.vizAnimationId = requestAnimationFrame(() => this.animateVisualization());
+    // Use setTimeout for slower animation (30fps instead of 60fps)
+    setTimeout(() => {
+      this.vizAnimationId = requestAnimationFrame(() => this.animateVisualization());
+    }, 33); // ~30fps
   }
 
   private listenForTelemetry(): void {

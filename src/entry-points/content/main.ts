@@ -25,12 +25,12 @@ import requestIdlePromise from './helpers/requestIdlePromise';
 import { PerTabControlPanel } from './PerTabControlPanelV3';
 import { updatePerTabCache } from './perTabState';
 
-// Guard against multiple script injections
+// Guard against multiple script injections with immediate flag setting
 if ((window as any).__jumpCutterInitialized) {
   console.log('[JumpCutter] Already running, exiting');
-  // Exit early - script already running
-} else {
-  (window as any).__jumpCutterInitialized = true;
+  throw new Error('Jump Cutter already initialized'); // Throw to completely stop execution
+}
+(window as any).__jumpCutterInitialized = true;
 
 (async function () { // Just for top-level `await`
 
@@ -100,16 +100,19 @@ const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const
 const globalSettings = (await browserOrChrome.storage[mainStorageAreaName].get(keys)) as Settings;
 const globalEnabled = globalSettings.enabled !== false; // Default to true if not set
 
-console.log('[JumpCutter] Initialization:', {
+console.log('[JumpCutter] Initialization check:', {
   globalEnabled,
   perTabEnabled: perTabControl.getEnabled(),
-  url: window.location.href
+  url: window.location.href,
+  alreadyInitialized: isInitialized
 });
 
 // Only initialize once if both global and per-tab are enabled
-if (globalEnabled && perTabEnabled) {
+if (globalEnabled && perTabEnabled && !isInitialized) {
   console.log('[JumpCutter] Starting initialization...');
   await importAndInit();
+} else if (isInitialized) {
+  console.log('[JumpCutter] Already initialized, skipping startup init');
 }
 // Listen for global enabled state changes
 browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
@@ -130,5 +133,3 @@ browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChange
 });
 
 })();
-
-} // End of else block for multiple injection guard
