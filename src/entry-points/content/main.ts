@@ -22,7 +22,7 @@ import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settin
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
-import { PerTabControlPanel } from './PerTabControlPanelV2';
+import { PerTabControlPanel } from './PerTabControlPanelV3';
 
 (async function () { // Just for top-level `await`
 
@@ -44,8 +44,12 @@ async function importAndInit() {
 async function deinitialize() {
   if (!isInitialized) return;
   
-  // Send a message to trigger cleanup in init.ts
-  // The init module listens for storage changes to cleanup
+  // Trigger cleanup by temporarily setting enabled to false
+  // This will be caught by the storage listener in init.ts
+  await browserOrChrome.storage[mainStorageAreaName].set({ enabled: false });
+  // Immediately restore it so global setting isn't affected
+  await browserOrChrome.storage[mainStorageAreaName].set({ enabled: true });
+  
   isInitialized = false;
 }
 
@@ -60,14 +64,7 @@ perTabControl.createOverlay(async (enabled: boolean) => {
       await importAndInit();
     }
   } else {
-    // Disable by setting the global enabled flag to false temporarily
-    // This will trigger the controller destruction in AllMediaElementsController
-    const currentSettings = (await browserOrChrome.storage[mainStorageAreaName].get({ enabled: enabledSettingDefaultValue })) as Settings;
-    if (currentSettings.enabled !== false) {
-      // Store the original state so we can restore it
-      await browserOrChrome.storage.local.set({ '_perTabDisabled': true });
-      await browserOrChrome.storage[mainStorageAreaName].set({ enabled: false });
-    }
+    // Just deinitialize without touching global settings
     await deinitialize();
   }
 });
