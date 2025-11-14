@@ -120,9 +120,8 @@ export class PerTabControlPanel {
     
     // Set initial position
     this.updatePosition();
-
-    // Initialize with saved state
-    this.notifyToggleState();
+    
+    // Don't notify on creation - let main.ts handle initial state
   }
 
   private createControlsHTML(): string {
