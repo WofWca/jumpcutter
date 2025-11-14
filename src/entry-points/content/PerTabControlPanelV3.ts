@@ -24,6 +24,10 @@ export class PerTabControlPanel {
   private lastNotifiedEnabled: boolean | null = null;
   private position: number = 50; // Default to middle of screen
   private isDragging: boolean = false;
+  private vizCanvas: HTMLCanvasElement | null = null;
+  private vizCtx: CanvasRenderingContext2D | null = null;
+  private vizAnimationId: number | null = null;
+  private audioData: number[] = [];
 
   constructor() {
     this.loadStatePromise = this.loadState();
@@ -103,6 +107,8 @@ export class PerTabControlPanel {
           <button id="jc-toggle-enabled" class="toggle-btn ${this.isEnabled ? 'enabled' : 'disabled'}">
             ${this.isEnabled ? '⏸️ Disable' : '▶️ Enable'}
           </button>
+          
+          <canvas id="jc-audio-viz" width="280" height="60"></canvas>
           
           ${this.createControlsHTML()}
         </div>
@@ -188,12 +194,18 @@ export class PerTabControlPanel {
     
     // Tab click to show panel
     tab?.addEventListener('click', () => {
-      panel.classList.toggle('visible');
+      const isVisible = panel.classList.toggle('visible');
+      if (isVisible) {
+        this.startVisualization();
+      } else {
+        this.stopVisualization();
+      }
     });
     
     // Close panel
     closeBtn?.addEventListener('click', () => {
       panel.classList.remove('visible');
+      this.stopVisualization();
     });
     
     // Make tab draggable
@@ -281,7 +293,11 @@ export class PerTabControlPanel {
     // Open options
     const openOptions = this.container?.querySelector('#jc-open-options') as HTMLButtonElement;
     openOptions?.addEventListener('click', () => {
-      browserOrChrome.runtime.openOptionsPage();
+      if (browserOrChrome?.runtime?.openOptionsPage) {
+        browserOrChrome.runtime.openOptionsPage();
+      } else {
+        console.error('[JumpCutter] openOptionsPage not available');
+      }
     });
   }
 
@@ -326,10 +342,9 @@ export class PerTabControlPanel {
       style.textContent = `
         #jumpcutter-overlay-container {
           position: fixed;
-          top: 0;
+          top: 50%;
           right: 0;
-          bottom: 0;
-          width: 0;
+          transform: translateY(-50%);
           z-index: 2147483647;
           pointer-events: none;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -434,6 +449,14 @@ export class PerTabControlPanel {
           padding: 20px;
           overflow-y: auto;
           max-height: calc(80vh - 60px);
+        }
+
+        #jc-audio-viz {
+          width: 100%;
+          height: 60px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 6px;
+          margin-bottom: 20px;
         }
 
         .toggle-btn {
@@ -598,5 +621,82 @@ export class PerTabControlPanel {
 
   public getEnabled(): boolean {
     return this.isEnabled;
+  }
+
+  private startVisualization(): void {
+    this.vizCanvas = this.container?.querySelector('#jc-audio-viz') as HTMLCanvasElement;
+    if (!this.vizCanvas) return;
+    
+    this.vizCtx = this.vizCanvas.getContext('2d');
+    if (!this.vizCtx) return;
+    
+    // Initialize with empty data
+    this.audioData = new Array(50).fill(0);
+    
+    // Start animation loop
+    this.animateVisualization();
+    
+    // Listen for telemetry data
+    this.listenForTelemetry();
+  }
+
+  private stopVisualization(): void {
+    if (this.vizAnimationId) {
+      cancelAnimationFrame(this.vizAnimationId);
+      this.vizAnimationId = null;
+    }
+  }
+
+  private animateVisualization(): void {
+    if (!this.vizCtx || !this.vizCanvas) return;
+    
+    const ctx = this.vizCtx;
+    const canvas = this.vizCanvas;
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw threshold line
+    const threshold = (this.settings.volumeThreshold || 0.05) * height;
+    ctx.strokeStyle = 'rgba(255, 68, 68, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, height - threshold);
+    ctx.lineTo(width, height - threshold);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Draw audio bars
+    const barWidth = width / this.audioData.length;
+    this.audioData.forEach((value, i) => {
+      const barHeight = value * height;
+      const x = i * barWidth;
+      const y = height - barHeight;
+      
+      // Color based on threshold
+      if (value > (this.settings.volumeThreshold || 0.05)) {
+        ctx.fillStyle = 'rgba(102, 126, 234, 0.8)';
+      } else {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      }
+      
+      ctx.fillRect(x, y, barWidth - 1, barHeight);
+    });
+    
+    // Shift data left and add random value for demo
+    // TODO: Replace with real telemetry data
+    this.audioData.shift();
+    this.audioData.push(Math.random() * 0.8);
+    
+    this.vizAnimationId = requestAnimationFrame(() => this.animateVisualization());
+  }
+
+  private listenForTelemetry(): void {
+    // TODO: Connect to actual telemetry port
+    // For now, just generate random data for visualization
   }
 }
