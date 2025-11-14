@@ -23,11 +23,13 @@ import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
 import { PerTabControlPanel } from './PerTabControlPanelV3';
+import { updatePerTabCache } from './perTabState';
 
 (async function () { // Just for top-level `await`
 
 let perTabControl: PerTabControlPanel | null = null;
 let isInitialized = false;
+let perTabEnabled = true;
 
 async function importAndInit() {
   if (isInitialized) return;
@@ -41,32 +43,40 @@ async function importAndInit() {
   isInitialized = true;
 }
 
-async function deinitialize() {
-  if (!isInitialized) return;
-  
-  // Trigger cleanup by temporarily setting enabled to false
-  // This will be caught by the storage listener in init.ts
-  await browserOrChrome.storage[mainStorageAreaName].set({ enabled: false });
-  // Immediately restore it so global setting isn't affected
-  await browserOrChrome.storage[mainStorageAreaName].set({ enabled: true });
-  
-  isInitialized = false;
-}
-
 // Create per-tab control overlay
 perTabControl = new PerTabControlPanel();
+perTabEnabled = perTabControl.getEnabled();
+
+// Set up the overlay with a simpler callback
 perTabControl.createOverlay(async (enabled: boolean) => {
   console.log('[JumpCutter] Per-tab toggle changed to:', enabled);
-  if (enabled) {
-    // Check if global is also enabled before initializing
+  perTabEnabled = enabled;
+  
+  // Update the cache immediately
+  updatePerTabCache(enabled);
+  
+  // Store per-tab state in both storages for the controller to check
+  const url = window.location.href;
+  const key = `perTabEnabled_${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
+  
+  // Save to localStorage for synchronous access in controller
+  try {
+    localStorage.setItem(key, String(enabled));
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+  
+  // Also save to extension storage for persistence
+  await browserOrChrome.storage.local.set({ [key]: enabled });
+  
+  // If enabling and not initialized, initialize
+  if (enabled && !isInitialized) {
     const globalSettings = (await browserOrChrome.storage[mainStorageAreaName].get({ enabled: enabledSettingDefaultValue })) as Settings;
     if (globalSettings.enabled !== false) {
       await importAndInit();
     }
-  } else {
-    // Just deinitialize without touching global settings
-    await deinitialize();
   }
+  // Don't destroy when disabling - let the controller handle the enabled state internally
 });
 
 // Check global enabled state
@@ -98,7 +108,8 @@ browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChange
       importAndInit();
     }
   } else if (maybeEnabledChange?.newValue === false && maybeEnabledChange.oldValue === true) {
-    deinitialize();
+    // Don't deinitialize - let the controller handle the enabled state
+    console.log('[JumpCutter] Global disabled, controller will handle state internally');
   }
 });
 

@@ -447,6 +447,19 @@ export default class Controller {
    * to {@link Controller.maybeSeekOrSpeedup} to skip it.
    */
   maybeScheduleMaybeSeekOrSpeedup() {
+    // Quick check if per-tab is disabled - bail early to avoid interference
+    // Import synchronously cached value to avoid async issues
+    try {
+      const url = window.location.href;
+      const key = `perTabEnabled_${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
+      const stored = localStorage.getItem(key);
+      if (stored === 'false') {
+        return; // Per-tab disabled, don't schedule anything
+      }
+    } catch (e) {
+      // Ignore errors, continue normally
+    }
+    
     const { currentTime } = this.element;
     const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
     if (!maybeUpcomingSilenceRange) {
