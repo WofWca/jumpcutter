@@ -42,6 +42,7 @@ import {
 } from '../playbackRateChangeTracking';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 import requestIdlePromise from '../helpers/requestIdlePromise';
+import { getPerTabKeySync } from '../perTabIdentity';
 
 type Time = AnyTime;
 
@@ -450,8 +451,7 @@ export default class Controller {
     // Quick check if per-tab is disabled - bail early to avoid interference
     // Import synchronously cached value to avoid async issues
     try {
-      const url = window.location.href;
-      const key = `perTabEnabled_${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
+      const key = getPerTabKeySync('perTabEnabled');
       const stored = localStorage.getItem(key);
       if (stored === 'false') {
         return; // Per-tab disabled, don't schedule anything

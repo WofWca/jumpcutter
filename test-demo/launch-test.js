@@ -1,31 +1,52 @@
 #!/usr/bin/env node
 
-const { chromium } = require('playwright');
+const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
 
 async function launchTest() {
   const extensionPath = path.resolve(__dirname, '..', 'dist-chromium');
+  const userDataDir = path.join(os.tmpdir(), 'jc-test-' + Date.now());
+  fs.mkdirSync(userDataDir, { recursive: true });
   
-  console.log('🚀 Launching Chrome with Jump Cutter extension...');
-  console.log('📁 Extension path:', extensionPath);
+  // Find Playwright's Chromium (allows --load-extension unlike Google Chrome)
+  const playwrightCache = path.join(os.homedir(), 'Library/Caches/ms-playwright');
+  const chromiumDirs = fs.readdirSync(playwrightCache)
+    .filter(d => d.startsWith('chromium-'))
+    .sort()
+    .reverse();
+  
+  if (chromiumDirs.length === 0) {
+    console.error('❌ Playwright Chromium not found. Run: npx playwright install chromium');
+    process.exit(1);
+  }
+  
+  const chromiumPath = path.join(
+    playwrightCache, 
+    chromiumDirs[0], 
+    'chrome-mac/Chromium.app/Contents/MacOS/Chromium'
+  );
+  
+  console.log('🚀 Launching Chromium with Jump Cutter extension...');
+  console.log('📁 Extension:', extensionPath);
+  console.log('📂 Profile:', userDataDir);
+  console.log('🌐 Browser:', chromiumPath);
   console.log('');
   
-  const context = await chromium.launchPersistentContext('', {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`
-    ],
-    viewport: { width: 1280, height: 800 }
-  });
+  const args = [
+    `--user-data-dir=${userDataDir}`,
+    `--disable-extensions-except=${extensionPath}`,
+    `--load-extension=${extensionPath}`,
+    '--no-first-run',
+    'https://www.youtube.com/watch?v=HtSuA80QTyo'
+  ];
   
-  console.log('✅ Chrome launched!');
+  spawn(chromiumPath, args, { stdio: 'inherit', detached: true });
+  
+  console.log('✅ Chromium launched!');
   console.log('');
-  
-  // Open YouTube video directly - no need for demo page
-  const page = await context.newPage();
-  await page.goto('https://www.youtube.com/watch?v=aqz-KE-bpKQ');
-  console.log('\n🎬 YouTube video opened: Big Buck Bunny');
+  console.log('🎬 YouTube MIT Lecture opened');
   
   console.log('');
   console.log('📝 TEST CHECKLIST:');
@@ -37,9 +58,7 @@ async function launchTest() {
   console.log('5. DISABLE: Click Disable button - video should play normally');
   console.log('6. SEEK TEST: While disabled, try seeking - should work without errors');
   console.log('');
-  console.log('Press Ctrl+C to close browser');
-  
-  await new Promise(() => {});
+  console.log('Close browser manually when done.');
 }
 
 launchTest().catch(console.error);

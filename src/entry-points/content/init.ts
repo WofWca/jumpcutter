@@ -32,11 +32,26 @@ const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsControlle
   ? allMediaElementsController.broadcastStatus()
   : broadcastStatus({ elementLastActivatedAt: undefined });
 
+let allMediaElementsController: AllMediaElementsController | undefined;
+let stopWatchingElements: (() => void) | undefined;
+
+export function destroyController(): void {
+  if (allMediaElementsController) {
+    // Access the private destroy method via type assertion
+    (allMediaElementsController as any).destroy?.();
+    allMediaElementsController = undefined;
+  }
+  if (stopWatchingElements) {
+    stopWatchingElements();
+    stopWatchingElements = undefined;
+  }
+}
+
 export default async function init(): Promise<void> {
   // TODO would be better to pass them as a parameter from `main.ts`.
   const settingsP = getSettings('applyTo');
 
-  let allMediaElementsController: AllMediaElementsController | undefined;
+  // Use module-level variable instead of local
   const ensureInitAllMediaElementsController = once(async function () {
     const AllMediaElementsController = (await import(
       /* webpackExports: ['default'] */
@@ -71,7 +86,7 @@ export default async function init(): Promise<void> {
   const removeListener = addOnStorageChangedListener((changes: MyStorageChanges) => {
     if (changes.enabled?.newValue === false) {
       browserOrChrome.runtime.onMessage.removeListener(onMessage);
-      stopWatchingElements();
+      stopWatchingElements?.();
       removeListener();
     }
   });
@@ -86,7 +101,7 @@ export default async function init(): Promise<void> {
   }
 
   await requestIdlePromise({ timeout: 5000 })
-  const stopWatchingElements = watchAllElements(
+  stopWatchingElements = watchAllElements(
     tagNames,
     newElements => ensureInitAllMediaElementsController().then(allMediaElementsController => {
       allMediaElementsController.onNewMediaElements(...newElements);

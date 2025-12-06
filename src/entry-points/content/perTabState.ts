@@ -6,6 +6,7 @@
  */
 
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { getPerTabKeySync } from './perTabIdentity';
 
 let cachedEnabled = true;
 let lastChecked = 0;
@@ -18,8 +19,7 @@ export async function isPerTabEnabled(): Promise<boolean> {
   }
   
   try {
-    const url = window.location.href;
-    const key = `perTabEnabled_${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
+    const key = getPerTabKeySync('perTabEnabled');
     const result = await browserOrChrome.storage.local.get(key);
     cachedEnabled = result[key] !== false; // Default to true if not set
     lastChecked = Date.now();

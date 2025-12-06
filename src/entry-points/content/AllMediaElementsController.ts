@@ -26,6 +26,7 @@ import {
 import { assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
 import requestIdlePromise from './helpers/requestIdlePromise';
+import { getPerTabKeySync } from './perTabIdentity';
 import type ElementPlaybackControllerStretching from
   './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
 import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
@@ -77,6 +78,17 @@ const controllerTypeDependsOnSettings = [
   'experimentalControllerType',
   'dontAttachToCrossOriginMedia',
 ] as const;
+
+function isPerTabDisabledSync(): boolean {
+  try {
+    const key = getPerTabKeySync('perTabEnabled');
+    const stored = localStorage.getItem(key);
+    return stored === 'false';
+  } catch {
+    // On any error, default to enabled so we don't accidentally disable globally
+    return false;
+  }
+}
 function getAppropriateControllerType(
   settings: Pick<Settings, typeof controllerTypeDependsOnSettings[number]>,
   elementSourceIsCrossOrigin: boolean,
@@ -392,6 +404,14 @@ export default class AllMediaElementsController {
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
   private async ensureAttachToElement(el: HTMLMediaElement) {
+    // Respect per-tab disabled state: do not attach and ensure we detach if already attached
+    if (isPerTabDisabledSync()) {
+      if (this.activeMediaElement) {
+        this.detachFromActiveElement();
+      }
+      return;
+    }
+
     if (IS_DEV_MODE) {
       if (el.readyState < HTMLMediaElement.HAVE_METADATA) {
         // We shouldn't be doing that because this probably means that the element has no source or is still loading

@@ -16,8 +16,9 @@ export interface PerTabPanelState {
 }
 
 export class PerTabControlPanel {
+  private readonly storageKey: string;
   private container: HTMLDivElement | null = null;
-  private isEnabled: boolean = true;
+  private isEnabled: boolean = false;
   private onToggleCallback: ((enabled: boolean) => void) | null = null;
   private settings: Partial<Settings> = {};
   private readonly loadStatePromise: Promise<void>;
@@ -29,20 +30,22 @@ export class PerTabControlPanel {
   private vizAnimationId: number | null = null;
   private audioData: number[] = [];
 
-  constructor() {
+  constructor(storageKey: string) {
+    this.storageKey = storageKey;
     this.loadStatePromise = this.loadState();
   }
 
   private async loadState(): Promise<void> {
     try {
-      const url = window.location.href;
-      const key = `perTabPanel_${this.sanitizeKey(url)}`;
-      const result = await browserOrChrome.storage.local.get(key);
-      const state = result[key] as PerTabPanelState;
+      const result = await browserOrChrome.storage.local.get(this.storageKey);
+      const state = result[this.storageKey] as PerTabPanelState;
       
       if (state) {
         this.isEnabled = state.enabled !== false;
         this.position = state.position || 50;
+      } else {
+        // No saved state for this page yet: default to disabled
+        this.isEnabled = false;
       }
       
       // Load current settings
@@ -63,21 +66,15 @@ export class PerTabControlPanel {
 
   private async saveState(): Promise<void> {
     try {
-      const url = window.location.href;
-      const key = `perTabPanel_${this.sanitizeKey(url)}`;
       const state: PerTabPanelState = {
         enabled: this.isEnabled,
-        url: url,
+        url: window.location.href,
         position: this.position
       };
-      await browserOrChrome.storage.local.set({ [key]: state });
+      await browserOrChrome.storage.local.set({ [this.storageKey]: state });
     } catch (error) {
       console.error('Failed to save per-tab state:', error);
     }
-  }
-
-  private sanitizeKey(url: string): string {
-    return url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100);
   }
 
   public async createOverlay(onToggle: (enabled: boolean) => void): Promise<void> {
@@ -349,6 +346,9 @@ export class PerTabControlPanel {
           pointer-events: none;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           font-size: 14px;
+          width: 0;
+          height: 0;
+          overflow: visible;
         }
 
         #jumpcutter-tab {
@@ -621,6 +621,10 @@ export class PerTabControlPanel {
 
   public getEnabled(): boolean {
     return this.isEnabled;
+  }
+
+  public async waitForLoad(): Promise<void> {
+    await this.loadStatePromise;
   }
 
   private startVisualization(): void {

@@ -23,14 +23,14 @@ import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
 import { PerTabControlPanel } from './PerTabControlPanelV3';
+import { destroyController } from './init';
 import { updatePerTabCache } from './perTabState';
+import { ensurePerTabIdentity, getPerTabKeySync } from './perTabIdentity';
 
-// Use a more robust guard with immediate synchronous check
-const INIT_KEY = '__jumpCutterInit_' + window.location.href.substring(0, 100);
+// Use a robust guard that is independent of URL so we only initialize once per frame
+const INIT_KEY = '__jumpCutterInit';
 if ((window as any)[INIT_KEY]) {
-  console.warn('[JumpCutter] Already running on this page, exiting');
-  // Exit completely - don't run any more code
-  (function() { return; })();
+  console.warn('[JumpCutter] Already running in this frame, exiting');
   throw new Error('Already initialized');
 }
 // Set flag immediately and synchronously
@@ -42,9 +42,24 @@ Object.defineProperty(window, INIT_KEY, {
 
 (async function () { // Just for top-level `await`
 
+console.log('[JumpCutter] Content script starting...', window.location.href);
+
+// Only run in top frame for YouTube to avoid iframe interference
+const isYouTube = window.location.hostname.includes('youtube.com');
+if (isYouTube && window !== window.top) {
+  console.log('[JumpCutter] Skipping iframe on YouTube');
+  return;
+}
+
+console.log('[JumpCutter] Getting tab identity...');
+await ensurePerTabIdentity();
+console.log('[JumpCutter] Tab identity obtained');
+const perTabEnabledKey = getPerTabKeySync('perTabEnabled');
+const perTabPanelKey = getPerTabKeySync('perTabPanel');
+
 let perTabControl: PerTabControlPanel | null = null;
 let isInitialized = false;
-let perTabEnabled = true;
+let perTabEnabled = false; // Default to disabled
 
 async function importAndInit() {
   if (isInitialized) {
@@ -52,7 +67,11 @@ async function importAndInit() {
     return;
   }
   
-  console.log('[JumpCutter] Importing and initializing controller...');
+  console.log('[JumpCutter] Importing and initializing controller...', {
+    url: window.location.href,
+    isTopFrame: window === window.top,
+    frameDepth: window.top ? (window === window.top ? 0 : 1) : 'unknown'
+  });
   const init = (await import(
     /* webpackExports: ['default'] */
     './init'
@@ -63,20 +82,14 @@ async function importAndInit() {
   console.log('[JumpCutter] Controller initialized successfully');
 }
 
-// Create per-tab control overlay
-perTabControl = new PerTabControlPanel();
+// Create per-tab control overlay and wait for state to load
+console.log('[JumpCutter] Creating overlay...');
+perTabControl = new PerTabControlPanel(perTabPanelKey);
+await perTabControl.waitForLoad();
 perTabEnabled = perTabControl.getEnabled();
 
-// Initialize localStorage with current state
-const url = window.location.href;
-const storageKey = `perTabEnabled_${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
-try {
-  localStorage.setItem(storageKey, String(perTabEnabled));
-} catch (e) {
-  // Ignore localStorage errors
-}
-
-// Set up the overlay with a simpler callback
+console.log('[JumpCutter] Per-tab state loaded:', { perTabEnabled, perTabEnabledKey });
+console.log('[JumpCutter] Creating overlay UI...');
 perTabControl.createOverlay(async (enabled: boolean) => {
   console.log('[JumpCutter] Per-tab toggle changed to:', enabled);
   
@@ -92,35 +105,55 @@ perTabControl.createOverlay(async (enabled: boolean) => {
   
   // Save to localStorage for synchronous access in controller
   try {
-    localStorage.setItem(storageKey, String(enabled));
+    localStorage.setItem(perTabEnabledKey, String(enabled));
   } catch (e) {
     // Ignore localStorage errors
   }
   
   // Also save to extension storage for persistence
-  await browserOrChrome.storage.local.set({ [storageKey]: enabled });
+  await browserOrChrome.storage.local.set({ [perTabEnabledKey]: enabled });
   
-  // Don't try to initialize/deinitialize - let the controller check the state
+  // If disabled, destroy the controller to stop all interference
+  if (!enabled) {
+    destroyController();
+    isInitialized = false;
+  } else {
+    // Initialize when enabling (per-tab enable should work regardless of global setting)
+    if (!isInitialized) {
+      await importAndInit();
+    }
+  }
 });
+console.log('[JumpCutter] Overlay created!');
+
+// Initialize localStorage with current state
+try {
+  localStorage.setItem(perTabEnabledKey, String(perTabEnabled));
+} catch (e) {
+  // Ignore localStorage errors
+}
 
 // Check global enabled state
 const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
 const globalSettings = (await browserOrChrome.storage[mainStorageAreaName].get(keys)) as Settings;
-const globalEnabled = globalSettings.enabled !== false; // Default to true if not set
+const globalEnabled = globalSettings.enabled === true; // Only enabled if explicitly true
 
 console.log('[JumpCutter] Initialization check:', {
   globalEnabled,
   perTabEnabled: perTabControl.getEnabled(),
   url: window.location.href,
+  isTopFrame: window === window.top,
   alreadyInitialized: isInitialized
 });
 
-// Only initialize once if both global and per-tab are enabled
-if (globalEnabled && perTabEnabled && !isInitialized) {
-  console.log('[JumpCutter] Starting initialization...');
+// Initialize if per-tab is enabled (per-tab takes precedence over global)
+if (perTabEnabled && !isInitialized) {
+  console.log('[JumpCutter] Starting initialization (per-tab enabled)...');
   await importAndInit();
 } else if (isInitialized) {
   console.log('[JumpCutter] Already initialized, skipping startup init');
+} else {
+  console.log('[JumpCutter] Not initializing (per-tab disabled)');
 }
 // Listen for global enabled state changes
 browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {

@@ -202,6 +202,14 @@ browserOrChrome.runtime.onConnect.addListener(port => {
   })
 });
 
+browserOrChrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === 'jumpcutter:getTabId') {
+    sendResponse({ tabId: sender.tab?.id ?? null });
+    return true;
+  }
+  return undefined;
+});
+
 async function updateMediaSourceCloningScriptRegistered(
   settings: Pick<Settings, "enabled" | "experimentalControllerType">
 ) {

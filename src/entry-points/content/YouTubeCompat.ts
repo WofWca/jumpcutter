@@ -32,22 +32,14 @@ export class YouTubeCompat {
 
   /**
    * Get safe playback rate limits for the current site
+   * Note: No special YouTube limits - YouTube can handle the same speeds as other sites
    */
   public static getSpeedLimits(): { min: number; max: number; silenceMax: number } {
-    if (this.isYouTube()) {
-      // YouTube has strict limits on playback rate
-      return {
-        min: 0.25,
-        max: 2.0,  // YouTube's max is 2x
-        silenceMax: 2.0  // Don't exceed 2x for silence
-      };
-    }
-
-    // Other sites can handle higher speeds
+    // Same limits for all sites - YouTube can handle these fine
     return {
       min: 0.25,
       max: 4.0,
-      silenceMax: 8.0
+      silenceMax: 16.0
     };
   }
 
@@ -56,6 +48,8 @@ export class YouTubeCompat {
    */
   public static applyWorkarounds(video: HTMLVideoElement): void {
     if (!this.isYouTube()) return;
+    // Mark parameter as used to satisfy linter (future hooks may use it)
+    void video;
 
     // Don't modify playback rate property on YouTube
     // Let the extension work through the normal API
@@ -82,22 +76,11 @@ export class YouTubeCompat {
 
   /**
    * Get adjusted settings for YouTube
+   * Note: No longer applying YouTube-specific adjustments - use user's settings as-is
    */
   public static getAdjustedSettings(settings: any): any {
-    if (!this.isYouTube()) return settings;
-
-    const limits = this.getSpeedLimits();
-    
-    return {
-      ...settings,
-      soundedSpeed: Math.min(settings.soundedSpeed || 1, limits.max),
-      silenceSpeedRaw: Math.min(settings.silenceSpeedRaw || 2, limits.silenceMax),
-      // Increase margin to avoid cutting off speech on YouTube
-      marginBefore: Math.max(settings.marginBefore || 0.1, 0.15),
-      marginAfter: Math.max(settings.marginAfter || 0.1, 0.15),
-      // Less aggressive volume threshold for YouTube
-      volumeThreshold: Math.max(settings.volumeThreshold || 0.05, 0.08)
-    };
+    // Return settings unchanged - no special YouTube adjustments needed
+    return settings;
   }
 
   /**
