@@ -1,38 +1,41 @@
 # Jump Cutter - Agent Status
 
 ## Current Version
-`v1.31.0-pertab` (tagged)
+`v1.31.0-pertab` (feature branch: `feature/extension-per-page`)
 
 ## Active Feature: Per-Tab Control
 
 ### What Works
 - ✅ Per-tab enable/disable toggle (independent state per browser tab)
-- ✅ Minimal floating pill UI (replaces old expandable panel)
+- ✅ Per-tab settings (each tab can have different speed/threshold settings)
+- ✅ Svelte-based floating pill UI with reactive state management
 - ✅ Silence skipping on YouTube and other video sites
 - ✅ Seeking works (using Playwright's Chromium)
 - ✅ State persistence using tab ID
 
-### New Floating Pill UI
+### Floating Pill UI (Svelte Component)
 - **Single click** to toggle on/off
-- **Double click** to open settings panel with fine-grained controls
+- **Hover** to reveal gear button (⚙)
+- **Gear button** opens settings panel
 - **Visual feedback**: Green glow when active, gray when inactive
 - **Draggable anywhere** on screen
 - **Edge docking**: Snaps to left/right edge when released nearby (half-hidden)
-- **Scroll wheel**: Adjust skip aggressiveness (skip more/less) - shows indicator
-- **Speed display**: Shows current speed when active
-- **Pulse animation**: Glows when actively skipping silence
+- **Scroll wheel**: Adjust skip aggressiveness (skip more/less)
+- **Speed display**: Shows current sounded speed when active
 
-### Settings Panel (double-click to open)
+### Settings Panel (gear button to open)
 - Sounded Speed (0.5x - 3x)
 - Silence Speed (1x - 8x)
 - Volume Threshold
 - Algorithm toggle (stretching vs cloning)
 - "More Options" button to open full options page
 
-### TODO (Priority Order)
+### Per-Tab Storage
+- `floatingPill_tab_{tabId}` - enabled state, position, docking
+- `tabSettings_{tabId}` - per-tab speed/threshold settings
 
-1. **Connect real telemetry** to speed display (currently placeholder)
-2. **Algorithm Review** - Compare behavior with original Jump Cutter
+### Ready for PR
+Feature branch pushed to origin. Ready for pull request to upstream.
 
 ## Testing
 
