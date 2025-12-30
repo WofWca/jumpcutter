@@ -79,15 +79,12 @@ const controllerTypeDependsOnSettings = [
   'dontAttachToCrossOriginMedia',
 ] as const;
 
+// Import the cached state from perTabState module
+import { isPerTabEnabledSync } from './perTabState';
+
 function isPerTabDisabledSync(): boolean {
-  try {
-    const key = getPerTabKeySync('perTabEnabled');
-    const stored = localStorage.getItem(key);
-    return stored === 'false';
-  } catch {
-    // On any error, default to enabled so we don't accidentally disable globally
-    return false;
-  }
+  // Use the cached value from extension storage (not website localStorage)
+  return !isPerTabEnabledSync();
 }
 function getAppropriateControllerType(
   settings: Pick<Settings, typeof controllerTypeDependsOnSettings[number]>,

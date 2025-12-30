@@ -110,14 +110,7 @@ async function handleToggle(enabled: boolean) {
   // Update the cache immediately
   updatePerTabCache(enabled);
   
-  // Save to localStorage for synchronous access in controller
-  try {
-    localStorage.setItem(perTabEnabledKey, String(enabled));
-  } catch (e) {
-    // Ignore localStorage errors
-  }
-  
-  // Also save to extension storage for persistence
+  // Save to extension storage for persistence
   await browserOrChrome.storage.local.set({ [perTabEnabledKey]: enabled });
   
   // If disabled, destroy the controller to stop all interference
@@ -150,13 +143,6 @@ perTabControl = new FloatingPill({
 perTabEnabled = perTabControl.getEnabled();
 console.log('[JumpCutter] Per-tab state loaded:', { perTabEnabled, perTabEnabledKey, tabId });
 console.log('[JumpCutter] Floating pill created!');
-
-// Initialize localStorage with current state
-try {
-  localStorage.setItem(perTabEnabledKey, String(perTabEnabled));
-} catch (e) {
-  // Ignore localStorage errors
-}
 
 // Check global enabled state
 const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;

@@ -22,7 +22,7 @@ import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
   addOnStorageChangedListener, MyStorageChanges, getSettings
 } from '@/settings';
-import { getPerTabKeySync } from './perTabIdentity';
+import { isPerTabEnabledSync } from './perTabState';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
@@ -88,15 +88,10 @@ export default async function init(): Promise<void> {
     // Only stop watching if global enabled=false AND per-tab is also disabled
     // Per-tab enabled should override global disabled
     if (changes.enabled?.newValue === false) {
-      try {
-        const key = getPerTabKeySync('perTabEnabled');
-        const perTabEnabled = localStorage.getItem(key) === 'true';
-        if (perTabEnabled) {
-          // Per-tab is enabled, don't stop watching
-          return;
-        }
-      } catch {
-        // On error, default to stopping (original behavior)
+      // Check cached per-tab state (no localStorage usage)
+      if (isPerTabEnabledSync()) {
+        // Per-tab is enabled, don't stop watching
+        return;
       }
       browserOrChrome.runtime.onMessage.removeListener(onMessage);
       stopWatchingElements?.();

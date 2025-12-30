@@ -42,7 +42,6 @@ import {
 } from '../playbackRateChangeTracking';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 import requestIdlePromise from '../helpers/requestIdlePromise';
-import { getPerTabKeySync } from '../perTabIdentity';
 
 type Time = AnyTime;
 
@@ -448,18 +447,6 @@ export default class Controller {
    * to {@link Controller.maybeSeekOrSpeedup} to skip it.
    */
   maybeScheduleMaybeSeekOrSpeedup() {
-    // Quick check if per-tab is disabled - bail early to avoid interference
-    // Import synchronously cached value to avoid async issues
-    try {
-      const key = getPerTabKeySync('perTabEnabled');
-      const stored = localStorage.getItem(key);
-      if (stored === 'false') {
-        return; // Per-tab disabled, don't schedule anything
-      }
-    } catch (e) {
-      // Ignore errors, continue normally
-    }
-    
     const { currentTime } = this.element;
     const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
     if (!maybeUpcomingSilenceRange) {

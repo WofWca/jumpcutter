@@ -12,6 +12,11 @@ let cachedEnabled = true;
 let lastChecked = 0;
 const CACHE_DURATION = 100; // Cache for 100ms to avoid excessive storage reads
 
+// Synchronous version - returns cached value (for use in hot paths)
+export function isPerTabEnabledSync(): boolean {
+  return cachedEnabled;
+}
+
 export async function isPerTabEnabled(): Promise<boolean> {
   // Use cached value if recent
   if (Date.now() - lastChecked < CACHE_DURATION) {
