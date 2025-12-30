@@ -7,22 +7,32 @@
 
 ### What Works
 - ✅ Per-tab enable/disable toggle (independent state per browser tab)
-- ✅ Floating purple tab UI on right edge with expandable panel
+- ✅ Minimal floating pill UI (replaces old expandable panel)
 - ✅ Silence skipping on YouTube and other video sites
 - ✅ Seeking works (using Playwright's Chromium)
 - ✅ State persistence using tab ID
 
+### New Floating Pill UI
+- **Single click** to toggle on/off
+- **Double click** to open settings panel with fine-grained controls
+- **Visual feedback**: Green glow when active, gray when inactive
+- **Draggable anywhere** on screen
+- **Edge docking**: Snaps to left/right edge when released nearby (half-hidden)
+- **Scroll wheel**: Adjust skip aggressiveness (skip more/less) - shows indicator
+- **Speed display**: Shows current speed when active
+- **Pulse animation**: Glows when actively skipping silence
+
+### Settings Panel (double-click to open)
+- Sounded Speed (0.5x - 3x)
+- Silence Speed (1x - 8x)
+- Volume Threshold
+- Algorithm toggle (stretching vs cloning)
+- "More Options" button to open full options page
+
 ### TODO (Priority Order)
 
-1. **UI Improvements** (compare with original Jump Cutter)
-   - Show current effective playback speed prominently
-   - Highlight skipping state in audio visualization
-   - Better drag handle with visual affordance
-   - Auto-collapse panel after inactivity
-
-2. **Algorithm Review**
-   - Compare behavior with original Jump Cutter
-   - Tune volume threshold and margins
+1. **Connect real telemetry** to speed display (currently placeholder)
+2. **Algorithm Review** - Compare behavior with original Jump Cutter
 
 ## Testing
 
@@ -41,7 +51,8 @@ node test-demo/launch-test.js
 ### New Files (our additions)
 ```
 src/entry-points/content/
-├── PerTabControlPanelV3.ts    # Floating UI overlay (727 lines)
+├── FloatingPill.ts            # Minimal draggable toggle pill (~350 lines)
+├── PerTabControlPanelV3.ts    # OLD: Expandable panel (deprecated)
 ├── perTabIdentity.ts          # Tab ID management via background script
 ├── perTabState.ts             # Per-tab state cache
 ├── YouTubeCompat.ts           # YouTube compatibility (minimal now)

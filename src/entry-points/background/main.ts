@@ -207,6 +207,11 @@ browserOrChrome.runtime.onMessage.addListener((message, sender, sendResponse) =>
     sendResponse({ tabId: sender.tab?.id ?? null });
     return true;
   }
+  // Handle openOptionsPage request from content script
+  if (message?.action === 'openOptionsPage') {
+    browserOrChrome.runtime.openOptionsPage();
+    return true;
+  }
   return undefined;
 });
 

@@ -226,7 +226,9 @@ export default class AllMediaElementsController {
   }
   private ensureLoadSettings = once(this._loadSettings);
   private reactToSettingsNewValues(newValues: Partial<Settings>) {
-    if (newValues.enabled === false) {
+    // Only destroy on global enabled=false if per-tab is also disabled
+    // Per-tab enabled should override global disabled
+    if (newValues.enabled === false && isPerTabDisabledSync()) {
       this.destroy();
       return;
     }
@@ -245,7 +247,11 @@ export default class AllMediaElementsController {
       return;
     }
     Object.assign(this.settings, newValues);
-    assertDev(this.controller);
+    
+    // Guard: if controller isn't initialized yet, just update settings and return
+    if (!this.controller) {
+      return;
+    }
 
     if (controllerTypeDependsOnSettings.some(key => key in newValues)) {
       const currentController = this.controller;

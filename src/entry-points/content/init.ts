@@ -22,6 +22,7 @@ import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
   addOnStorageChangedListener, MyStorageChanges, getSettings
 } from '@/settings';
+import { getPerTabKeySync } from './perTabIdentity';
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
@@ -84,7 +85,19 @@ export default async function init(): Promise<void> {
   // So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
   broadcastStatus2(allMediaElementsController);
   const removeListener = addOnStorageChangedListener((changes: MyStorageChanges) => {
+    // Only stop watching if global enabled=false AND per-tab is also disabled
+    // Per-tab enabled should override global disabled
     if (changes.enabled?.newValue === false) {
+      try {
+        const key = getPerTabKeySync('perTabEnabled');
+        const perTabEnabled = localStorage.getItem(key) === 'true';
+        if (perTabEnabled) {
+          // Per-tab is enabled, don't stop watching
+          return;
+        }
+      } catch {
+        // On error, default to stopping (original behavior)
+      }
       browserOrChrome.runtime.onMessage.removeListener(onMessage);
       stopWatchingElements?.();
       removeListener();

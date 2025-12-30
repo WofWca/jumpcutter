@@ -22,7 +22,7 @@ import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settin
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
-import { PerTabControlPanel } from './PerTabControlPanelV3';
+import FloatingPill from './FloatingPill.svelte';
 import { destroyController } from './init';
 import { updatePerTabCache } from './perTabState';
 import { ensurePerTabIdentity, getPerTabKeySync } from './perTabIdentity';
@@ -57,7 +57,7 @@ console.log('[JumpCutter] Tab identity obtained');
 const perTabEnabledKey = getPerTabKeySync('perTabEnabled');
 const perTabPanelKey = getPerTabKeySync('perTabPanel');
 
-let perTabControl: PerTabControlPanel | null = null;
+let perTabControl: FloatingPill | null = null;
 let isInitialized = false;
 let perTabEnabled = false; // Default to disabled
 
@@ -82,15 +82,22 @@ async function importAndInit() {
   console.log('[JumpCutter] Controller initialized successfully');
 }
 
-// Create per-tab control overlay and wait for state to load
-console.log('[JumpCutter] Creating overlay...');
-perTabControl = new PerTabControlPanel(perTabPanelKey);
-await perTabControl.waitForLoad();
-perTabEnabled = perTabControl.getEnabled();
+// Get tab ID for unique storage key
+const tabIdResult = await new Promise<{ tabId: number | null }>((resolve) => {
+  (browserOrChrome.runtime.sendMessage as (msg: unknown, cb: (r: { tabId: number | null }) => void) => void)(
+    { type: 'jumpcutter:getTabId' }, 
+    resolve
+  );
+});
+const tabId = tabIdResult?.tabId ?? Math.floor(Math.random() * 1000000);
 
-console.log('[JumpCutter] Per-tab state loaded:', { perTabEnabled, perTabEnabledKey });
-console.log('[JumpCutter] Creating overlay UI...');
-perTabControl.createOverlay(async (enabled: boolean) => {
+// Create container for Svelte component
+const pillContainer = document.createElement('div');
+pillContainer.id = 'jc-floating-pill-root';
+document.body.appendChild(pillContainer);
+
+// Toggle handler
+async function handleToggle(enabled: boolean) {
   console.log('[JumpCutter] Per-tab toggle changed to:', enabled);
   
   // Only process if state actually changed
@@ -121,10 +128,28 @@ perTabControl.createOverlay(async (enabled: boolean) => {
     // Initialize when enabling (per-tab enable should work regardless of global setting)
     if (!isInitialized) {
       await importAndInit();
+      // Apply per-tab settings after controller init
+      if (perTabControl) {
+        await perTabControl.applyPerTabSettings();
+      }
     }
   }
+}
+
+// Create Svelte floating pill control
+console.log('[JumpCutter] Creating floating pill...');
+perTabControl = new FloatingPill({
+  target: pillContainer,
+  props: {
+    tabId,
+    onToggle: handleToggle
+  }
 });
-console.log('[JumpCutter] Overlay created!');
+
+// Get initial enabled state from component
+perTabEnabled = perTabControl.getEnabled();
+console.log('[JumpCutter] Per-tab state loaded:', { perTabEnabled, perTabEnabledKey, tabId });
+console.log('[JumpCutter] Floating pill created!');
 
 // Initialize localStorage with current state
 try {

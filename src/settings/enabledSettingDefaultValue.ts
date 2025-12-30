@@ -18,4 +18,4 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const enabledSettingDefaultValue = false;
+export const enabledSettingDefaultValue = true;

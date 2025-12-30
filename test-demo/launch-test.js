@@ -51,12 +51,14 @@ async function launchTest() {
   console.log('');
   console.log('📝 TEST CHECKLIST:');
   console.log('================================');
-  console.log('1. TAB BUTTON: Look for purple tab on right edge of page');
-  console.log('2. DRAG TAB: Drag the tab up/down using the dots (⋮)');
-  console.log('3. CLICK TAB: Click tab to show/hide control panel');
-  console.log('4. PLAY VIDEO: Start the video and watch for silence skipping');
-  console.log('5. DISABLE: Click Disable button - video should play normally');
-  console.log('6. SEEK TEST: While disabled, try seeking - should work without errors');
+  console.log('1. FLOATING PILL: Look for dark circular button (⚡) - starts gray/disabled');
+  console.log('2. SINGLE CLICK: Toggle on/off - green glow when active');
+  console.log('3. DOUBLE CLICK: Opens settings panel with fine-grained controls');
+  console.log('4. SCROLL WHEEL: Hover over pill and scroll - adjusts skip level');
+  console.log('5. DRAG ANYWHERE: Drag the pill around the screen');
+  console.log('6. EDGE DOCKING: Drag near left/right edge - pill docks (half-hidden)');
+  console.log('7. SETTINGS PANEL: Adjust sounded speed, silence speed, volume threshold');
+  console.log('8. PLAY VIDEO: Start video - watch for silence skipping when enabled');
   console.log('');
   console.log('Close browser manually when done.');
 }
