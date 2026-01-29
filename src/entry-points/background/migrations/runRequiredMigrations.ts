@@ -28,7 +28,7 @@ import migrateFrom1_18_3 from "./migrateFrom1_18_3";
 import migrateFrom1_22_1 from "./migrateFrom1_22_1";
 import migrateFrom1_25_1 from "./migrateFrom1_25_1";
 import migrateFrom1_27_5 from "./migrateFrom1_27_5";
-import migrateFrom1_31_0 from "./migrateFrom1_31_0";
+import migrateFrom1_32_1 from "./migrateFrom1_32_1";
 
 function compareVersions(a: string, b: string) {
   if (IS_DEV_MODE) {
@@ -71,7 +71,7 @@ sortedMigrationsFrom.push(
   { ver: '1.22.1', fn: migrateFrom1_22_1, },
   { ver: '1.25.1', fn: migrateFrom1_25_1, },
   { ver: '1.27.5', fn: migrateFrom1_27_5, },
-  { ver: '1.31.0', fn: migrateFrom1_31_0, },
+  { ver: '1.32.1', fn: migrateFrom1_32_1, },
 );
 
 export default async function runRequiredMigrations(
