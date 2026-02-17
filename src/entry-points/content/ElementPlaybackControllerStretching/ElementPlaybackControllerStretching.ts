@@ -18,7 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { audioContext } from '@/entry-points/content/audioContext';
 import {
   getOrCreateMediaElementSourceAndUpdateMap
@@ -159,6 +158,9 @@ export default class Controller {
     name: SpeedName,
   };
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
+  // CPU overload detection: track if we're in an overloaded state
+  private _cpuOverloaded = false;
+  private _cpuOverloadRecoveryTimeoutId: ReturnType<typeof setTimeout> | undefined;
   _analyzerOut?: AnalyserNode;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   _log?: (msg?: any) => void;
@@ -199,7 +201,7 @@ export default class Controller {
     this.audioContext = audioContext;
 
     const addWorkletProcessor = (url: string) =>
-      audioContext.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
+      audioContext.audioWorklet.addModule(chrome.runtime.getURL(url));
 
     const volumeFilterSmoothingWindowLength = 0.03; // TODO make a setting out of it.
     const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
@@ -373,7 +375,37 @@ export default class Controller {
 
     toAwait.push(silenceDetectorP.then(silenceDetector => {
       silenceDetector.port.onmessage = ({ data }: MessageEvent<SilenceDetectorMessage>) => {
-        const [silenceStartOrEnd] = data;
+        const [silenceStartOrEnd, messageSentAt] = data;
+
+        // CPU overload detection: if message processing is significantly delayed,
+        // reset to safe speed and wait for recovery before processing more events.
+        const currentTime = this.audioContext!.currentTime;
+        const delayS = currentTime - messageSentAt;
+        const CPU_OVERLOAD_THRESHOLD_S = 0.5; // 500ms delay indicates overload
+
+        if (delayS > CPU_OVERLOAD_THRESHOLD_S) {
+          if (!this._cpuOverloaded) {
+            this._cpuOverloaded = true;
+            this._setSpeedAndLog(SpeedName.SOUNDED); // Reset to safe speed
+            if (IS_DEV_MODE) {
+              console.warn(`CPU overload detected (delay: ${delayS}s), resetting to sounded speed`);
+            }
+          }
+          // Schedule recovery check
+          clearTimeout(this._cpuOverloadRecoveryTimeoutId);
+          this._cpuOverloadRecoveryTimeoutId = setTimeout(() => {
+            this._cpuOverloaded = false;
+            if (IS_DEV_MODE) {
+              console.log('CPU overload recovery complete');
+            }
+          }, 2000);
+          return; // Skip processing during overload
+        }
+
+        if (this._cpuOverloaded) {
+          return; // Still in overload state, skip processing
+        }
+
         let elementSpeedSwitchedAt: AudioContextTime;
         if (silenceStartOrEnd === SilenceDetectorEventType.SILENCE_END) {
           // Keep in mind that we need to do `el.playbackRate =` as fast as possible here in order to not
@@ -439,10 +471,9 @@ export default class Controller {
         // think optimizing anything other than this sent-to-received delay is worth the effort.
         // I wish we could change `el.playbackRate` directly from `AudioWorkletProcessor`.
         if (IS_DEV_MODE) {
-          const messageSentAt = data[1];
-          const delayS = elementSpeedSwitchedAt - messageSentAt;
-          if (delayS > 0.03) {
-            console.warn(`Skipped too much, or too little: delay: ${delayS}s`);
+          const processingDelay = elementSpeedSwitchedAt - messageSentAt;
+          if (processingDelay > 0.03) {
+            console.warn(`Skipped too much, or too little: delay: ${processingDelay}s`);
           }
         }
       }
@@ -452,7 +483,10 @@ export default class Controller {
       // to cause a memory leak for some reason.
       // Doing `this._silenceDetectorNode = null` does not get rid of it, so I think the AudioWorkletNode is the only
       // thing retaining a reference to the listener. TODO
-      this._destroyedPromise.then(() => silenceDetector.port.onmessage = null);
+      this._destroyedPromise.then(() => {
+        silenceDetector.port.onmessage = null;
+        clearTimeout(this._cpuOverloadRecoveryTimeoutId);
+      });
     }));
 
     if (isLogging(this)) {

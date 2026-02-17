@@ -152,8 +152,19 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <style>
   @media (prefers-color-scheme: dark) {
     :global(body) {
-      background: #222;
+      background: #111;
       color: #ddd;
+    }
+    button {
+      background: #333;
+      color: #ddd;
+      border-color: #555;
+    }
+    button:hover:not(:disabled) {
+      background: #444;
+    }
+    button:disabled {
+      opacity: 0.5;
     }
   }
 

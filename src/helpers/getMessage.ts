@@ -18,6 +18,5 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
-export const getMessage = browserOrChrome.i18n.getMessage;
+export const getMessage = chrome.i18n.getMessage;

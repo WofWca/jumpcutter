@@ -21,12 +21,11 @@
 import { filterOutUnchangedValues } from '@/helpers';
 import { mainStorageAreaName } from './mainStorageAreaName';
 import type { MyStorageChanges } from './';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 type MyOnChangedListener = (changes: MyStorageChanges) => void;
 // type NativeOnChangedListener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
 type NativeOnChangedListener = (
-  changes: { [key: string]: browser.storage.StorageChange | chrome.storage.StorageChange },
+  changes: { [key: string]: chrome.storage.StorageChange },
   // areaName: chrome.storage.AreaName,
   areaName: typeof mainStorageAreaName | string,
 ) => void;
@@ -47,7 +46,7 @@ export function createWrapperListener(listener: MyOnChangedListener): NativeOnCh
 }
 
 /**
- * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
+ * This is a wrapper around the native `chrome.storage.onChanged.addListener`. The reason we need this is so listeners
  * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
  * 
  * @returns `removeListener` function, as a convenience.
@@ -55,9 +54,9 @@ export function createWrapperListener(listener: MyOnChangedListener): NativeOnCh
  */
 export function addOnStorageChangedListener(listener: MyOnChangedListener): () => void {
   const actualListener = createWrapperListener(listener);
-  browserOrChrome.storage.onChanged.addListener(actualListener);
+  chrome.storage.onChanged.addListener(actualListener);
   const removeListener = () =>
-    browserOrChrome.storage.onChanged.removeListener(actualListener)
+    chrome.storage.onChanged.removeListener(actualListener)
   listener2RemoveListener.set(listener, removeListener)
 
   return removeListener

@@ -23,7 +23,6 @@ import { Settings, ControllerKind_CLONING, ControllerKind_STRETCHING, } from '@/
 import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
 import { assertNever, getMessage } from '@/helpers';
 import { isMobile } from '@/helpers/isMobile';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 export let settings: Pick<Settings,
   'experimentalControllerType'
@@ -86,7 +85,7 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
         ? undefined
         : (e) => {
           e.preventDefault();
-          browserOrChrome.tabs.create({
+          chrome.tabs.create({
             url: latestTelemetryRecord.elementCurrentSrc
           });
           window.close();

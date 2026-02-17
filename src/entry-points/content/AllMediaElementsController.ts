@@ -18,10 +18,9 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import {
   Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
-  settingsChanges2NewValues,
+  settingsChanges2NewValues, PerTabOverrides, defaultSettings,
 } from '@/settings';
 import { assertNever, assertDev } from '@/helpers';
 import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
@@ -43,6 +42,13 @@ import {
   setPlaybackRateAndRememberIt
 } from './playbackRateChangeTracking';
 import type executeNonSettingsActionsT from './nonSettingsUserActions';
+import type { ContentStatusReason, RuntimeMessage } from '@/core/messaging/contracts';
+import {
+  decidePlaybackRatePolicy,
+  pickBestMediaCandidateIndex,
+  shouldForceSoundedSpeed,
+  toMediaSelectionCandidate,
+} from './helpers';
 
 type SomeController =
   ElementPlaybackControllerStretching
@@ -135,9 +141,22 @@ async function importAndCreateController<T extends ControllerKind>(
 }
 
 function isElementIneligibleBecauseMuted(el: HTMLMediaElement, settings: Pick<Settings, 'omitMutedElements'>) {
-  return settings.omitMutedElements
-    ? el.muted
-    : false;
+  if (!settings.omitMutedElements) {
+    return false;
+  }
+  if (el.muted) {
+    return true;
+  }
+  // Check if element has no audio tracks (like slide videos in lecture recordings).
+  // This helps with multi-video scenarios where one video has slides and another has audio.
+  // The audioTracks API is not available in all browsers, so check safely.
+  if ('audioTracks' in el) {
+    const audioTracks = (el as HTMLMediaElement & { audioTracks?: { length: number } }).audioTracks;
+    if (audioTracks && audioTracks.length === 0) {
+      return true; // No audio tracks - likely a slides/silent video
+    }
+  }
+  return false;
 }
 
 // type BasicSettings = Pick<Settings, 'omitMutedElements'>;
@@ -147,6 +166,8 @@ export default class AllMediaElementsController {
   unhandledNewElements = new Set<HTMLMediaElement>();
   handledElements = new WeakSet<HTMLMediaElement>();
   private handledMutedElements = new WeakSet<HTMLMediaElement>();
+  // Track cleanup functions for each element to prevent memory leaks
+  private elementCleanupFunctions = new WeakMap<HTMLMediaElement, () => void>();
   elementLastActivatedAt: number | undefined;
   controller: SomeController | undefined;
 
@@ -157,6 +178,12 @@ export default class AllMediaElementsController {
   private getLifetimeTimeSaved?: () => TimeSavedTracker['timeSavedData']
 
   private settings: Settings | undefined;
+  // Per-tab overrides that take precedence over global settings
+  private perTabOverrides: PerTabOverrides | null = null;
+  private statusReason: ContentStatusReason = 'initializing';
+  private statusDetail: string | undefined;
+  private stallGuardIntervalId: ReturnType<typeof setInterval> | undefined;
+  private lastObservedRateChangeAtMs = Date.now();
   // This is so we don't have to load all the settings keys just for basic functionality.
   // This is pretty stupid. Maybe it could be soumehow refactored to look less stupid.
   private basicSettingsP: Promise<Pick<Settings, 'omitMutedElements'>>;
@@ -185,9 +212,46 @@ export default class AllMediaElementsController {
     }
     const removeListener = addOnStorageChangedListener(reactToStorageChanges);
     this._destroyedPromise.then(removeListener);
+
+    // Listen for per-tab override messages from popup
+    const perTabMessageListener = (message: RuntimeMessage) => {
+      if (message?.type === 'perTabOverridesChanged') {
+        this.setPerTabOverrides(message.overrides ?? null);
+      }
+    };
+    chrome.runtime.onMessage.addListener(perTabMessageListener);
+    this._destroyedPromise.then(() => chrome.runtime.onMessage.removeListener(perTabMessageListener));
+  }
+
+  /**
+   * Apply per-tab overrides to the current settings.
+   * These overrides take precedence over global settings.
+   */
+  public setPerTabOverrides(overrides: PerTabOverrides | null) {
+    this.perTabOverrides = overrides;
+    if (this.settings && overrides) {
+      // Merge overrides with global settings and apply
+      const mergedChanges: Partial<Settings> = {};
+      if (overrides.enabled !== undefined) mergedChanges.enabled = overrides.enabled;
+      if (overrides.soundedSpeed !== undefined) mergedChanges.soundedSpeed = overrides.soundedSpeed;
+      if (overrides.silenceSpeedRaw !== undefined) mergedChanges.silenceSpeedRaw = overrides.silenceSpeedRaw;
+      if (overrides.volumeThreshold !== undefined) mergedChanges.volumeThreshold = overrides.volumeThreshold;
+      this.reactToSettingsNewValues(mergedChanges);
+    } else if (this.settings && !overrides) {
+      // Remove overrides - reload original settings
+      getSettings(['enabled', 'soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold']).then(originalSettings => {
+        this.reactToSettingsNewValues(originalSettings);
+      });
+    }
+    this.broadcastStatus();
   }
   private destroy() {
     this.detachFromActiveElement();
+    clearInterval(this.stallGuardIntervalId);
+    this.stallGuardIntervalId = undefined;
+    this.statusReason = 'disabled';
+    this.statusDetail = 'controller-destroyed';
+    this.broadcastStatus();
     this._resolveDestroyedPromise();
 
     if (IS_DEV_MODE) {
@@ -201,16 +265,33 @@ export default class AllMediaElementsController {
     // has been called (see that function).
     this.controller?.destroy();
     this.controller = undefined;
+    this.statusReason = 'no-active-media';
+    this.statusDetail = undefined;
     this._onDetachFromActiveElement?.();
     this._onDetachFromActiveElement = undefined;
   }
 
   public broadcastStatus(): void {
-    broadcastStatus({ elementLastActivatedAt: this.elementLastActivatedAt });
+    broadcastStatus({
+      elementLastActivatedAt: this.elementLastActivatedAt,
+      status: this.statusReason,
+      detail: this.statusDetail,
+    });
+  }
+
+  public getContentStatus() {
+    return {
+      elementLastActivatedAt: this.elementLastActivatedAt,
+      status: this.statusReason,
+      detail: this.statusDetail,
+    } as const;
   }
 
   private async _loadSettings() {
-    this.settings = await getSettings();
+    this.settings = await getSettings(defaultSettings);
+    if (this.perTabOverrides) {
+      Object.assign(this.settings, this.perTabOverrides);
+    }
   }
   private ensureLoadSettings = once(this._loadSettings);
   private reactToSettingsNewValues(newValues: Partial<Settings>) {
@@ -269,7 +350,7 @@ export default class AllMediaElementsController {
     }
   }
 
-  private onConnect = (port: browser.runtime.Port | chrome.runtime.Port) => {
+  private onConnect = (port: chrome.runtime.Port) => {
     let executeNonSettingsActions: undefined | typeof executeNonSettingsActionsT
 
     let listener: (msg: unknown) => void;
@@ -362,8 +443,8 @@ export default class AllMediaElementsController {
     this._destroyedPromise.then(() => port.onMessage.removeListener(listener));
   }
   private _addOnConnectListener() {
-    browserOrChrome.runtime.onConnect.addListener(this.onConnect);
-    this._destroyedPromise.then(() => browserOrChrome.runtime.onConnect.removeListener(this.onConnect));
+    chrome.runtime.onConnect.addListener(this.onConnect);
+    this._destroyedPromise.then(() => chrome.runtime.onConnect.removeListener(this.onConnect));
   }
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
@@ -408,12 +489,17 @@ export default class AllMediaElementsController {
       // Need to do this even if it's already the active element, for the case when there are multiple iframe-embedded
       // media elements on the page.
       this.elementLastActivatedAt = calledAt;
+      this.statusReason = 'active';
+      this.statusDetail = undefined;
       return;
     }
     if (this.activeMediaElement) {
       this.detachFromActiveElement();
     }
     this.activeMediaElement = el;
+    this.statusReason = 'initializing';
+    this.statusDetail = 'attaching-controller';
+    this.broadcastStatus();
 
     assertDev(this._onDetachFromActiveElement === undefined, 'I think `_onDetachFromActiveElement` '
       + `should be \`undefined\` here. Instead it is ${this._onDetachFromActiveElement}`);
@@ -436,6 +522,19 @@ export default class AllMediaElementsController {
 
     await this.ensureLoadSettings();
     assertDev(this.settings)
+
+    // Skip live streams (duration is Infinity) if the setting is enabled.
+    // Live streams don't work well with silence-skipping because they have no defined duration.
+    if (this.settings.autoDisableForLiveStreams && !Number.isFinite(el.duration)) {
+      if (IS_DEV_MODE) {
+        console.log('Jump Cutter: Skipping live stream (duration is Infinity)');
+      }
+      this.activeMediaElement = undefined;
+      this.statusReason = 'unsupported-media';
+      this.statusDetail = 'live-stream-auto-disabled';
+      this.broadcastStatus();
+      return;
+    }
 
     const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
     const onMaybeSourceChange = () => {
@@ -601,6 +700,7 @@ export default class AllMediaElementsController {
 
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
+        this.lastObservedRateChangeAtMs = Date.now();
 
         if (IS_DEV_MODE) {
           if (lastPlaybackRateSetByThisExtensionMap.get(el_) === undefined) {
@@ -611,52 +711,36 @@ export default class AllMediaElementsController {
           }
         }
 
-        switch (
-          !forcePrevent
-            ? this.settings!.onPlaybackRateChangeFromOtherScripts
-            : 'prevent'
-        ) {
-          case 'updateSoundedSpeed': {
-            const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
-            if (
-              el_.playbackRate !== lastPlaybackRateSetByUs
-              && lastPlaybackRateSetByUs !== undefined
-            ) {
-              // TODO improvement: hey, how about we watch `defaultPlaybackRate` instead of `playbackRate`?
-              // While it may make more, sense, unfortunately it's rare that websites ever use `defaultPlaybackRate`.
-              // Even YouTube doesn't update it. Make it an option at least? And should we maybe reach out to
-              // these services / other extensions' developers to encourage them to update `defaultPlaybackRate`?
+        const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
+        const decision = decidePlaybackRatePolicy({
+          mode: this.settings!.onPlaybackRateChangeFromOtherScripts,
+          forcePrevent,
+          currentPlaybackRate: el_.playbackRate,
+          lastPlaybackRateSetByExtension: lastPlaybackRateSetByUs,
+        });
 
-              // TODO improvement: how about we check if it's currently silence, therefore we should
-              // be more careful with updating soundedSpeed, because some websites/extensions could
-              // just be doing `el.playbackRate += increment`;
-
-              const settingsNewValues = { soundedSpeed: el_.playbackRate };
-              this.reactToSettingsNewValues(settingsNewValues);
-              setSettings(settingsNewValues);
-              if (IS_DEV_MODE) {
-                console.warn('Updating soundedSpeed because apparently playbackRate was changed by'
-                  + ' something other that this extension.');
-              }
+        switch (decision) {
+          case 'adopt-external-rate': {
+            const settingsNewValues = { soundedSpeed: el_.playbackRate };
+            this.reactToSettingsNewValues(settingsNewValues);
+            setSettings(settingsNewValues);
+            if (IS_DEV_MODE) {
+              console.warn(
+                'Updating soundedSpeed because playbackRate changed outside this extension.'
+              );
             }
             break;
           }
-          case 'prevent': {
-            // Consider doing this for `defaultPlaybackRate` as well.
-            const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
-            if (
-              el_.playbackRate !== lastPlaybackRateSetByUs
-              // Just in case.
-              && lastPlaybackRateSetByUs !== undefined
-            ) {
+          case 'prevent-change': {
+            if (lastPlaybackRateSetByUs !== undefined) {
               setPlaybackRateAndRememberIt(el_, lastPlaybackRateSetByUs);
-              // The website may be listening to 'ratechange' events and update `playbackRate`
-              // inside the listener. Let's make it so that it doesn't receive the event.
-              // This happens on Twitch (https://github.com/WofWca/jumpcutter/issues/25).
               event.stopImmediatePropagation();
             }
             break;
           }
+          case 'ignore':
+          default:
+            break;
         }
       };
       const listenerOptions = {
@@ -707,7 +791,38 @@ export default class AllMediaElementsController {
     // considers that `elementLastActivatedAt !== undefined` means that it's free to connect, but
     // `ensureAddOnConnectListener` can still have not been called. TODO refactor?
     this.elementLastActivatedAt = calledAt;
+    this.statusReason = 'active';
+    this.statusDetail = undefined;
+    this.ensureStartStallGuard(el);
     this.broadcastStatus();
+  }
+
+  private ensureStartStallGuard(el: HTMLMediaElement) {
+    clearInterval(this.stallGuardIntervalId);
+    this.stallGuardIntervalId = setInterval(() => {
+      if (!this.settings || this.activeMediaElement !== el || !this.controller) {
+        return;
+      }
+      const shouldRecover = shouldForceSoundedSpeed({
+        nowMs: Date.now(),
+        lastRateChangeAtMs: this.lastObservedRateChangeAtMs,
+        currentPlaybackRate: el.playbackRate,
+        soundedSpeed: this.settings.soundedSpeed,
+        elementPaused: el.paused,
+        minimumStuckDurationMs: 3000,
+      });
+      if (!shouldRecover) {
+        return;
+      }
+      setPlaybackRateAndRememberIt(el, this.settings.soundedSpeed);
+      if (IS_DEV_MODE) {
+        console.warn('Recovered from likely stuck playback state by forcing sounded speed');
+      }
+    }, 1500);
+    this._destroyedPromise.then(() => {
+      clearInterval(this.stallGuardIntervalId);
+      this.stallGuardIntervalId = undefined;
+    });
   }
 
   private ensureAttachToEventTargetElementIfEligible = async (e: Event) => {
@@ -751,13 +866,21 @@ export default class AllMediaElementsController {
       // Make the active element the one that got started last.
       // Why not 'play'? See the comment about `el.readyState` below.
       el.addEventListener('playing', this.ensureAttachToEventTargetElementIfEligible, { passive: true });
-      this._destroyedPromise.then(() => el.removeEventListener('playing', this.ensureAttachToEventTargetElementIfEligible));
 
       if (el.muted) {
         this.handledMutedElements.add(el);
       }
       el.addEventListener('volumechange', this.onvolumechange, { passive: true });
-      this._destroyedPromise.then(() => el.removeEventListener('volumechange', this.onvolumechange));
+
+      // Store cleanup function for this element to prevent memory leaks when elements are removed
+      const cleanup = () => {
+        el.removeEventListener('playing', this.ensureAttachToEventTargetElementIfEligible);
+        el.removeEventListener('volumechange', this.onvolumechange);
+        this.handledElements.delete(el);
+        this.handledMutedElements.delete(el);
+      };
+      this.elementCleanupFunctions.set(el, cleanup);
+      this._destroyedPromise.then(cleanup);
 
       // TODO should we detach when it gets muted again? Maybe make a separate option for this?
       // Or should we maybe move this logic to the Controller?
@@ -772,38 +895,18 @@ export default class AllMediaElementsController {
       }
     })
 
-    // Attach to the first new element that is not paused, even if we're already attached to another.
-    // The thoguht process is like this - if such an element has been inserted, it is most likely due to the user
-    // wanting to switch his attention to it (e.g. pressing the "play" button on a custom media player, or scrolling
-    // a page with an infinite scroll with autoplaying videos).
-    // It may be that the designer of the website is an asshole and inserts new media elements whenever he feels like
-    // it, or I missed some other common cases. TODO think about it.
-    for (const el of eligibleForAttachmentElements) {
-      if (!el.paused) {
-        this.ensureAttachToElement(el);
-        break;
-      }
-    }
-    // Useful when the extension is disabled at first, then the user pauses the video to give himself time to enable it.
-    if (!this.activeMediaElement) {
-      for (const el of eligibleForAttachmentElements) {
-        if (
-          el.currentTime > 0
-          // It is possilble for an element to have `currentTime > 0` while having its `readyState === HAVE_NOTHING`.
-          // For example, this can happen if a website resumes playback from where the user stopped watching it on
-          // another occasion (e.g. Odysee). Or with streams. This is mostly to ensure that we don't attach to
-          // an element until its `currentSrc` is set to check if it cross-origin or not.
-          // If this happens, we'll attach to it later, on a 'playing' event.
-          // How about move this condition to `isElementIneligible` in order to also check it before
-          // every other call to `ensureAttach`. Or make `ensureAttach` an async function
-          // that awaits for the element to become ready. Don't forget to cancel the attachment
-          // if it was called again with a new element.
-          && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-        ) {
-          this.ensureAttachToElement(el);
-          break;
-        }
-      }
+    const candidates = eligibleForAttachmentElements.filter(el =>
+      el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA || !el.paused
+    );
+    const bestCandidateIndex = pickBestMediaCandidateIndex(
+      candidates.map(toMediaSelectionCandidate)
+    );
+    if (bestCandidateIndex >= 0) {
+      this.ensureAttachToElement(candidates[bestCandidateIndex]);
+    } else if (!this.activeMediaElement) {
+      this.statusReason = 'no-active-media';
+      this.statusDetail = undefined;
+      this.broadcastStatus();
     }
     // Otherwise it seems that the only benefit of attaching to some other element is that it can be started with a
     // pause/unpause hotkey.
@@ -822,5 +925,25 @@ export default class AllMediaElementsController {
       assertDev(this.basicSettings);
       this.debouncedHandleNewElements(this.basicSettings);
     })
+  }
+
+  /**
+   * Clean up event listeners when media elements are removed from the DOM.
+   * This prevents memory leaks that can occur when navigating between videos.
+   */
+  public onRemovedMediaElements(...removedElements: HTMLMediaElement[]): void {
+    for (const el of removedElements) {
+      const cleanup = this.elementCleanupFunctions.get(el);
+      if (cleanup) {
+        cleanup();
+        this.elementCleanupFunctions.delete(el);
+      }
+      // Also remove from unhandled elements set if present
+      this.unhandledNewElements.delete(el);
+      // If this was the active element, detach from it
+      if (this.activeMediaElement === el) {
+        this.detachFromActiveElement();
+      }
+    }
   }
 }

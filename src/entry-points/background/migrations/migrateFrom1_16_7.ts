@@ -19,15 +19,14 @@
  */
 
 import type { Settings } from '@/settings';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 export default async function (): Promise<void> {
-  const { popupChartLengthInSeconds } = await browserOrChrome.storage.local.get('popupChartLengthInSeconds');
+  const { popupChartLengthInSeconds } = await chrome.storage.local.get('popupChartLengthInSeconds');
   //  Otherwise the value key missing will be assigned from default settings.
   if (popupChartLengthInSeconds !== undefined) {
     const newValues: Partial<Settings> = {
       popupChartLengthInSeconds: popupChartLengthInSeconds * 2,
     };
-    await browserOrChrome.storage.local.set(newValues);
+    await chrome.storage.local.set(newValues);
   }
 }

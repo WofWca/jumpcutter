@@ -18,7 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import { Settings as ExtensionSettings } from '@/settings';
 import { assertDev, clamp, maxPlaybackRate, MediaTime } from '@/helpers';
 import { destroyAudioWorkletNode, getRealtimeMargin } from '@/entry-points/content/helpers';
@@ -89,6 +88,9 @@ export default class Lookahead {
    * This is only used when `isOppositeDay === true`.
    */
   loudSince: MediaTime | undefined;
+  // CPU overload detection
+  private _cpuOverloaded = false;
+  private _cpuOverloadRecoveryTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
   // // onNewSilenceRange: TODO set in constructor?
   // silenceRanges: Array<[start: Time, end: Time]> = []; // Array is not the fastest data structure for this application.
@@ -200,7 +202,7 @@ export default class Lookahead {
     }
     ctx.suspend();
     const addWorkletProcessor = (url: string) =>
-      ctx.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
+      ctx.audioWorklet.addModule(chrome.runtime.getURL(url));
 
     // TODO refactor: DRY
     // const smoothingWindowLenght = 0.03;
@@ -239,6 +241,32 @@ export default class Lookahead {
       silenceDetector.port.onmessage = msg => {
         const [eventType, eventTimeAudioContextTime] = msg.data as SilenceDetectorMessage;
         const realTimePassedSinceEvent = ctx.currentTime - eventTimeAudioContextTime;
+
+        // CPU overload detection: if message processing is significantly delayed,
+        // skip processing and wait for recovery.
+        const CPU_OVERLOAD_THRESHOLD_S = 0.5; // 500ms delay indicates overload
+        if (realTimePassedSinceEvent > CPU_OVERLOAD_THRESHOLD_S) {
+          if (!this._cpuOverloaded) {
+            this._cpuOverloaded = true;
+            if (IS_DEV_MODE) {
+              console.warn(`Lookahead: CPU overload detected (delay: ${realTimePassedSinceEvent}s)`);
+            }
+          }
+          // Schedule recovery check
+          clearTimeout(this._cpuOverloadRecoveryTimeoutId);
+          this._cpuOverloadRecoveryTimeoutId = setTimeout(() => {
+            this._cpuOverloaded = false;
+            if (IS_DEV_MODE) {
+              console.log('Lookahead: CPU overload recovery complete');
+            }
+          }, 2000);
+          return; // Skip processing during overload
+        }
+
+        if (this._cpuOverloaded) {
+          return; // Still in overload state, skip processing
+        }
+
         if (eventType === SilenceDetectorEventType.SILENCE_START) {
           // `marginAfter` will be taken into account when we `pushNewSilenceRange`.
           const realTimePassedSinceSilenceStart =
@@ -633,6 +661,7 @@ export default class Lookahead {
   }
   public async destroy(): Promise<void> {
     await this.ensureInit();
+    clearTimeout(this._cpuOverloadRecoveryTimeoutId);
     this._resolveDestroyedPromise();
   }
 }

@@ -20,15 +20,12 @@
 
 import { settingKeyToPreviousValueKey, Settings, togglableSettings, TogglableSettings,
   CorrespondingPreviousValueSetting } from "@/settings";
-import { clamp, assertNever, KeysOfType, getGeckoLikelyMaxNonMutedPlaybackRate } from "@/helpers";
+import { clamp, assertNever, KeysOfType } from "@/helpers";
 import type { HotkeyBinding, NonSettingsAction, NonSettingsActions } from './';
 import { eventMatchesCombination } from "./eventMatchesCombination";
 import { HotkeyAction } from "./HotkeyAction";
 
-// See the comment in `getAbsoluteClampedSilenceSpeed` definition on why this is different for different browsers.
-const maxSpeedClamp = BUILD_DEFINITIONS.BROWSER === 'gecko'
-  ? getGeckoLikelyMaxNonMutedPlaybackRate()
-  : 15;
+const maxSpeedClamp = 15;
 
 /**
  * @param bindings - custom keybindings array. Defaults to {@link currentSettings.hotkeys}

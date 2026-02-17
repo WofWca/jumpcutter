@@ -1,17 +1,15 @@
 # <img src="./src/icons/icon.svg" alt="Logo" height="32"/> Jump Cutter
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/users/lmppdpldfpfdlipofacekcfleacbbncp?logo=google-chrome)][chrome-web-store]
-[![Firefox Browser Add-ons](https://img.shields.io/amo/users/jump-cutter?logo=firefox-browser)][addons-mozilla-org] <!-- [![Liberapay](https://img.shields.io/liberapay/receives/WofWca?logo=liberapay)](https://liberapay.com/WofWca) --> [![Matrix](https://img.shields.io/matrix/jump-cutter-extension:matrix.org?logo=matrix&server_fqdn=matrix.org)](https://matrix.to/#/#jump-cutter-extension:matrix.org)
+<!-- [![Liberapay](https://img.shields.io/liberapay/receives/WofWca?logo=liberapay)](https://liberapay.com/WofWca) --> [![Matrix](https://img.shields.io/matrix/jump-cutter-extension:matrix.org?logo=matrix&server_fqdn=matrix.org)](https://matrix.to/#/#jump-cutter-extension:matrix.org)
 [![Discord](https://img.shields.io/discord/678444692592918548?logo=discord)](https://discord.gg/HCjghyT)
 [![Translation status](https://hosted.weblate.org/widgets/jump-cutter/-/svg-badge.svg)][weblate]
 
 Download:
 
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
-[![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
 [![Microsoft Edge Add-ons](docs/extension-store-badges/microsoft.svg)][microsoft-edge-addons]
-or from GitHub: [Chromium](https://github.com/WofWca/jumpcutter/releases/latest/download/lmppdpldfpfdlipofacekcfleacbbncp_main.crx
-) / [Gecko (Firefox)](https://github.com/WofWca/jumpcutter/releases/latest/download/jump_cutter.xpi)
+or from GitHub: [Chromium](https://github.com/WofWca/jumpcutter/releases/latest/download/lmppdpldfpfdlipofacekcfleacbbncp_main.crx)
 
 Skips silent parts in videos, in real time.
 
@@ -116,7 +114,7 @@ Currently you can enable this algorithm by checking the "Use the experimental al
 Need to reference specific commits perhaps,
 but I don't want to link to GitHub. -->
 We look for video elements by
-[injecting a script in all pages](./src/manifest_base.json#L16-L23)
+[injecting a script in all pages](./src/manifest.chrome.json)
 and simply
 [`document.getElementsByTagName('video')`](./src/entry-points/content/watchAllElements.ts#L37).
 But new video elements could get inserted
@@ -243,11 +241,10 @@ graph
 
 1. Install base tools:
     * [Node.js](https://nodejs.org/).
-    * [Yarn v1](https://classic.yarnpkg.com/docs/install).
 2. Run
 
     ```bash
-    yarn install
+    npm install
     ```
 
 3.
@@ -259,24 +256,17 @@ graph
 
     * If you don't want to use `git`, download them from the `translations` branch and put in `src/_locales` manually.
 
-4.
-    * To build for Gecko (e.g. Firefox):
+4. Build for Chromium:
 
-        ```bash
-        yarn build:gecko
-        ```
+    ```bash
+    npm run build
+    ```
 
-    * To build for Chromium (e.g. Chrome, Edge)
-
-        ```bash
-        yarn build:chromium
-        ```
-
-    Bundled files will appear in `./dist-gecko` (or `./dist-chromium`).
+    Bundled files will appear in `./dist`.
 
 For development build, see [CONTRIBUTING.md](./CONTRIBUTING.md)
 
-Then you can install it on the extensions management page of your browser ([Chromium](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked), [Gecko](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#installing)).
+Then you can install it on the extensions management page of your browser ([Chromium](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked)).
 
 ## Privacy & security
 
@@ -357,7 +347,6 @@ I am not really considering it.
 
 [![AGPLv3 Logo](docs/agplv3-with-text-162x68.png)](./COPYING)
 
-[addons-mozilla-org]: https://addons.mozilla.org/firefox/addon/jump-cutter
 [chrome-web-store]: https://chrome.google.com/webstore/detail/jump-cutter/lmppdpldfpfdlipofacekcfleacbbncp
 [microsoft-edge-addons]: https://microsoftedge.microsoft.com/addons/detail/jlbjhoaphnkkjdafpjomedllppldjkbj
 [weblate]: https://hosted.weblate.org/engage/jump-cutter/

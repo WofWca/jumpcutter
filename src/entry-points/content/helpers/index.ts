@@ -33,3 +33,6 @@ export * from './playbackDetection';
 export * from './destroyAudioWorkletNode';
 export * from './isSourceCrossOrigin';
 export * from './requestIdleCallbackPolyfill';
+export * from './mediaSelection';
+export * from './playbackRatePolicy';
+export * from './stuckSpeedRecovery';

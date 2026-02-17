@@ -1,4 +1,3 @@
-import { browserOrChrome } from "@/webextensions-api-browser-or-chrome"
 import { getTimeSavedComparedToSoundedSpeedFraction } from "@/helpers/timeSavedMath"
 import { requestIdleCallbackPolyfill } from "./helpers"
 import type { MyStorageChanges, Settings } from "@/settings"
@@ -18,7 +17,7 @@ export async function startSendingTimeSavedMessagesForBadge(
   onStop: (callback: () => void) => void,
 ) {
   let timeSavedPort_:
-    undefined | ReturnType<typeof browserOrChrome.runtime.connect>
+    undefined | ReturnType<typeof chrome.runtime.connect>
   const getTimeSavedPort = () => {
     if (timeSavedPort_ == undefined) {
       // TODO fix: this may connect to two destinations:
@@ -33,7 +32,7 @@ export async function startSendingTimeSavedMessagesForBadge(
       // - https://bugzilla.mozilla.org/show_bug.cgi?id=1465514
       // - https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port#lifecycle
       // - https://developer.chrome.com/docs/extensions/develop/concepts/messaging#port-lifetime
-      timeSavedPort_ = browserOrChrome.runtime.connect({
+      timeSavedPort_ = chrome.runtime.connect({
         name: 'timeSavedBadgeText'
       })
 

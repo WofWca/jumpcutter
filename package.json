@@ -13,17 +13,19 @@
   },
   "homepage": "https://github.com/WofWca/jumpcutter#readme",
   "scripts": {
-    "_abstract-build": "yarn lint && NODE_ENV=production webpack --mode=production",
-    "build:gecko": "yarn run _abstract-build --env browser=gecko",
-    "build:chromium": "yarn run _abstract-build --env browser=chromium",
-    "_abstract-build-and-package": "yarn run build:$BROWSER -- --env noreport && cd dist-$BROWSER && rm -f ../dist-$BROWSER.zip && zip -r ../dist-$BROWSER.zip .",
-    "build-and-package:gecko": "BROWSER=gecko yarn run _abstract-build-and-package",
-    "build-and-package:chromium": "BROWSER=chromium yarn run _abstract-build-and-package",
-    "build-and-package:all": "rm -f dist-*.zip && yarn run build-and-package:gecko & yarn run build-and-package:chromium",
-    "_abstract-serve": "webpack --mode=development --watch",
-    "serve:gecko": "yarn run _abstract-serve --env browser=gecko",
-    "serve:chromium": "yarn run _abstract-serve --env browser=chromium",
-    "lint": "eslint ./src/"
+    "lint": "eslint ./src/",
+    "typecheck": "tsc --noEmit",
+    "build:ui": "VITE_UI_ENTRY=popup vite build --config vite.config.mts && VITE_UI_ENTRY=options vite build --config vite.config.mts && VITE_UI_ENTRY=local-file-player vite build --config vite.config.mts",
+    "build:content": "VITE_CONTENT_ENTRY=main vite build --config vite.config.content.mts && VITE_CONTENT_ENTRY=cloneExtension vite build --config vite.config.content.mts && VITE_CONTENT_ENTRY=clonePage vite build --config vite.config.content.mts && VITE_CONTENT_ENTRY=silenceDetectorProcessor vite build --config vite.config.content.mts && VITE_CONTENT_ENTRY=volumeFilterProcessor vite build --config vite.config.content.mts",
+    "build:background": "vite build --config vite.config.background.mts",
+    "build:assets": "node scripts/build-assets.mjs",
+    "_build:all": "npm run build:ui && npm run build:content && npm run build:background && npm run build:assets",
+    "build": "npm run lint && NODE_ENV=production npm run _build:all",
+    "dev": "NODE_ENV=development npm run _build:all",
+    "dev:watch": "NODE_ENV=development sh -c 'VITE_UI_ENTRY=popup vite build --watch --config vite.config.mts & VITE_UI_ENTRY=options vite build --watch --config vite.config.mts & VITE_UI_ENTRY=local-file-player vite build --watch --config vite.config.mts & VITE_CONTENT_ENTRY=main vite build --watch --config vite.config.content.mts & VITE_CONTENT_ENTRY=cloneExtension vite build --watch --config vite.config.content.mts & VITE_CONTENT_ENTRY=clonePage vite build --watch --config vite.config.content.mts & VITE_CONTENT_ENTRY=silenceDetectorProcessor vite build --watch --config vite.config.content.mts & VITE_CONTENT_ENTRY=volumeFilterProcessor vite build --watch --config vite.config.content.mts & vite build --watch --config vite.config.background.mts & wait'",
+    "test": "vitest run",
+    "test:e2e:headless": "node scripts/test-extension-headless.mjs",
+    "package": "npm run build && cd dist && rm -f ../dist.zip && zip -r ../dist.zip ."
   },
   "sideEffects": [
     "./src/{content,popup,background,options,local-file-player}/main.ts",
@@ -38,27 +40,20 @@
     "tone": "~14.7.77"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "@types/chrome": "^0.1.18",
-    "@types/firefox-webext-browser": "^120.0.5",
     "@types/hh-mm-ss": "^1.2.3",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.6.2",
     "@typescript-eslint/eslint-plugin": "^7.9.0",
     "@typescript-eslint/parser": "^7.9.0",
-    "clean-webpack-plugin": "^4.0.0",
-    "copy-webpack-plugin": "^12.0.2",
-    "css-loader": "^7.1.1",
     "eslint": "^8.44.0",
-    "minimize-webext-i18n-json": "^2.0.2",
-    "style-loader": "^4.0.0",
+    "playwright": "^1.58.2",
     "svelte": "~4.2.17",
     "svelte-check": "^3.7.1",
-    "svelte-loader": "^3.2.0",
     "svelte-preprocess": "^5.1.4",
-    "ts-loader": "^9.5.1",
     "typescript": "~5.8.3",
-    "webpack": "^5.91.0",
-    "webpack-bundle-analyzer": "^4.10.2",
-    "webpack-cli": "^6.0.1"
+    "vite": "^5.4.14",
+    "vitest": "^2.1.8"
   }
 }

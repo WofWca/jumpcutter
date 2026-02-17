@@ -22,7 +22,6 @@
 // https://developer.chrome.com/extensions/background_pages#unloading
 // 1. migrations
 // 2. settings saving.
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 import { onCommand as onCommandWhenReady } from './browserHotkeysListener';
 import {
@@ -40,6 +39,8 @@ import {
 import type { Settings } from '@/settings';
 import { defaultSettings } from '@/settings';
 import runRequiredMigrations from './migrations/runRequiredMigrations';
+import { runLegacyStorageMigrationToV2 } from '@/core/storage';
+import type { RuntimeMessage } from '@/core/messaging/contracts';
 
 // Remember that we need to attach the event listeners at the top level since it's a
 // non-persistent background script:
@@ -65,20 +66,21 @@ async function setNewSettingsKeysToDefaults() {
   await storage.set(newSettings);
 }
 
-const currentVersion = browserOrChrome.runtime.getManifest().version;
+const currentVersion = chrome.runtime.getManifest().version;
 let postInstallStorageChangesDonePResolve: (storageMightHaveBeenChanged: boolean) => void;
 /**
  * Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
  * storage. The resolve value indicates if we might have made changes to the storage.
  */
 const postInstallStorageChangesDoneP = new Promise<boolean>(r => postInstallStorageChangesDonePResolve = r);
+const storageSchemaMigrationDoneP = runLegacyStorageMigrationToV2();
 // Pretty hacky. Feels like there must be API that allows us to do this. TODO?
-browserOrChrome.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
+chrome.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
   if (currentVersion === __lastHandledUpdateToVersion) {
     postInstallStorageChangesDonePResolve(false);
   }
 });
-browserOrChrome.runtime.onInstalled.addListener(async details => {
+chrome.runtime.onInstalled.addListener(async details => {
   if (!['update', 'install'].includes(details.reason)) {
     return;
   }
@@ -96,13 +98,13 @@ browserOrChrome.runtime.onInstalled.addListener(async details => {
     await runRequiredMigrations(details.previousVersion!);
   }
   await setNewSettingsKeysToDefaults();
+  await runLegacyStorageMigrationToV2();
 
-  browserOrChrome.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
+  chrome.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
   postInstallStorageChangesDonePResolve(true);
 });
 
-// `commands` API is currently not supported by Gecko for Android.
-browserOrChrome.commands?.onCommand?.addListener?.(async (command) => {
+chrome.commands?.onCommand?.addListener?.(async (command) => {
   await postInstallStorageChangesDoneP;
   onCommandWhenReady(command);
 });
@@ -122,7 +124,9 @@ let mayThisOnStorageChangeEventBeCausedByPostInstallScriptP: Promise<boolean> | 
   }));
 })();
 
-const settingsP = postInstallStorageChangesDoneP.then(() => getSettings());
+const settingsP = Promise.all([postInstallStorageChangesDoneP, storageSchemaMigrationDoneP]).then(
+  () => getSettings(defaultSettings)
+);
 
 const initIconAndBadgeP = settingsP.then(s => initIconAndBadge(s));
 settingsP.then(s => {
@@ -144,7 +148,7 @@ const onStorageChanged = createWrapperListener(async changes => {
   updateIconAndBadge(settings, changes);
 });
 
-browserOrChrome.storage.onChanged.addListener(async (...args) => {
+chrome.storage.onChanged.addListener(async (...args) => {
   // We can't just ignore all the events that were fired before `postInstallStorageChangesDoneP`
   // resolved because this script is non-persistent and it may be woken up, that is executed all
   // over again just to handle a `storage.onChanged` event, so this listener is gonna be executed
@@ -156,7 +160,7 @@ browserOrChrome.storage.onChanged.addListener(async (...args) => {
   await onStorageChanged(...args);
 });
 
-browserOrChrome.runtime.onConnect.addListener(port => {
+chrome.runtime.onConnect.addListener(port => {
   if (port.name !== 'timeSavedBadgeText') {
     console.warn(
       'received connection, but port name is unknown. Ignoring.',
@@ -202,6 +206,26 @@ browserOrChrome.runtime.onConnect.addListener(port => {
   })
 });
 
+chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
+  if (!message || typeof message !== 'object') {
+    return;
+  }
+  switch (message.type) {
+    case 'backgroundReady':
+      sendResponse({ ok: true, now: Date.now() });
+      return;
+    case 'resolveTabContext':
+      sendResponse({ tabId: sender.tab?.id });
+      return;
+    case 'floatingPillStateChanged':
+      // Reserved for background-driven UX telemetry/state in future iterations.
+      sendResponse({ ok: true });
+      return;
+    default:
+      return;
+  }
+});
+
 async function updateMediaSourceCloningScriptRegistered(
   settings: Pick<Settings, "enabled" | "experimentalControllerType">
 ) {
@@ -212,7 +236,7 @@ async function updateMediaSourceCloningScriptRegistered(
     settings.enabled;
   const isRegistered =
     (
-      await browserOrChrome.scripting.getRegisteredContentScripts({
+      await chrome.scripting.getRegisteredContentScripts({
         ids: [cloneMediaSourcesScriptId],
       })
     ).length > 0;
@@ -232,7 +256,7 @@ async function updateMediaSourceCloningScriptRegistered(
     IS_DEV_MODE &&
       console.log("Registering `cloneMediaSources` content script");
 
-    await browserOrChrome.scripting.registerContentScripts([
+    await chrome.scripting.registerContentScripts([
       {
         id: cloneMediaSourcesScriptId,
         matches: ["http://*/*", "https://*/*"],
@@ -247,21 +271,7 @@ async function updateMediaSourceCloningScriptRegistered(
         // > Indicates whether the script can be injected into frames
         // > where the URL contains an unsupported scheme;
         // > specifically: about:, data:, blob:, or filesystem:.
-        //
-        // It's going to be available in Gecko since version 128:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1853411
-        // which comes out on 2024-07-09:
-        // https://whattrainisitnow.com/calendar/
-        // But let's not mark `strict_min_version`, because the extension
-        // is still usable without `matchOriginAsFallback`.
-        ...(
-          (
-            BUILD_DEFINITIONS.BROWSER === "gecko" &&
-            !(await doesGeckoSupportMatchOriginAsFallback())
-          )
-            ? {}
-            : { matchOriginAsFallback: true }
-        ),
+        matchOriginAsFallback: true,
 
         // TODO improvement: add `world: 'MAIN'` and load the
         // `content/cloneMediaSources-for-page-world.js` script directly.
@@ -272,19 +282,9 @@ async function updateMediaSourceCloningScriptRegistered(
     IS_DEV_MODE &&
       console.log("Unregistering `cloneMediaSources` content script");
 
-    await browserOrChrome.scripting.unregisterContentScripts({
+    await chrome.scripting.unregisterContentScripts({
       ids: [cloneMediaSourcesScriptId],
     });
   }
 }
 const cloneMediaSourcesScriptId = 'cloneMediaSources';
-
-async function doesGeckoSupportMatchOriginAsFallback(): Promise<boolean> {
-  const version = (
-    await import(
-      /* webpackExports: ['getGeckoMajorVersion']*/
-      "@/helpers"
-    )
-  ).getGeckoMajorVersion();
-  return version == undefined || version >= 128;
-}

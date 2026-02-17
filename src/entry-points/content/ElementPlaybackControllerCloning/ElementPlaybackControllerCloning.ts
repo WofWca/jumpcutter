@@ -18,7 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import Lookahead, { TimeRange } from './Lookahead';
 import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
 import type { MediaTime, AnyTime } from '@/helpers';
@@ -30,12 +29,6 @@ import throttle from 'lodash/throttle';
 import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
 import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
-import {
-  audioContext as commonAudioContext,
-} from '@/entry-points/content/audioContext';
-import {
-  getOrCreateMediaElementSourceAndUpdateMap
-} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
 import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
@@ -307,22 +300,18 @@ export default class Controller {
       // i.e. when the popup is closed.
       type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
         captureStream?: () => MediaStream,
-        mozCaptureStream?: () => MediaStream,
       }
       const element_ = element as HTMLMediaElementWithMaybeMissingFields;
-      const unprefixedCaptureStreamPresent = element_.captureStream;
-      const browserGecko = BUILD_DEFINITIONS.BROWSER === 'gecko';
-      const captureStream =
+      const captureStream = element_.captureStream
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (unprefixedCaptureStreamPresent && (() => element_.captureStream!()))
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        || (browserGecko && element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
+        ? (() => element_.captureStream!())
+        : undefined;
 
       if (captureStream) {
         // Also mostly copy-pasted from `ElementPlaybackControllerStretching`.
         const audioContext = this.audioContext;
         const addWorkletProcessor = (url: string) =>
-          audioContext.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
+          audioContext.audioWorklet.addModule(chrome.runtime.getURL(url));
         // Must be the same so what the user sees matches what the lookahead sees.
         const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
         const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
@@ -377,19 +366,6 @@ export default class Controller {
           reinit();
         }
         const alreadyInitialized = canCaptureStreamNow;
-
-        // Workaround for
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1178751
-        if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
-          const mozCaptureStreamUsed = !unprefixedCaptureStreamPresent;
-          if (mozCaptureStreamUsed) {
-            const [, mediaElementSource] = getOrCreateMediaElementSourceAndUpdateMap(
-              element,
-              () => commonAudioContext
-            );
-            mediaElementSource.connect(commonAudioContext.destination);
-          }
-        }
 
         // Hopefully this covers all cases where the `MediaStreamAudioSourceNode` stops working.
         // 'loadstart' is for when the source changes, 'ended' speaks for itself.

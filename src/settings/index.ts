@@ -20,6 +20,7 @@
 
 import { HotkeyBinding } from '@/hotkeys';
 import { ControllerKind } from './ControllerKind';
+import type { OppositeDayMode } from './OppositeDayMode';
 // For JSDoc.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
@@ -88,6 +89,12 @@ export interface Settings {
    * https://github.com/WofWca/jumpcutter/blob/f9cafdc59e042674e494482abe2f0f3dc955e695/src/content/AllMediaElementsController.ts#L67-L77
    */
   dontAttachToCrossOriginMedia: boolean,
+
+  /**
+   * Automatically skip live streams (duration === Infinity) because
+   * the silence-skipping logic doesn't work well with them.
+   */
+  autoDisableForLiveStreams: boolean,
 
   enableHotkeys: boolean,
   hotkeys: HotkeyBinding[],
@@ -189,27 +196,6 @@ export interface Settings {
   oppositeDayMode: OppositeDayMode
 }
 
-export const enum OppositeDayMode {
-  /**
-   * The user (probably) isn't aware of the "opposite day mode".
-   * We have either not shown it anywhere yet, or we did show it,
-   * but the user hasn't interacted with it.
-   */
-  UNDISCOVERED = 'undiscovered',
-  ON = 'on',
-  OFF = 'off',
-  /**
-   * The user has hidden the checkbox from the popup,
-   * by toggling a setting on the options page.
-   */
-  HIDDEN_BY_USER = 'hiddenByUser',
-}
-
-export const OppositeDayMode_UNDISCOVERED = OppositeDayMode.UNDISCOVERED;
-export const OppositeDayMode_ON = OppositeDayMode.ON;
-export const OppositeDayMode_OFF = OppositeDayMode.OFF;
-export const OppositeDayMode_HIDDEN_BY_USER = OppositeDayMode.HIDDEN_BY_USER;
-
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
 export type MyStorageChanges = {
   [P in keyof Settings]?: {
@@ -218,7 +204,20 @@ export type MyStorageChanges = {
   }
 };
 
+/**
+ * Per-tab overrides for settings. These are stored in local storage
+ * with the tab ID as part of the key (e.g., `perTab_${tabId}`).
+ * Only a subset of settings can be overridden per-tab.
+ */
+export interface PerTabOverrides {
+  enabled?: boolean;
+  soundedSpeed?: number;
+  silenceSpeedRaw?: number;
+  volumeThreshold?: number;
+}
+
 export * from './enabledSettingDefaultValue';
+export * from './OppositeDayMode';
 export * from './defaultSettings';
 export * from './getSettings';
 export * from './setSettings';

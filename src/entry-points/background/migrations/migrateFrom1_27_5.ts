@@ -18,10 +18,9 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
 export default async function (): Promise<void> {
-  await browserOrChrome.storage.local.set({
+  await chrome.storage.local.set({
     // Let's not change the UI for users who already installed the extension
     // prior to the introduction of this setting.
     advancedMode: true,

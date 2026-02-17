@@ -17,14 +17,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import type { ContentStatusPayload } from '@/core/messaging/contracts';
 
 export default async function broadcastStatus(
-  status: { elementLastActivatedAt: undefined | number }
+  status: Omit<ContentStatusPayload, 'type'>
 ): Promise<void> {
-  const p = (browserOrChrome as typeof chrome).runtime.sendMessage({
-    type: 'contentStatus', // TODO DRY this?
+  const p = (chrome as typeof chrome).runtime.sendMessage<ContentStatusPayload>({
+    type: 'contentStatus',
     ...status,
   });
   // Try-catch in order to not print this error in production.

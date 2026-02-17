@@ -18,11 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { enabledSettingDefaultValue, OppositeDayMode } from './';
-import type { Settings } from './';
+import { enabledSettingDefaultValue } from './enabledSettingDefaultValue';
+import { OppositeDayMode } from './OppositeDayMode';
+import type { Settings } from './index';
 import { ControllerKind } from './ControllerKind';
 import { HotkeyAction } from '@/hotkeys';
-import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
 import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
 import { isMobile } from '@/helpers/isMobile';
 
@@ -86,6 +86,12 @@ export const defaultSettings: Readonly<Settings> = {
   omitMutedElements: true,
 
   dontAttachToCrossOriginMedia: true,
+
+  /**
+   * Automatically skip live streams because they have infinite duration
+   * and the silence-skipping logic doesn't work well with them.
+   */
+  autoDisableForLiveStreams: true,
 
   // I think phones can also work with keyboards,
   // so let's not completely disable the hotkeys functionality.
@@ -210,12 +216,7 @@ export const defaultSettings: Readonly<Settings> = {
   popupSoundedSpeedStep: 0.05,
 
   popupSilenceSpeedRawMin: 1,
-  // See the comment in `getAbsoluteClampedSilenceSpeed` definition on why `max` is different
-  // for different browsers.
-  popupSilenceSpeedRawMax: BUILD_DEFINITIONS.BROWSER === 'gecko'
-    // But if the browser gets upgraded, this will remain at 4. Doesn't matter?
-    ? Math.min(8, getGeckoLikelyMaxNonMutedPlaybackRate())
-    : 8,
+  popupSilenceSpeedRawMax: 8,
   popupSilenceSpeedRawStep: 0.05,
 
   popupMarginBeforeMin: 0,

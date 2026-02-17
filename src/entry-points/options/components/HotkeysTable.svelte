@@ -117,9 +117,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <td>
             <button
               type="button"
+              class="icon-button"
               on:click={e => removeBinding(bindingInd)}
               aria-label="{getMessage('removeBinding')}"
-            >🗑️</button>
+            ><img src="/imgs/trash.svg" alt="" class="icon" /></button>
           </td>
         </tr>
       {/each}
@@ -127,7 +128,39 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   </table>
   <button
     type="button"
+    class="icon-button"
     on:click={addNewBinding}
     aria-label="{getMessage('addBinding')}"
-  >➕</button>
+  ><img src="/imgs/plus.svg" alt="" class="icon" /></button>
 </div>
+
+<style>
+  .icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    background: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .icon-button:hover {
+    background: #f0f0f0;
+  }
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .icon-button {
+      border-color: #555;
+    }
+    .icon-button:hover {
+      background: #333;
+    }
+    .icon {
+      filter: invert(1);
+    }
+  }
+</style>

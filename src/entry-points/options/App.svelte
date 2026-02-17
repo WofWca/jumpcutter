@@ -18,13 +18,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script lang="ts">
-  import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
   import { tick } from 'svelte';
   import HotkeysTable, { PotentiallyInvalidHotkeyBinding } from './components/HotkeysTable.svelte';
   import CheckboxField from './components/CheckboxField.svelte';
   import NumberField from './components/NumberField.svelte';
   import InputFieldBase from './components/InputFieldBase.svelte';
-  import { cloneDeepJson, assertDev, assertNever, getMessage } from '@/helpers';
+  import { cloneDeepJson, assertDev, getMessage } from '@/helpers';
   import {
     defaultSettings,
     filterOutLocalStorageOnlySettings,
@@ -62,8 +61,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   Promise.all([settingsPromise, originalSettingsPromise]).then(() => initialized = true);
 
   // `commands` API is currently not supported by Gecko for Android.
-  const commandsPromise: undefined | ReturnType<typeof browserOrChrome.commands.getAll>
-    = browserOrChrome.commands?.getAll?.();
+  const commandsPromise: undefined | ReturnType<typeof chrome.commands.getAll>
+    = chrome.commands?.getAll?.();
 
   function checkValidity(settings: PotentiallyInvalidSettings): settings is Settings {
     return formEl.checkValidity();
@@ -162,36 +161,21 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   ] as const;
   const rangeInputAttrs = ['Min', 'Step', 'Max'] as const;
 
-  // TODO add `rel` attribute to the link element?
-  let editNativeShortcutsLinkUrl: string;
-  switch (BUILD_DEFINITIONS.BROWSER) {
-    case 'chromium':
-      // From https://developer.chrome.com/apps/commands#usage
-      editNativeShortcutsLinkUrl = 'chrome://extensions/configureCommands';
-      break;
-    case 'gecko':
-      // Yes, it's a knowledge base page, because Firefox doesn't have a dedicated link for the "manage shortcuts" page.
-      // TODO change it when it does.
-      // Also it there is this method: `browser.commands.update`, but I think native the dedicated page is better.
-      editNativeShortcutsLinkUrl = 'https://support.mozilla.org/kb/manage-extension-shortcuts-firefox';
-      break;
-    default: assertNever(BUILD_DEFINITIONS.BROWSER);
-  }
+  // From https://developer.chrome.com/apps/commands#usage
+  const editNativeShortcutsLinkUrl = 'chrome://extensions/configureCommands';
 
   // Yes, these don't take migartions into account at all. TODO.
   async function downloadFromSync() {
-    Object.assign(settings, await browserOrChrome.storage.sync.get() as Partial<Settings>);
+    Object.assign(settings, await chrome.storage.sync.get() as Partial<Settings>);
     settings = settings;
   }
   async function uploadToSync() {
     assertDev(checkValidity(settings));
-    browserOrChrome.storage.sync.clear();
-    browserOrChrome.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
+    chrome.storage.sync.clear();
+    chrome.storage.sync.set(filterOutLocalStorageOnlySettings(settings));
   }
 
-  const snowflakeExtensionUrl = BUILD_DEFINITIONS.BROWSER === 'gecko'
-    ? 'https://addons.mozilla.org/firefox/addon/torproject-snowflake/'
-    : 'https://chrome.google.com/webstore/detail/snowflake/mafpmfcccpbjnhfhjnllmmalhifmlcie';
+  const snowflakeExtensionUrl = 'https://chrome.google.com/webstore/detail/snowflake/mafpmfcccpbjnhfhjnllmmalhifmlcie';
 
   let contactEmailHref: string | null = BUILD_DEFINITIONS.CONTACT_EMAIL
     ? `mailto:${BUILD_DEFINITIONS.CONTACT_EMAIL}`
@@ -205,8 +189,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       subject: 'Jump Cutter',
       // TODO improvement: i18n?
       body: `Debug info (you can remove this):`
-        + `\nJump Cutter version: ${browserOrChrome.runtime.getManifest().version}`
-        + `\nLanguage: ${browserOrChrome.i18n.getUILanguage()}`
+        + `\nJump Cutter version: ${chrome.runtime.getManifest().version}`
+        + `\nLanguage: ${chrome.i18n.getUILanguage()}`
         + `\nSystem info: ${navigator.userAgent}`
         + `\nJump Cutter settings:`
         + '\n\n```json'
@@ -365,7 +349,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
                     to not work fully (no scrolling to anchor). Just 'href' doesn't work. -->
                     <a
                       href={editNativeShortcutsLinkUrl}
-                      on:click|preventDefault={_ => browserOrChrome.tabs.create({
+                      on:click|preventDefault={_ => chrome.tabs.create({
                         url: editNativeShortcutsLinkUrl,
                         active: true,
                       })}
@@ -659,7 +643,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <div style="margin: 1rem 0;">
     <a
       target="_blank"
-      href="{browserOrChrome.runtime.getURL('/license.html')}"
+      href="{chrome.runtime.getURL('/license.html')}"
     >⚖️ {getMessage('license')}</a>
   </div>
   <div style="margin: 1rem 0;">
@@ -673,7 +657,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <footer>
   <a
     target="_blank"
-    href="{browserOrChrome.runtime.getURL('/license.html')}"
+    href="{chrome.runtime.getURL('/license.html')}"
   >
     <img src="/agplv3-with-text-162x68.png" alt="AGPLv3 Logo">
   </a>
@@ -760,10 +744,17 @@ h1, h2, h3, h4, h5, h6 {
   color: green;
 }
 @media (prefers-color-scheme: dark) {
-  .status-bar {
-    /* IDK, `background-color: inherit` doesn't make it dark with the dark theme with default colors. */
+  :global(body) {
     background: #111;
     color: #ddd;
+  }
+  section {
+    background: #88888820;
+    border-color: #555;
+  }
+  .status-bar {
+    background: #111;
+    border-top-color: #555;
   }
   .saved-text {
     color: lightgreen;

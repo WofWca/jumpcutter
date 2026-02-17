@@ -18,13 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import type { Settings, MyStorageChanges } from '@/settings';
-import { assertDev } from '@/helpers';
 
 function setGlobalBadge(text: string, color: string) {
-  browserOrChrome.action.setBadgeBackgroundColor({ color });
-  browserOrChrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color });
+  chrome.action.setBadgeText({ text });
 }
 type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold' | 'marginBefore'
   | 'marginAfter'>;
@@ -62,7 +60,7 @@ function setBadgeToDefault(settings: Settings) {
     || settings.badgeWhatSettingToDisplayByDefault === 'timeSaved'
     || !settings.enabled
   ) {
-    browserOrChrome.action.setBadgeText({ text: '' });
+    chrome.action.setBadgeText({ text: '' });
 
     if (
       settings.badgeWhatSettingToDisplayByDefault === 'timeSaved'
@@ -70,8 +68,8 @@ function setBadgeToDefault(settings: Settings) {
     ) {
       // Restore the stashed values
       for (const [tabId, badgeValue] of stashedTabSpecificBadges.entries()) {
-        browserOrChrome.action.setBadgeText({ tabId, text: badgeValue.text })
-        browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: badgeValue.color })
+        chrome.action.setBadgeText({ tabId, text: badgeValue.text })
+        chrome.action.setBadgeBackgroundColor({ tabId, color: badgeValue.color })
       }
       // We restored them, no longer need in the stash.
       stashedTabSpecificBadges.clear()
@@ -94,7 +92,7 @@ async function temporarilySetBadge(text: string, color: string, settings: Settin
     // because it takes precedence over the global badge.
     // Also stash its state to restore it after timeout.
 
-    const tabs = await browserOrChrome.tabs.query({ active: true })
+    const tabs = await chrome.tabs.query({ active: true })
     for (const tab of tabs) {
       const tabId = tab.id
       if (tabId == undefined) {
@@ -106,8 +104,8 @@ async function temporarilySetBadge(text: string, color: string, settings: Settin
       // to avoid this async operation, so that we can
       // `setBadgesetBadge()` faster?
       await Promise.all([
-        browserOrChrome.action.getBadgeText({ tabId }),
-        browserOrChrome.action.getBadgeBackgroundColor({ tabId }),
+        chrome.action.getBadgeText({ tabId }),
+        chrome.action.getBadgeBackgroundColor({ tabId }),
       ]).then(([text, color]) => {
         if (text === '') {
           return
@@ -115,7 +113,7 @@ async function temporarilySetBadge(text: string, color: string, settings: Settin
         stashedTabSpecificBadges.set(tabId, { text, color });
       });
 
-      browserOrChrome.action.setBadgeText({
+      chrome.action.setBadgeText({
         tabId,
         // @ts-expect-error ts(2322) the "types" package is not correct,
         // this can actually be `null`:
@@ -163,7 +161,7 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
 
   // Apparently it doesn't perform this check internally. TODO chore: report bug / fix.
   if (path64 !== currentPath64) {
-    browserOrChrome.action.setIcon({
+    chrome.action.setIcon({
       path: {
         "64": path64,
         "128": path128,
@@ -199,14 +197,14 @@ export function updateIconAndBadge(
       || changes.enabled?.newValue === false
     ) {
       // Reset all tab-specific badges
-      browserOrChrome.tabs.query({}).then((tabs) => {
+      chrome.tabs.query({}).then((tabs) => {
         for (const tab of tabs) {
           const tabId = tab.id
           if (tabId == undefined) {
             console.warn('tab.id is', tabId, ', ignoring');
             continue;
           }
-          browserOrChrome.action.setBadgeText({
+          chrome.action.setBadgeText({
             tabId,
             // @ts-expect-error ts(2322) see another `setBadgeText` call above.
             text: null
@@ -237,8 +235,8 @@ export function onNewTimeSavedInfo(tabId: number, timeSaved: string) {
   if (isBadgeTemporarilyOverridden) {
     stashedTabSpecificBadges.set(tabId, newBadgeValue)
   } else {
-    browserOrChrome.action.setBadgeText({ tabId, text: newBadgeValue.text })
-    browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: newBadgeValue.color })
+    chrome.action.setBadgeText({ tabId, text: newBadgeValue.text })
+    chrome.action.setBadgeBackgroundColor({ tabId, color: newBadgeValue.color })
   }
 }
 
@@ -251,22 +249,17 @@ function resetTabSpecificBadgeColor(
   tabId: number,
   fallbackColor: Parameters<typeof chrome.action.setBadgeBackgroundColor>[0]['color']
 ) {
-  if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
-    // Unfortunately in Chromium resetting tab-specific color
-    // is not possible for now:
-    // https://issues.chromium.org/issues/40073862
-    // But it's not a big deal, let's just set it to the color we want.
-    try {
-      browserOrChrome.action.setBadgeBackgroundColor({
-        tabId,
-        // @ts-expect-error ts(2322) not possible in Chromium for now.
-        color: null
-      })
-    } catch (error) {
-      browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: fallbackColor })
-    }
-  } else {
-    assertDev(browserOrChrome === browser)
-    browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: null })
+  // Unfortunately in Chromium resetting tab-specific color
+  // is not possible for now:
+  // https://issues.chromium.org/issues/40073862
+  // But it's not a big deal, let's just set it to the color we want.
+  try {
+    chrome.action.setBadgeBackgroundColor({
+      tabId,
+      // @ts-expect-error ts(2322) not possible in Chromium for now.
+      color: null
+    })
+  } catch (error) {
+    chrome.action.setBadgeBackgroundColor({ tabId, color: fallbackColor })
   }
 }

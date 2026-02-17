@@ -55,6 +55,9 @@
     "64": "icons/icon.svg-64.png",
     "128": "icons/icon-big-padded.svg-128.png"
   },
+  "background": {
+    "service_worker": "background/main.js"
+  },
   "manifest_version": 3,
   "default_locale": "en"
 }

@@ -49,5 +49,4 @@ export * from './filterOutUnchangedValues';
 export * from './speedName';
 export * from './getBrowserMajorVersion';
 export * from './maxPlaybackRate';
-export * from './getGeckoLikelyMaxNonMutedPlaybackRate';
 export * from './getMessage';

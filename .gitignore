@@ -3,6 +3,8 @@ node_modules/
 /dist-chromium/
 /dist-gecko.zip
 /dist-chromium.zip
+/dist/
+/dist.zip
 
 .vscode/*
 !.vscode/extensions.json

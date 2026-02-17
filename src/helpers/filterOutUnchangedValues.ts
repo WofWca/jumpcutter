@@ -31,8 +31,8 @@ import isEqual from 'lodash/isEqual';
  * @return a shallow clone with unchanged value keys deleted.
  */
 export function filterOutUnchangedValues(
-  changes: Record<string, browser.storage.StorageChange>
-): Record<string, browser.storage.StorageChange> {
+  changes: Record<string, chrome.storage.StorageChange>
+): Record<string, chrome.storage.StorageChange> {
   if (IS_DEV_MODE) {
     if (!BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT) {
       console.warn('It is redundant to use this function in Chromium');

@@ -19,6 +19,13 @@
  */
 
 // Hacky. Using this: https://github.com/Microsoft/TypeScript/issues/28308#issuecomment-650802278. TODO.
+interface AudioParamDescriptor {
+  name: string;
+  defaultValue?: number;
+  minValue?: number;
+  maxValue?: number;
+  automationRate?: string;
+}
 interface AudioWorkletProcessor {
   readonly port: MessagePort;
   process(

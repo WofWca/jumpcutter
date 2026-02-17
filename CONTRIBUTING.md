@@ -13,14 +13,13 @@ Follow the steps in [README.md#build](./README.md#build), until the `yarn build`
 ### 2. Build (for development)
 
 <!-- TODO refactor: this seems to be duplicating the README a little. -->
-If you're gonna be testing your changes in a Chromium-based browser, run `yarn serve:chromium`. For Gecko-based browsers it's `yarn serve:gecko`. The built files will appear in `./dist-chromium` (or `./dist-gecko`), and will update as you make changes to the code.
+Run `npm run dev:watch`. The built files will appear in `./dist`, and will update as you make changes to the code.
 
 ### 3. Load the extension into the browser
 
 Follow these instructions:
 
 * [Chromium](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked)
-* [Gecko](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#installing)
 
 Now it should be working, like you just installed it from a store.
 
@@ -32,7 +31,6 @@ For content scripts, also __reload the page__ you're testing it on.
 You can open browser dev tools for each script (background, popup, content) of the extension:
 
 * [Chromium](https://developer.chrome.com/docs/extensions/mv3/tut_debugging/)
-* [Gecko](https://firefox-source-docs.mozilla.org/devtools-user/about_colon_debugging/index.html#installed-extensions)
 
 ## Closing points
 

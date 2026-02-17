@@ -39,12 +39,8 @@ export default class SilenceDetectorNode extends AudioWorkletNode {
     this.volumeThresholdParam = this.parameters.get('volumeThreshold')!;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.durationThresholdParam = this.parameters.get('durationThreshold')!;
-    // TODO a workaround. Otherwise when you create an instance of `SilenceDetectorNode`, it appears to not have
-    // the below `volumeThreshold` & `durationThreshold` setters.
-    // Need to report this bug.
-    if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
-      Object.setPrototypeOf(this, SilenceDetectorNode.prototype);
-    }
+    // Keep explicit prototype assignment for stable behavior in all Chromium builds.
+    Object.setPrototypeOf(this, SilenceDetectorNode.prototype);
   }
   set volumeThreshold(v: number) {
     this.volumeThresholdParam.value = v;

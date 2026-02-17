@@ -20,7 +20,7 @@
 
 import { setSettings, getSettings } from '@/settings';
 
-type ListenerType = Parameters<typeof browser.commands.onCommand.addListener>[0];
+type ListenerType = Parameters<typeof chrome.commands.onCommand.addListener>[0];
 
 export const onCommand: ListenerType = async (command) => {
   switch (command) {

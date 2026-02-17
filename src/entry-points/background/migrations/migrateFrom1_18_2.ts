@@ -19,7 +19,6 @@
  */
 
 import { defaultSettings, Settings } from '@/settings';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 
 // A fix for https://github.com/WofWca/jumpcutter/issues/30
 // (make it impossible to set soundedSpeed to 0 using popup inputs and change it to be non-zero if it already is).
@@ -28,7 +27,7 @@ export default async function (): Promise<void> {
     popupSoundedSpeedMin,
     popupSoundedSpeedStep: popupSoundedSpeedStepFromStorage,
     soundedSpeed,
-  } = await browserOrChrome.storage.local.get(['popupSoundedSpeedMin', 'popupSoundedSpeedStep', 'soundedSpeed']);
+  } = await chrome.storage.local.get(['popupSoundedSpeedMin', 'popupSoundedSpeedStep', 'soundedSpeed']);
   const popupSoundedSpeedStep = popupSoundedSpeedStepFromStorage ?? defaultSettings.popupSoundedSpeedStep;
 
   const newValues: Partial<Settings> = {};
@@ -41,5 +40,5 @@ export default async function (): Promise<void> {
   if (soundedSpeed === 0) {
     newValues.soundedSpeed = popupSoundedSpeedStep;
   }
-  await browserOrChrome.storage.local.set(newValues);
+  await chrome.storage.local.set(newValues);
 }

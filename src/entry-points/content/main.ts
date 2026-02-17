@@ -20,7 +20,6 @@
 
 import { enabledSettingDefaultValue, MyStorageChanges, Settings } from '@/settings';
 import { mainStorageAreaName } from '@/settings/mainStorageAreaName';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
 import requestIdlePromise from './helpers/requestIdlePromise';
 
 (async function () { // Just for top-level `await`
@@ -36,14 +35,14 @@ async function importAndInit() {
 
 const keys: Partial<Settings> = { enabled: enabledSettingDefaultValue } as const;
 const enabledOnInitialization = (
-  (await browserOrChrome.storage[mainStorageAreaName].get(keys)) as Settings
+  (await chrome.storage[mainStorageAreaName].get(keys)) as Settings
 ).enabled;
 if (enabledOnInitialization) {
   importAndInit();
 }
 // Not using `addOnStorageChangedListener` from '@/settings' because it's heavy because of `filterOutUnchangedValues`.
 // TODO use it when (if?) it's gone.
-browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
+chrome.storage.onChanged.addListener(function (changes: MyStorageChanges, areaName) {
   if (areaName !== mainStorageAreaName) {
     return;
   }
@@ -51,8 +50,7 @@ browserOrChrome.storage.onChanged.addListener(function (changes: MyStorageChange
   // Don't need to check if it's already initialized/deinitialized because it's a setting CHANGE, and it's already
   // initialized/deinitialized in accordance to the setting a few lines above.
   // Need to check both `newValue` and `oldValue` because:
-  // 1. In Gecko, it is currently possible that `newValue === oldValue`. See `filterOutUnchangedValues` in '@/settings'.
-  // 2. When the extension is first installed and the storage is empty, `enabled` may be set to `true` with the first
+  // 1. When the extension is first installed and the storage is empty, `enabled` may be set to `true` with the first
   //    settings change and `newValue === true && oldValue === undefined`.
   if (maybeEnabledChange?.newValue === true && maybeEnabledChange.oldValue === false) {
     importAndInit();

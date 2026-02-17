@@ -18,7 +18,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script lang="ts">
-  import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
   import { onDestroy } from 'svelte';
   import {
     addOnStorageChangedListener, getSettings, setSettings, Settings, settingsChanges2NewValues,
@@ -29,7 +28,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     OppositeDayMode_OFF,
     OppositeDayMode_HIDDEN_BY_USER,
     OppositeDayMode_UNDISCOVERED,
+    PerTabOverrides,
   } from '@/settings';
+  import type { ContentStatusPayload, RuntimeMessage } from '@/core/messaging/contracts';
+  import { getV2TabOverride, removeV2TabOverride, setV2TabOverride } from '@/core/storage';
   import { tippyActionAsyncPreload as tippy } from './tippyAction';
   import RangeSlider from './RangeSlider.svelte';
   import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
@@ -66,10 +68,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   import type { Props as TippyProps } from 'tippy.js';
   import VolumeIndicator from './VolumeIndicator.svelte';
 
-  // See ./popup.css. Would be cool to do this at build-time
-  if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
-    document.body.classList.add('better-dark-border');
-  }
+  // See ./popup.css. Would be cool to do this at build-time.
+  document.body.classList.add('better-dark-border');
 
   type RequiredSettings =
     Pick<Settings,
@@ -118,19 +118,87 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   async function getTab() {
     // TODO but what about Kiwi browser? It always opens popup on a separate page. And in general, it's not always
     // guaranteed that there will be a tab, is it?
-    const tabs = await browserOrChrome.tabs.query({ active: true, currentWindow: true, });
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true, });
     return tabs[0];
   }
   const tabPromise = getTab();
+
+  // Per-tab settings state
+  let perTabOverrides: PerTabOverrides = {};
+  let usePerTabSettings = false;
+  let currentTabId: number | undefined;
+  let lastContentStatusReason: ContentStatusPayload['status'] | undefined;
+  let lastContentStatusDetail: string | undefined;
+
+  // Load per-tab overrides when tab is known
+  tabPromise.then(async (tab) => {
+    if (tab?.id) {
+      currentTabId = tab.id;
+      const key = `perTab_${tab.id}`;
+      const [v2Override, stored] = await Promise.all([
+        getV2TabOverride(tab.id),
+        chrome.storage.local.get(key),
+      ]);
+      const resolved = v2Override ?? stored[key];
+      if (resolved) {
+        perTabOverrides = resolved;
+        usePerTabSettings = true;
+      }
+    }
+  });
+
+  async function savePerTabOverrides() {
+    if (!currentTabId) return;
+    const key = `perTab_${currentTabId}`;
+    if (usePerTabSettings && Object.keys(perTabOverrides).length > 0) {
+      await Promise.all([
+        setV2TabOverride(currentTabId, perTabOverrides),
+        chrome.storage.local.set({ [key]: perTabOverrides }),
+      ]);
+    } else {
+      await Promise.all([
+        removeV2TabOverride(currentTabId),
+        chrome.storage.local.remove(key),
+      ]);
+    }
+    // Notify content script
+    chrome.tabs.sendMessage(currentTabId, {
+      type: 'perTabOverridesChanged',
+      overrides: usePerTabSettings ? perTabOverrides : null
+    } as RuntimeMessage).catch(() => {
+      // Tab might not have content script loaded
+    });
+  }
+
+  function onUsePerTabSettingsChange(e: Event) {
+    usePerTabSettings = (e.target as HTMLInputElement).checked;
+    if (!usePerTabSettings) {
+      perTabOverrides = {};
+    }
+    savePerTabOverrides();
+  }
+
+  function updatePerTabOverride<K extends keyof PerTabOverrides>(key: K, value: PerTabOverrides[K]) {
+    perTabOverrides[key] = value;
+    perTabOverrides = perTabOverrides; // Trigger reactivity
+    savePerTabOverrides();
+  }
+  function getPerTabSettingValue<K extends keyof PerTabOverrides>(
+    key: K,
+    fallback: NonNullable<PerTabOverrides[K]>
+  ): NonNullable<PerTabOverrides[K]> {
+    return (perTabOverrides[key] ?? fallback) as NonNullable<PerTabOverrides[K]>;
+  }
+
   const tabLoadedPromise = (async () => {
     let tab = await tabPromise;
     if (tab.status !== 'complete') { // TODO it says `status` is optional? When is it missing?
       tab = await new Promise(r => {
         let pollTimeout: ReturnType<typeof setTimeout>;
-        function finishIfComplete(tab: browser.tabs.Tab | chrome.tabs.Tab) {
+        function finishIfComplete(tab: chrome.tabs.Tab) {
           if (tab.status === 'complete') {
             r(tab);
-            browserOrChrome.tabs.onUpdated.removeListener(onUpdatedListener);
+            chrome.tabs.onUpdated.removeListener(onUpdatedListener);
             clearTimeout(pollTimeout);
             return true;
           }
@@ -138,12 +206,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         const onUpdatedListener = (
           tabId: number,
           _: unknown,
-          updatedTab: browser.tabs.Tab | chrome.tabs.Tab
+          updatedTab: chrome.tabs.Tab
         ) => {
           if (tabId !== tab.id) return;
           finishIfComplete(updatedTab);
         }
-        browserOrChrome.tabs.onUpdated.addListener(onUpdatedListener);
+        chrome.tabs.onUpdated.addListener(onUpdatedListener);
 
         // Sometimes if you open the popup during page load, it would never resolve. I tried attaching the listener
         // before calling `browser.tabs.query`, but it didn't help either. This is a workaround. TODO.
@@ -160,7 +228,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return tab;
   })();
 
-  let nonSettingsActionsPort: Omit<ReturnType<typeof browserOrChrome.tabs.connect>, 'postMessage'> & {
+  let nonSettingsActionsPort: Omit<ReturnType<typeof chrome.tabs.connect>, 'postMessage'> & {
     postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
   } | undefined;
 
@@ -181,13 +249,15 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     let elementLastActivatedAt: number | undefined;
 
     const onMessageListener = (
-      message: any,
-      sender: chrome.runtime.MessageSender | browser.runtime.MessageSender
+      message: ContentStatusPayload,
+      sender: chrome.runtime.MessageSender
     ) => {
       if (
         sender.tab?.id !== tab.id
         || message.type !== 'contentStatus' // TODO DRY message types.
       ) return;
+      lastContentStatusReason = message.status;
+      lastContentStatusDetail = message.detail;
       gotAtLeastOneContentStatusResponse = true;
       // TODO check sender.url? Not only to check protocol, but also to somehow aid the user to locate the file that
       // he's trying to open. Idk how though, we can't just `input.value = sender.url`.
@@ -202,7 +272,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
         // TODO how do we close it on popup close? Do we have to?
         // https://developer.chrome.com/extensions/messaging#port-lifetime
-        const telemetryPort = browserOrChrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
+        const telemetryPort = chrome.tabs.connect(tab.id!, { name: 'telemetry', frameId });
         telemetryPort.onMessage.addListener(msg => {
           if (!msg) {
             return;
@@ -216,7 +286,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           telemetryTimeoutId = setTimeout(sendGetTelemetryAndScheduleAnother, telemetryUpdatePeriod * 1000);
         })();
 
-        nonSettingsActionsPort = browserOrChrome.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
+        nonSettingsActionsPort = chrome.tabs.connect(tab.id!, { name: 'nonSettingsActions', frameId });
 
         disconnect = () => {
           clearTimeout(telemetryTimeoutId);
@@ -228,8 +298,36 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         considerConnectionFailed = false; // In case it timed out at first, but then succeeded some time later.
       }
     };
-    browserOrChrome.runtime.onMessage.addListener(onMessageListener);
-    browserOrChrome.tabs.sendMessage(tab.id!, 'checkContentStatus') // TODO DRY.
+    chrome.runtime.onMessage.addListener(onMessageListener);
+
+    await chrome.runtime.sendMessage({ type: 'backgroundReady' } as RuntimeMessage);
+    const retryBackoffMs = [0, 120, 300, 700];
+    for (const delayMs of retryBackoffMs) {
+      if (delayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+      try {
+        const status = await chrome.tabs.sendMessage(
+          tab.id!,
+          { type: 'checkContentStatus' } as RuntimeMessage
+        ) as ContentStatusPayload | undefined;
+        if (status?.type === 'contentStatus') {
+          lastContentStatusReason = status.status;
+          lastContentStatusDetail = status.detail;
+          gotAtLeastOneContentStatusResponse = true;
+        }
+        break;
+      } catch (error) {
+        const message = String(error);
+        if (message.includes('Could not establish connection')) {
+          lastContentStatusReason = 'initializing';
+          lastContentStatusDetail = 'no-receiver';
+          continue;
+        }
+        lastContentStatusReason = 'unsupported-media';
+        lastContentStatusDetail = message;
+      }
+    }
   })();
 
   (async () => {
@@ -346,19 +444,17 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
 
   const openLocalFileLinkProps = {
-    href: browserOrChrome.runtime.getURL('local-file-player/index.html'),
+    href: chrome.runtime.getURL('local-file-player/index.html'),
     target: '_blank',
   } as const;
-  // Firefox for Android acts weird and apparently opens this
-  // the same way it opens popups, and then when you select a file,
-  // nothing happens.
-  // We want to open it in a separate tab therefore.
+  // Some mobile browsers open this as a popup-like surface where file selection fails,
+  // so force opening in a tab.
   const onClickOpenLocalFileLink = !isMobile
     ? undefined
     : (e: Event) => {
       e.preventDefault();
-      browserOrChrome.tabs.create({
-        url: browserOrChrome.runtime.getURL('local-file-player/index.html')
+      chrome.tabs.create({
+        url: chrome.runtime.getURL('local-file-player/index.html')
       });
       window.close();
     };
@@ -450,9 +546,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return '\n' + actionName + ': ' + actionString;
   }
 
-  // `commands` API is currently not supported by Gecko for Android.
-  const commandsPromise: undefined | ReturnType<typeof browserOrChrome.commands.getAll>
-  = browserOrChrome.commands?.getAll?.();
+  const commandsPromise: undefined | ReturnType<typeof chrome.commands.getAll>
+  = chrome.commands?.getAll?.();
 
   let toggleExtensionTooltip: undefined | Partial<TippyProps> = undefined;
   if (commandsPromise) {
@@ -591,10 +686,86 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     >
       {#if settings.advancedMode}
       <div style="margin-bottom: 0.375rem;">
+        <label
+          style="display: inline-flex; align-items: center; font-size: 0.85em; cursor: pointer;"
+          use:tippy={{
+            content: () => 'Use custom settings for this tab only',
+            theme: 'my-tippy',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={usePerTabSettings}
+            on:change={onUsePerTabSettingsChange}
+            style="margin-right: 0.25rem;"
+          >
+          <span>Tab</span>
+        </label>
+      </div>
+      {#if usePerTabSettings}
+      <div
+        style="
+          margin-bottom: 0.375rem;
+          padding: 0.35rem 0.45rem;
+          border: 1px solid rgba(120, 120, 120, 0.35);
+          border-radius: 0.35rem;
+          font-size: 0.72rem;
+          background: rgba(127, 127, 127, 0.08);
+          text-align: left;
+        "
+      >
+        <div style="font-weight: 600; margin-bottom: 0.2rem;">Per-tab overrides</div>
+        <label style="display: grid; grid-template-columns: 1fr auto; gap: 0.25rem; align-items: center;">
+          <span>Enabled</span>
+          <input
+            type="checkbox"
+            checked={getPerTabSettingValue('enabled', settings.enabled)}
+            on:change={e => updatePerTabOverride('enabled', e.currentTarget.checked)}
+          >
+        </label>
+        <label style="display: grid; grid-template-columns: 1fr auto; gap: 0.25rem; align-items: center;">
+          <span>Sounded</span>
+          <input
+            type="number"
+            min={settings.popupSoundedSpeedMin}
+            max={settings.popupSoundedSpeedMax}
+            step={settings.popupSoundedSpeedStep}
+            value={getPerTabSettingValue('soundedSpeed', settings.soundedSpeed)}
+            style="width: 5rem;"
+            on:input={e => updatePerTabOverride('soundedSpeed', Number(e.currentTarget.value))}
+          >
+        </label>
+        <label style="display: grid; grid-template-columns: 1fr auto; gap: 0.25rem; align-items: center;">
+          <span>Silence</span>
+          <input
+            type="number"
+            min={settings.popupSilenceSpeedRawMin}
+            max={settings.popupSilenceSpeedRawMax}
+            step={settings.popupSilenceSpeedRawStep}
+            value={getPerTabSettingValue('silenceSpeedRaw', settings.silenceSpeedRaw)}
+            style="width: 5rem;"
+            on:input={e => updatePerTabOverride('silenceSpeedRaw', Number(e.currentTarget.value))}
+          >
+        </label>
+        <label style="display: grid; grid-template-columns: 1fr auto; gap: 0.25rem; align-items: center;">
+          <span>Threshold</span>
+          <input
+            type="number"
+            min={settings.popupVolumeThresholdMin}
+            max={settings.popupVolumeThresholdMax}
+            step={settings.popupVolumeThresholdStep}
+            value={getPerTabSettingValue('volumeThreshold', settings.volumeThreshold)}
+            style="width: 5rem;"
+            on:input={e => updatePerTabOverride('volumeThreshold', Number(e.currentTarget.value))}
+          >
+        </label>
+      </div>
+      {/if}
+      <div style="margin-bottom: 0.375rem;">
         <!-- TODO but this is technically a button. Is this ok? -->
         <button
           on:click={() => {
-            browserOrChrome.runtime.openOptionsPage();
+            chrome.runtime.openOptionsPage();
             if (isMobile) {
               // The options tab gets opened, but it's not visible
               // because the popup stays open. Let's close it.
@@ -646,9 +817,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     }
   >
   <div
-    style={
+      style={
       "min-width: 100%;"
-      // So in Gecko it prefers to wrap instead of exceeding `settings.popupChartWidthPx`.
+      // Prevent wrap and allow this block to exceed width when needed.
       + "width: min-content;"
     }
   >
@@ -659,44 +830,40 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       {#if settings.enabled}
         {#if considerConnectionFailed}
           {#if gotAtLeastOneContentStatusResponse}
-            <p>
-              <span>🤷‍♀️ {getMessage('noSuitableElement')}.</span>
-              <br/>
-              <!-- Maybe remove this button as we already have the "changeElementSearchCriteria" one?
-              Also it's kind of confusing, because this button also qualifies as a one that changes
-              the search criteria. -->
-              <!-- TODO how about don't show this button when there are no such elements on the page
-              (e.g. when `settings.applyTo !== 'videoOnly'` and there are no <audio> elements) -->
-              {#if settings.applyTo !== 'both'}
+            {#if lastContentStatusReason === 'unsupported-media'}
+              <p>
+                ⚠️ {getMessage('contentScriptFail')}.<br>
+                {#if lastContentStatusDetail}
+                  <small>{lastContentStatusDetail}</small>
+                {/if}
+              </p>
+            {:else}
+              <p>
+                <span>🤷‍♀️ {getMessage('noSuitableElement')}.</span>
+                <br/>
+                {#if settings.applyTo !== 'both'}
+                  <button
+                    on:click={async () => {
+                      settings.applyTo = 'both';
+                      await setSettings({ applyTo: 'both', enabled: false });
+                      setSettings({ enabled: true });
+                    }}
+                    style="margin: 0.25rem"
+                  >🔍 {getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
+                {/if}
+                <button
+                  on:click={() => chrome.runtime.openOptionsPage()}
+                  style="margin: 0.25rem"
+                >⚙️ {getMessage('changeElementSearchCriteria')}</button>
                 <button
                   on:click={async () => {
-                    // TODO same issue as with "retry".
-                    settings.applyTo = 'both';
-                    await setSettings({ applyTo: 'both', enabled: false });
+                    await setSettings({ enabled: false });
                     setSettings({ enabled: true });
                   }}
                   style="margin: 0.25rem"
-                >🔍 {getMessage('alsoSearchFor', getMessage(settings.applyTo === 'videoOnly' ? 'audio' : 'video'))}</button>
-              {/if}
-              <!-- How about just suggesting unmuting the element first? -->
-              <!-- TODO somehow highligth the related section after opening the options page? Or maybe it's Better
-              to replace it with those very inputs from the options page? -->
-              <button
-                on:click={() => browserOrChrome.runtime.openOptionsPage()}
-                style="margin: 0.25rem"
-              >⚙️ {getMessage('changeElementSearchCriteria')}</button>
-              <!-- Event though we now have implemented dynamic element search, there may still be some bug where this
-              could be useful. -->
-              <button
-                on:click={async () => {
-                  // TODO this flashes the parts of the UI that depend on the `enabled` setting, which doesn't look
-                  // ideal.
-                  await setSettings({ enabled: false });
-                  setSettings({ enabled: true });
-                }}
-                style="margin: 0.25rem"
-              >🔄 {getMessage('retry')}</button>
-            </p>
+                >🔄 {getMessage('retry')}</button>
+              </p>
+            {/if}
           {:else}
             <p>
               ⚠️ {getMessage('contentScriptFail')}.<br>
@@ -721,8 +888,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     </div>
   {:else}
     <!-- How about {#if settings.popupChartHeightPx > 0 && settings.popupChartWidthPx > 0} -->
-    <!-- Keep in mind that on Firefox for Android YouTube won't play
-    the video when the popup is open. This does _not_ apply to all websites. -->
+    <!-- Popup rendering may interfere with autoplay on some mobile browsers/websites. -->
     {#await import(
       /* webpackExports: ['default'] */
       './Chart.svelte'
@@ -885,7 +1051,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
             // that we're currently connected to might not be the same tab,
             // e.g. if this popup is open in a separate tab.
             assertDev(tab.id)
-            browserOrChrome.tabs.reload(tab.id);
+            chrome.tabs.reload(tab.id);
           })
           const thisButton = e.target;
           assertDev(thisButton instanceof HTMLButtonElement)

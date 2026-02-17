@@ -31,70 +31,111 @@ type HTMLElementTagNameMapUppercase = {
  * @param tagNames - list of _uppercase_ tag names.
  * If it is mutated, it will only affect future DOM changes, it won't
  * search for all the exisiting elements again.
+ * @param onRemovedElements - optional callback for when elements are removed from the DOM.
+ * Useful for cleaning up event listeners and preventing memory leaks.
  * @returns the `stopWatching` function, the destructor
  */
 export default function watchAllElements<T extends keyof HTMLElementTagNameMapUppercase>(
   tagNames: Array<T>,
   onNewElements: (elements: Array<HTMLElementTagNameMapUppercase[T]>) => void,
+  onRemovedElements?: (elements: Array<HTMLElementTagNameMapUppercase[T]>) => void,
 ): () => void {
-  for (const tagName of tagNames) {
-    const allElementsWThisTag = document.getElementsByTagName(
-      tagName
-    ) as HTMLCollectionOf<HTMLElementTagNameMapUppercase[typeof tagName]>;
-    // const allElementsWThisTag = document.getElementsByTagName<keyof HTMLElementTagNameMap>(tagName as HTMLElementTagNameUppercaseToLowercaseMap[T]);
-    // const allElementsWThisTag = document.getElementsByTagName(tagName as unknown as LowercaseT);
-    if (allElementsWThisTag.length) {
-      onNewElements([...allElementsWThisTag]);
+  const tagNamesAsString = tagNames as string[];
+
+  function collectElementsDeep(
+    root: Document | Element | ShadowRoot,
+    out: Array<HTMLElementTagNameMapUppercase[T]>,
+  ) {
+    for (const tagName of tagNames) {
+      const allElementsWThisTag = root.querySelectorAll(
+        tagName.toLowerCase()
+      ) as NodeListOf<HTMLElementTagNameMapUppercase[typeof tagName]>;
+      if (allElementsWThisTag.length > 0) {
+        out.push(...allElementsWThisTag);
+      }
+    }
+    if (!(root instanceof Element || root instanceof ShadowRoot || root instanceof Document)) {
+      return;
+    }
+    const hosts = root.querySelectorAll('*');
+    for (const host of hosts) {
+      const shadowRoot = host.shadowRoot;
+      if (!shadowRoot) continue;
+      collectElementsDeep(shadowRoot, out);
     }
   }
+
+  function collectElementsFromNodeDeep(node: Node, out: Array<HTMLElementTagNameMapUppercase[T]>) {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+    const el = node as Element;
+    if (tagNamesAsString.includes(el.tagName)) {
+      out.push(el as HTMLElementTagNameMapUppercase[T]);
+    }
+    collectElementsDeep(el, out);
+    if (el.shadowRoot) {
+      collectElementsDeep(el.shadowRoot, out);
+    }
+  }
+
+  const initiallyFoundElements: Array<HTMLElementTagNameMapUppercase[T]> = [];
+  collectElementsDeep(document, initiallyFoundElements);
+  if (initiallyFoundElements.length) {
+    onNewElements(initiallyFoundElements);
+  }
+
+  const observedRoots = new WeakSet<Node>();
+  const observeRoot = (root: Node) => {
+    if (observedRoots.has(root)) {
+      return;
+    }
+    observedRoots.add(root);
+    mutationObserver.observe(root, {
+      subtree: true,
+      childList: true,
+    });
+  };
+
+  const observeShadowRootsDeep = (node: Node) => {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+    const element = node as Element;
+    if (element.shadowRoot) {
+      observeRoot(element.shadowRoot);
+    }
+    const descendants = element.querySelectorAll('*');
+    for (const descendant of descendants) {
+      if (descendant.shadowRoot) {
+        observeRoot(descendant.shadowRoot);
+      }
+    }
+  }
+
   // Peeked at https://github.com/igrigorik/videospeed/blob/a25373f1d831fe06430c2e9e87dc1bd1aabd25b1/inject.js#L631
   function handleMutations(mutations: MutationRecord[]) {
-    // TODO perf: reduce the amount of allocations. Although an average page shouldn't
-    // have enough media elements for this to be a problem
     const newElements: Array<HTMLElementTagNameMapUppercase[T]> = [];
+    const removedElements: Array<HTMLElementTagNameMapUppercase[T]> = [];
     for (const m of mutations) {
       if (m.type !== 'childList') {
         continue;
       }
       for (const node_ of m.addedNodes) {
-        if (node_.nodeType !== Node.ELEMENT_NODE) {
-          continue;
-        }
-        // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType#node.element_node
-        // https://dom.spec.whatwg.org/#ref-for-element%E2%91%A2%E2%91%A0
-        const node = node_ as Element;
-
-        // Keep in mind that the same element may get removed then added to the tree again. This is handled
-        // inside `handleNewElements` (`this.handledElements.has(el)`).
-        // Also the fact that we have an array of `addedNodes` in an array of mutations may mean (idk actually)
-        // that we can have duplicate nodes in the array, which currently is fine thanks to
-        // `this.handledElements.has(el)`.
-        // `node.tagName` is why we need `tagNames` to be uppercase.
-        if ((tagNames as string[]).includes(node.tagName)) {
-          newElements.push(node as HTMLElementTagNameMapUppercase[typeof tagNames[number]]);
-        } else {
-          // TODO here https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName
-          // it says "The returned list is live, which means it updates itself with the DOM tree
-          // automatically". Does it mean that it would be better to somehow use the
-          // `allElementsWThisTag` variable from a few lines above?
-          // But here https://dom.spec.whatwg.org/#introduction-to-dom-ranges it says that upgdating
-          // live ranges can be costly.
-          for (const tagName of tagNames) {
-            const childTargetElements = node.getElementsByTagName(
-              tagName
-            ) as HTMLCollectionOf<HTMLElementTagNameMapUppercase[typeof tagName]>;
-            if (childTargetElements.length) {
-              newElements.push(...childTargetElements);
-            }
-          }
+        collectElementsFromNodeDeep(node_, newElements);
+        observeShadowRootsDeep(node_);
+      }
+      if (onRemovedElements) {
+        for (const node_ of m.removedNodes) {
+          collectElementsFromNodeDeep(node_, removedElements);
         }
       }
-      // TODO should we also manually detach from removed nodes? If so, this is probably to be done in
-      // `AllMediaElementsController.ts`. But currently it is made so that there's at most one Controller
-      // (attached to just one element), so it's fine.
     }
     if (newElements.length) {
       onNewElements(newElements);
+    }
+    if (removedElements.length && onRemovedElements) {
+      onRemovedElements(removedElements);
     }
   }
   const handleMutationsOnIdle =
@@ -103,9 +144,44 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMapUp
       { timeout: 5000 },
     );
   const mutationObserver = new MutationObserver(handleMutationsOnIdle);
-  mutationObserver.observe(document, {
-    subtree: true,
-    childList: true, // Again, why `subtree: true` is not enough here?
-  });
-  return () => mutationObserver.disconnect();
+
+  const scanDocumentForNewShadowRoots = () => {
+    if (document.documentElement) {
+      observeShadowRootsDeep(document.documentElement);
+    }
+  };
+  const shadowRootsFallbackInterval = window.setInterval(
+    scanDocumentForNewShadowRoots,
+    1500,
+  );
+
+  const originalAttachShadow = Element.prototype.attachShadow;
+  let isAttachShadowPatched = false;
+  try {
+    const patchedAttachShadow: typeof Element.prototype.attachShadow = function (this: Element, ...args) {
+      const shadowRoot = originalAttachShadow.apply(this, args);
+      observeRoot(shadowRoot);
+      const discoveredInShadowRoot: Array<HTMLElementTagNameMapUppercase[T]> = [];
+      collectElementsDeep(shadowRoot, discoveredInShadowRoot);
+      if (discoveredInShadowRoot.length) {
+        onNewElements(discoveredInShadowRoot);
+      }
+      return shadowRoot;
+    };
+    Element.prototype.attachShadow = patchedAttachShadow;
+    isAttachShadowPatched = true;
+  } catch {
+    // Some environments may prevent patching DOM prototypes.
+    isAttachShadowPatched = false;
+  }
+
+  observeRoot(document);
+  scanDocumentForNewShadowRoots();
+  return () => {
+    mutationObserver.disconnect();
+    window.clearInterval(shadowRootsFallbackInterval);
+    if (isAttachShadowPatched && Element.prototype.attachShadow !== originalAttachShadow) {
+      Element.prototype.attachShadow = originalAttachShadow;
+    }
+  };
 }
