@@ -25,7 +25,7 @@ import {
 import type AllMediaElementsController from './AllMediaElementsController';
 import broadcastStatus from './broadcastStatus';
 import once from 'lodash/once';
-import watchAllElements from './watchAllElements';
+import ElementsWatcher from './elementsWatcher';
 import requestIdlePromise from './helpers/requestIdlePromise';
 
 const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsController) => allMediaElementsController
@@ -86,10 +86,13 @@ export default async function init(): Promise<void> {
   }
 
   await requestIdlePromise({ timeout: 5000 })
-  const stopWatchingElements = watchAllElements(
+  const elementsWatcher = new ElementsWatcher(
     tagNames,
     newElements => ensureInitAllMediaElementsController().then(allMediaElementsController => {
       allMediaElementsController.onNewMediaElements(...newElements);
-    })
+    }),
+    true
   )
+
+  const stopWatchingElements = () => elementsWatcher.destroy();
 }
