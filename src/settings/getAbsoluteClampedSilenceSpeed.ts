@@ -18,8 +18,8 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings } from './';
-import { maxPlaybackRate } from '@/helpers/maxPlaybackRate';
+import type { Settings } from "./";
+import { maxPlaybackRate } from "@/helpers/maxPlaybackRate";
 
 // TODO This is a temporary measure to avoid setting playbackRate to an unsupported values
 // - the user can still set higher playbackRate
@@ -27,11 +27,15 @@ import { maxPlaybackRate } from '@/helpers/maxPlaybackRate';
 // Also browser may change these values in the future. Add a setting? Or add `try ... catch` to where
 // we assign to `.playbackRate`?
 export function getAbsoluteClampedSilenceSpeed(
-  settings: Pick<Settings, 'silenceSpeedRaw' | 'silenceSpeedSpecificationMethod' | 'soundedSpeed'>
+  settings: Pick<
+    Settings,
+    "silenceSpeedRaw" | "silenceSpeedSpecificationMethod" | "soundedSpeed"
+  >,
 ): number {
-  let val = settings.silenceSpeedSpecificationMethod === 'relativeToSoundedSpeed'
-    ? settings.silenceSpeedRaw * settings.soundedSpeed
-    : settings.silenceSpeedRaw;
+  let val =
+    settings.silenceSpeedSpecificationMethod === "relativeToSoundedSpeed"
+      ? settings.silenceSpeedRaw * settings.soundedSpeed
+      : settings.silenceSpeedRaw;
 
   if (val > maxPlaybackRate) {
     val = maxPlaybackRate;

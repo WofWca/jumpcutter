@@ -18,11 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { TimeDelta } from '@/helpers';
+import type { TimeDelta } from "@/helpers";
 
 export function getDelayFromInputToStretcherOutput(
   lookaheadNodeDelay: TimeDelta,
-  stretcherNodeDelay: TimeDelta
+  stretcherNodeDelay: TimeDelta,
 ): TimeDelta {
   return lookaheadNodeDelay + stretcherNodeDelay;
 }

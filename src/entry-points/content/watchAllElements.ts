@@ -18,11 +18,13 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { requestIdleCallbackPolyfill } from './helpers';
+import { requestIdleCallbackPolyfill } from "./helpers";
 
 type HTMLElementTagNameMapUppercase = {
-  [P in Uppercase<keyof HTMLElementTagNameMap>]: HTMLElementTagNameMap[Lowercase<P>]
-}
+  [
+    P in Uppercase<keyof HTMLElementTagNameMap>
+  ]: HTMLElementTagNameMap[Lowercase<P>];
+};
 /**
  * Watch the document and call `onNewElements` with the list of new elements every time they get
  * inserted in the document. When it is fist called, all the elements that are already
@@ -33,13 +35,15 @@ type HTMLElementTagNameMapUppercase = {
  * search for all the exisiting elements again.
  * @returns the `stopWatching` function, the destructor
  */
-export default function watchAllElements<T extends keyof HTMLElementTagNameMapUppercase>(
+export default function watchAllElements<
+  T extends keyof HTMLElementTagNameMapUppercase,
+>(
   tagNames: Array<T>,
   onNewElements: (elements: Array<HTMLElementTagNameMapUppercase[T]>) => void,
 ): () => void {
   for (const tagName of tagNames) {
     const allElementsWThisTag = document.getElementsByTagName(
-      tagName
+      tagName,
     ) as HTMLCollectionOf<HTMLElementTagNameMapUppercase[typeof tagName]>;
     // const allElementsWThisTag = document.getElementsByTagName<keyof HTMLElementTagNameMap>(tagName as HTMLElementTagNameUppercaseToLowercaseMap[T]);
     // const allElementsWThisTag = document.getElementsByTagName(tagName as unknown as LowercaseT);
@@ -53,7 +57,7 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMapUp
     // have enough media elements for this to be a problem
     const newElements: Array<HTMLElementTagNameMapUppercase[T]> = [];
     for (const m of mutations) {
-      if (m.type !== 'childList') {
+      if (m.type !== "childList") {
         continue;
       }
       for (const node_ of m.addedNodes) {
@@ -71,7 +75,9 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMapUp
         // `this.handledElements.has(el)`.
         // `node.tagName` is why we need `tagNames` to be uppercase.
         if ((tagNames as string[]).includes(node.tagName)) {
-          newElements.push(node as HTMLElementTagNameMapUppercase[typeof tagNames[number]]);
+          newElements.push(
+            node as HTMLElementTagNameMapUppercase[(typeof tagNames)[number]],
+          );
         } else {
           // TODO here https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName
           // it says "The returned list is live, which means it updates itself with the DOM tree
@@ -81,8 +87,10 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMapUp
           // live ranges can be costly.
           for (const tagName of tagNames) {
             const childTargetElements = node.getElementsByTagName(
-              tagName
-            ) as HTMLCollectionOf<HTMLElementTagNameMapUppercase[typeof tagName]>;
+              tagName,
+            ) as HTMLCollectionOf<
+              HTMLElementTagNameMapUppercase[typeof tagName]
+            >;
             if (childTargetElements.length) {
               newElements.push(...childTargetElements);
             }
@@ -97,11 +105,10 @@ export default function watchAllElements<T extends keyof HTMLElementTagNameMapUp
       onNewElements(newElements);
     }
   }
-  const handleMutationsOnIdle =
-    (mutations: MutationRecord[]) => requestIdleCallbackPolyfill(
-      () => handleMutations(mutations),
-      { timeout: 5000 },
-    );
+  const handleMutationsOnIdle = (mutations: MutationRecord[]) =>
+    requestIdleCallbackPolyfill(() => handleMutations(mutations), {
+      timeout: 5000,
+    });
   const mutationObserver = new MutationObserver(handleMutationsOnIdle);
   mutationObserver.observe(document, {
     subtree: true,

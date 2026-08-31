@@ -16,10 +16,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
 -->
+<svelte:options immutable={true} />
 
-<svelte:options
-  immutable={true}
-/>
 <script lang="ts">
   export let value: string;
 
@@ -32,10 +30,4 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 </script>
 
 <!-- on:input={e => e.target.value = value} -->
-<input
-  {...$$props}
-  on:input={onChange}
-
-  on:input
-  on:keydown
-/>
+<input {...$$props} on:input={onChange} on:input on:keydown />

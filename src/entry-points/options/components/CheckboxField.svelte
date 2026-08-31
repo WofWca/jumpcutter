@@ -17,10 +17,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
 -->
+<svelte:options immutable={true} />
 
-<svelte:options
-  immutable={true}
-/>
 <script lang="ts">
   export let label: string;
   export let checked: boolean;
@@ -30,13 +28,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 <div>
   <label>
     {label}
-    <input
-      type="checkbox"
-      {...$$restProps}
-      bind:checked
-      on:input
-      on:change
-    >
+    <input type="checkbox" {...$$restProps} bind:checked on:input on:change />
   </label>
 </div>
 

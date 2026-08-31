@@ -22,7 +22,7 @@
 import {
   BRIDGE_ELEMENT_ID_AND_PROP_NAME,
   GET_CLONE_REQUEST_EVENT_NAME,
-  GET_CLONE_RESPONSE_EVENT_NAME
+  GET_CLONE_RESPONSE_EVENT_NAME,
 } from "./constants";
 import { startCloningMediaSources } from "./lib";
 
@@ -61,62 +61,67 @@ const [
   stopCloningMediaSources,
 ] = startCloningMediaSources();
 
-
 // Keep in mind that the website itself (or other extensions) can also dispatch such an event.
 // TODO perf: `removeEventListener` when appropriate (when the extension is disabled, idk).
-document.addEventListener(GET_CLONE_REQUEST_EVENT_NAME, async e_ => {
-  if (!(e_ instanceof CustomEvent)) {
-    if (IS_DEV_MODE) {
-      console.warn('Not a CustomEvent');
+document.addEventListener(
+  GET_CLONE_REQUEST_EVENT_NAME,
+  async (e_) => {
+    if (!(e_ instanceof CustomEvent)) {
+      if (IS_DEV_MODE) {
+        console.warn("Not a CustomEvent");
+      }
+      return;
     }
-    return;
-  }
 
-  const e: CustomEvent<unknown> = e_;
-  const requestId = (
-    e.detail
-    && typeof e.detail === 'object'
-    && 'requestId' in e.detail
-    && e.detail.requestId
-  );
+    const e: CustomEvent<unknown> = e_;
+    const requestId =
+      e.detail &&
+      typeof e.detail === "object" &&
+      "requestId" in e.detail &&
+      e.detail.requestId;
 
-  if (!requestId) {
-    if (IS_DEV_MODE) {
-      console.warn('No `requestId` in a request event');
+    if (!requestId) {
+      if (IS_DEV_MODE) {
+        console.warn("No `requestId` in a request event");
+      }
+      return;
     }
-    return;
-  }
 
-  // FYI we could use a different channel for error responses.
-  const sendGetCloneErrorResponse = () => sendGetCloneResponse(bridgeElement, { requestId });
-  // TODO fix: the extension might request a clone for an element that is not actually
-  // in the document tree, so this event won't get caught.
-  // Such elements can still play audio:
-  // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource
-  // > Media elements that are potentially playing while not in a document must
-  // > not play any video, but should play any audio component
-  // therefore they still are a valid target for us. Thought websites are rarely made this way.
-  const originalEl = e.target;
+    // FYI we could use a different channel for error responses.
+    const sendGetCloneErrorResponse = () =>
+      sendGetCloneResponse(bridgeElement, { requestId });
+    // TODO fix: the extension might request a clone for an element that is not actually
+    // in the document tree, so this event won't get caught.
+    // Such elements can still play audio:
+    // https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource
+    // > Media elements that are potentially playing while not in a document must
+    // > not play any video, but should play any audio component
+    // therefore they still are a valid target for us. Thought websites are rarely made this way.
+    const originalEl = e.target;
 
-  if (!(originalEl instanceof HTMLMediaElement)) {
-    console.warn('Requested a clone for an element that is not an HTMLMediaElement');
-    sendGetCloneErrorResponse();
-    return;
-  }
+    if (!(originalEl instanceof HTMLMediaElement)) {
+      console.warn(
+        "Requested a clone for an element that is not an HTMLMediaElement",
+      );
+      sendGetCloneErrorResponse();
+      return;
+    }
 
-  const cloneEl = getCloneElement(originalEl);
-  if (!cloneEl) {
-    sendGetCloneErrorResponse();
-    return;
-  }
+    const cloneEl = getCloneElement(originalEl);
+    if (!cloneEl) {
+      sendGetCloneErrorResponse();
+      return;
+    }
 
-  // Keep in mind that the original element's source might change before our response is
-  // received.
+    // Keep in mind that the original element's source might change before our response is
+    // received.
 
-  // The receiver will remove the clone element from the bridge element.
-  bridgeElement.appendChild(cloneEl);
-  sendGetCloneResponse(cloneEl, { requestId });
-}, { passive: true });
+    // The receiver will remove the clone element from the bridge element.
+    bridgeElement.appendChild(cloneEl);
+    sendGetCloneResponse(cloneEl, { requestId });
+  },
+  { passive: true },
+);
 
 /**
  * @see {@link sendBridgeElement}
@@ -125,12 +130,14 @@ function receiveBridgeElement(): HTMLDivElement {
   if (IS_DEV_MODE) {
     console.log(
       "receiveBridgeElement",
-      document.getElementById(BRIDGE_ELEMENT_ID_AND_PROP_NAME)
+      document.getElementById(BRIDGE_ELEMENT_ID_AND_PROP_NAME),
     );
   }
 
-  const el = document.getElementById(BRIDGE_ELEMENT_ID_AND_PROP_NAME) as HTMLDivElement;
-  el.id = ''; // No need for it anymore.
+  const el = document.getElementById(
+    BRIDGE_ELEMENT_ID_AND_PROP_NAME,
+  ) as HTMLDivElement;
+  el.id = ""; // No need for it anymore.
   el.remove();
   return el;
 }
@@ -139,8 +146,10 @@ function sendGetCloneResponse(
   targetElement: HTMLMediaElement | typeof bridgeElement,
   detail: { requestId: number | unknown } & Record<string, unknown>,
 ) {
-  targetElement.dispatchEvent(new CustomEvent(GET_CLONE_RESPONSE_EVENT_NAME, {
-    bubbles: true, // The event shall be received on the bridgeElement.
-    detail,
-  }));
+  targetElement.dispatchEvent(
+    new CustomEvent(GET_CLONE_RESPONSE_EVENT_NAME, {
+      bubbles: true, // The event shall be received on the bridgeElement.
+      detail,
+    }),
+  );
 }

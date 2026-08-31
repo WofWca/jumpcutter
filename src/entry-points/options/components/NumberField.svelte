@@ -16,24 +16,16 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
 -->
+<svelte:options immutable={true} />
 
-<svelte:options
-  immutable={true}
-/>
 <script lang="ts">
-  import InputFieldBase from './InputFieldBase.svelte'
+  import InputFieldBase from "./InputFieldBase.svelte";
 
   export let label: string;
   export let value: number;
-  export let step: HTMLInputElement['step'] = 'any';
+  export let step: HTMLInputElement["step"] = "any";
 </script>
 
 <InputFieldBase {label} let:id>
-  <input
-    {...$$restProps}
-    type="number"
-    bind:value
-    {step}
-    {id}
-  />
+  <input {...$$restProps} type="number" bind:value {step} {id} />
 </InputFieldBase>

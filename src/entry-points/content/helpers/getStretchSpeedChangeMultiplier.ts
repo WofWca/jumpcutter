@@ -18,10 +18,18 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { StretchInfo } from '@/helpers';
+import type { StretchInfo } from "@/helpers";
 
-export function getStretchSpeedChangeMultiplier(
-  { startValue, endValue, startTime, endTime }: Pick<StretchInfo, 'startValue' | 'endValue' | 'startTime' | 'endTime'>
-): number {
-  return ((endTime - startTime) + (startValue - endValue)) / (endTime - startTime);
+export function getStretchSpeedChangeMultiplier({
+  startValue,
+  endValue,
+  startTime,
+  endTime,
+}: Pick<
+  StretchInfo,
+  "startValue" | "endValue" | "startTime" | "endTime"
+>): number {
+  return (
+    (endTime - startTime + (startValue - endValue)) / (endTime - startTime)
+  );
 }

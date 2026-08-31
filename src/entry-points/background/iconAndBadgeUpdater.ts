@@ -18,63 +18,75 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import type { Settings, MyStorageChanges } from '@/settings';
-import { assertDev } from '@/helpers';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
+import type { Settings, MyStorageChanges } from "@/settings";
+import { assertDev } from "@/helpers";
 
 function setGlobalBadge(text: string, color: string) {
   browserOrChrome.action.setBadgeBackgroundColor({ color });
   browserOrChrome.action.setBadgeText({ text });
 }
-type SupportedSettings = keyof Pick<Settings, 'soundedSpeed' | 'silenceSpeedRaw' | 'volumeThreshold' | 'marginBefore'
-  | 'marginAfter'>;
+type SupportedSettings = keyof Pick<
+  Settings,
+  | "soundedSpeed"
+  | "silenceSpeedRaw"
+  | "volumeThreshold"
+  | "marginBefore"
+  | "marginAfter"
+>;
 function settingToBadgeParams<T extends SupportedSettings>(
   settingName: T,
-  value: Settings[T]
-): Parameters<typeof setGlobalBadge>
-{
+  value: Settings[T],
+): Parameters<typeof setGlobalBadge> {
   switch (settingName) {
     // TODO refactor: DRY colors? Though here they're darker anyway, to account for the white text.
     // TODO refactor: Also DRY `toFixed` precision, to match the popup?
-    case 'soundedSpeed': return [value.toFixed(2), '#0d0'];
-    case 'silenceSpeedRaw': return [value.toFixed(2), '#d00'];
+    case "soundedSpeed":
+      return [value.toFixed(2), "#0d0"];
+    case "silenceSpeedRaw":
+      return [value.toFixed(2), "#d00"];
     // I guess it's better when it's blue and not red, so it's not confused with `silenceSpeed`.
-    case 'volumeThreshold': return [value.toFixed(4), '#00d'];
+    case "volumeThreshold":
+      return [value.toFixed(4), "#00d"];
     // TODO improvement: any better ideas for background colors for these two?
-    case 'marginBefore': return [value.toFixed(3), '#333'];
-    case 'marginAfter': return [value.toFixed(3), '#333'];
+    case "marginBefore":
+      return [value.toFixed(3), "#333"];
+    case "marginAfter":
+      return [value.toFixed(3), "#333"];
     // default: assertNever(settingName); Does not work because of the generic type. TODO
-    default: throw new Error();
+    default:
+      throw new Error();
   }
 }
 const stashedTabSpecificBadges = new Map<
   number,
   {
     text: string;
-    color: Parameters<
-      typeof chrome.action.setBadgeBackgroundColor
-    >[0]['color'];
+    color: Parameters<typeof chrome.action.setBadgeBackgroundColor>[0]["color"];
   }
 >();
 function setBadgeToDefault(settings: Settings) {
   if (
-    settings.badgeWhatSettingToDisplayByDefault === 'none'
-    || settings.badgeWhatSettingToDisplayByDefault === 'timeSaved'
-    || !settings.enabled
+    settings.badgeWhatSettingToDisplayByDefault === "none" ||
+    settings.badgeWhatSettingToDisplayByDefault === "timeSaved" ||
+    !settings.enabled
   ) {
-    browserOrChrome.action.setBadgeText({ text: '' });
+    browserOrChrome.action.setBadgeText({ text: "" });
 
     if (
-      settings.badgeWhatSettingToDisplayByDefault === 'timeSaved'
-      && settings.enabled
+      settings.badgeWhatSettingToDisplayByDefault === "timeSaved" &&
+      settings.enabled
     ) {
       // Restore the stashed values
       for (const [tabId, badgeValue] of stashedTabSpecificBadges.entries()) {
-        browserOrChrome.action.setBadgeText({ tabId, text: badgeValue.text })
-        browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: badgeValue.color })
+        browserOrChrome.action.setBadgeText({ tabId, text: badgeValue.text });
+        browserOrChrome.action.setBadgeBackgroundColor({
+          tabId,
+          color: badgeValue.color,
+        });
       }
       // We restored them, no longer need in the stash.
-      stashedTabSpecificBadges.clear()
+      stashedTabSpecificBadges.clear();
     }
   } else {
     const settingName = settings.badgeWhatSettingToDisplayByDefault;
@@ -82,23 +94,24 @@ function setBadgeToDefault(settings: Settings) {
   }
 }
 let setBadgeToDefaultTimeout: number | null = null;
-async function temporarilySetBadge(text: string, color: string, settings: Settings) {
+async function temporarilySetBadge(
+  text: string,
+  color: string,
+  settings: Settings,
+) {
   const tabsMayHaveTabSpecificBadges =
-    settings.badgeWhatSettingToDisplayByDefault == 'timeSaved';
-  const isBadgeTemporarilyOverridden = setBadgeToDefaultTimeout != null
-  if (
-    tabsMayHaveTabSpecificBadges
-    && !isBadgeTemporarilyOverridden
-  ) {
+    settings.badgeWhatSettingToDisplayByDefault == "timeSaved";
+  const isBadgeTemporarilyOverridden = setBadgeToDefaultTimeout != null;
+  if (tabsMayHaveTabSpecificBadges && !isBadgeTemporarilyOverridden) {
     // Сlear the tab-specific badge for the current tab,
     // because it takes precedence over the global badge.
     // Also stash its state to restore it after timeout.
 
-    const tabs = await browserOrChrome.tabs.query({ active: true })
+    const tabs = await browserOrChrome.tabs.query({ active: true });
     for (const tab of tabs) {
-      const tabId = tab.id
+      const tabId = tab.id;
       if (tabId == undefined) {
-        console.warn('tab.id is', tabId, ', ignoring');
+        console.warn("tab.id is", tabId, ", ignoring");
         continue;
       }
 
@@ -109,8 +122,8 @@ async function temporarilySetBadge(text: string, color: string, settings: Settin
         browserOrChrome.action.getBadgeText({ tabId }),
         browserOrChrome.action.getBadgeBackgroundColor({ tabId }),
       ]).then(([text, color]) => {
-        if (text === '') {
-          return
+        if (text === "") {
+          return;
         }
         stashedTabSpecificBadges.set(tabId, { text, color });
       });
@@ -123,9 +136,9 @@ async function temporarilySetBadge(text: string, color: string, settings: Settin
         // > If tabId is specified and text is null,
         // > the text for the specified tab is cleared
         // > and defaults to the global badge text.
-        text: null
+        text: null,
       });
-      resetTabSpecificBadgeColor(tabId, color)
+      resetTabSpecificBadgeColor(tabId, color);
     }
   }
   // Only do this _after_ `getBadgeText` and `getBadgeBackgroundColor`.
@@ -138,24 +151,24 @@ async function temporarilySetBadge(text: string, color: string, settings: Settin
   // TODO refactor: do we need to migrate to alarms or is 1500ms fine?
   setBadgeToDefaultTimeout = (setTimeout as typeof window.setTimeout)(() => {
     setBadgeToDefault(settings);
-    setBadgeToDefaultTimeout = null
+    setBadgeToDefaultTimeout = null;
   }, 1500);
 }
 
 let currentPath64: string | undefined;
-function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
-  const iconsDir = '/icons/';
+function setIcon(settings: Pick<Settings, "enabled" | "volumeThreshold">) {
+  const iconsDir = "/icons/";
   let icon64, icon128;
   // TODO refactor: these image files are just copy-pasted, with only class name being different. DRY.
   if (!settings.enabled) {
-    icon64 = 'icon-disabled.svg-64.png';
-    icon128 = 'icon-disabled.svg-128.png';
+    icon64 = "icon-disabled.svg-64.png";
+    icon128 = "icon-disabled.svg-128.png";
   } else if (settings.volumeThreshold === 0) {
-    icon64 = 'icon-only-sounded.svg-64.png';
-    icon128 = 'icon-only-sounded.svg-128.png';
+    icon64 = "icon-only-sounded.svg-64.png";
+    icon128 = "icon-only-sounded.svg-128.png";
   } else {
-    icon64 = 'icon.svg-64.png';
-    icon128 = 'icon.svg-128.png';
+    icon64 = "icon.svg-64.png";
+    icon128 = "icon.svg-128.png";
   }
 
   const path64 = iconsDir + icon64;
@@ -167,7 +180,7 @@ function setIcon(settings: Pick<Settings, 'enabled' | 'volumeThreshold'>) {
       path: {
         "64": path64,
         "128": path128,
-      }
+      },
     });
 
     currentPath64 = path64;
@@ -181,12 +194,20 @@ export function updateIconAndBadge(
   setIcon(newSettings);
 
   // TODO improvement: also display `video.volume` changes? Perhaps this script belongs to `content/main.ts`?
-  const orderedSetingsNames =
-    ['soundedSpeed', 'silenceSpeedRaw', 'volumeThreshold', 'marginBefore', 'marginAfter'] as const;
+  const orderedSetingsNames = [
+    "soundedSpeed",
+    "silenceSpeedRaw",
+    "volumeThreshold",
+    "marginBefore",
+    "marginAfter",
+  ] as const;
   for (const settingName of orderedSetingsNames) {
     const currSettingChange = changes[settingName];
     if (currSettingChange) {
-      temporarilySetBadge(...settingToBadgeParams(settingName, currSettingChange.newValue!), newSettings);
+      temporarilySetBadge(
+        ...settingToBadgeParams(settingName, currSettingChange.newValue!),
+        newSettings,
+      );
       break;
     }
   }
@@ -195,21 +216,21 @@ export function updateIconAndBadge(
     setBadgeToDefault(newSettings);
 
     if (
-      changes.badgeWhatSettingToDisplayByDefault?.oldValue === "timeSaved"
-      || changes.enabled?.newValue === false
+      changes.badgeWhatSettingToDisplayByDefault?.oldValue === "timeSaved" ||
+      changes.enabled?.newValue === false
     ) {
       // Reset all tab-specific badges
       browserOrChrome.tabs.query({}).then((tabs) => {
         for (const tab of tabs) {
-          const tabId = tab.id
+          const tabId = tab.id;
           if (tabId == undefined) {
-            console.warn('tab.id is', tabId, ', ignoring');
+            console.warn("tab.id is", tabId, ", ignoring");
             continue;
           }
           browserOrChrome.action.setBadgeText({
             tabId,
             // @ts-expect-error ts(2322) see another `setBadgeText` call above.
-            text: null
+            text: null,
           });
           // Yep, reset to white in Chromium. Not good, but let's wait
           // for Chromium to fix it (see the comments in the function).
@@ -220,9 +241,9 @@ export function updateIconAndBadge(
           // on the tabs that do not have tab-specific color
           // (or have the color set to the "time saved" color) (or text).
           // But that would be over-engineering.
-          resetTabSpecificBadgeColor(tabId, '#ffffff')
+          resetTabSpecificBadgeColor(tabId, "#ffffff");
         }
-      })
+      });
     }
   }
 }
@@ -230,15 +251,18 @@ export function updateIconAndBadge(
 export function onNewTimeSavedInfo(tabId: number, timeSaved: string) {
   const newBadgeValue = {
     text: timeSaved,
-    color: '#aae5ff'
-  }
+    color: "#aae5ff",
+  };
 
-  const isBadgeTemporarilyOverridden = setBadgeToDefaultTimeout != null
+  const isBadgeTemporarilyOverridden = setBadgeToDefaultTimeout != null;
   if (isBadgeTemporarilyOverridden) {
-    stashedTabSpecificBadges.set(tabId, newBadgeValue)
+    stashedTabSpecificBadges.set(tabId, newBadgeValue);
   } else {
-    browserOrChrome.action.setBadgeText({ tabId, text: newBadgeValue.text })
-    browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: newBadgeValue.color })
+    browserOrChrome.action.setBadgeText({ tabId, text: newBadgeValue.text });
+    browserOrChrome.action.setBadgeBackgroundColor({
+      tabId,
+      color: newBadgeValue.color,
+    });
   }
 }
 
@@ -249,9 +273,11 @@ export function initIconAndBadge(settings: Settings) {
 
 function resetTabSpecificBadgeColor(
   tabId: number,
-  fallbackColor: Parameters<typeof chrome.action.setBadgeBackgroundColor>[0]['color']
+  fallbackColor: Parameters<
+    typeof chrome.action.setBadgeBackgroundColor
+  >[0]["color"],
 ) {
-  if (BUILD_DEFINITIONS.BROWSER === 'chromium') {
+  if (BUILD_DEFINITIONS.BROWSER === "chromium") {
     // Unfortunately in Chromium resetting tab-specific color
     // is not possible for now:
     // https://issues.chromium.org/issues/40073862
@@ -260,13 +286,16 @@ function resetTabSpecificBadgeColor(
       browserOrChrome.action.setBadgeBackgroundColor({
         tabId,
         // @ts-expect-error ts(2322) not possible in Chromium for now.
-        color: null
-      })
+        color: null,
+      });
     } catch (error) {
-      browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: fallbackColor })
+      browserOrChrome.action.setBadgeBackgroundColor({
+        tabId,
+        color: fallbackColor,
+      });
     }
   } else {
-    assertDev(browserOrChrome === browser)
-    browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: null })
+    assertDev(browserOrChrome === browser);
+    browserOrChrome.action.setBadgeBackgroundColor({ tabId, color: null });
   }
 }

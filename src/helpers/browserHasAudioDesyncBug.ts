@@ -1,6 +1,6 @@
 import { getChromiumMajorVersion } from "./getBrowserMajorVersion";
 
-let chromiumVersion
+let chromiumVersion;
 /**
  * If `false`, it is guaranteed that it doesn't have this bug,
  * however, there were preview builds of Chromium 128 without this

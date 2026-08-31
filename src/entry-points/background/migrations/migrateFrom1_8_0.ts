@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 import type { Settings } from "@/settings";
 
 export default async function (): Promise<void> {
@@ -28,19 +28,21 @@ export default async function (): Promise<void> {
     soundedSpeed: 1.5,
     enableExperimentalFeatures: true,
   };
-  const { silenceSpeed, soundedSpeed, enableExperimentalFeatures } = await storage.get(defaults) as typeof defaults;
+  const { silenceSpeed, soundedSpeed, enableExperimentalFeatures } =
+    (await storage.get(defaults)) as typeof defaults;
   let multiplier = silenceSpeed / soundedSpeed;
-  if (!(0 < multiplier && multiplier <= 10)) { // Check if it's reasonable (and if it's a nubmer at all, just in case).
+  if (!(0 < multiplier && multiplier <= 10)) {
+    // Check if it's reasonable (and if it's a nubmer at all, just in case).
     multiplier = 2;
   }
   const newValues: Partial<Settings> = {
-    silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed',
+    silenceSpeedSpecificationMethod: "relativeToSoundedSpeed",
     silenceSpeedRaw: multiplier,
-  }
+  };
   if (enableExperimentalFeatures === false) {
     // Since the new version, this is practically equivalent.
     newValues.marginBefore = 0;
   }
-  await storage.remove(['silenceSpeed', 'enableExperimentalFeatures']);
+  await storage.remove(["silenceSpeed", "enableExperimentalFeatures"]);
   await storage.set(newValues);
 }

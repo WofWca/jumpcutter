@@ -18,8 +18,14 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const lastPlaybackRateSetByThisExtensionMap =        new WeakMap<HTMLMediaElement, number>();
-export const lastDefaultPlaybackRateSetByThisExtensionMap = new WeakMap<HTMLMediaElement, number>();
+export const lastPlaybackRateSetByThisExtensionMap = new WeakMap<
+  HTMLMediaElement,
+  number
+>();
+export const lastDefaultPlaybackRateSetByThisExtensionMap = new WeakMap<
+  HTMLMediaElement,
+  number
+>();
 // const recentlySetPlaybackRateFor =        new WeakSet<HTMLMediaElement>();
 // const recentlySetDefaultPlaybackRateFor = new WeakSet<HTMLMediaElement>();
 
@@ -74,7 +80,10 @@ function rememberChangeAndForgetAfterEventListenersWereExecuted(
 /**
  * This must be used instead of `el.playbackRate =`
  */
-export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: number) {
+export function setPlaybackRateAndRememberIt(
+  el: HTMLMediaElement,
+  newVal: number,
+) {
   /*
   TODO feat: use this for a feature where we BOTH prevent other scripts from changing the playback
   rate AND update soundedSpeed when the user does it. How to differentiate? Simple. Roll back
@@ -111,7 +120,10 @@ export function setPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: numbe
 /**
  * @see {@link setPlaybackRateAndRememberIt}
  */
-export function setDefaultPlaybackRateAndRememberIt(el: HTMLMediaElement, newVal: number) {
+export function setDefaultPlaybackRateAndRememberIt(
+  el: HTMLMediaElement,
+  newVal: number,
+) {
   /*
   if (el.defaultPlaybackRate !== newVal) {
     queueMicrotask(() => rememberChangeAndForgetAfterEventListenersWereExecuted(

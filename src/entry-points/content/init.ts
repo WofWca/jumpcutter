@@ -18,30 +18,37 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 import {
-  addOnStorageChangedListener, MyStorageChanges, getSettings
-} from '@/settings';
-import type AllMediaElementsController from './AllMediaElementsController';
-import broadcastStatus from './broadcastStatus';
-import once from 'lodash/once';
-import watchAllElements from './watchAllElements';
-import requestIdlePromise from './helpers/requestIdlePromise';
+  addOnStorageChangedListener,
+  MyStorageChanges,
+  getSettings,
+} from "@/settings";
+import type AllMediaElementsController from "./AllMediaElementsController";
+import broadcastStatus from "./broadcastStatus";
+import once from "lodash/once";
+import watchAllElements from "./watchAllElements";
+import requestIdlePromise from "./helpers/requestIdlePromise";
 
-const broadcastStatus2 = (allMediaElementsController?: AllMediaElementsController) => allMediaElementsController
-  ? allMediaElementsController.broadcastStatus()
-  : broadcastStatus({ elementLastActivatedAt: undefined });
+const broadcastStatus2 = (
+  allMediaElementsController?: AllMediaElementsController,
+) =>
+  allMediaElementsController
+    ? allMediaElementsController.broadcastStatus()
+    : broadcastStatus({ elementLastActivatedAt: undefined });
 
 export default async function init(): Promise<void> {
   // TODO would be better to pass them as a parameter from `main.ts`.
-  const settingsP = getSettings('applyTo');
+  const settingsP = getSettings("applyTo");
 
   let allMediaElementsController: AllMediaElementsController | undefined;
   const ensureInitAllMediaElementsController = once(async function () {
-    const AllMediaElementsController = (await import(
-      /* webpackExports: ['default'] */
-      './AllMediaElementsController'
-    )).default
+    const AllMediaElementsController = (
+      await import(
+        /* webpackExports: ['default'] */
+        "./AllMediaElementsController"
+      )
+    ).default;
     allMediaElementsController = new AllMediaElementsController();
     return allMediaElementsController;
   });
@@ -51,45 +58,49 @@ export default async function init(): Promise<void> {
     // `browser.runtime.sendMessage`, this code is not only run as a content script - on the `local-file-player`
     // page it is run as the page script, so this listener will catch all messages sent with
     // `browser.runtime.sendMessage`, including other `broadcastStatus`.
-    if (message !== 'checkContentStatus') { // TODO DRY.
+    if (message !== "checkContentStatus") {
+      // TODO DRY.
       if (IS_DEV_MODE) {
         const thisIsExtensionPage = document.location.href.startsWith(
-          browserOrChrome.runtime.getURL('')
+          browserOrChrome.runtime.getURL(""),
         );
         const thisIsLocalFilePlayer = thisIsExtensionPage;
         if (!thisIsLocalFilePlayer) {
-          console.error('Unrecognized message', message);
+          console.error("Unrecognized message", message);
         }
       }
       return;
     }
     broadcastStatus2(allMediaElementsController);
-  }
+  };
   browserOrChrome.runtime.onMessage.addListener(onMessage);
   // So it sends the message automatically when it loads, in case the popup was opened while the page is loading.
   broadcastStatus2(allMediaElementsController);
-  const removeListener = addOnStorageChangedListener((changes: MyStorageChanges) => {
-    if (changes.enabled?.newValue === false) {
-      browserOrChrome.runtime.onMessage.removeListener(onMessage);
-      stopWatchingElements();
-      removeListener();
-    }
-  });
+  const removeListener = addOnStorageChangedListener(
+    (changes: MyStorageChanges) => {
+      if (changes.enabled?.newValue === false) {
+        browserOrChrome.runtime.onMessage.removeListener(onMessage);
+        stopWatchingElements();
+        removeListener();
+      }
+    },
+  );
 
   const { applyTo } = await settingsP;
-  const tagNames: Array<'VIDEO' | 'AUDIO'> = [];
-  if (applyTo !== 'audioOnly') {
-    tagNames.push('VIDEO');
+  const tagNames: Array<"VIDEO" | "AUDIO"> = [];
+  if (applyTo !== "audioOnly") {
+    tagNames.push("VIDEO");
   }
-  if (applyTo !== 'videoOnly') {
-    tagNames.push('AUDIO');
+  if (applyTo !== "videoOnly") {
+    tagNames.push("AUDIO");
   }
 
-  await requestIdlePromise({ timeout: 5000 })
-  const stopWatchingElements = watchAllElements(
-    tagNames,
-    newElements => ensureInitAllMediaElementsController().then(allMediaElementsController => {
-      allMediaElementsController.onNewMediaElements(...newElements);
-    })
-  )
+  await requestIdlePromise({ timeout: 5000 });
+  const stopWatchingElements = watchAllElements(tagNames, (newElements) =>
+    ensureInitAllMediaElementsController().then(
+      (allMediaElementsController) => {
+        allMediaElementsController.onNewMediaElements(...newElements);
+      },
+    ),
+  );
 }

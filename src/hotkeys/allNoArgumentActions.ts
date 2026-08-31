@@ -18,6 +18,9 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { HotkeyAction } from './HotkeyAction';
+import { HotkeyAction } from "./HotkeyAction";
 
-export const allNoArgumentActions = [HotkeyAction.TOGGLE_PAUSE, HotkeyAction.TOGGLE_MUTE] as const;
+export const allNoArgumentActions = [
+  HotkeyAction.TOGGLE_PAUSE,
+  HotkeyAction.TOGGLE_MUTE,
+] as const;

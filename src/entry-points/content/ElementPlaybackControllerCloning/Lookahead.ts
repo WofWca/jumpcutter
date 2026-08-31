@@ -18,37 +18,39 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import { Settings as ExtensionSettings } from '@/settings';
-import { assertDev, clamp, maxPlaybackRate, MediaTime } from '@/helpers';
-import { destroyAudioWorkletNode, getRealtimeMargin } from '@/entry-points/content/helpers';
-import once from 'lodash/once';
-import throttle from 'lodash/throttle';
-import SilenceDetectorNode, { SilenceDetectorEventType, SilenceDetectorMessage }
-  from '@/entry-points/content/SilenceDetector/SilenceDetectorNode';
-import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
-import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
+import { Settings as ExtensionSettings } from "@/settings";
+import { assertDev, clamp, maxPlaybackRate, MediaTime } from "@/helpers";
 import {
-  getOrCreateMediaElementSourceAndUpdateMap
-} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
-import { getFinalCloneElement } from './getFinalCloneElement';
-import requestIdlePromise from '../helpers/requestIdlePromise';
+  destroyAudioWorkletNode,
+  getRealtimeMargin,
+} from "@/entry-points/content/helpers";
+import once from "lodash/once";
+import throttle from "lodash/throttle";
+import SilenceDetectorNode, {
+  SilenceDetectorEventType,
+  SilenceDetectorMessage,
+} from "@/entry-points/content/SilenceDetector/SilenceDetectorNode";
+import VolumeFilterNode from "@/entry-points/content/VolumeFilter/VolumeFilterNode";
+import lookaheadVolumeFilterSmoothing from "./lookaheadVolumeFilterSmoothing.json";
+import { getOrCreateMediaElementSourceAndUpdateMap } from "@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap";
+import { getFinalCloneElement } from "./getFinalCloneElement";
+import requestIdlePromise from "../helpers/requestIdlePromise";
 
 // A more semantically correct version would be `Array<[start: MediaTime, end: MediaTime]>`,
 // but I think this is a bit faster.
 // TODO `Float32Array` should be even faster, though it doesn't support `push`.
 // But I think array is not the best suited data structure for this application in the first place.
 type MyTimeRanges = {
-  starts: MediaTime[],
-  ends: MediaTime[],
-}
+  starts: MediaTime[];
+  ends: MediaTime[];
+};
 export type TimeRange = [start: MediaTime, end: MediaTime];
 
 function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
   // TODO super inefficient, same as with `getNextOutOfRangesTime`.
   for (let i = 0; i < ranges.length; i++) {
-    const
-      start = ranges.start(i),
+    const start = ranges.start(i),
       end = ranges.end(i);
     if (start <= time && time <= end) {
       return true;
@@ -59,12 +61,12 @@ function inRanges(ranges: TimeRanges, time: MediaTime): boolean {
 
 type LookaheadSettings = Pick<
   ExtensionSettings,
-  'volumeThreshold' | 'marginBefore' | 'marginAfter'
+  "volumeThreshold" | "marginBefore" | "marginAfter"
 > & {
   /**
    * @see {@link ControllerSettings.isOppositeDay}
    */
-  isOppositeDay: boolean
+  isOppositeDay: boolean;
 };
 
 // The `maxPlaybackRate` could change in the future, to something like 64, so let's cap it at
@@ -99,7 +101,9 @@ export default class Lookahead {
   };
 
   private _resolveDestroyedPromise!: () => void;
-  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
+  private _destroyedPromise = new Promise<void>(
+    (r) => (this._resolveDestroyedPromise = r),
+  );
   /**
    * @param getFallbackCloneElement a function that returns a clone element. It is used when
    * the `Lookahead` could not reuse the same source as the original element. The current
@@ -111,7 +115,10 @@ export default class Lookahead {
     private settings: LookaheadSettings,
     // public onNewSilenceRange: (start: Time, end: Time) => void,
     private readonly getFallbackCloneElement:
-      undefined | ((originalElement: HTMLMediaElement) => Promise<HTMLAudioElement | undefined>),
+      | undefined
+      | ((
+          originalElement: HTMLMediaElement,
+        ) => Promise<HTMLAudioElement | undefined>),
     private onClonePlaybackError: () => void,
   ) {}
   private async _init(): Promise<void> {
@@ -123,7 +130,7 @@ export default class Lookahead {
 
     // TODO perf: don't await here, schedule other async operations.
     const [clone, isFallbackElement] = await cloneElementP;
-    await requestIdlePromise({ timeout: 2000 })
+    await requestIdlePromise({ timeout: 2000 });
     /**
      * Whether the same element can be used between `Lookahead` instantiations and stuff.
      * Otherwise it's disposable and we don't care what happens to it once we stop needing it.
@@ -134,9 +141,11 @@ export default class Lookahead {
     if (clone.error) {
       this.onClonePlaybackError();
     }
-    clone.addEventListener("error", this.onClonePlaybackError, { passive: true });
+    clone.addEventListener("error", this.onClonePlaybackError, {
+      passive: true,
+    });
     this._destroyedPromise.then(() =>
-      clone.removeEventListener("error", this.onClonePlaybackError)
+      clone.removeEventListener("error", this.onClonePlaybackError),
     );
 
     this.loudSince = clone.currentTime;
@@ -159,7 +168,7 @@ export default class Lookahead {
       // https://html.spec.whatwg.org/multipage/media.html#best-practices-for-authors-using-media-elements
       // > or, even better, by setting the element's src attribute to an empty string
       // BTW, `clone.pause()` also works (sometimes?)
-      this._destroyedPromise.then(() => clone.src = '');
+      this._destroyedPromise.then(() => (clone.src = ""));
     }
 
     if (IS_DEV_MODE && !isFallbackElement) {
@@ -167,7 +176,13 @@ export default class Lookahead {
         const cloneSrc = clone.src;
         const originalSrc = originalElement.currentSrc;
         if (cloneSrc !== originalSrc) {
-          console.error('clone.src !== originalElement.currentSrc,', '\n', cloneSrc, '\n', originalSrc);
+          console.error(
+            "clone.src !== originalElement.currentSrc,",
+            "\n",
+            cloneSrc,
+            "\n",
+            originalSrc,
+          );
         }
       }, 2000);
       this._destroyedPromise.then(() => clearInterval(interval));
@@ -183,9 +198,10 @@ export default class Lookahead {
     // unconditionally.
     const [ctx, src] = getOrCreateMediaElementSourceAndUpdateMap(
       clone,
-      () => new AudioContext({
-        latencyHint: 'playback',
-      }),
+      () =>
+        new AudioContext({
+          latencyHint: "playback",
+        }),
     );
     if (isCloneElementAndAudioContextReusable) {
       // The fact that the clone element is reusable also means that the `AudioContext` that it's
@@ -208,16 +224,30 @@ export default class Lookahead {
     // TODO improvement: `lookaheadVolumeFilterSmoothing` must depend on the element's playbackRate.
     const smoothingWindowLenght = lookaheadVolumeFilterSmoothing;
     // TODO refactor: DRY the creation and destruction of these 2 nodes?
-    const volumeFilterP = addWorkletProcessor('content/VolumeFilterProcessor.js').then(() => {
-      const volumeFilter = new VolumeFilterNode(ctx, smoothingWindowLenght, smoothingWindowLenght);
+    const volumeFilterP = addWorkletProcessor(
+      "content/VolumeFilterProcessor.js",
+    ).then(() => {
+      const volumeFilter = new VolumeFilterNode(
+        ctx,
+        smoothingWindowLenght,
+        smoothingWindowLenght,
+      );
       this._destroyedPromise.then(() => destroyAudioWorkletNode(volumeFilter));
       return volumeFilter;
     });
 
-    const silenceDetectorDurationThreshold = this._getSilenceDetectorNodeDurationThreshold();
-    const silenceDetectorP = addWorkletProcessor('content/SilenceDetectorProcessor.js').then(() => {
-      const silenceDetector = new SilenceDetectorNode(ctx, silenceDetectorDurationThreshold);
-      this._destroyedPromise.then(() => destroyAudioWorkletNode(silenceDetector));
+    const silenceDetectorDurationThreshold =
+      this._getSilenceDetectorNodeDurationThreshold();
+    const silenceDetectorP = addWorkletProcessor(
+      "content/SilenceDetectorProcessor.js",
+    ).then(() => {
+      const silenceDetector = new SilenceDetectorNode(
+        ctx,
+        silenceDetectorDurationThreshold,
+      );
+      this._destroyedPromise.then(() =>
+        destroyAudioWorkletNode(silenceDetector),
+      );
       return silenceDetector;
     });
 
@@ -228,64 +258,81 @@ export default class Lookahead {
     // equal to `smoothingWindowLenght`, or smaller than a half.
     const volumeSmoothingCausedDelay = smoothingWindowLenght / 2;
 
-    toAwait.push(volumeFilterP.then(async volumeFilter => {
-      src.connect(volumeFilter);
-      const silenceDetector = await silenceDetectorP;
-      volumeFilter.connect(silenceDetector);
-    }));
-    toAwait.push(silenceDetectorP.then(silenceDetector => {
-      silenceDetector.volumeThreshold = this.settings.volumeThreshold;
+    toAwait.push(
+      volumeFilterP.then(async (volumeFilter) => {
+        src.connect(volumeFilter);
+        const silenceDetector = await silenceDetectorP;
+        volumeFilter.connect(silenceDetector);
+      }),
+    );
+    toAwait.push(
+      silenceDetectorP.then((silenceDetector) => {
+        silenceDetector.volumeThreshold = this.settings.volumeThreshold;
 
-      silenceDetector.port.onmessage = msg => {
-        const [eventType, eventTimeAudioContextTime] = msg.data as SilenceDetectorMessage;
-        const realTimePassedSinceEvent = ctx.currentTime - eventTimeAudioContextTime;
-        if (eventType === SilenceDetectorEventType.SILENCE_START) {
-          // `marginAfter` will be taken into account when we `pushNewSilenceRange`.
-          const realTimePassedSinceSilenceStart =
-            realTimePassedSinceEvent + silenceDetector.durationThreshold + volumeSmoothingCausedDelay;
-          const intrinsicTimePassedSinceSilenceStart = realTimePassedSinceSilenceStart * clone.playbackRate;
-          // TODO fix: very rarely this calculation can be a little off. It can happen when
-          // 1. The element got paused juuust before the event, and then got unpaused again.
-          // Imagine if the time between the message is sent and is received is 1 second.
-          // This code would say "well", the event actually happened one second ago, and the
-          // `playbackRate` of the element is 4, therefore it happend 4 intrinsic seconds ago.
-          // 2. Playback rate of the clone element got changed just recently.
-          // The bigger `silenceDetector.durationThreshold` is, the bigger is the error.
-          // Same applies to the `SILENCE_END` case below.
-          const silenceStartAtIntrinsicTime = clone.currentTime - intrinsicTimePassedSinceSilenceStart;
+        silenceDetector.port.onmessage = (msg) => {
+          const [eventType, eventTimeAudioContextTime] =
+            msg.data as SilenceDetectorMessage;
+          const realTimePassedSinceEvent =
+            ctx.currentTime - eventTimeAudioContextTime;
+          if (eventType === SilenceDetectorEventType.SILENCE_START) {
+            // `marginAfter` will be taken into account when we `pushNewSilenceRange`.
+            const realTimePassedSinceSilenceStart =
+              realTimePassedSinceEvent +
+              silenceDetector.durationThreshold +
+              volumeSmoothingCausedDelay;
+            const intrinsicTimePassedSinceSilenceStart =
+              realTimePassedSinceSilenceStart * clone.playbackRate;
+            // TODO fix: very rarely this calculation can be a little off. It can happen when
+            // 1. The element got paused juuust before the event, and then got unpaused again.
+            // Imagine if the time between the message is sent and is received is 1 second.
+            // This code would say "well", the event actually happened one second ago, and the
+            // `playbackRate` of the element is 4, therefore it happend 4 intrinsic seconds ago.
+            // 2. Playback rate of the clone element got changed just recently.
+            // The bigger `silenceDetector.durationThreshold` is, the bigger is the error.
+            // Same applies to the `SILENCE_END` case below.
+            const silenceStartAtIntrinsicTime =
+              clone.currentTime - intrinsicTimePassedSinceSilenceStart;
 
-          if (this.settings.isOppositeDay) {
-            assertDev(this.loudSince != undefined, 'Weird, this.loudSince is undefined');
-            // We're actually pushing a "loud" range.
-            this.pushNewSilenceRange(
-              this.loudSince - this.settings.marginBefore,
-              silenceStartAtIntrinsicTime + this.settings.marginAfter,
-            )
-          }
+            if (this.settings.isOppositeDay) {
+              assertDev(
+                this.loudSince != undefined,
+                "Weird, this.loudSince is undefined",
+              );
+              // We're actually pushing a "loud" range.
+              this.pushNewSilenceRange(
+                this.loudSince - this.settings.marginBefore,
+                silenceStartAtIntrinsicTime + this.settings.marginAfter,
+              );
+            }
 
-          this.silenceSince = silenceStartAtIntrinsicTime;
-          this.loudSince = undefined;
-        } else {
-          assertDev(this.silenceSince != undefined,
-            'Thought `this.silenceSince` to be set because SilenceDetector was '
-            + 'thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`');
-          const realTimePassedSinceSilenceEnd =
-            realTimePassedSinceEvent + volumeSmoothingCausedDelay;
-          const intrinsicTimePassedSinceSilenceEnd = realTimePassedSinceSilenceEnd * clone.playbackRate;
-          const silenceEndAtIntrinsicTime = clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
-
-          if (!this.settings.isOppositeDay) {
-            this.pushNewSilenceRange(
-              this.silenceSince + this.settings.marginAfter,
-              silenceEndAtIntrinsicTime - this.settings.marginBefore,
+            this.silenceSince = silenceStartAtIntrinsicTime;
+            this.loudSince = undefined;
+          } else {
+            assertDev(
+              this.silenceSince != undefined,
+              "Thought `this.silenceSince` to be set because SilenceDetector was " +
+                "thought to always send `SilenceDetectorEventType.SILENCE_START` before `SILENCE_END`",
             );
-          }
+            const realTimePassedSinceSilenceEnd =
+              realTimePassedSinceEvent + volumeSmoothingCausedDelay;
+            const intrinsicTimePassedSinceSilenceEnd =
+              realTimePassedSinceSilenceEnd * clone.playbackRate;
+            const silenceEndAtIntrinsicTime =
+              clone.currentTime - intrinsicTimePassedSinceSilenceEnd;
 
-          this.silenceSince = undefined;
-          this.loudSince = silenceEndAtIntrinsicTime;
-        }
-      }
-    }));
+            if (!this.settings.isOppositeDay) {
+              this.pushNewSilenceRange(
+                this.silenceSince + this.settings.marginAfter,
+                silenceEndAtIntrinsicTime - this.settings.marginBefore,
+              );
+            }
+
+            this.silenceSince = undefined;
+            this.loudSince = silenceEndAtIntrinsicTime;
+          }
+        };
+      }),
+    );
 
     // If it's currently silent and we've reached the end of the video, `silenceDetector` won't emit
     // `SilenceDetectorEventType.SILENCE_END` (and righly so), so `pushNewSilenceRange` wouldn't be performed.
@@ -306,9 +353,11 @@ export default class Lookahead {
         this.silenceSince + this.settings.marginAfter,
         clone.duration,
       );
-    }
-    clone.addEventListener('ended', onEnded, { passive: true });
-    this._destroyedPromise.then(() => clone.removeEventListener('ended', onEnded));
+    };
+    clone.addEventListener("ended", onEnded, { passive: true });
+    this._destroyedPromise.then(() =>
+      clone.removeEventListener("ended", onEnded),
+    );
 
     // For better performance. TODO however I'm not sure if this can significantly affect volume readings.
     // On one hand we could say "we don't change the waveform, we're just processing it faster", on the other hand
@@ -317,7 +366,7 @@ export default class Lookahead {
 
     // It's a bit weird that it's not at the very bottom of the function. TODO?
     await Promise.all(toAwait);
-    await requestIdlePromise({ timeout: 2000 })
+    await requestIdlePromise({ timeout: 2000 });
 
     // TODO perf: also need to seek if the clone started playing a processed range.
     // TODO perf: but this can make `silenceRanges` [non-normalized](https://html.spec.whatwg.org/multipage/media.html#normalised-timeranges-object),
@@ -325,7 +374,9 @@ export default class Lookahead {
     // However, the current implementation of `getMaybeSilenceRangeForTime` allows this.
     const seekClone = clone.fastSeek
       ? (seekTo: MediaTime) => clone.fastSeek(seekTo)
-      : (seekTo: MediaTime) => { clone.currentTime = seekTo };
+      : (seekTo: MediaTime) => {
+          clone.currentTime = seekTo;
+        };
     const seekCloneIfOriginalElIsPlayingUnprocessedRange = () => {
       const originalElementTime = originalElement.currentTime;
       // TODO fix: Since the `HTMLMediaElement` may be reusable
@@ -343,7 +394,10 @@ export default class Lookahead {
       // TODO fix: `clone.played` doesn't mean that we've actually played back that part.
       // E.g. if you play a video in Odysee then reload the page such that the video starts
       // playing from the middle then this is gonna say that it `played` it from start to middle.
-      const playingUnprocessedRange = !inRanges(clone.played, originalElementTime);
+      const playingUnprocessedRange = !inRanges(
+        clone.played,
+        originalElementTime,
+      );
       if (!playingUnprocessedRange) {
         return;
       }
@@ -360,12 +414,15 @@ export default class Lookahead {
       if (currentlySilence) {
         this.silenceSince = originalElementTime;
       } else {
-        this.loudSince = originalElementTime
+        this.loudSince = originalElementTime;
       }
-    }
+    };
     // TODO perf: also utilize `requestIdleCallback` so it gets called less frequently during high loads?
     // TODO perf: we could instead detach the listener and attach it again after one second.
-    const throttledSeekCloneIfPlayingUnprocessedRange = throttle(seekCloneIfOriginalElIsPlayingUnprocessedRange, 1000);
+    const throttledSeekCloneIfPlayingUnprocessedRange = throttle(
+      seekCloneIfOriginalElIsPlayingUnprocessedRange,
+      1000,
+    );
     if (isCloneElementAndAudioContextReusable) {
       // A somewhat of a workaround for the `played` thing (see the comment about it above).
       // Ensure that even if the current range is `played` by clone, we start processing
@@ -378,19 +435,27 @@ export default class Lookahead {
     // TODO refactor: are there other cases when the clone can get out of sync?
     // the media load algorithm, but we re-create the Lookahead in that case.
     // Anything else? Maybe search the spec for "set the (current|official) playback position".
-    originalElement.addEventListener('seeking', throttledSeekCloneIfPlayingUnprocessedRange, { passive: true });
+    originalElement.addEventListener(
+      "seeking",
+      throttledSeekCloneIfPlayingUnprocessedRange,
+      { passive: true },
+    );
     this._destroyedPromise.then(() => {
-      originalElement.removeEventListener('seeking', throttledSeekCloneIfPlayingUnprocessedRange);
+      originalElement.removeEventListener(
+        "seeking",
+        throttledSeekCloneIfPlayingUnprocessedRange,
+      );
     });
 
     {
       // TODO refactor: shouldn't we watch both originalElement's and clone's 'timeupdate'?
       // Are there edge cases?
-      const addListener = () => originalElement.addEventListener(
-        'timeupdate',
-        setClonePlaybackRateAndScheduleAnother,
-        { once: true, passive: true }
-      );
+      const addListener = () =>
+        originalElement.addEventListener(
+          "timeupdate",
+          setClonePlaybackRateAndScheduleAnother,
+          { once: true, passive: true },
+        );
       let timeoutId = -1;
       const setClonePlaybackRateAndScheduleAnother = () => {
         // TODO improvement: also make it depend on `soundedSpeed` and how much
@@ -411,7 +476,12 @@ export default class Lookahead {
         if (IS_DEV_MODE) {
           // TODO improvement: this can happen when a seek is performed. In that case speed will jump to max.
           if (aheadSeconds < 0) {
-            console.warn('aheadSeconds < 0:', aheadSeconds, clone.currentTime, originalElement.currentTime);
+            console.warn(
+              "aheadSeconds < 0:",
+              aheadSeconds,
+              clone.currentTime,
+              originalElement.currentTime,
+            );
           }
         }
 
@@ -422,10 +492,9 @@ export default class Lookahead {
          * it means that it's `MediaSource` clone based.
          * TODO refactor?
          */
-        const cloneCanNotPlayFarAheadOfOriginal = isCloneElementAndAudioContextReusable;
-        const zeroSpeedAt = cloneCanNotPlayFarAheadOfOriginal
-          ? (2 * 60)
-          : (3 * 60);
+        const cloneCanNotPlayFarAheadOfOriginal =
+          isCloneElementAndAudioContextReusable;
+        const zeroSpeedAt = cloneCanNotPlayFarAheadOfOriginal ? 2 * 60 : 3 * 60;
         // If the clone element can't get far ahead of the original one in terms of playback
         // position, it happens more often that `aheadSeconds` is not high enough to the
         // point that we don't see the next silence range. And silence range detection
@@ -437,7 +506,8 @@ export default class Lookahead {
         // Speed is max when 0 seconds ahead and is 0 when `zeroSpeedAt` ahead
         // (but we'll clamp it, below).
 
-        const playbackRateUnclamped = maxClonePlaybackRate * (1 - (aheadSeconds / zeroSpeedAt));
+        const playbackRateUnclamped =
+          maxClonePlaybackRate * (1 - aheadSeconds / zeroSpeedAt);
         // Min clamp shouldn't be low because of performance - playing a video at 0.01 speed for 100 seconds
         // is much worse than playing it at 1 speed for 1 second.
         // TODO perf: Need to pause the video instead when it goes below the lower bound.
@@ -445,23 +515,28 @@ export default class Lookahead {
         // TODO improvement: also approaching it this way in effect makes it so that the greater
         // the effective playbackRate of the original element is, the less far ahead the clone
         // is going to be, which sounds a little stupid.
-        clone.playbackRate = clamp(playbackRateUnclamped, 2, maxClonePlaybackRate);
+        clone.playbackRate = clamp(
+          playbackRateUnclamped,
+          2,
+          maxClonePlaybackRate,
+        );
         // TODO refactor: await for it somewhere above, otherwise it's not synchronous.
         // Also it's not really correct to immediately change `durationThreshold` because
         // the `silenceDetector` has data of media being played at different speed.
-        silenceDetectorP.then(silenceDetector => {
-          silenceDetector.durationThreshold = this._getSilenceDetectorNodeDurationThreshold();
+        silenceDetectorP.then((silenceDetector) => {
+          silenceDetector.durationThreshold =
+            this._getSilenceDetectorNodeDurationThreshold();
         });
         // TODO perf: changing playback rate too often may not be a good idea.
         // Maybe need to change the speed in steps (like don't change by less than 0.5).
-        timeoutId = (setTimeout as typeof window.setTimeout)(
-          addListener,
-          3000
-        );
+        timeoutId = (setTimeout as typeof window.setTimeout)(addListener, 3000);
       };
       setClonePlaybackRateAndScheduleAnother();
       this._destroyedPromise.then(() => {
-        originalElement.removeEventListener('timeupdate', setClonePlaybackRateAndScheduleAnother);
+        originalElement.removeEventListener(
+          "timeupdate",
+          setClonePlaybackRateAndScheduleAnother,
+        );
         clearTimeout(timeoutId);
       });
     }
@@ -475,15 +550,15 @@ export default class Lookahead {
     };
     const suspendAudioContext = () => {
       ctx.suspend();
-    }
+    };
     if (!clone.paused) {
       resumeAudioContext();
     }
-    clone.addEventListener('pause', suspendAudioContext, { passive: true });
-    clone.addEventListener('play', resumeAudioContext, { passive: true });
+    clone.addEventListener("pause", suspendAudioContext, { passive: true });
+    clone.addEventListener("play", resumeAudioContext, { passive: true });
     this._destroyedPromise.then(() => {
-      clone.removeEventListener('pause', suspendAudioContext);
-      clone.removeEventListener('play', resumeAudioContext);
+      clone.removeEventListener("pause", suspendAudioContext);
+      clone.removeEventListener("play", resumeAudioContext);
     });
 
     // For performance
@@ -494,22 +569,25 @@ export default class Lookahead {
     };
     const pauseClone = () => {
       clone.pause();
-    }
+    };
     if (!originalElement.paused) {
       playClone();
     }
-    originalElement.addEventListener('pause', pauseClone, { passive: true });
-    originalElement.addEventListener('play', playClone, { passive: true });
+    originalElement.addEventListener("pause", pauseClone, { passive: true });
+    originalElement.addEventListener("play", playClone, { passive: true });
     this._destroyedPromise.then(() => {
-      originalElement.removeEventListener('pause', pauseClone);
-      originalElement.removeEventListener('play', playClone);
+      originalElement.removeEventListener("pause", pauseClone);
+      originalElement.removeEventListener("play", playClone);
     });
   }
   public ensureInit = once(this._init);
 
   private _getSilenceDetectorNodeDurationThreshold() {
     // TODO refactor: get rid of the only occurence of `this.clone`? Or shall we keep it?
-    return getRealtimeMargin(this.settings.marginAfter + this.settings.marginBefore, this.clone!.playbackRate);
+    return getRealtimeMargin(
+      this.settings.marginAfter + this.settings.marginBefore,
+      this.clone!.playbackRate,
+    );
   }
 
   /**
@@ -524,7 +602,7 @@ export default class Lookahead {
    *    when it is determined, but we know that this range is safe to skip.
    */
   public getNextSilenceRange(
-    time: MediaTime
+    time: MediaTime,
   ): [TimeRange, isPending: boolean] | undefined {
     // TODO I wrote this real quick, no edge cases considered.
     // TODO Super inefficient. Doesn't take into account the fact that it's sorted, and the fact that the previously
@@ -553,34 +631,34 @@ export default class Lookahead {
     }
 
     {
-    // If there is a pending nextSilenceRange
-    const silenceSince = this.settings.isOppositeDay
-      ? this.loudSince
-      : this.silenceSince;
+      // If there is a pending nextSilenceRange
+      const silenceSince = this.settings.isOppositeDay
+        ? this.loudSince
+        : this.silenceSince;
 
-    const currentlySilence = silenceSince != undefined;
-    if (!currentlySilence) {
-      return undefined;
-    }
+      const currentlySilence = silenceSince != undefined;
+      if (!currentlySilence) {
+        return undefined;
+      }
 
-    if (!this.clone) {
-      return undefined;
-    }
+      if (!this.clone) {
+        return undefined;
+      }
 
-    const pendingSilenceRangeEnd =
-      this.clone.currentTime -
-      this.settings.marginBefore -
-      // Take into account the fact that it might already be a sounded part,
-      // but we just haven't received the message from the `SilenceDetector`,
-      // so let's be conservative here.
-      0.05;
+      const pendingSilenceRangeEnd =
+        this.clone.currentTime -
+        this.settings.marginBefore -
+        // Take into account the fact that it might already be a sounded part,
+        // but we just haven't received the message from the `SilenceDetector`,
+        // so let's be conservative here.
+        0.05;
 
-    if (time < pendingSilenceRangeEnd) {
-      return [
-        [silenceSince + this.settings.marginAfter, pendingSilenceRangeEnd],
-        true, // isPending
-      ];
-    }
+      if (time < pendingSilenceRangeEnd) {
+        return [
+          [silenceSince + this.settings.marginAfter, pendingSilenceRangeEnd],
+          true, // isPending
+        ];
+      }
     }
 
     // `time` is past all the ranges.
@@ -604,7 +682,10 @@ export default class Lookahead {
   //     ? [starts[currentRangeInd], ends[currentRangeInd]]
   //     : undefined;
   // }
-  private pushNewSilenceRange(elementTimeStart: MediaTime, elementTimeEnd: MediaTime) {
+  private pushNewSilenceRange(
+    elementTimeStart: MediaTime,
+    elementTimeEnd: MediaTime,
+  ) {
     const silenceDuration = elementTimeEnd - elementTimeStart;
     // Not really necessary, but reduces the size of silenceRanges arrays a bit.
     // The final decision on whether or not to perform a seek is made in
@@ -612,16 +693,16 @@ export default class Lookahead {
     // `expectedSeekDuration` is ulikely to get lower than this value.
     // But even if it were to get lower, if we don't encounter silence ranges of such duration too often,
     // we don't loose too much time not skipping them anyway.
-    if (silenceDuration < 0.010) {
+    if (silenceDuration < 0.01) {
       if (IS_DEV_MODE) {
         // TODO refactor: we call `pushNewSilenceRange` regardless of whether
         // the silence was long enough to be skipped given `marginBefore` and
         // `marginAfter`, so this warning is giving false alarms.
         if (silenceDuration <= 0) {
-          if (silenceDuration < -0.050) {
-            console.error('Huge negative silence duration', silenceDuration);
+          if (silenceDuration < -0.05) {
+            console.error("Huge negative silence duration", silenceDuration);
           } else {
-            console.warn('Negative silence duration', silenceDuration);
+            console.warn("Negative silence duration", silenceDuration);
           }
         }
       }
