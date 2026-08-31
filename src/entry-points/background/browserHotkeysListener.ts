@@ -18,22 +18,24 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { setSettings, getSettings } from '@/settings';
+import { setSettings, getSettings } from "@/settings";
 
-type ListenerType = Parameters<typeof browser.commands.onCommand.addListener>[0];
+type ListenerType = Parameters<
+  typeof browser.commands.onCommand.addListener
+>[0];
 
 export const onCommand: ListenerType = async (command) => {
   switch (command) {
-    case 'toggle_enabled': {
+    case "toggle_enabled": {
       // How about sharing the settings cache object with between all background scripts?
-      const { enabled } = await getSettings('enabled');
+      const { enabled } = await getSettings("enabled");
       await setSettings({ enabled: !enabled });
       break;
     }
     default: {
       if (IS_DEV_MODE) {
-        console.error('Unrecognized command', command);
+        console.error("Unrecognized command", command);
       }
     }
   }
-}
+};

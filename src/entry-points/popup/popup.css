@@ -22,12 +22,13 @@
   --number-representation-min-width: 6ch;
 }
 
-html, body {
+html,
+body {
   font-size: 12px;
 }
 
 body {
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
 
   /* This is so we can set a border for the popup (see below). I'd be glad to apply it to `html`
   instead of `body`, but in Chromium there appears to be a bug – the bottom border is not displayed.

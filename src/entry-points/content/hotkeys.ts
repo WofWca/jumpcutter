@@ -1,4 +1,4 @@
-import type { keydownEventToActions } from '@/hotkeys'
+import type { keydownEventToActions } from "@/hotkeys";
 
 export default async function initHotkeyListener({
   getSettings,
@@ -6,33 +6,36 @@ export default async function initHotkeyListener({
   getActiveMediaElement,
   onStop,
 }: {
-  getSettings: () => Parameters<typeof keydownEventToActions>[1],
-  setSettings: (newValues: Exclude<ReturnType<typeof keydownEventToActions>, undefined>[0]) => void,
-  getActiveMediaElement: () => HTMLMediaElement | undefined,
-  onStop: (callback: () => void) => void
+  getSettings: () => Parameters<typeof keydownEventToActions>[1];
+  setSettings: (
+    newValues: Exclude<ReturnType<typeof keydownEventToActions>, undefined>[0],
+  ) => void;
+  getActiveMediaElement: () => HTMLMediaElement | undefined;
+  onStop: (callback: () => void) => void;
 }) {
   const actionsModuleP = import(
     /* webpackExports: ['default'] */
-    './nonSettingsUserActions'
-  )
+    "./nonSettingsUserActions"
+  );
   const hotkeysModule = await import(
     /* webpackExports: ['keydownEventToActions', 'eventTargetIsInput'] */
-    '@/hotkeys'
+    "@/hotkeys"
   );
   const keydownEventToActions = hotkeysModule.keydownEventToActions;
   const eventTargetIsInput = hotkeysModule.eventTargetIsInput;
-  const executeNonSettingsActions = (await actionsModuleP).default
+  const executeNonSettingsActions = (await actionsModuleP).default;
   const handleKeydown = (e: KeyboardEvent) => {
     if (eventTargetIsInput(e)) return;
     const actions = keydownEventToActions(e, getSettings());
     if (!actions) {
       return;
     }
-    const element = getActiveMediaElement()
+    const element = getActiveMediaElement();
     if (element == undefined) {
       return;
     }
-    const [ settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys ] = actions;
+    const [settingsNewValues, nonSettingsActions, overrideWebsiteHotkeys] =
+      actions;
 
     // Works because `useCapture` of `addEventListener` is `true`. However, it's not guaranteed to work on every
     // website, as they might as well set `useCapture` to `true`. TODO fix. Somehow. Maybe attach it before
@@ -43,7 +46,7 @@ export default async function initHotkeyListener({
       e.stopPropagation();
     }
 
-    setSettings(settingsNewValues)
+    setSettings(settingsNewValues);
 
     executeNonSettingsActions(element, nonSettingsActions);
   };
@@ -66,18 +69,22 @@ export default async function initHotkeyListener({
   // Why not always attach with `useCapture = true`? For performance.
   // TODO but if the user changed `overrideWebsiteHotkeys` for some binding, an extension reload will
   // be required. React to settings changes?
-  if (getSettings().hotkeys.some(binding => binding.overrideWebsiteHotkeys)) {
+  if (getSettings().hotkeys.some((binding) => binding.overrideWebsiteHotkeys)) {
     // `useCapture` is true because see `overrideWebsiteHotkeys`.
-    document.addEventListener('keydown', handleKeydown, true);
-    onStop(() => document.removeEventListener('keydown', handleKeydown, true));
+    document.addEventListener("keydown", handleKeydown, true);
+    onStop(() => document.removeEventListener("keydown", handleKeydown, true));
   } else {
     // Deferred because it's not top priority. But maybe it should be?
     // Yes, it would mean that the `if (overrideWebsiteHotkeys) {` inside `handleKeydown` will always
     // be false.
-    const handleKeydownDeferred =
-      (...args: Parameters<typeof handleKeydown>) => setTimeout(handleKeydown, undefined, ...args);
-    document.addEventListener('keydown', handleKeydownDeferred, { passive: true });
-    onStop(() => document.removeEventListener('keydown', handleKeydownDeferred));
+    const handleKeydownDeferred = (...args: Parameters<typeof handleKeydown>) =>
+      setTimeout(handleKeydown, undefined, ...args);
+    document.addEventListener("keydown", handleKeydownDeferred, {
+      passive: true,
+    });
+    onStop(() =>
+      document.removeEventListener("keydown", handleKeydownDeferred),
+    );
   }
   // this.hotkeyListenerAttached = true;
 }

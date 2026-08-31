@@ -1,30 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <!-- media-src is more lax in the manifest.json's CSP,
+  <head>
+    <!-- media-src is more lax in the manifest.json's CSP,
   it allows it for local-media-player. Here we don't need it. -->
-  <meta
-    http-equiv="Content-Security-Policy"
-    content="media-src 'none';"
-  />
+    <meta http-equiv="Content-Security-Policy" content="media-src 'none';" />
 
-  <script defer src="main.js"></script>
-  <meta charset="UTF-8">
-  <!-- Helps with popup size on Firefox for Android
+    <script defer src="main.js"></script>
+    <meta charset="UTF-8" />
+    <!-- Helps with popup size on Firefox for Android
   https://extensionworkshop.com/documentation/develop/developing-extensions-for-firefox-for-android/#check-for-firefox-for-android-compatibility-->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <link rel="stylesheet" href="popup.css"/>
-  <!-- Who would have thogught that writing a dark theme is that easy.
+    <link rel="stylesheet" href="popup.css" />
+    <!-- Who would have thogught that writing a dark theme is that easy.
   Currently this doesn't do much in Gecko, so either you try not to use `@media (prefers-color-scheme: dark)` or
   you manually define dark styles for the whole page (for which there may be a library that is suitable for
   default-styled pages). Or you wait until https://bugzilla.mozilla.org/show_bug.cgi?id=1525107
   is resolved.
   The same applies to the other pages of this extension. -->
-  <meta name="color-scheme" content="dark light">
-</head>
+    <meta name="color-scheme" content="dark light" />
+  </head>
 
-<body>
-</body>
-
+  <body></body>
 </html>

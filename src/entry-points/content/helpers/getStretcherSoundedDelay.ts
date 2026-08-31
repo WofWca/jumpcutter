@@ -18,16 +18,20 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { TimeDelta } from '@/helpers';
-import { getStretcherDelayChange } from './getStretcherDelayChange';
+import type { TimeDelta } from "@/helpers";
+import { getStretcherDelayChange } from "./getStretcherDelayChange";
 
 // TODO Is it always constant though? What about these short silence snippets, where we don't have to fully reset the margin?
 export function getStretcherSoundedDelay(
   intrinsicTimeMarginBefore: TimeDelta,
   soundedSpeed: number,
-  silenceSpeed: number
+  silenceSpeed: number,
 ): TimeDelta {
   const realTimeMarginBefore = intrinsicTimeMarginBefore / silenceSpeed;
-  const delayChange = getStretcherDelayChange(realTimeMarginBefore, silenceSpeed, soundedSpeed);
+  const delayChange = getStretcherDelayChange(
+    realTimeMarginBefore,
+    silenceSpeed,
+    soundedSpeed,
+  );
   return 0 + delayChange;
 }

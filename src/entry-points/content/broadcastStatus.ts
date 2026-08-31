@@ -18,23 +18,23 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
-export default async function broadcastStatus(
-  status: { elementLastActivatedAt: undefined | number }
-): Promise<void> {
+export default async function broadcastStatus(status: {
+  elementLastActivatedAt: undefined | number;
+}): Promise<void> {
   const p = (browserOrChrome as typeof chrome).runtime.sendMessage({
-    type: 'contentStatus', // TODO DRY this?
+    type: "contentStatus", // TODO DRY this?
     ...status,
   });
   // Try-catch in order to not print this error in production.
   try {
-    await p
+    await p;
   } catch (error) {
     IS_DEV_MODE &&
       console.log(
         "broadcastStatus failed. This is normal if the popup is not open",
-        error
+        error,
       );
   }
 }

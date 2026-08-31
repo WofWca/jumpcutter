@@ -18,22 +18,29 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script context="module" lang="ts">
-  export type PotentiallyInvalidHotkeyBinding<T extends HotkeyAction = HotkeyAction> = {
+  export type PotentiallyInvalidHotkeyBinding<
+    T extends HotkeyAction = HotkeyAction,
+  > = {
     [P in keyof HotkeyBinding<T>]?: HotkeyBinding<T>[P];
-  }
+  };
 </script>
 
 <script lang="ts">
-  import CustomValueInput from './CustomValueInput.svelte';
+  import CustomValueInput from "./CustomValueInput.svelte";
   import {
-    eventToCombination, combinationToString, HotkeyBinding, hotkeyActionToString, HotkeyAction, NoArgumentAction,
+    eventToCombination,
+    combinationToString,
+    HotkeyBinding,
+    hotkeyActionToString,
+    HotkeyAction,
+    NoArgumentAction,
     allNoArgumentActions,
-  } from '@/hotkeys';
-  import { getMessage } from '@/helpers';
+  } from "@/hotkeys";
+  import { getMessage } from "@/helpers";
 
   export let hotkeys: PotentiallyInvalidHotkeyBinding[];
   export let displayOverrideWebsiteHotkeysColumn: boolean;
-  export let style: string = '';
+  export let style: string = "";
 
   function addNewBinding() {
     hotkeys.push({});
@@ -43,10 +50,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     hotkeys.splice(bindingInd, 1);
     hotkeys = hotkeys;
   }
-  async function onCombinationInputKeydown(bindingInd: number, event: KeyboardEvent) {
+  async function onCombinationInputKeydown(
+    bindingInd: number,
+    event: KeyboardEvent,
+  ) {
     // In case the user just wanted to focus another input and pressed "Tab".
     // Though if you press "Shift+Tab", "Shift" is still recorded.
-    await new Promise(r => setTimeout(r)); // Not a huge event loop expert. TODO make sure it's consistent.
+    await new Promise((r) => setTimeout(r)); // Not a huge event loop expert. TODO make sure it's consistent.
     if (document.activeElement !== event.target) {
       return;
     }
@@ -57,19 +67,24 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
   function isPotentiallyInvalidBindingWithArgument(
     binding: PotentiallyInvalidHotkeyBinding,
-  ): binding is PotentiallyInvalidHotkeyBinding<Exclude<HotkeyAction, NoArgumentAction>> {
-    return !!binding.action && !(allNoArgumentActions as any).includes(binding.action);
+  ): binding is PotentiallyInvalidHotkeyBinding<
+    Exclude<HotkeyAction, NoArgumentAction>
+  > {
+    return (
+      !!binding.action &&
+      !(allNoArgumentActions as any).includes(binding.action)
+    );
   }
 </script>
 
-<div style={'overflow-x: auto;' + style}>
+<div style={"overflow-x: auto;" + style}>
   <table>
     <thead>
-      <th>{getMessage('action')}</th>
-      <th>{getMessage('hotkey')}</th>
-      <th>{getMessage('value')}</th>
+      <th>{getMessage("action")}</th>
+      <th>{getMessage("hotkey")}</th>
+      <th>{getMessage("value")}</th>
       {#if displayOverrideWebsiteHotkeysColumn}
-        <th>{getMessage('overrideWebsiteHotkeys')}</th>
+        <th>{getMessage("overrideWebsiteHotkeys")}</th>
       {/if}
     </thead>
     <tbody>
@@ -78,10 +93,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       {#each hotkeys as binding, bindingInd}
         <tr>
           <td>
-            <select
-              bind:value={binding.action}
-              required
-            >
+            <select bind:value={binding.action} required>
               {#each Object.entries(hotkeyActionToString) as [id, string]}
                 <option value={id}>{string}</option>
               {/each}
@@ -90,20 +102,22 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <td>
             <CustomValueInput
               required
-              value={binding.keyCombination ? combinationToString(binding.keyCombination) : ''}
-              on:keydown={e => onCombinationInputKeydown(bindingInd, e)}
+              value={binding.keyCombination
+                ? combinationToString(binding.keyCombination)
+                : ""}
+              on:keydown={(e) => onCombinationInputKeydown(bindingInd, e)}
             />
           </td>
           <td>
             {#if isPotentiallyInvalidBindingWithArgument(binding)}
-            <!-- TODO in the future, the argument isn't necessarily going to be a number. -->
+              <!-- TODO in the future, the argument isn't necessarily going to be a number. -->
               <input
                 bind:value={binding.actionArgument}
                 required
                 type="number"
                 step="any"
                 style="width: 14ch"
-              >
+              />
             {/if}
           </td>
           {#if displayOverrideWebsiteHotkeysColumn}
@@ -117,9 +131,9 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <td>
             <button
               type="button"
-              on:click={e => removeBinding(bindingInd)}
-              aria-label="{getMessage('removeBinding')}"
-            >🗑️</button>
+              on:click={(e) => removeBinding(bindingInd)}
+              aria-label={getMessage("removeBinding")}>🗑️</button
+            >
           </td>
         </tr>
       {/each}
@@ -128,6 +142,6 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   <button
     type="button"
     on:click={addNewBinding}
-    aria-label="{getMessage('addBinding')}"
-  >➕</button>
+    aria-label={getMessage("addBinding")}>➕</button
+  >
 </div>

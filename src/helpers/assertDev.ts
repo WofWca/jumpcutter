@@ -18,7 +18,10 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export function assertDev(condition: unknown, msg?: unknown): asserts condition {
+export function assertDev(
+  condition: unknown,
+  msg?: unknown,
+): asserts condition {
   if (IS_DEV_MODE) {
     if (!condition) {
       console.error(msg);

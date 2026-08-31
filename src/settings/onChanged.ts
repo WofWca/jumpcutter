@@ -18,24 +18,30 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { filterOutUnchangedValues } from '@/helpers';
-import { mainStorageAreaName } from './mainStorageAreaName';
-import type { MyStorageChanges } from './';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { filterOutUnchangedValues } from "@/helpers";
+import { mainStorageAreaName } from "./mainStorageAreaName";
+import type { MyStorageChanges } from "./";
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
 type MyOnChangedListener = (changes: MyStorageChanges) => void;
 // type NativeOnChangedListener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
 type NativeOnChangedListener = (
-  changes: { [key: string]: browser.storage.StorageChange | chrome.storage.StorageChange },
+  changes: {
+    [key: string]: browser.storage.StorageChange | chrome.storage.StorageChange;
+  },
   // areaName: chrome.storage.AreaName,
   areaName: typeof mainStorageAreaName | string,
 ) => void;
 const listener2RemoveListener = new WeakMap<MyOnChangedListener, () => void>();
-export function createWrapperListener(listener: MyOnChangedListener): NativeOnChangedListener {
+export function createWrapperListener(
+  listener: MyOnChangedListener,
+): NativeOnChangedListener {
   return (changes, areaName) => {
     if (areaName !== mainStorageAreaName) return;
 
-    if (BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT) {
+    if (
+      BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT
+    ) {
       changes = filterOutUnchangedValues(changes);
       if (Object.keys(changes).length === 0) {
         return;
@@ -49,26 +55,30 @@ export function createWrapperListener(listener: MyOnChangedListener): NativeOnCh
 /**
  * This is a wrapper around the native `browser.storage.onChanged.addListener`. The reason we need this is so listeners
  * attached using it only react to changes in `local` storage, but not `sync` (or others). See `src/background.ts`.
- * 
+ *
  * @returns `removeListener` function, as a convenience.
  * It's equivalent to `() => removeOnStorageChangedListener(listener)`.
  */
-export function addOnStorageChangedListener(listener: MyOnChangedListener): () => void {
+export function addOnStorageChangedListener(
+  listener: MyOnChangedListener,
+): () => void {
   const actualListener = createWrapperListener(listener);
   browserOrChrome.storage.onChanged.addListener(actualListener);
   const removeListener = () =>
-    browserOrChrome.storage.onChanged.removeListener(actualListener)
-  listener2RemoveListener.set(listener, removeListener)
+    browserOrChrome.storage.onChanged.removeListener(actualListener);
+  listener2RemoveListener.set(listener, removeListener);
 
-  return removeListener
+  return removeListener;
 }
-export function removeOnStorageChangedListener(listener: MyOnChangedListener): void {
+export function removeOnStorageChangedListener(
+  listener: MyOnChangedListener,
+): void {
   const removeListener = listener2RemoveListener.get(listener);
   if (!removeListener) {
     if (IS_DEV_MODE) {
-      console.warn('Did not remove listener because it\'s already not attached');
+      console.warn("Did not remove listener because it's already not attached");
     }
     return;
   }
-  removeListener()
+  removeListener();
 }

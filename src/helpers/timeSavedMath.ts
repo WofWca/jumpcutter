@@ -1,7 +1,7 @@
 import type TimeSavedTracker from "@/entry-points/content/TimeSavedTracker";
 
 export function getTimeSavedComparedToSoundedSpeedFraction(
-  s: TimeSavedTracker["timeSavedData"]
+  s: TimeSavedTracker["timeSavedData"],
 ): number {
   return (
     s.timeSavedComparedToSoundedSpeed /
@@ -9,7 +9,7 @@ export function getTimeSavedComparedToSoundedSpeedFraction(
   );
 }
 export function getTimeSavedComparedToIntrinsicSpeedFraction(
-  s: TimeSavedTracker["timeSavedData"]
+  s: TimeSavedTracker["timeSavedData"],
 ): number {
   return (
     s.timeSavedComparedToIntrinsicSpeed /

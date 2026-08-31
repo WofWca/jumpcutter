@@ -16,34 +16,37 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
 -->
+<svelte:options immutable={true} />
 
-<svelte:options
-  immutable={true}
-/>
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import type { SmoothieChart, TimeSeries } from '@wofwca/smoothie';
-  import { assertDev, /* SpeedName, */ SpeedName_SILENCE, SpeedName_SOUNDED } from '@/helpers';
+  import { onMount } from "svelte";
+  import type { SmoothieChart, TimeSeries } from "@wofwca/smoothie";
+  import {
+    assertDev,
+    /* SpeedName, */ SpeedName_SILENCE,
+    SpeedName_SOUNDED,
+  } from "@/helpers";
   import type {
-    StretchInfo, AnyTime as TimeS, MediaTime, AudioContextTime, TimeDelta, AnyTime,
-  } from '@/helpers';
-  import type { Settings } from '@/settings';
-  import type { TelemetryRecord as ElementPlaybackControllerStretchingTelemetryRecord }
-    from '@/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
-  import type { TelemetryRecord as ElementPlaybackControllerCloningTelemetryRecord }
-    from '@/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
-  import type { TelemetryRecord as ElementPlaybackControllerAlwaysSoundedTelemetryRecord }
-    from '@/entry-points/content/ElementPlaybackControllerAlwaysSounded';
-  import debounce from 'lodash/debounce';
+    StretchInfo,
+    AnyTime as TimeS,
+    MediaTime,
+    AudioContextTime,
+    TimeDelta,
+    AnyTime,
+  } from "@/helpers";
+  import type { Settings } from "@/settings";
+  import type { TelemetryRecord as ElementPlaybackControllerStretchingTelemetryRecord } from "@/entry-points/content/ElementPlaybackControllerStretching/ElementPlaybackControllerStretching";
+  import type { TelemetryRecord as ElementPlaybackControllerCloningTelemetryRecord } from "@/entry-points/content/ElementPlaybackControllerCloning/ElementPlaybackControllerCloning";
+  import type { TelemetryRecord as ElementPlaybackControllerAlwaysSoundedTelemetryRecord } from "@/entry-points/content/ElementPlaybackControllerAlwaysSounded";
+  import debounce from "lodash/debounce";
 
   // TODO feat: make this an option. Scaling in `updateStretcherDelaySeries` may require some work though.
   const PLOT_STRETCHER_DELAY = IS_DEV_MODE && true;
 
   type TelemetryRecord =
-    ElementPlaybackControllerStretchingTelemetryRecord
+    | ElementPlaybackControllerStretchingTelemetryRecord
     | ElementPlaybackControllerCloningTelemetryRecord
-    | ElementPlaybackControllerAlwaysSoundedTelemetryRecord
-  ;
+    | ElementPlaybackControllerAlwaysSoundedTelemetryRecord;
   export let latestTelemetryRecord: TelemetryRecord | undefined;
   export let volumeThreshold: number;
   export let loadedPromise: Promise<any>;
@@ -51,32 +54,33 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   export let heightPx: number;
   export let lengthSeconds: number;
   export let jumpPeriod: number; // As a percentage.
-  export let timeProgressionSpeed: Settings['popupChartSpeed']; // Non-reactive
+  export let timeProgressionSpeed: Settings["popupChartSpeed"]; // Non-reactive
   export let soundedSpeed: number;
   export let telemetryUpdatePeriod: TimeDelta;
 
   const timelineIsMediaIntrinsic =
-    timeProgressionSpeed === 'intrinsicTime'
-    || timeProgressionSpeed === 'soundedSpeedTime';
+    timeProgressionSpeed === "intrinsicTime" ||
+    timeProgressionSpeed === "soundedSpeedTime";
 
   let canvasEl: HTMLCanvasElement;
-  $: stretchFactor = timeProgressionSpeed === 'soundedSpeedTime'
-    ? soundedSpeed
-    : 1;
+  $: stretchFactor =
+    timeProgressionSpeed === "soundedSpeedTime" ? soundedSpeed : 1;
 
   // TODO technically this is not correct, because the grid and the current output marker
   // (https://github.com/WofWca/jumpcutter/blob/5e09bf841e9c94ed5f5da03dfaea862dda269788/src/popup/Chart.svelte#L424-L455)
   // are still drawn in media intrinsic time, not in (media intrinsic time / soundedSpeed),
   // so it's more like changing `popupChartLengthInSeconds`, like it's not respected.
-  $: millisPerPixel = stretchFactor * lengthSeconds * 1000 / widthPx;
+  $: millisPerPixel = (stretchFactor * lengthSeconds * 1000) / widthPx;
   let millisPerPixelCurrValue: number | undefined;
   let millisPerPixelPrevValue = 0;
   let millisPerPixelLastUpdatedAt = 0;
   function getTweenedMillisPerPixel(tweeningDuration: number = 50) {
-    const tweeningPhase = 1 - Math.min(
-      1,
-      (Date.now() - millisPerPixelLastUpdatedAt) / tweeningDuration
-    );
+    const tweeningPhase =
+      1 -
+      Math.min(
+        1,
+        (Date.now() - millisPerPixelLastUpdatedAt) / tweeningDuration,
+      );
     const diff = millisPerPixelCurrValue! - millisPerPixelPrevValue;
     return millisPerPixelCurrValue! - diff * tweeningPhase;
   }
@@ -90,7 +94,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
   $: onMillisPerPixelUpdate(millisPerPixel);
 
-  $: jumpPeriodMs = jumpPeriod / 100 * widthPx * millisPerPixel;
+  $: jumpPeriodMs = (jumpPeriod / 100) * widthPx * millisPerPixel;
   let onJumpPeriodChange: undefined | ((prevStretchFactor: number) => void);
   let prevStretchFactor = stretchFactor;
   $: {
@@ -101,9 +105,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
   $: lastVolume = latestTelemetryRecord?.inputVolume ?? 0;
 
-  
   type TimeSeriesWithPrivateFields = TimeSeries & {
-    data: Array<[time: AnyTime, value: number]>,
+    data: Array<[time: AnyTime, value: number]>;
   };
   let smoothie: SmoothieChart | undefined;
   let volumeSeries: TimeSeries;
@@ -113,17 +116,20 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   // Using series for this instead of `options.horizontalLines` because horizontal lines are always on behind the data
   // lines, so it's poorly visible.
   let volumeThresholdSeries: TimeSeries;
-  let stretcherDelaySeries: TimeSeries
+  let stretcherDelaySeries: TimeSeries;
 
   let stretchSeries: TimeSeries;
   let shrinkSeries: TimeSeries;
 
-  const bestYAxisRelativeVolumeThreshold = 1/6;
+  const bestYAxisRelativeVolumeThreshold = 1 / 6;
   let chartMaxValue: number;
   function setMaxChartValueToBest() {
-    chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold
+    chartMaxValue = volumeThreshold / bestYAxisRelativeVolumeThreshold;
   }
-  const debouncedSetMaxChartValueToBest = debounce(setMaxChartValueToBest, 3000);
+  const debouncedSetMaxChartValueToBest = debounce(
+    setMaxChartValueToBest,
+    3000,
+  );
   setMaxChartValueToBest();
   $: {
     volumeThreshold;
@@ -138,33 +144,44 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   const smoothieImportP = import(
     /* webpackPreload: true */
     /* webpackExports: ['SmoothieChart', 'TimeSeries'] */
-    '@wofwca/smoothie' // TODO replace it with just 'smoothie' when it starts being released.
+    "@wofwca/smoothie" // TODO replace it with just 'smoothie' when it starts being released.
   );
 
   type TimeMs = number;
   function sToMs(seconds: TimeS): TimeMs {
     return seconds * 1000;
   }
-  function toUnixTime(audioContextTime: TimeS, anyTelemetryRecord: TelemetryRecord) {
+  function toUnixTime(
+    audioContextTime: TimeS,
+    anyTelemetryRecord: TelemetryRecord,
+  ) {
     // TODO why don't we just get rid of all audio context time references in the telemetry object and just use Unix
     // time everywhere?
-    const audioContextCreationTimeUnix = anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
+    const audioContextCreationTimeUnix =
+      anyTelemetryRecord.unixTime - anyTelemetryRecord.contextTime;
     return audioContextCreationTimeUnix + audioContextTime;
   }
   function toUnixTimeMs(...args: Parameters<typeof toUnixTime>) {
     return sToMs(toUnixTime(...args));
   }
 
-  let prevPlaybackRateChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined;
+  let prevPlaybackRateChange:
+    TelemetryRecord["lastActualPlaybackRateChange"] | undefined;
   // I have a feeling there is a way to make this simplier by doing this in the controller.
   /**
    * @param targetTime - can be no earlier than the third latest actualPlaybackRateChange.
    */
   function toIntrinsicTime(
     targetTime: AudioContextTime,
-    telemetryRecord:
-      Pick<TelemetryRecord, 'unixTime' | 'contextTime' | 'intrinsicTime' | 'lastActualPlaybackRateChange'>,
-    prevSpeedChange: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+    telemetryRecord: Pick<
+      TelemetryRecord,
+      | "unixTime"
+      | "contextTime"
+      | "intrinsicTime"
+      | "lastActualPlaybackRateChange"
+    >,
+    prevSpeedChange:
+      TelemetryRecord["lastActualPlaybackRateChange"] | undefined,
   ) {
     // Keep in mind that due to the fact that you can seek a media element, several different `targetTime`s
     // can correspond to the same `el.currentTime`.
@@ -172,10 +189,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     let intrinsicTimeDelta: TimeDelta = 0;
 
     if (IS_DEV_MODE) {
-      if (prevSpeedChange && (prevSpeedChange.time >= lastSpeedChange.time)) {
+      if (prevSpeedChange && prevSpeedChange.time >= lastSpeedChange.time) {
         // However this check doesn't catch whether it was _immediately_ before, only if it's just _before_.
-        console.error('`prevSpeedChange` must be the speed change that was immediately before'
-          + ' `telemetryRecord.lastActualPlaybackRateChange`');
+        console.error(
+          "`prevSpeedChange` must be the speed change that was immediately before" +
+            " `telemetryRecord.lastActualPlaybackRateChange`",
+        );
       }
     }
 
@@ -185,14 +204,14 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         speedChange,
         nextSpeedChange, // By "next" we mean next in time.
         targetTimeIsWithinCurrentSpeed = false;
-
       !targetTimeIsWithinCurrentSpeed;
-
       nextSpeedChange = speedChange, speedChangeInd--
     ) {
       // TODO weels like this can be much simplier and more efficient.
       switch (speedChangeInd) {
-        case 0: speedChange = lastSpeedChange; break;
+        case 0:
+          speedChange = lastSpeedChange;
+          break;
         case -1: {
           if (prevSpeedChange) {
             speedChange = prevSpeedChange;
@@ -215,17 +234,21 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           speedChange = {
             time: -Infinity,
             value: lastSpeedChange.value,
-          }
+          };
           break;
         }
-        default: throw Error();
+        default:
+          throw Error();
       }
 
       targetTimeIsWithinCurrentSpeed = targetTime >= speedChange.time;
-      const currSpeedSnippetUntil = nextSpeedChange?.time ?? telemetryRecord.contextTime;
+      const currSpeedSnippetUntil =
+        nextSpeedChange?.time ?? telemetryRecord.contextTime;
       const currSpeedSnippetFrom = Math.max(speedChange.time, targetTime);
-      const currSpeedRealimeDelta = currSpeedSnippetFrom - currSpeedSnippetUntil;
-      const currentSpeedIntrinsicTimeDelta = currSpeedRealimeDelta * speedChange.value;
+      const currSpeedRealimeDelta =
+        currSpeedSnippetFrom - currSpeedSnippetUntil;
+      const currentSpeedIntrinsicTimeDelta =
+        currSpeedRealimeDelta * speedChange.value;
       intrinsicTimeDelta += currentSpeedIntrinsicTimeDelta;
     }
     return telemetryRecord.intrinsicTime + intrinsicTimeDelta;
@@ -234,9 +257,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return sToMs(toIntrinsicTime(...args));
   }
 
-  const convertTime = timelineIsMediaIntrinsic
-    ? toIntrinsicTime
-    : toUnixTime;
+  const convertTime = timelineIsMediaIntrinsic ? toIntrinsicTime : toUnixTime;
   const convertTimeMs = timelineIsMediaIntrinsic
     ? toIntrinsicTimeMs
     : toUnixTimeMs;
@@ -247,11 +268,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     // TODO make all these numbers customizable.
     smoothie = new SmoothieChart({
       millisPerPixel, // To be adjusted dynamically
-      interpolation: 'step',
+      interpolation: "step",
       // responsive: true, ?
       grid: {
-        fillStyle: '#fff',
-        strokeStyle: '#aaa',
+        fillStyle: "#fff",
+        strokeStyle: "#aaa",
         verticalSections: 0,
         millisPerLine: 1000,
         lineWidth: 1,
@@ -268,8 +289,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           const minYAxisRelativeVolumeThreshold = 0.05;
           const yAxisRelativeVolumeThreshold = volumeThreshold / chartMaxValue;
           if (
-            yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold
-            || yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
+            yAxisRelativeVolumeThreshold > maxYAxisRelativeVolumeThreshold ||
+            yAxisRelativeVolumeThreshold < minYAxisRelativeVolumeThreshold
           ) {
             setMaxChartValueToBest();
           }
@@ -302,8 +323,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     shrinkSeries = new TimeSeries();
     // Order determines z-index
     // WET, see the styles at the bottom of the file and `background: rgb(` in `{#await}` in './App.svelte'.
-    const soundedSpeedColor = 'rgba(0, 255, 0, 0.3)';
-    const silenceSpeedColor = 'rgba(255, 0, 0, 0.3)';
+    const soundedSpeedColor = "rgba(0, 255, 0, 0.3)";
+    const silenceSpeedColor = "rgba(255, 0, 0, 0.3)";
     smoothie.addTimeSeries(soundedSpeedSeries, {
       strokeStyle: undefined,
       fillStyle: soundedSpeedColor,
@@ -316,29 +337,29 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       strokeStyle: undefined,
       // fillStyle: 'rgba(0, 255, 0, 0.4)',
       fillStyle: soundedSpeedColor,
-    })
+    });
     smoothie.addTimeSeries(shrinkSeries, {
       strokeStyle: undefined,
       // fillStyle: 'rgba(255, 0, 0, 0.4)',
       fillStyle: silenceSpeedColor,
-    })
+    });
     smoothie.addTimeSeries(volumeSeries, {
       // RGB taken from Audacity.
-      interpolation: 'linear',
+      interpolation: "linear",
       // lineWidth: 1,
       // strokeStyle: 'rgba(100, 100, 220, 0)',
       strokeStyle: undefined,
-      fillStyle: 'rgba(100, 100, 220, 0.8)',
+      fillStyle: "rgba(100, 100, 220, 0.8)",
     });
     smoothie.addTimeSeries(volumeThresholdSeries, {
       lineWidth: 2,
-      strokeStyle: '#f44',
+      strokeStyle: "#f44",
     });
     if (PLOT_STRETCHER_DELAY) {
       smoothie.addTimeSeries(stretcherDelaySeries, {
-        interpolation: 'linear',
+        interpolation: "linear",
         lineWidth: 1,
-        strokeStyle: 'purple',
+        strokeStyle: "purple",
       });
     }
 
@@ -377,40 +398,55 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       // gets paused?
       if (!r.elementPlaybackActive) {
         // TODO this is incorrect if the speed recently changed. Good enoguh though.
-        const delayToAvoidExtrapolationIntrinsicTime
-          = delayToAvoidExtrapolationRealTime * r.lastActualPlaybackRateChange.value;
+        const delayToAvoidExtrapolationIntrinsicTime =
+          delayToAvoidExtrapolationRealTime *
+          r.lastActualPlaybackRateChange.value;
         return r.intrinsicTime - delayToAvoidExtrapolationIntrinsicTime;
       }
 
-      const delayToAvoidExtrapolationRealTimeMs = delayToAvoidExtrapolationRealTime * 1000;
-      const targetTimeUnix = (Date.now() - delayToAvoidExtrapolationRealTimeMs) / 1000;
+      const delayToAvoidExtrapolationRealTimeMs =
+        delayToAvoidExtrapolationRealTime * 1000;
+      const targetTimeUnix =
+        (Date.now() - delayToAvoidExtrapolationRealTimeMs) / 1000;
       // TODO make sure this conversion doesn't add error, as with (`el.currentTime`). Or get rid of it by making
       // `toIntrinsicTime` accept `targetTime` as `UnixTime`, not just `AudioContextTime`.
-      const targetTimeAudioContextTimeBasedOnLatest = r.contextTime + (targetTimeUnix - r.unixTime);
+      const targetTimeAudioContextTimeBasedOnLatest =
+        r.contextTime + (targetTimeUnix - r.unixTime);
 
-      const expectedTimeBasedOnLatest
-        = toIntrinsicTime(targetTimeAudioContextTimeBasedOnLatest, r, prevPlaybackRateChange);
+      const expectedTimeBasedOnLatest = toIntrinsicTime(
+        targetTimeAudioContextTimeBasedOnLatest,
+        r,
+        prevPlaybackRateChange,
+      );
       const speedChangedSinceReference =
-        !referenceTelemetry
-        || referenceTelemetry.lastActualPlaybackRateChange.time !== r.lastActualPlaybackRateChange.time;
+        !referenceTelemetry ||
+        referenceTelemetry.lastActualPlaybackRateChange.time !==
+          r.lastActualPlaybackRateChange.time;
       // Technically considering the fact that there is `delayToAvoidExtrapolationRealTime`,
       // `referenceTelemetry` is not immediately invalid after the speed changed in the new telemetry,
       // but rather only after `targetTimeUnix > r.lastActualPlaybackRateChange.time`, but this does not
       // appear to cause trouble right now, I believe this only leads to the chart jump happening a bit earlier.
       // TODO? Maybe just rename it to `speedChangingSoonSoReferenceWillBeInvalid` for now?
-      if (!speedChangedSinceReference) { // Otherwise the reference is incorrect.
+      if (!speedChangedSinceReference) {
+        // Otherwise the reference is incorrect.
         assertDev(referenceTelemetry); // `speedChangedSinceReference` would be `true` otherwise.
-        const targetTimeAudioContextTimeBasedOnReference
-          = referenceTelemetry.contextTime + (targetTimeUnix - referenceTelemetry.unixTime);
-        const expectedTimeBasedOnReference
-          = toIntrinsicTime(targetTimeAudioContextTimeBasedOnReference, referenceTelemetry, prevPlaybackRateChange);
+        const targetTimeAudioContextTimeBasedOnReference =
+          referenceTelemetry.contextTime +
+          (targetTimeUnix - referenceTelemetry.unixTime);
+        const expectedTimeBasedOnReference = toIntrinsicTime(
+          targetTimeAudioContextTimeBasedOnReference,
+          referenceTelemetry,
+          prevPlaybackRateChange,
+        );
         // You would think that this is pretty big of a margin and e.g. if there is a seek that is smaller
         // than this, it would not get noticed (for example, desync correction can take
         // less than that), but this function (at least when I wrote this) is only responsible for how fast the
         // chart is moving - it plays no role in `timeSeries.append(` arguments.
         // The actual average error appears to be around 0.0008s for Chromium and 0.005s for Gecko for me.
         const maxAllowedError = 0.25;
-        const referenceIsCorrect = Math.abs(expectedTimeBasedOnReference - expectedTimeBasedOnLatest) < maxAllowedError;
+        const referenceIsCorrect =
+          Math.abs(expectedTimeBasedOnReference - expectedTimeBasedOnLatest) <
+          maxAllowedError;
         if (referenceIsCorrect) {
           return expectedTimeBasedOnReference;
         }
@@ -426,23 +462,27 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
     updateSmoothieVolumeThreshold();
 
-    const canvasContext = canvasEl.getContext('2d')!;
+    const canvasContext = canvasEl.getContext("2d")!;
 
     let offsetAdjustment: number | undefined;
     function getCurrentTime(latestTelemetryRecord: TelemetryRecord) {
       return timelineIsMediaIntrinsic
-        ? sToMs(getExpectedElementCurrentTimeDelayed(
-            latestTelemetryRecord,
-            referenceTelemetry,
-            setReferenceToLatest,
-          ))
-          // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
-          // was omitted.
-          || Number.MIN_SAFE_INTEGER
-        : Date.now()
+        ? sToMs(
+            getExpectedElementCurrentTimeDelayed(
+              latestTelemetryRecord,
+              referenceTelemetry,
+              setReferenceToLatest,
+            ),
+          ) ||
+            // Otherwise if the returned value is 0, smoothie will behave as if the `time` parameter
+            // was omitted.
+            Number.MIN_SAFE_INTEGER
+        : Date.now();
     }
 
-    const updateOffsetAdjustmentSoChartDoesntJumpImmediately = (prevStretchFactor: number) => {
+    const updateOffsetAdjustmentSoChartDoesntJumpImmediately = (
+      prevStretchFactor: number,
+    ) => {
       // Need to make it so that the current output remains on the same place on the chart, so it doesn't
       // jump all over the place as you change `soundedSpeed`. For this we need the value of
       // `(chartJumpingOffsetMs / (millisPerPixel * widthPx))` to remain the same after the change of
@@ -458,15 +498,15 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       const time = getCurrentTime(latestTelemetryRecord);
 
       const stretchFactorChangeMultiplier = stretchFactor / prevStretchFactor;
-      const oldJumpPeriod = jumpPeriodMs / stretchFactor * prevStretchFactor;
+      const oldJumpPeriod = (jumpPeriodMs / stretchFactor) * prevStretchFactor;
       // I don't know how this works, I simply derived this by solving an equation (see the comment above).
       // And they say you won't need math in your daily life. TODO it's best to rewrite this using logic only.
       // Maybe it could also be simplified.
       offsetAdjustment =
-        ((time + offsetAdjustment) % oldJumpPeriod)
-        * stretchFactorChangeMultiplier
-        - time % jumpPeriodMs;
-    }
+        ((time + offsetAdjustment) % oldJumpPeriod) *
+          stretchFactorChangeMultiplier -
+        (time % jumpPeriodMs);
+    };
     onJumpPeriodChange = updateOffsetAdjustmentSoChartDoesntJumpImmediately;
     (function drawAndScheduleAnother() {
       if (latestTelemetryRecord) {
@@ -501,25 +541,27 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         maybeInsertExtrapolatedData(soundedSpeedSeries, time, extrapolatedFor);
 
         type SmoothieChartWithPrivateFields = SmoothieChart & {
-          lastRenderTimeMillis: number,
-          lastChartTimestamp: number | any,
+          lastRenderTimeMillis: number;
+          lastChartTimestamp: number | any;
         };
 
         let chartJumpingOffsetMs = 0;
         if (jumpPeriodMs > 0) {
           // TODO perf: do this only once instead of on each RAF.
           if (offsetAdjustment === undefined) {
-            offsetAdjustment = jumpPeriodMs - time % jumpPeriodMs;
+            offsetAdjustment = jumpPeriodMs - (time % jumpPeriodMs);
           }
           // `+ offsetAdjustment` so we always start at max offset so we don't jump almost immediately after
           // the popup opens.
-          chartJumpingOffsetMs = (jumpPeriodMs - (time + offsetAdjustment) % jumpPeriodMs);
+          chartJumpingOffsetMs =
+            jumpPeriodMs - ((time + offsetAdjustment) % jumpPeriodMs);
           // FYI There's also `smoothie.delay = -chartJumpingOffsetMs`, but it doesn't work rn.
           timeAtChartEdge += chartJumpingOffsetMs;
 
           // This is a hack to get rid of the fact that smoothie won't `render` if it has been passed the
           // `time` the same as before (actually it would, but only 6 times per second).
-          (smoothie as SmoothieChartWithPrivateFields).lastChartTimestamp = null;
+          (smoothie as SmoothieChartWithPrivateFields).lastChartTimestamp =
+            null;
         }
 
         // This is a workaround for (apparently) a Chromium bug - on some devices, if a line's points are
@@ -533,12 +575,16 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         // Should we rename the original `millisPerPixel` to `untweenedMillisPerPixel`?
         // TODO this is jumpy with `jumpPeriodMs > 0`. Need to also tween `jumpPeriodMs` because it depends on
         // `millisPerPixel`.
-        const millisPerPixelTweened = getTweenedMillisPerPixel(jumpPeriodMs > 0 ? 0 : undefined);
+        const millisPerPixelTweened = getTweenedMillisPerPixel(
+          jumpPeriodMs > 0 ? 0 : undefined,
+        );
         smoothie.options.millisPerPixel = millisPerPixelTweened;
 
-        const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
+        const renderTimeBefore = (smoothie as SmoothieChartWithPrivateFields)
+          .lastRenderTimeMillis;
         smoothie.render(canvasEl, timeAtChartEdge);
-        const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields).lastRenderTimeMillis;
+        const renderTimeAfter = (smoothie as SmoothieChartWithPrivateFields)
+          .lastRenderTimeMillis;
         const canvasRepainted = renderTimeBefore !== renderTimeAfter; // Not true for FPS > 1000.
 
         extrapolatedFor.forEach(dropExtrapolatedData);
@@ -550,28 +596,36 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           // means before.
           let chartEdgeTimeOffset: TimeDelta;
           if (timelineIsMediaIntrinsic) {
-            const momentCurrentlyBeingOutputContextTime = latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
-            const momentCurrentlyBeingOutputIntrinsicTime
-              = toIntrinsicTime(momentCurrentlyBeingOutputContextTime, latestTelemetryRecord, prevPlaybackRateChange);
-            const totalOutputDelayIntrinsicTime
-              = latestTelemetryRecord.intrinsicTime - momentCurrentlyBeingOutputIntrinsicTime;
+            const momentCurrentlyBeingOutputContextTime =
+              latestTelemetryRecord.contextTime - totalOutputDelayRealTime;
+            const momentCurrentlyBeingOutputIntrinsicTime = toIntrinsicTime(
+              momentCurrentlyBeingOutputContextTime,
+              latestTelemetryRecord,
+              prevPlaybackRateChange,
+            );
+            const totalOutputDelayIntrinsicTime =
+              latestTelemetryRecord.intrinsicTime -
+              momentCurrentlyBeingOutputIntrinsicTime;
             // TODO this is incorrect because the delay introduced by `getExpectedElementCurrentTimeDelayed`
             // is not taken into account. But it's good enough, as that delay is unnoticeable currently.
             chartEdgeTimeOffset = totalOutputDelayIntrinsicTime;
           } else {
             chartEdgeTimeOffset = totalOutputDelayRealTime;
           }
-          const pixelOffset = (sToMs(chartEdgeTimeOffset) + chartJumpingOffsetMs) / millisPerPixelTweened;
+          const pixelOffset =
+            (sToMs(chartEdgeTimeOffset) + chartJumpingOffsetMs) /
+            millisPerPixelTweened;
           // So it's not smeared accross two pixels.
           const pixelOffsetCentered = Math.floor(pixelOffset) + 0.5;
           const x = widthPx - pixelOffsetCentered;
           canvasContext.save();
           canvasContext.beginPath();
           canvasContext.lineWidth = 1;
-          canvasContext.strokeStyle = jumpPeriodMs === 0
-            ? 'rgba(0, 0, 0, 0.3)'
-            // So it's more clearly visible as it's moving accross the screen.
-            : 'rgba(0, 0, 0, 0.8)';
+          canvasContext.strokeStyle =
+            jumpPeriodMs === 0
+              ? "rgba(0, 0, 0, 0.3)"
+              : // So it's more clearly visible as it's moving accross the screen.
+                "rgba(0, 0, 0, 0.8)";
           canvasContext.moveTo(x, 0);
           canvasContext.lineTo(x, heightPx);
           canvasContext.stroke();
@@ -584,14 +638,28 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   }
   onMount(initSmoothie);
 
-  function appendToSpeedSeries(timeMs: TimeMs, speedName: TelemetryRecord['lastActualPlaybackRateChange']['name']) {
-    soundedSpeedSeries.append(timeMs, speedName === SpeedName_SOUNDED ? offTheChartsValue : 0);
-    silenceSpeedSeries.append(timeMs, speedName === SpeedName_SILENCE ? offTheChartsValue : 0);
+  function appendToSpeedSeries(
+    timeMs: TimeMs,
+    speedName: TelemetryRecord["lastActualPlaybackRateChange"]["name"],
+  ) {
+    soundedSpeedSeries.append(
+      timeMs,
+      speedName === SpeedName_SOUNDED ? offTheChartsValue : 0,
+    );
+    silenceSpeedSeries.append(
+      timeMs,
+      speedName === SpeedName_SILENCE ? offTheChartsValue : 0,
+    );
 
     if (IS_DEV_MODE) {
-      if (latestTelemetryRecord && (latestTelemetryRecord.inputVolume > offTheChartsValue)) {
-        console.warn('offTheChartsValue is supposed to be so large tha it\'s beyond chart bonds so it just looks like'
-          + ' background, but now it has been exceeded by inutVolume value');
+      if (
+        latestTelemetryRecord &&
+        latestTelemetryRecord.inputVolume > offTheChartsValue
+      ) {
+        console.warn(
+          "offTheChartsValue is supposed to be so large tha it's beyond chart bonds so it just looks like" +
+            " background, but now it has been exceeded by inutVolume value",
+        );
       }
     }
   }
@@ -606,28 +674,43 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   function updateSpeedSeries(newTelemetryRecord: TelemetryRecord) {
     const r = newTelemetryRecord;
     const speedName = r.lastActualPlaybackRateChange.name;
-    appendToSpeedSeries(convertTimeMs(r.lastActualPlaybackRateChange.time, r, prevPlaybackRateChange), speedName);
-  };
+    appendToSpeedSeries(
+      convertTimeMs(
+        r.lastActualPlaybackRateChange.time,
+        r,
+        prevPlaybackRateChange,
+      ),
+      speedName,
+    );
+  }
 
-  function updateStretchAndAdjustSpeedSeries(newTelemetryRecord: TelemetryRecord) {
-    assertDev(newTelemetryRecord.lastScheduledStretchInputTime,
-      'Attempted to update stretch series, but stretch is not defined');
+  function updateStretchAndAdjustSpeedSeries(
+    newTelemetryRecord: TelemetryRecord,
+  ) {
+    assertDev(
+      newTelemetryRecord.lastScheduledStretchInputTime,
+      "Attempted to update stretch series, but stretch is not defined",
+    );
     const stretch = newTelemetryRecord.lastScheduledStretchInputTime;
-    const stretchStartConvertedMs = convertTimeMs(stretch.startTime, newTelemetryRecord, prevPlaybackRateChange);
-    const stretchEndConvertedMs = convertTimeMs(stretch.endTime, newTelemetryRecord, prevPlaybackRateChange);
-    const stretchOrShrink = stretch.endValue > stretch.startValue
-      ? 'stretch'
-      : 'shrink';
-    const series = stretchOrShrink === 'stretch'
-      ? stretchSeries
-      : shrinkSeries;
+    const stretchStartConvertedMs = convertTimeMs(
+      stretch.startTime,
+      newTelemetryRecord,
+      prevPlaybackRateChange,
+    );
+    const stretchEndConvertedMs = convertTimeMs(
+      stretch.endTime,
+      newTelemetryRecord,
+      prevPlaybackRateChange,
+    );
+    const stretchOrShrink =
+      stretch.endValue > stretch.startValue ? "stretch" : "shrink";
+    const series = stretchOrShrink === "stretch" ? stretchSeries : shrinkSeries;
     series.append(stretchStartConvertedMs, offTheChartsValue);
     series.append(stretchEndConvertedMs, 0);
 
     // Don't draw actual video playback speed at that period so they don't overlap with stretches.
-    const actualPlaybackRateDuringStretch = stretchOrShrink === 'shrink'
-      ? 'sounded'
-      : 'silence';
+    const actualPlaybackRateDuringStretch =
+      stretchOrShrink === "shrink" ? "sounded" : "silence";
     silenceSpeedSeries.append(stretchStartConvertedMs, 0);
     soundedSpeedSeries.append(stretchStartConvertedMs, 0);
     // We don't have to restore the actual speed line's value after the stretch end, because stretches are always
@@ -651,28 +734,42 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       maxRecordedStretcherDelay = stretcherDelay;
     }
     // Yes, old values' scale is not updated.
-    const scaledValue = stretcherDelay / maxRecordedStretcherDelay * chartMaxValue * 0.90;
-    const momentCurrentlyAtStretcherOutputAudioContextTime = r.contextTime - r.delayFromInputToStretcherOutput;
+    const scaledValue =
+      (stretcherDelay / maxRecordedStretcherDelay) * chartMaxValue * 0.9;
+    const momentCurrentlyAtStretcherOutputAudioContextTime =
+      r.contextTime - r.delayFromInputToStretcherOutput;
     stretcherDelaySeries.append(
-      convertTimeMs(momentCurrentlyAtStretcherOutputAudioContextTime, newTelemetryRecord, prevPlaybackRateChange),
+      convertTimeMs(
+        momentCurrentlyAtStretcherOutputAudioContextTime,
+        newTelemetryRecord,
+        prevPlaybackRateChange,
+      ),
       scaledValue,
     );
   }
 
-
   /** An equivalent of `smoothie.prototype.dropOldData` */
-  function timeSeriesDropFutureData(timeSeries: TimeSeries, newestValidTime: MediaTime) {
+  function timeSeriesDropFutureData(
+    timeSeries: TimeSeries,
+    newestValidTime: MediaTime,
+  ) {
     const data = (timeSeries as TimeSeriesWithPrivateFields).data;
     const newestValidTimeMs = newestValidTime * 1000;
-    const firstInvalidInd = data.findIndex(([time]) => time > newestValidTimeMs);
+    const firstInvalidInd = data.findIndex(
+      ([time]) => time > newestValidTimeMs,
+    );
     if (firstInvalidInd < 0) return;
     data.splice(firstInvalidInd);
   }
-  function smoothieDropFutureData(smoothie: SmoothieChart, newestValidTime: MediaTime) {
+  function smoothieDropFutureData(
+    smoothie: SmoothieChart,
+    newestValidTime: MediaTime,
+  ) {
     type SmoothieWithPrivateFields = SmoothieChart & {
-      seriesSet: Array<{ timeSeries: TimeSeries }>
+      seriesSet: Array<{ timeSeries: TimeSeries }>;
     };
-    for (const { timeSeries } of (smoothie as SmoothieWithPrivateFields).seriesSet) {
+    for (const { timeSeries } of (smoothie as SmoothieWithPrivateFields)
+      .seriesSet) {
       timeSeriesDropFutureData(timeSeries, newestValidTime);
     }
   }
@@ -683,9 +780,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       return;
     }
     const r = newTelemetryRecord;
-    const now = timelineIsMediaIntrinsic
-      ? r.intrinsicTime
-      : r.unixTime;
+    const now = timelineIsMediaIntrinsic ? r.intrinsicTime : r.unixTime;
 
     // Not required with real-time speed, because real time alsways goes forward.
     if (timelineIsMediaIntrinsic) {
@@ -700,13 +795,16 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       // TODO However this does not actually fully achieve what's needed because some data gets placed with at points
       // in time which are earlier than `r.intrinsicTime`, for example things that take output delay into account -
       // such as `stretcherDelaySeries`, so if you do a tiny seek back, the datapoints will still get clamped up.
-      const newIntrinsicTimeIsEarlierThanPrevious = BUILD_DEFINITIONS.BROWSER === 'gecko'
-        // A workaround for the fact that in Gecko even if we seeked forward, `el.currentTime` can still become
-        // a little smaller for some reason (perhaps due to reduced time precision or something).
-        // This is especially noticeable when you skip silence by seeking instead of increasing `playbackRate`.
-        // TODO investiagate and maybe report bug.
-        ? lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime - r.intrinsicTime > 0.01)
-        : lastHandledTelemetryRecord && (lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime);
+      const newIntrinsicTimeIsEarlierThanPrevious =
+        BUILD_DEFINITIONS.BROWSER === "gecko"
+          ? // A workaround for the fact that in Gecko even if we seeked forward, `el.currentTime` can still become
+            // a little smaller for some reason (perhaps due to reduced time precision or something).
+            // This is especially noticeable when you skip silence by seeking instead of increasing `playbackRate`.
+            // TODO investiagate and maybe report bug.
+            lastHandledTelemetryRecord &&
+            lastHandledTelemetryRecord.intrinsicTime - r.intrinsicTime > 0.01
+          : lastHandledTelemetryRecord &&
+            lastHandledTelemetryRecord.intrinsicTime > r.intrinsicTime;
       if (newIntrinsicTimeIsEarlierThanPrevious) {
         smoothieDropFutureData(smoothie, r.intrinsicTime);
 
@@ -718,11 +816,11 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       }
     }
 
-    volumeSeries.append(sToMs(now), r.inputVolume)
+    volumeSeries.append(sToMs(now), r.inputVolume);
 
     function arePlaybackRateChangeObjectsEqual(
-      a: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
-      b: TelemetryRecord['lastActualPlaybackRateChange'] | undefined,
+      a: TelemetryRecord["lastActualPlaybackRateChange"] | undefined,
+      b: TelemetryRecord["lastActualPlaybackRateChange"] | undefined,
     ) {
       return a?.time === b?.time;
     }
@@ -735,19 +833,21 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
       // Otherwise it's not required.
       if (timelineIsMediaIntrinsic) {
-        prevPlaybackRateChange = lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
+        prevPlaybackRateChange =
+          lastHandledTelemetryRecord?.lastActualPlaybackRateChange;
       }
     }
 
-    if (timelineIsMediaIntrinsic && 'lastSilenceSkippingSeek' in r) {
-      const lastSilenceSkippingSeek = r.lastSilenceSkippingSeek
+    if (timelineIsMediaIntrinsic && "lastSilenceSkippingSeek" in r) {
+      const lastSilenceSkippingSeek = r.lastSilenceSkippingSeek;
       const prevSilenceSkippingSeek =
-        (lastHandledTelemetryRecord && 'lastSilenceSkippingSeek' in lastHandledTelemetryRecord)
+        lastHandledTelemetryRecord &&
+        "lastSilenceSkippingSeek" in lastHandledTelemetryRecord
           ? lastHandledTelemetryRecord.lastSilenceSkippingSeek
           : undefined;
       const newSilenceSkippingSeekPerformed =
-        lastSilenceSkippingSeek
-        && prevSilenceSkippingSeek?.[0] !== lastSilenceSkippingSeek[0];
+        lastSilenceSkippingSeek &&
+        prevSilenceSkippingSeek?.[0] !== lastSilenceSkippingSeek[0];
       // TODO but if we seek back and then the same silence skipping seek gets performed, it won't be drawn
       // on the chart because it will consider it "the same". Add a timestamp for every seek?
       if (newSilenceSkippingSeekPerformed) {
@@ -764,7 +864,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         const maxExpectedTimeErrorMs = 20;
         const datapointTimeOffsetMs = Math.min(
           length / 10, // In case the range is pretty short (compared to `maxExpectedTimeErrorMs`).
-          maxExpectedTimeErrorMs
+          maxExpectedTimeErrorMs,
         );
 
         volumeSeries.append(startMs + datapointTimeOffsetMs, 0);
@@ -776,17 +876,18 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       }
     }
 
-
     function areStretchObjectsEqual(
       stretchA: StretchInfo | undefined | null,
       stretchB: StretchInfo | undefined | null,
     ) {
       return stretchA?.startTime === stretchB?.startTime;
     }
-    const newStretch = r.lastScheduledStretchInputTime && !areStretchObjectsEqual(
-      lastHandledTelemetryRecord?.lastScheduledStretchInputTime,
-      r.lastScheduledStretchInputTime
-    );
+    const newStretch =
+      r.lastScheduledStretchInputTime &&
+      !areStretchObjectsEqual(
+        lastHandledTelemetryRecord?.lastScheduledStretchInputTime,
+        r.lastScheduledStretchInputTime,
+      );
     if (newStretch) {
       updateStretchAndAdjustSpeedSeries(r);
     }
@@ -806,36 +907,29 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     volumeThresholdSeries.clear();
     const timeBeforeChartStart = timelineIsMediaIntrinsic
       ? 0
-      // For some reason using just `0` makes the line disappear. TODO investigate?
-      : Date.now() - Math.round(lengthSeconds * 1000);
+      : // For some reason using just `0` makes the line disappear. TODO investigate?
+        Date.now() - Math.round(lengthSeconds * 1000);
     // Not sure if using larger values makes it consume more memory.
     volumeThresholdSeries.append(timeBeforeChartStart, volumeThreshold);
     volumeThresholdSeries.append(unreachableFutureMomentMs, volumeThreshold);
   }
   $: if (smoothie) {
     volumeThreshold;
-    updateSmoothieVolumeThreshold()
+    updateSmoothieVolumeThreshold();
   }
 </script>
 
 <!-- Don't apply `style=` directly to the canvas because smoothie.js also internally does this. -->
-<canvas
-  bind:this={canvasEl}
-  width={widthPx}
-  height={heightPx}
-  on:click
->
+<canvas bind:this={canvasEl} width={widthPx} height={heightPx} on:click>
   <label>
     Volume
     <meter
-      aria-label='volume'
+      aria-label="volume"
       value={lastVolume}
       low={volumeThreshold}
       max={meterMaxValue}
     />
-    <span
-      aria-hidden='true'
-    >{lastVolume.toFixed(3)}</span>
+    <span aria-hidden="true">{lastVolume.toFixed(3)}</span>
   </label>
 </canvas>
 

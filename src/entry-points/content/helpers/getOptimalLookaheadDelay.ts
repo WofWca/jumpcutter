@@ -18,15 +18,21 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { TimeDelta } from '@/helpers';
+import type { TimeDelta } from "@/helpers";
 
 /**
  * Mathematically minimal lookahead delay which is required for marginBefore to work.
  */
-function getMinLookaheadDelay(intrinsicTimeMargin: TimeDelta, soundedSpeed: number, silenceSpeed: number): TimeDelta {
+function getMinLookaheadDelay(
+  intrinsicTimeMargin: TimeDelta,
+  soundedSpeed: number,
+  silenceSpeed: number,
+): TimeDelta {
   return intrinsicTimeMargin / Math.max(soundedSpeed, silenceSpeed);
 }
-export function getOptimalLookaheadDelay(...args: Parameters<typeof getMinLookaheadDelay>): TimeDelta {
+export function getOptimalLookaheadDelay(
+  ...args: Parameters<typeof getMinLookaheadDelay>
+): TimeDelta {
   // If we were to use `getMinLookaheadDelay`, it would mean that we basically need to instantly start stretching as
   // soon as we get `SilenceDetectorEventType.SILENCE_END` from `Controller._silenceDetectorNode`, but this is not a
   // perfect world and code cannot be executed instantly, so `StretcherAndPitchCorrectorNode.stretch` ends up getting

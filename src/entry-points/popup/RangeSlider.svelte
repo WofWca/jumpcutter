@@ -16,19 +16,20 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
 -->
+<svelte:options immutable={true} />
 
-<svelte:options
-  immutable={true}
-/>
 <script lang="ts">
   export let value: number;
   export let label: string;
   export let fractionalDigits: number = 3;
 
   type SvelteActionParameters = any;
-  type SvelteAction = (node: HTMLElement, parameters: SvelteActionParameters) => {
-    update?: (parameters: SvelteActionParameters) => void,
-    destroy?: () => void,
+  type SvelteAction = (
+    node: HTMLElement,
+    parameters: SvelteActionParameters,
+  ) => {
+    update?: (parameters: SvelteActionParameters) => void;
+    destroy?: () => void;
   };
 
   export let useForInput: SvelteAction = () => ({});
@@ -51,11 +52,10 @@ TODO. -->
       bind:value
       use:useForInput={useForInputParams}
       on:input
+    />
+    <span aria-hidden="true" class="number-representation"
+      >{value.toFixed(fractionalDigits)}</span
     >
-    <span
-      aria-hidden="true"
-      class="number-representation"
-    >{value.toFixed(fractionalDigits)}</span>
   </div>
 </label>
 

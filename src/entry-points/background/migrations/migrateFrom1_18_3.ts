@@ -18,14 +18,15 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import { defaultSettings, Settings } from '@/settings';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
+import { defaultSettings, Settings } from "@/settings";
 
 export default async function (): Promise<void> {
-  const {
-    popupChartLengthInSeconds,
-    soundedSpeed,
-  } = await browserOrChrome.storage.local.get(['popupChartLengthInSeconds', 'soundedSpeed']);
+  const { popupChartLengthInSeconds, soundedSpeed } =
+    await browserOrChrome.storage.local.get([
+      "popupChartLengthInSeconds",
+      "soundedSpeed",
+    ]);
 
   const newValues: Partial<Settings> = {};
 
@@ -33,7 +34,8 @@ export default async function (): Promise<void> {
   // missing in the storage if the `previousVersion` is an old one, which would reslt in `popupChartLengthInSeconds`
   // becoming `NaN`.
   if (!Number.isFinite(popupChartLengthInSeconds)) {
-    newValues.popupChartLengthInSeconds = defaultSettings.popupChartLengthInSeconds
+    newValues.popupChartLengthInSeconds =
+      defaultSettings.popupChartLengthInSeconds;
   }
 
   // A fix for the faulty `migrateFrom1_18_2.ts`. There `popupSoundedSpeedStep` could be missing from the storage so

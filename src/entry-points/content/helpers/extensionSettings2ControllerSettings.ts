@@ -18,13 +18,14 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings as ExtensionSettings } from '@/settings';
-import { OppositeDayMode } from '@/settings';
-import type { ControllerSettings } from
-  '../ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
-import { getAbsoluteClampedSilenceSpeed } from '@/settings';
+import type { Settings as ExtensionSettings } from "@/settings";
+import { OppositeDayMode } from "@/settings";
+import type { ControllerSettings } from "../ElementPlaybackControllerStretching/ElementPlaybackControllerStretching";
+import { getAbsoluteClampedSilenceSpeed } from "@/settings";
 
-export default function extensionSettings2ControllerSettings(extensionSettings: ExtensionSettings): ControllerSettings {
+export default function extensionSettings2ControllerSettings(
+  extensionSettings: ExtensionSettings,
+): ControllerSettings {
   return {
     // So we don't have to copy all the properties with `...extensionSettings`.
     soundedSpeed: extensionSettings.soundedSpeed,
@@ -35,6 +36,6 @@ export default function extensionSettings2ControllerSettings(extensionSettings: 
 
     silenceSpeed: getAbsoluteClampedSilenceSpeed(extensionSettings),
 
-    isOppositeDay: extensionSettings.oppositeDayMode === OppositeDayMode.ON
+    isOppositeDay: extensionSettings.oppositeDayMode === OppositeDayMode.ON,
   };
 }

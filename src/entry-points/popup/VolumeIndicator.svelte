@@ -10,7 +10,10 @@
 
   const tippyThemeMyTippyAndPreLine = "my-tippy white-space-pre-line";
 
-  type GetActionStringFunc = (actionId: HotkeyAction, actionName: string) => string;
+  type GetActionStringFunc = (
+    actionId: HotkeyAction,
+    actionName: string,
+  ) => string;
   export let getActionString: GetActionStringFunc;
   export let latestTelemetryRecord: TelemetryMessage | undefined;
 </script>

@@ -18,10 +18,17 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { KeyCombination } from './';
-import { modifierFlagPropNames } from './modifierFlagPropNames';
+import type { KeyCombination } from "./";
+import { modifierFlagPropNames } from "./modifierFlagPropNames";
 
-export function eventMatchesCombination(event: KeyboardEvent, combination: KeyCombination): boolean {
-  return combination.code === event.code
-    && modifierFlagPropNames.every(key => event[key] === (combination.modifiers ?? []).includes(key))
+export function eventMatchesCombination(
+  event: KeyboardEvent,
+  combination: KeyCombination,
+): boolean {
+  return (
+    combination.code === event.code &&
+    modifierFlagPropNames.every(
+      (key) => event[key] === (combination.modifiers ?? []).includes(key),
+    )
+  );
 }

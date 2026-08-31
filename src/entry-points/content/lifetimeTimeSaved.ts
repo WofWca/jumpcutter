@@ -1,6 +1,9 @@
 import { addOnStorageChangedListener, type Settings } from "@/settings";
 import type TimeSavedTracker from "./TimeSavedTracker";
-import { getTimeSavedComparedToIntrinsicSpeedFraction, getTimeSavedComparedToSoundedSpeedFraction } from "@/helpers/timeSavedMath";
+import {
+  getTimeSavedComparedToIntrinsicSpeedFraction,
+  getTimeSavedComparedToSoundedSpeedFraction,
+} from "@/helpers/timeSavedMath";
 
 /**
  * Starts tracking how much time we're saving on {@linkcode el},
@@ -30,10 +33,10 @@ export default function startTrackingLifetimeTimeSaved(
         | "lifetimeWouldHaveLastedIfSpeedWasSounded"
         | "lifetimeWouldHaveLastedIfSpeedWasIntrinsic"
       >
-    >
+    >,
   ) => void,
   TimeSavedTracker_: typeof TimeSavedTracker,
-  onStop: (callback: () => void) => void
+  onStop: (callback: () => void) => void,
 ): {
   getLifetimeTimeSaved: () => TimeSavedTracker["timeSavedData"];
   onSilenceSkippingSeek: TimeSavedTracker["onSilenceSkippingSeek"];
@@ -62,7 +65,7 @@ export default function startTrackingLifetimeTimeSaved(
       timeSavedAveragingWindowLength: 42,
       timeSavedExponentialAveragingLatestDataWeight: 0.42,
     },
-    wrapperAddOnSettingsChangedListener
+    wrapperAddOnSettingsChangedListener,
   );
   const startedTrackingAtMs = Date.now();
   const onStopDestroyTracker = () => onStop(() => timeSavedTracker.destroy());
@@ -79,7 +82,7 @@ export default function startTrackingLifetimeTimeSaved(
     wouldHaveLastedIfSpeedWasSounded: 0,
   };
   const getLifetimeTimeSaved = (
-    savedInCurrSession: TimeSavedTracker["timeSavedData"]
+    savedInCurrSession: TimeSavedTracker["timeSavedData"],
   ) => {
     return {
       // Same calculation for each value.
@@ -119,7 +122,7 @@ export default function startTrackingLifetimeTimeSaved(
     ) {
       IS_DEV_MODE &&
         console.log(
-          "Time saved didn't change since the last time we saved it, skip saving"
+          "Time saved didn't change since the last time we saved it, skip saving",
         );
       return;
     }
@@ -143,7 +146,7 @@ export default function startTrackingLifetimeTimeSaved(
         "Total time saved doesn't look sane, will not store it to persistent storage",
         timeSavedInCurrSession,
         startedTrackingAtMs,
-        lifetimeSaved
+        lifetimeSaved,
       );
       return;
     }
@@ -172,7 +175,10 @@ export default function startTrackingLifetimeTimeSaved(
   // Save before potential page close.
   document.addEventListener("visibilitychange", onVisibilitychangeListener);
   onStop(() =>
-    document.removeEventListener("visibilitychange", onVisibilitychangeListener)
+    document.removeEventListener(
+      "visibilitychange",
+      onVisibilitychangeListener,
+    ),
   );
 
   onStop(saveToStorage);
@@ -189,7 +195,7 @@ export default function startTrackingLifetimeTimeSaved(
 
 function isSessionTimeSavedSane(
   saved: TimeSavedTracker["timeSavedData"],
-  startedTrackingAtMs: number
+  startedTrackingAtMs: number,
 ): boolean {
   // Also be sure to handle NaN.
   // That is why we use `!(n <= 0.95)` instead of `n > 0.95`.
@@ -252,9 +258,7 @@ function isSessionTimeSavedSane(
 
   return true;
 }
-function isLifetimeSavedSane(
-  lifetimeSaved: TimeSavedTracker["timeSavedData"]
-) {
+function isLifetimeSavedSane(lifetimeSaved: TimeSavedTracker["timeSavedData"]) {
   return (
     Number.isFinite(lifetimeSaved.timeSavedComparedToIntrinsicSpeed) &&
     Number.isFinite(lifetimeSaved.timeSavedComparedToSoundedSpeed) &&

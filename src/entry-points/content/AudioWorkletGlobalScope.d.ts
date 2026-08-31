@@ -24,12 +24,15 @@ interface AudioWorkletProcessor {
   process(
     inputs: Float32Array[][],
     outputs: Float32Array[][],
-    parameters: Record<string, Float32Array>
+    parameters: Record<string, Float32Array>,
   ): boolean;
 }
 declare const AudioWorkletProcessor: {
   prototype: AudioWorkletProcessor;
-  new(options?: AudioWorkletNodeOptions, ...rest: unknown[]): AudioWorkletProcessor;
+  new (
+    options?: AudioWorkletNodeOptions,
+    ...rest: unknown[]
+  ): AudioWorkletProcessor;
   readonly parameterDescriptors: AudioParamDescriptor[];
 };
 declare const sampleRate: number;
@@ -38,8 +41,8 @@ declare const currentTime: number;
 declare function registerProcessor(
   name: string,
   processorCtor: (new (
-    options?: AudioWorkletNodeOptions
+    options?: AudioWorkletNodeOptions,
   ) => AudioWorkletProcessor) & {
     parameterDescriptors?: AudioParamDescriptor[];
-  }
+  },
 ): unknown;

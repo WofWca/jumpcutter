@@ -18,75 +18,73 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import Lookahead, { TimeRange } from './Lookahead';
-import { assertDev, AudioContextTime, SpeedName } from '@/helpers';
-import type { MediaTime, AnyTime } from '@/helpers';
-import { isPlaybackActive, destroyAudioWorkletNode, requestIdleCallbackPolyfill,
-  maybeClosestNonNormalSpeed } from '@/entry-points/content/helpers';
-import { ControllerKind } from '@/settings';
-import type { Settings as ExtensionSettings } from '@/settings';
-import throttle from 'lodash/throttle';
-import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
-import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
-import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
+import Lookahead, { TimeRange } from "./Lookahead";
+import { assertDev, AudioContextTime, SpeedName } from "@/helpers";
+import type { MediaTime, AnyTime } from "@/helpers";
 import {
-  audioContext as commonAudioContext,
-} from '@/entry-points/content/audioContext';
-import {
-  getOrCreateMediaElementSourceAndUpdateMap
-} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
+  isPlaybackActive,
+  destroyAudioWorkletNode,
+  requestIdleCallbackPolyfill,
+  maybeClosestNonNormalSpeed,
+} from "@/entry-points/content/helpers";
+import { ControllerKind } from "@/settings";
+import type { Settings as ExtensionSettings } from "@/settings";
+import throttle from "lodash/throttle";
+import type TimeSavedTracker from "@/entry-points/content/TimeSavedTracker";
+import VolumeFilterNode from "@/entry-points/content/VolumeFilter/VolumeFilterNode";
+import lookaheadVolumeFilterSmoothing from "./lookaheadVolumeFilterSmoothing.json";
+import { audioContext as commonAudioContext } from "@/entry-points/content/audioContext";
+import { getOrCreateMediaElementSourceAndUpdateMap } from "@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap";
 import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
-} from '../playbackRateChangeTracking';
-import { browserHasAudioDesyncBug } from '@/helpers/browserHasAudioDesyncBug';
-import requestIdlePromise from '../helpers/requestIdlePromise';
+} from "../playbackRateChangeTracking";
+import { browserHasAudioDesyncBug } from "@/helpers/browserHasAudioDesyncBug";
+import requestIdlePromise from "../helpers/requestIdlePromise";
 
 type Time = AnyTime;
 
-type ControllerInitialized =
-  Controller
-  & { initialized: true }
-  & Required<Pick<Controller, 'initialized'>>;
+type ControllerInitialized = Controller & { initialized: true } & Required<
+    Pick<Controller, "initialized">
+  >;
 
-export type ControllerSettings =
-  Pick<
-    ExtensionSettings,
-    'volumeThreshold'
-    | 'soundedSpeed'
-    | 'marginBefore'
-    | 'marginAfter'
-    | 'enableDesyncCorrection'
-  > & {
-    silenceSpeed: number,
-    /**
-     * Whether we should be skipping sounded (loud) parts
-     * instead of silent parts.
-     *
-     * This is only supported by the cloning controller.
-     */
-    isOppositeDay: boolean
-  };
+export type ControllerSettings = Pick<
+  ExtensionSettings,
+  | "volumeThreshold"
+  | "soundedSpeed"
+  | "marginBefore"
+  | "marginAfter"
+  | "enableDesyncCorrection"
+> & {
+  silenceSpeed: number;
+  /**
+   * Whether we should be skipping sounded (loud) parts
+   * instead of silent parts.
+   *
+   * This is only supported by the cloning controller.
+   */
+  isOppositeDay: boolean;
+};
 
 export interface TelemetryRecord {
-  clonePlaybackError?: true,
-  unixTime: Time,
-  intrinsicTime: MediaTime,
-  elementPlaybackActive: boolean,
-  contextTime: Time,
-  inputVolume: number,
+  clonePlaybackError?: true;
+  unixTime: Time;
+  intrinsicTime: MediaTime;
+  elementPlaybackActive: boolean;
+  contextTime: Time;
+  inputVolume: number;
   lastActualPlaybackRateChange: {
-    time: Time,
-    value: number,
-    name: SpeedName,
-  },
-  lastSilenceSkippingSeek?: TimeRange,
-  elementVolume: number,
-  totalOutputDelay: Time,
-  delayFromInputToStretcherOutput: Time,
-  stretcherDelay: Time,
-  lastScheduledStretchInputTime?: undefined,
+    time: Time;
+    value: number;
+    name: SpeedName;
+  };
+  lastSilenceSkippingSeek?: TimeRange;
+  elementVolume: number;
+  totalOutputDelay: Time;
+  delayFromInputToStretcherOutput: Time;
+  stretcherDelay: Time;
+  lastScheduledStretchInputTime?: undefined;
 }
 
 const seekDurationProphetHistoryLength = 5;
@@ -95,26 +93,26 @@ const seekDurationProphetNoDataInitialAssumedDuration = 150;
  * Tells us how long (based on previous data) the next seek is gonna take.
  */
 class SeekDurationProphet {
-  el: HTMLMediaElement
+  el: HTMLMediaElement;
   // TODO perf: replace with a ring buffer (we have one in `VolumeFilterProcessor`)?
   history: number[] = [];
   historyAverage = seekDurationProphetNoDataInitialAssumedDuration;
   /** Can be called several times. Only the first call has effect. */
   public destroy!: () => void;
-  private _destroyedPromise = new Promise<void>(r => this.destroy = r);
+  private _destroyedPromise = new Promise<void>((r) => (this.destroy = r));
   lastSeekStartTime: number = performance.now();
-  constructor (el: HTMLMediaElement) {
+  constructor(el: HTMLMediaElement) {
     this.el = el;
     // Keep in mind that 'seeking' can be fired more than once before 'seeked' is fired, if the previous
     // seek didn't manage to finish.
     const onSeeking = this.onSeeking.bind(this);
     const onSeeked = this.onSeeked.bind(this);
-    el.addEventListener('seeking', onSeeking, { passive: true });
-    el.addEventListener('seeked', onSeeked, { passive: true });
+    el.addEventListener("seeking", onSeeking, { passive: true });
+    el.addEventListener("seeked", onSeeked, { passive: true });
     this._destroyedPromise.then(() => {
-      el.removeEventListener('seeking', onSeeking);
-      el.removeEventListener('seeked', onSeeked);
-    })
+      el.removeEventListener("seeking", onSeeking);
+      el.removeEventListener("seeked", onSeeked);
+    });
   }
   onSeeking(e: Event) {
     // Keep in mind that it is possible for the constructor to be called after a 'seeking' event has
@@ -167,21 +165,25 @@ export default class Controller {
   _resolveInitPromise!: (result: Controller) => void;
   // TODO how about also rejecting it when `init()` throws? Would need to put the whole initialization in the promise
   // executor?
-  _initPromise = new Promise<Controller>(resolve => this._resolveInitPromise = resolve);
+  _initPromise = new Promise<Controller>(
+    (resolve) => (this._resolveInitPromise = resolve),
+  );
   // Settings updates that haven't been applied because `updateSettingsAndMaybeCreateNewInstance` was called before
   // `init` finished.
   _pendingSettingsUpdates: ControllerSettings | undefined;
 
   private _resolveDestroyedPromise!: () => void;
-  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
+  private _destroyedPromise = new Promise<void>(
+    (r) => (this._resolveDestroyedPromise = r),
+  );
   audioContext: AudioContext;
   getVolume: () => number = () => 0;
   _lastSilenceSkippingSeek: TimeRange | undefined;
   _lastActualPlaybackRateChange: {
-    time: AudioContextTime,
-    value: number,
+    time: AudioContextTime;
+    value: number;
     // name: SpeedName.SOUNDED,
-    name: SpeedName,
+    name: SpeedName;
   } = {
     // Dummy values (except for `name`), will be ovewritten in `_setSpeedAndLog`.
     name: SpeedName.SOUNDED,
@@ -197,41 +199,46 @@ export default class Controller {
   _didNotDoDesyncCorrectionForNSpeedSwitches = 0;
 
   // TODO refactor: make this a constructor parameter for this Controller.
-  private readonly getMediaSourceCloneElement: ConstructorParameters<typeof Lookahead>[2] =
-    (originalElement) => import(
+  private readonly getMediaSourceCloneElement: ConstructorParameters<
+    typeof Lookahead
+  >[2] = (originalElement) =>
+    import(
       /* webpackExports: ['getMediaSourceCloneElement']*/
-      '@/entry-points/content/cloneMediaSources/getMediaSourceCloneElement'
-    ).then(({ getMediaSourceCloneElement }) => getMediaSourceCloneElement(originalElement));
+      "@/entry-points/content/cloneMediaSources/getMediaSourceCloneElement"
+    ).then(({ getMediaSourceCloneElement }) =>
+      getMediaSourceCloneElement(originalElement),
+    );
 
   constructor(
     element: HTMLMediaElement,
     controllerSettings: ControllerSettings,
-    private onSilenceSkippingSeek: TimeSavedTracker['onSilenceSkippingSeek'],
+    private onSilenceSkippingSeek: TimeSavedTracker["onSilenceSkippingSeek"],
   ) {
     this.element = element;
     this.settings = controllerSettings;
 
-    const lookahead = this.lookahead = new Lookahead(
+    const lookahead = (this.lookahead = new Lookahead(
       element,
       this.settings,
       this.getMediaSourceCloneElement,
-      () => this.clonePlaybackError = true
-    );
+      () => (this.clonePlaybackError = true),
+    ));
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
 
-    const seekDurationProphet = this.seekDurationProphet = new SeekDurationProphet(element);
+    const seekDurationProphet = (this.seekDurationProphet =
+      new SeekDurationProphet(element));
     this._destroyedPromise.then(() => seekDurationProphet.destroy());
 
     // We don't need a high sample rate as this context is currently only used to volume on the chart,
     // so consider setting it manually to a lower one. But I'm thinking whether it woruld actually
     // add performance overhead instead (would make resampling harder or something).
-    const audioContext = this.audioContext = new AudioContext({
-      latencyHint: 'playback',
-    });
+    const audioContext = (this.audioContext = new AudioContext({
+      latencyHint: "playback",
+    }));
     this._destroyedPromise.then(() => {
       audioContext.close();
-    })
+    });
   }
 
   isInitialized(): this is ControllerInitialized {
@@ -248,18 +255,28 @@ export default class Controller {
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
     this._destroyedPromise.then(() => {
-      setPlaybackRateAndRememberIt(element, elementPlaybackRateBeforeInitialization);
-      setDefaultPlaybackRateAndRememberIt(element, elementDefaultPlaybackRateBeforeInitialization);
+      setPlaybackRateAndRememberIt(
+        element,
+        elementPlaybackRateBeforeInitialization,
+      );
+      setDefaultPlaybackRateAndRememberIt(
+        element,
+        elementDefaultPlaybackRateBeforeInitialization,
+      );
     });
 
-    toAwait.push(this.lookahead!.ensureInit().then(() => {
-      // TODO perf: super inefficient, I know.
-      const onTimeupdate = () => {
-        this.maybeScheduleMaybeSeekOrSpeedup();
-      }
-      element.addEventListener('timeupdate', onTimeupdate, { passive: true });
-      this._destroyedPromise.then(() => element.removeEventListener('timeupdate', onTimeupdate));
-    }));
+    toAwait.push(
+      this.lookahead!.ensureInit().then(() => {
+        // TODO perf: super inefficient, I know.
+        const onTimeupdate = () => {
+          this.maybeScheduleMaybeSeekOrSpeedup();
+        };
+        element.addEventListener("timeupdate", onTimeupdate, { passive: true });
+        this._destroyedPromise.then(() =>
+          element.removeEventListener("timeupdate", onTimeupdate),
+        );
+      }),
+    );
 
     const onNewSrc = () => {
       // This indicated that `element.currentSrc` has changed.
@@ -273,11 +290,14 @@ export default class Controller {
       // `seekDurationProphet`. It's a bit of a memory leak, but doesn't matter too much as
       // `seekDurationProphet.destroy()` can be called several times. TODO refactor.
       this.seekDurationProphet.destroy();
-      const seekDurationProphet = this.seekDurationProphet = new SeekDurationProphet(element);
+      const seekDurationProphet = (this.seekDurationProphet =
+        new SeekDurationProphet(element));
       this._destroyedPromise.then(() => seekDurationProphet.destroy());
-    }
-    element.addEventListener('loadstart', onNewSrc, { passive: true });
-    this._destroyedPromise.then(() => element.removeEventListener('loadstart', onNewSrc));
+    };
+    element.addEventListener("loadstart", onNewSrc, { passive: true });
+    this._destroyedPromise.then(() =>
+      element.removeEventListener("loadstart", onNewSrc),
+    );
 
     // Why `onNewSrc` is not enough? Because a 'timeupdate' event gets emited before 'loadstart', so
     // 'maybeScheduleMaybeSeekOrSpeedup' gets executed, and it tries to use the lookahead that was
@@ -286,9 +306,11 @@ export default class Controller {
     const onOldSrcGone = () => {
       this.lookahead?.destroy();
       this.lookahead = undefined;
-    }
-    element.addEventListener('emptied', onOldSrcGone, { passive: true });
-    this._destroyedPromise.then(() => element.removeEventListener('emptied', onOldSrcGone));
+    };
+    element.addEventListener("emptied", onOldSrcGone, { passive: true });
+    this._destroyedPromise.then(() =>
+      element.removeEventListener("emptied", onOldSrcGone),
+    );
 
     {
       // TODO refactor: abstract this into a function that returns `getVolume`.
@@ -306,33 +328,42 @@ export default class Controller {
       // TODO perf: destroy the stream and AudioContext when it's not necessary,
       // i.e. when the popup is closed.
       type HTMLMediaElementWithMaybeMissingFields = HTMLMediaElement & {
-        captureStream?: () => MediaStream,
-        mozCaptureStream?: () => MediaStream,
-      }
+        captureStream?: () => MediaStream;
+        mozCaptureStream?: () => MediaStream;
+      };
       const element_ = element as HTMLMediaElementWithMaybeMissingFields;
       const unprefixedCaptureStreamPresent = element_.captureStream;
-      const browserGecko = BUILD_DEFINITIONS.BROWSER === 'gecko';
+      const browserGecko = BUILD_DEFINITIONS.BROWSER === "gecko";
       const captureStream =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (unprefixedCaptureStreamPresent && (() => element_.captureStream!()))
+        (unprefixedCaptureStreamPresent && (() => element_.captureStream!())) ||
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        || (browserGecko && element_.mozCaptureStream && (() => element_.mozCaptureStream!()));
+        (browserGecko &&
+          element_.mozCaptureStream &&
+          (() => element_.mozCaptureStream!()));
 
       if (captureStream) {
         // Also mostly copy-pasted from `ElementPlaybackControllerStretching`.
         const audioContext = this.audioContext;
         const addWorkletProcessor = (url: string) =>
-          audioContext.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
+          audioContext.audioWorklet.addModule(
+            browserOrChrome.runtime.getURL(url),
+          );
         // Must be the same so what the user sees matches what the lookahead sees.
-        const volumeFilterSmoothingWindowLength = lookaheadVolumeFilterSmoothing;
-        const volumeFilterProcessorP = addWorkletProcessor('content/VolumeFilterProcessor.js');
+        const volumeFilterSmoothingWindowLength =
+          lookaheadVolumeFilterSmoothing;
+        const volumeFilterProcessorP = addWorkletProcessor(
+          "content/VolumeFilterProcessor.js",
+        );
         const volumeFilterP = volumeFilterProcessorP.then(() => {
           const volumeFilter = new VolumeFilterNode(
             audioContext,
             volumeFilterSmoothingWindowLength,
-            volumeFilterSmoothingWindowLength
+            volumeFilterSmoothingWindowLength,
           );
-          this._destroyedPromise.then(() => destroyAudioWorkletNode(volumeFilter));
+          this._destroyedPromise.then(() =>
+            destroyAudioWorkletNode(volumeFilter),
+          );
           return volumeFilter;
         });
 
@@ -348,30 +379,35 @@ export default class Controller {
             newStream = captureStream();
           } catch (e) {
             if (IS_DEV_MODE) {
-              console.warn('Couldn\'t `captureStream`, but ignoring it because maybe we\'re here because'
-                + ' `dontAttachToCrossOriginMedia` is `false` and the media is CORS-restricted', e);
+              console.warn(
+                "Couldn't `captureStream`, but ignoring it because maybe we're here because" +
+                  " `dontAttachToCrossOriginMedia` is `false` and the media is CORS-restricted",
+                e,
+              );
             }
           }
           if (newStream) {
             // Shouldn't we do something if there are no tracks?
             if (newStream.getAudioTracks().length) {
               source = audioContext.createMediaStreamSource(newStream);
-              volumeFilterP.then(filter => source.connect(filter));
+              volumeFilterP.then((filter) => source.connect(filter));
             }
           }
 
           reinitScheduled = false;
-        }
+        };
         const ensureReinitDeferred = () => {
           if (!reinitScheduled) {
             reinitScheduled = true;
             requestIdleCallbackPolyfill(reinit, { timeout: 2000 });
           }
-        }
+        };
 
         // This means that the 'playing' has already been emited.
         // https://html.spec.whatwg.org/multipage/media.html#mediaevents:event-media-playing
-        const nowPlaying = element.readyState > HTMLMediaElement.HAVE_FUTURE_DATA && !element.paused;
+        const nowPlaying =
+          element.readyState > HTMLMediaElement.HAVE_FUTURE_DATA &&
+          !element.paused;
         const canCaptureStreamNow = nowPlaying;
         if (canCaptureStreamNow) {
           reinit();
@@ -380,13 +416,14 @@ export default class Controller {
 
         // Workaround for
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1178751
-        if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
+        if (BUILD_DEFINITIONS.BROWSER === "gecko") {
           const mozCaptureStreamUsed = !unprefixedCaptureStreamPresent;
           if (mozCaptureStreamUsed) {
-            const [, mediaElementSource] = getOrCreateMediaElementSourceAndUpdateMap(
-              element,
-              () => commonAudioContext
-            );
+            const [, mediaElementSource] =
+              getOrCreateMediaElementSourceAndUpdateMap(
+                element,
+                () => commonAudioContext,
+              );
             mediaElementSource.connect(commonAudioContext.destination);
           }
         }
@@ -400,22 +437,28 @@ export default class Controller {
             ensureReinitDeferred();
             unhandledLoadstartOrEndedEvent = false;
           }
-        }
-        element.addEventListener('playing', onPlaying, { passive: true });
-        this._destroyedPromise.then(() => element.removeEventListener('playing', onPlaying));
+        };
+        element.addEventListener("playing", onPlaying, { passive: true });
+        this._destroyedPromise.then(() =>
+          element.removeEventListener("playing", onPlaying),
+        );
         const onEndedOrLoadstart = () => {
           unhandledLoadstartOrEndedEvent = true;
-        }
-        element.addEventListener('loadstart', onEndedOrLoadstart, { passive: true });
-        element.addEventListener('ended', onEndedOrLoadstart, { passive: true });
+        };
+        element.addEventListener("loadstart", onEndedOrLoadstart, {
+          passive: true,
+        });
+        element.addEventListener("ended", onEndedOrLoadstart, {
+          passive: true,
+        });
         this._destroyedPromise.then(() => {
-          element.removeEventListener('loadstart', onEndedOrLoadstart);
-          element.removeEventListener('ended', onEndedOrLoadstart);
+          element.removeEventListener("loadstart", onEndedOrLoadstart);
+          element.removeEventListener("ended", onEndedOrLoadstart);
         });
 
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 2 ** 5;
-        volumeFilterP.then(volumeFilter => {
+        volumeFilterP.then((volumeFilter) => {
           volumeFilter.connect(analyser);
         });
         // Using the minimum possible value for performance, as we're only using the node to get unchanged
@@ -432,7 +475,7 @@ export default class Controller {
     }
 
     await Promise.all(toAwait);
-    await requestIdlePromise({ timeout: 2000 })
+    await requestIdlePromise({ timeout: 2000 });
     this.initialized = true;
     this._resolveInitPromise(this);
 
@@ -448,18 +491,17 @@ export default class Controller {
    */
   maybeScheduleMaybeSeekOrSpeedup() {
     const { currentTime } = this.element;
-    const maybeUpcomingSilenceRange = this.lookahead?.getNextSilenceRange(currentTime);
+    const maybeUpcomingSilenceRange =
+      this.lookahead?.getNextSilenceRange(currentTime);
     if (!maybeUpcomingSilenceRange) {
       return;
     }
-    const [
-      [silenceStart, silenceEnd],
-      isTheUpcomingSilenceRangeStillPending,
-    ] = maybeUpcomingSilenceRange;
+    const [[silenceStart, silenceEnd], isTheUpcomingSilenceRangeStillPending] =
+      maybeUpcomingSilenceRange;
 
     if (this.settings.isOppositeDay) {
       if (isTheUpcomingSilenceRangeStillPending) {
-        return
+        return;
       }
     }
 
@@ -469,10 +511,10 @@ export default class Controller {
     // Would time accuracy increase?
     const seekAt = Math.max(silenceStart, currentTime);
     const seekTo = isTheUpcomingSilenceRangeStillPending
-      // Let's not skip to the very end of the pending silence range,
-      // because it's usually the end of the buffered range,
-      // so if we do perform a seek, the video will not be able to play.
-      ? Math.max(seekAt, silenceEnd - 3)
+      ? // Let's not skip to the very end of the pending silence range,
+        // because it's usually the end of the buffered range,
+        // so if we do perform a seek, the video will not be able to play.
+        Math.max(seekAt, silenceEnd - 3)
       : silenceEnd;
 
     const amountToSkip = seekTo - currentTime;
@@ -536,12 +578,9 @@ export default class Controller {
       this.maybeSeekOrSpeedup(seekTo, seekAt);
     } else {
       // TODO fix: `clearTimeout` on `destroy`.
-      this.maybeSeekOrSpeedupTimeoutId = (setTimeout as typeof window.setTimeout)(
-        this.maybeSeekOrSpeedupBounded,
-        seekInRealTime * 1000,
-        seekTo,
-        seekAt,
-      );
+      this.maybeSeekOrSpeedupTimeoutId = (
+        setTimeout as typeof window.setTimeout
+      )(this.maybeSeekOrSpeedupBounded, seekInRealTime * 1000, seekTo, seekAt);
     }
   }
   /**
@@ -561,26 +600,28 @@ export default class Controller {
     // TODO perf: would be more efficient to `clearTimeout` instead. On what occasions though?
     const expectedCurrentTime = seekScheduledTo;
     const mustCancelSeek =
-      Math.abs(currentTime - expectedCurrentTime) > 0.5 // E.g. if the user seeked manually to some other time
-      || paused;
+      Math.abs(currentTime - expectedCurrentTime) > 0.5 || // E.g. if the user seeked manually to some other time
+      paused;
     if (mustCancelSeek) {
       return;
     }
 
     const seekAmount = seekTo - currentTime;
     // TODO improvement: just use `fastSeek`? Add a setting?
-    const expectedSeekDuration = this.seekDurationProphet.nextSeekDurationMs / 1000;
+    const expectedSeekDuration =
+      this.seekDurationProphet.nextSeekDurationMs / 1000;
 
     if (IS_DEV_MODE) {
-      if (expectedSeekDuration < 0.010) {
+      if (expectedSeekDuration < 0.01) {
         console.warn(
-          '`expectedSeekDuration` got lower than 0.010, but we ignore silence ranges that are shorter than this.'
-          + ' See `pushNewSilenceRange` in `ElementPlaybackControllerCloning/Lookahead.ts`'
+          "`expectedSeekDuration` got lower than 0.010, but we ignore silence ranges that are shorter than this." +
+            " See `pushNewSilenceRange` in `ElementPlaybackControllerCloning/Lookahead.ts`",
         );
       }
     }
 
-    const realTimeLeftUntilDestinationAtNormalSpeed = seekAmount / this.settings.soundedSpeed;
+    const realTimeLeftUntilDestinationAtNormalSpeed =
+      seekAmount / this.settings.soundedSpeed;
     // TODO should we maybe also calculate it before `setTimeout(maybeSeekOrSpeedup)`?
     // Also even if seeking was instant, when you perform one the new `currentTime` can be a bit lower (or bigger)
     // than the value that you assigned to it, so `seekTo !== currentTime` would not work.
@@ -592,7 +633,8 @@ export default class Controller {
     // `this.settings.silenceSpeed`? Need to make sure to clamp it (`getAbsoluteClampedSilenceSpeed`).
     // If so, don't forget to change `_setSpeedAndLog` (because it accepts `SpeedName`).
     const playbackRateForSpeedup = this.settings.silenceSpeed;
-    const realTimeLeftUntilDestinationAtSilenceSpeed = seekAmount / playbackRateForSpeedup;
+    const realTimeLeftUntilDestinationAtSilenceSpeed =
+      seekAmount / playbackRateForSpeedup;
     let canSaveTimeBySpeedingUp_: number =
       realTimeLeftUntilDestinationAtNormalSpeed -
       realTimeLeftUntilDestinationAtSilenceSpeed;
@@ -616,7 +658,7 @@ export default class Controller {
         // otherwise we'll start skipping at incorrect time. Apparently it's audio that
         // gets out of sync with `el.currentTime`, not video.
         // TODO maybe then it even makes sense to ignore whether `enableDesyncCorrection === false`?
-  
+
         // In order to save more time, we don't simply check if
         // `this._didNotDoDesyncCorrectionForNSpeedSwitches >= DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES`.
         // It is better to perform desync correction when `realTimeLeftUntilDestinationWithoutSeeking`
@@ -629,19 +671,21 @@ export default class Controller {
         //
         // In practice this number is between 0 and 1.
         const howMuchWeWantDesyncCorrection =
-          this._didNotDoDesyncCorrectionForNSpeedSwitches / DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
+          this._didNotDoDesyncCorrectionForNSpeedSwitches /
+          DO_DESYNC_CORRECTION_EVERY_N_SPEED_SWITCHES;
         // This is between 0 and Infinity (unless `realTimeLeftUntilDestinationAtNormalSpeed < 0`,
         // in which case it's between -Infinity and Infinity, but it's also ok, because we're just
         // gonna behave as if there was no this silent part).
         const howMuchWeWantToSeek =
-          realTimeLeftUntilDestinationAtNormalSpeed / (expectedSeekDuration || Number.MIN_VALUE);
+          realTimeLeftUntilDestinationAtNormalSpeed /
+          (expectedSeekDuration || Number.MIN_VALUE);
         const howMuchWeDontWantToSeek = 1 - howMuchWeWantToSeek;
         if (howMuchWeWantDesyncCorrection >= howMuchWeDontWantToSeek) {
           return true;
         }
       }
       return false;
-    }
+    };
 
     const enum WhatToDo {
       NOTHING,
@@ -653,12 +697,12 @@ export default class Controller {
       // really, but I've challenged myself to write the code imagining that it is expensive)
       // and there are cases when we don't need to check `needForceSeekForDesyncCorrection()`
       // to decide what to do.
-      const ifNeedForceSeekThenSeekElse = <T extends Exclude<WhatToDo, WhatToDo.SEEK>>(
-        else_: T
+      const ifNeedForceSeekThenSeekElse = <
+        T extends Exclude<WhatToDo, WhatToDo.SEEK>,
+      >(
+        else_: T,
       ): WhatToDo => {
-        return needForceSeekForDesyncCorrection()
-          ? WhatToDo.SEEK
-          : else_;
+        return needForceSeekForDesyncCorrection() ? WhatToDo.SEEK : else_;
       };
       // TODO improvement: maybe it's worth adding a multiplier of like 0.90 to one of the values
       // because e.g. we can tolerate saving 10% less time than we could have, but in return get
@@ -687,16 +731,24 @@ export default class Controller {
       // short period because it won't save much time but make everything jumpy. It takes
       // on average 120 snippets shorter than 1 / 60 to save 0.875 of a second at silenceSpeed of 8.
       // Nah, sounds like an excuse to me.
-      const speedupCanOvershoot = realTimeLeftUntilDestinationAtSilenceSpeed <= expectedMinimumSetTimeoutDelay;
+      const speedupCanOvershoot =
+        realTimeLeftUntilDestinationAtSilenceSpeed <=
+        expectedMinimumSetTimeoutDelay;
       if (IS_DEV_MODE) {
         if (speedupCanOvershoot) {
-          performance.mark('timeout-scheduled')
+          performance.mark("timeout-scheduled");
           setTimeout(() => {
-            performance.mark('timeout-executed');
-            const delay = performance.measure('timeout-delay', 'timeout-scheduled', 'timeout-executed').duration;
+            performance.mark("timeout-executed");
+            const delay = performance.measure(
+              "timeout-delay",
+              "timeout-scheduled",
+              "timeout-executed",
+            ).duration;
             if (delay < expectedMinimumSetTimeoutDelay * 1000) {
-              console.warn('Did not speedup because expected `setTimeout` delay to be '
-                + `> ${expectedMinimumSetTimeoutDelay * 1000}ms, but actually it was ${delay}ms`);
+              console.warn(
+                "Did not speedup because expected `setTimeout` delay to be " +
+                  `> ${expectedMinimumSetTimeoutDelay * 1000}ms, but actually it was ${delay}ms`,
+              );
             }
           });
         }
@@ -764,12 +816,12 @@ export default class Controller {
   }
 
   private _initLookahead() {
-    const lookahead = this.lookahead = new Lookahead(
+    const lookahead = (this.lookahead = new Lookahead(
       this.element,
       this.settings,
       this.getMediaSourceCloneElement,
-      () => this.clonePlaybackError = true,
-    );
+      () => (this.clonePlaybackError = true),
+    ));
     // Destruction is performed in `this.destroy` directly.
     lookahead.ensureInit();
   }
@@ -789,7 +841,10 @@ export default class Controller {
    * parameter is omitted).
    * TODO refactor: maybe it's better to just store the state on the class instance?
    */
-  private _setStateAccordingToNewSettings(newSettings: ControllerSettings, oldSettings: ControllerSettings | null) {
+  private _setStateAccordingToNewSettings(
+    newSettings: ControllerSettings,
+    oldSettings: ControllerSettings | null,
+  ) {
     this.settings = newSettings;
     assertDev(this.isInitialized());
 
@@ -802,20 +857,19 @@ export default class Controller {
       this.element,
       getActualPlaybackRateForSpeed(
         this.settings.soundedSpeed,
-        this.settings.volumeThreshold
-      )
+        this.settings.volumeThreshold,
+      ),
     );
 
     // TODO do it as we do in ElementPlaybackControllerStretching, not always SOUNDED?
     // Fine for now though.
     this._setSpeedAndLog(SpeedName.SOUNDED);
     const lookaheadSettingsChanged =
-      oldSettings && (
-        newSettings.volumeThreshold !== oldSettings.volumeThreshold
-        || newSettings.marginBefore !== oldSettings.marginBefore
-        || newSettings.marginAfter !== oldSettings.marginAfter
-        || newSettings.isOppositeDay !== oldSettings.isOppositeDay
-      )
+      oldSettings &&
+      (newSettings.volumeThreshold !== oldSettings.volumeThreshold ||
+        newSettings.marginBefore !== oldSettings.marginBefore ||
+        newSettings.marginAfter !== oldSettings.marginAfter ||
+        newSettings.isOppositeDay !== oldSettings.isOppositeDay);
     if (lookaheadSettingsChanged) {
       // TODO inefficient. Better to add an `updateSettings` method to `Lookahead`.
       this.destroyAndThrottledInitLookahead();
@@ -835,7 +889,9 @@ export default class Controller {
    * immediately (waiting for the old one to get destroyed).
    * Can be called before the instance has been initialized.
    */
-  updateSettingsAndMaybeCreateNewInstance(newSettings: ControllerSettings): Controller {
+  updateSettingsAndMaybeCreateNewInstance(
+    newSettings: ControllerSettings,
+  ): Controller {
     // TODO how about not updating settings that heven't been changed
     if (this.initialized) {
       const oldSettings = this.settings;
@@ -853,7 +909,7 @@ export default class Controller {
       speedName === SpeedName.SOUNDED
         ? this.settings.soundedSpeed
         : this.settings.silenceSpeed,
-      this.settings.volumeThreshold
+      this.settings.volumeThreshold,
     );
     setPlaybackRateAndRememberIt(this.element, speedVal);
     const elementSpeedSwitchedAt = this.audioContext.currentTime;
@@ -862,10 +918,10 @@ export default class Controller {
       if (speedName === SpeedName.SOUNDED) {
         assertDev(
           this.element.playbackRate === this.element.defaultPlaybackRate,
-          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:`
-          + ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}`
-          + 'Perhaps `defaultPlaybackRate` was updated outside of this extension'
-          + ', or you forgot to update it yourself. It\'s not a major problem, just a heads-up'
+          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:` +
+            ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}` +
+            "Perhaps `defaultPlaybackRate` was updated outside of this extension" +
+            ", or you forgot to update it yourself. It's not a major problem, just a heads-up",
         );
       }
     }

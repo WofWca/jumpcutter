@@ -18,22 +18,26 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings } from '@/settings';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import type { Settings } from "@/settings";
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
-export default async function(): Promise<void> {
-  const { updateSoundedSpeedWheneverItChangesOnWebsite } = await browserOrChrome.storage.local.get(
-    'updateSoundedSpeedWheneverItChangesOnWebsite'
-  );
+export default async function (): Promise<void> {
+  const { updateSoundedSpeedWheneverItChangesOnWebsite } =
+    await browserOrChrome.storage.local.get(
+      "updateSoundedSpeedWheneverItChangesOnWebsite",
+    );
   if (updateSoundedSpeedWheneverItChangesOnWebsite !== undefined) {
     const newValues: Partial<Settings> = {
-      onPlaybackRateChangeFromOtherScripts: updateSoundedSpeedWheneverItChangesOnWebsite
-        ? 'updateSoundedSpeed'
-        : 'prevent',
+      onPlaybackRateChangeFromOtherScripts:
+        updateSoundedSpeedWheneverItChangesOnWebsite
+          ? "updateSoundedSpeed"
+          : "prevent",
     };
     await Promise.all([
       browserOrChrome.storage.local.set(newValues),
-      browserOrChrome.storage.local.remove('updateSoundedSpeedWheneverItChangesOnWebsite'),
+      browserOrChrome.storage.local.remove(
+        "updateSoundedSpeedWheneverItChangesOnWebsite",
+      ),
     ]);
   }
 }

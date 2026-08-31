@@ -27,7 +27,7 @@ export function createCloneElementWithSameSrc(
   // Also see {@link `getOriginalMediaSource`}. It is very similar.
   // Maybe even too similar.
 
-  const cloneEl = document.createElement('audio');
+  const cloneEl = document.createElement("audio");
 
   // TODO fix: this probably doesn't cover all cases. Maybe it's better to just
   // `originalElement.cloneNode(true)`?
@@ -46,8 +46,10 @@ export function createCloneElementWithSameSrc(
 
     if (!srcObject) {
       if (IS_DEV_MODE) {
-        console.warn('Making a clone element for an element with no source. You probably'
-          + ' should have waited before the original element gets a source');
+        console.warn(
+          "Making a clone element for an element with no source. You probably" +
+            " should have waited before the original element gets a source",
+        );
       }
       return cloneEl;
     }

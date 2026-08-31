@@ -18,8 +18,8 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import once from 'lodash/once';
-import { getGeckoMajorVersion } from './';
+import once from "lodash/once";
+import { getGeckoMajorVersion } from "./";
 
 // Firefox < 97 mutes media elements whose `playbackRate > 4`:
 // https://hg.mozilla.org/mozilla-central/file/9ab1bb831b50bc4012153f51a75389995abebc1d/dom/html/HTMLMediaElement.cpp#l182
@@ -32,14 +32,14 @@ import { getGeckoMajorVersion } from './';
 // Or we could ask Gecko devs to make this value available through JS.
 function _getGeckoLikelyMaxNonMutedPlaybackRate() {
   const geckoMajorVersion = getGeckoMajorVersion();
-  return (
-    !geckoMajorVersion
-    || geckoMajorVersion >= 97
+  return !geckoMajorVersion ||
+    geckoMajorVersion >= 97 ||
     // Sanity check, in case there were drastic changes to the `navigator.userAgent` format.
-    || geckoMajorVersion <= 2
-  )
+    geckoMajorVersion <= 2
     ? 8
     : 4;
 }
 // Memoized. Why not `lodash/memoize`? Because that's heavier.
-export const getGeckoLikelyMaxNonMutedPlaybackRate = once(_getGeckoLikelyMaxNonMutedPlaybackRate);
+export const getGeckoLikelyMaxNonMutedPlaybackRate = once(
+  _getGeckoLikelyMaxNonMutedPlaybackRate,
+);
