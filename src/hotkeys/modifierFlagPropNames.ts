@@ -18,6 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ModifierPropName } from './';
+import { ModifierPropName } from "./";
 
-export const modifierFlagPropNames: ModifierPropName[] = ['ctrlKey', 'altKey', 'shiftKey', 'metaKey']
+export const modifierFlagPropNames: ModifierPropName[] = [
+  "ctrlKey",
+  "altKey",
+  "shiftKey",
+  "metaKey",
+];

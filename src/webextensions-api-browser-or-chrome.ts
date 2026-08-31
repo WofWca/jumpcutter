@@ -22,7 +22,10 @@
 // the usage of 'webextension-polyfill' in Chromium.
 // Currently we don't use the polyfill at all because after Manifest V3 the
 // signatures are pretty compatible.
-export const browserOrChrome = BUILD_DEFINITIONS.BROWSER === 'chromium'
-  // Not just `chrome` because hopefully chromium will add `browser` and deprecate `chrome`
-  ? (typeof browser !== 'undefined' ? browser : chrome)
-  : browser;
+export const browserOrChrome =
+  BUILD_DEFINITIONS.BROWSER === "chromium"
+    ? // Not just `chrome` because hopefully chromium will add `browser` and deprecate `chrome`
+      typeof browser !== "undefined"
+      ? browser
+      : chrome
+    : browser;

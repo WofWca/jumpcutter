@@ -18,15 +18,16 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { closestNonNormalSpeed } from './closestNonNormalSpeed';
+import { closestNonNormalSpeed } from "./closestNonNormalSpeed";
 
 /**
  * Acts as {@link closestNonNormalSpeed} except when `volumeThreshold === 0` (which means that
  * we'll never switch to the `silenceSpeed`).
  * For performance, so the browser's internal pitch shifting algorithm doesn't consume processing time.
  */
-export function maybeClosestNonNormalSpeed(speed: number, volumeThreshold: number): number {
-  return volumeThreshold === 0
-    ? speed
-    : closestNonNormalSpeed(speed);
+export function maybeClosestNonNormalSpeed(
+  speed: number,
+  volumeThreshold: number,
+): number {
+  return volumeThreshold === 0 ? speed : closestNonNormalSpeed(speed);
 }

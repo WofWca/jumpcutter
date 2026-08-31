@@ -25,5 +25,5 @@ export const audioContext = new AudioContext({
   // https://webaudio.github.io/web-audio-api/#dom-audiocontextoptions-latencyhint
   // https://webaudio.github.io/web-audio-api/#dom-audiocontext-baselatency
   // Would be cool if I was wrong.
-  latencyHint: 'playback',
+  latencyHint: "playback",
 });

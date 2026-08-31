@@ -19,14 +19,16 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script lang="ts">
-  import { tick, onMount } from 'svelte';
+  import { tick, onMount } from "svelte";
   // TODO get rid of svelte?
-  import { getMessage } from '@/helpers';
+  import { getMessage } from "@/helpers";
 
-  const defaultDocumentTitle = 'Jump Cutter: local video player'; // TODO translate?
+  const defaultDocumentTitle = "Jump Cutter: local video player"; // TODO translate?
   document.title = defaultDocumentTitle;
 
-  type HTMLInputElementTypeFile = HTMLInputElement & { files: NonNullable<HTMLInputElement['files']> };
+  type HTMLInputElementTypeFile = HTMLInputElement & {
+    files: NonNullable<HTMLInputElement["files"]>;
+  };
   let inputEl: HTMLInputElementTypeFile;
   let videoEl: HTMLVideoElement;
   let objectURL: ReturnType<typeof URL.createObjectURL> | undefined;
@@ -45,7 +47,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     files = [...files, ...inputEl.files];
 
     const oldFilesLength = files.length - inputEl.files.length;
-    const firstAddedElementInd = (oldFilesLength - 1) + 1;
+    const firstAddedElementInd = oldFilesLength - 1 + 1;
 
     playFile(firstAddedElementInd);
   }
@@ -53,7 +55,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     currFileInd = ind;
     const file = files[ind];
     // TODO handle `!video.canPlayType(file.type)`?
-    document.title = file.name + ' – Jump Cutter';
+    document.title = file.name + " – Jump Cutter";
     // For better performance. https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#Memory_management
     // In the future it should be possible to `v.srcObject = file`:
     // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/srcObject
@@ -68,45 +70,46 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
   async function onDeleteFile(ind: number) {
     const oldLength = files.length;
-    files = files.filter((file,fileIndex) => fileIndex !== ind)
-    if (currFileInd === ind){
+    files = files.filter((file, fileIndex) => fileIndex !== ind);
+    if (currFileInd === ind) {
       if (ind === oldLength - 1) {
         // Removed the last file, play the new last file
-        currFileInd = files.length-1
+        currFileInd = files.length - 1;
       }
       playFile(currFileInd);
-    }else{
+    } else {
       // Just update `currFileInd` to match the file that is currently being played.
-      if(ind < currFileInd){
+      if (ind < currFileInd) {
         // Removed the file comes before current file, move forward the index
-        currFileInd-=1
+        currFileInd -= 1;
       } // Otherwise, the removed the file comes after current file, the index remain unchange
     }
   }
 
   onMount(() => {
-    videoEl.addEventListener('ended', async () => {
-      // TODO `if (loop)` `const nextFileInd = (currFileInd + 1) % inputEl.files.length;`
-      const nextFileInd = currFileInd + 1;
-      if (nextFileInd < files.length) {
-        // TODO `if (autoplay)`
-        playFile(nextFileInd);
-      }
-    }, { passive: true });
+    videoEl.addEventListener(
+      "ended",
+      async () => {
+        // TODO `if (loop)` `const nextFileInd = (currFileInd + 1) % inputEl.files.length;`
+        const nextFileInd = currFileInd + 1;
+        if (nextFileInd < files.length) {
+          // TODO `if (autoplay)`
+          playFile(nextFileInd);
+        }
+      },
+      { passive: true },
+    );
   });
-
 </script>
 
 <!-- TODO but can we add a way to add captions? -->
 <!-- svelte-ignore a11y-media-has-caption -->
 <div class="video-and-file-input">
-  <div
-    style="display: flex; flex-wrap: wrap;"
-  >
+  <div style="display: flex; flex-wrap: wrap;">
     <video
       bind:this={videoEl}
       controls
-      style={objectURL ? '' : 'display: none; '}
+      style={objectURL ? "" : "display: none; "}
     />
     <!-- <label>
       <input
@@ -122,8 +125,8 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <li>
             <div class="file-wrapper">
               <button
-              on:click={() => playFile(ind)}
-              disabled={ind === currFileInd}
+                on:click={() => playFile(ind)}
+                disabled={ind === currFileInd}
               >
                 {file.name}
               </button>
@@ -145,10 +148,13 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
       multiple
     />
     <div class="input-box-content">
-      <p style="text-align: center; margin: 1rem; white-space: pre-line;">{getMessage('fileInputLabel')}</p>
+      <p style="text-align: center; margin: 1rem; white-space: pre-line;">
+        {getMessage("fileInputLabel")}
+      </p>
     </div>
   </div>
 </div>
+
 <style>
   @media (prefers-color-scheme: dark) {
     :global(body) {
@@ -207,7 +213,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     align-items: center;
     font-size: 3rem;
     color: #555;
-    background:rgba(0, 255, 0, 0.3);
+    background: rgba(0, 255, 0, 0.3);
     border: 0.25rem dashed gray;
   }
 
@@ -219,7 +225,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   @media (prefers-color-scheme: dark) {
     .input-box-content {
       color: #aaa;
-      background:rgba(0, 255, 0, 0.2);
+      background: rgba(0, 255, 0, 0.2);
       border-color: #111;
     }
   }

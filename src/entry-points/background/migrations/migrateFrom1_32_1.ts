@@ -13,7 +13,7 @@ export default async function () {
     console.warn(
       "Time saved data appears to be corrupted",
       res,
-      "will reset to 0"
+      "will reset to 0",
     );
     await browserOrChrome.storage.local.set({
       lifetimeTimeSavedComparedToSoundedSpeed: 0,

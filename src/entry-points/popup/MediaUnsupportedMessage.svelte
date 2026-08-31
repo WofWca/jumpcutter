@@ -18,48 +18,45 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 -->
 
 <script lang="ts">
-import { createEventDispatcher } from 'svelte';
-import { Settings, ControllerKind_CLONING, ControllerKind_STRETCHING, } from '@/settings';
-import type { TelemetryMessage } from '@/entry-points/content/AllMediaElementsController';
-import { assertNever, getMessage } from '@/helpers';
-import { isMobile } from '@/helpers/isMobile';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+  import { createEventDispatcher } from "svelte";
+  import {
+    Settings,
+    ControllerKind_CLONING,
+    ControllerKind_STRETCHING,
+  } from "@/settings";
+  import type { TelemetryMessage } from "@/entry-points/content/AllMediaElementsController";
+  import { assertNever, getMessage } from "@/helpers";
+  import { isMobile } from "@/helpers/isMobile";
+  import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
-export let settings: Pick<Settings,
-  'experimentalControllerType'
-  | 'popupChartWidthPx'
-  | 'dontAttachToCrossOriginMedia'
->;
-export let latestTelemetryRecord: Pick<TelemetryMessage,
-  'createMediaElementSourceCalledForElement'
-  | 'elementCurrentSrc'
->;
+  export let settings: Pick<
+    Settings,
+    | "experimentalControllerType"
+    | "popupChartWidthPx"
+    | "dontAttachToCrossOriginMedia"
+  >;
+  export let latestTelemetryRecord: Pick<
+    TelemetryMessage,
+    "createMediaElementSourceCalledForElement" | "elementCurrentSrc"
+  >;
 
-const dispatch = createEventDispatcher();
-function onDontAttachToCrossOriginMediaChange(e: Event) {
-  dispatch('dontAttachToCrossOriginMediaChange', !(e.target as HTMLInputElement).checked);
-}
+  const dispatch = createEventDispatcher();
+  function onDontAttachToCrossOriginMediaChange(e: Event) {
+    dispatch(
+      "dontAttachToCrossOriginMediaChange",
+      !(e.target as HTMLInputElement).checked,
+    );
+  }
 </script>
 
 <section
-  style={
-    'margin: 1rem 0 0.25rem 0;'
-    + 'text-align: center;'
-    + 'text-align: center;'
-    + `width: ${settings.popupChartWidthPx}px`
-  }
+  style={"margin: 1rem 0 0.25rem 0;" +
+    "text-align: center;" +
+    "text-align: center;" +
+    `width: ${settings.popupChartWidthPx}px`}
 >
   ⚠️
-  {#each (
-    getMessage(
-      'mediaUnsupported',
-      settings.experimentalControllerType === ControllerKind_STRETCHING
-      ? getMessage('couldGetMuted')
-      : settings.experimentalControllerType === ControllerKind_CLONING
-      ? getMessage('silenceSkippingWontWork')
-      : assertNever(settings.experimentalControllerType)
-    ).split('**')
-  ) as part, i}
+  {#each getMessage("mediaUnsupported", settings.experimentalControllerType === ControllerKind_STRETCHING ? getMessage("couldGetMuted") : settings.experimentalControllerType === ControllerKind_CLONING ? getMessage("silenceSkippingWontWork") : assertNever(settings.experimentalControllerType)).split("**") as part, i}
     {#if i !== 1}
       <span>{part}</span>
     {:else}
@@ -81,23 +78,21 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
       target="_blank"
       rel="external nofollow noreferrer noopener"
       title={latestTelemetryRecord.elementCurrentSrc}
-
       on:click={!isMobile
         ? undefined
         : (e) => {
-          e.preventDefault();
-          browserOrChrome.tabs.create({
-            url: latestTelemetryRecord.elementCurrentSrc
-          });
-          window.close();
-        }
-      }
-    >{getMessage('tryOpeningDirectly')}</a>
+            e.preventDefault();
+            browserOrChrome.tabs.create({
+              url: latestTelemetryRecord.elementCurrentSrc,
+            });
+            window.close();
+          }}>{getMessage("tryOpeningDirectly")}</a
+    >
 
-    <br>
-    {getMessage('or')}
+    <br />
+    {getMessage("or")}
   {:else}
-    <br>
+    <br />
   {/if}
   <label
     style="display: inline-flex; align-items: center; margin-left: 0.25rem"
@@ -107,12 +102,12 @@ function onDontAttachToCrossOriginMediaChange(e: Event) {
       checked={!settings.dontAttachToCrossOriginMedia}
       on:change={onDontAttachToCrossOriginMediaChange}
     />
-    {getMessage('tryAttachAnyway')}
+    {getMessage("tryAttachAnyway")}
     <!-- Try -->
   </label>
   {#if settings.dontAttachToCrossOriginMedia && latestTelemetryRecord.createMediaElementSourceCalledForElement}
-    <br>
+    <br />
     <!-- <span>⚠️ Reload the page to umute the media.</span> -->
-    <span>⚠️ {getMessage('refreshIfMuted')}.</span>
+    <span>⚠️ {getMessage("refreshIfMuted")}.</span>
   {/if}
 </section>

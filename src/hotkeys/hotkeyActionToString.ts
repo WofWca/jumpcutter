@@ -18,46 +18,46 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getMessage } from '@/helpers';
-import { HotkeyAction } from './HotkeyAction';
+import { getMessage } from "@/helpers";
+import { HotkeyAction } from "./HotkeyAction";
 
 export const hotkeyActionToString: Record<HotkeyAction, string> = {
   // TODO check if emojis are ok with screen readers, though I think they should be.
 
   // 📉🎚️
-  [HotkeyAction.DECREASE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} 🔽`,
-  [HotkeyAction.INCREASE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} 🔼`,
-  [HotkeyAction.SET_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} =`,
-  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage('volumeThreshold')} ${getMessage('switch')} 🔄`,
+  [HotkeyAction.DECREASE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage("volumeThreshold")} 🔽`,
+  [HotkeyAction.INCREASE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage("volumeThreshold")} 🔼`,
+  [HotkeyAction.SET_VOLUME_THRESHOLD]: `🔉📉 ${getMessage("volumeThreshold")} =`,
+  [HotkeyAction.TOGGLE_VOLUME_THRESHOLD]: `🔉📉 ${getMessage("volumeThreshold")} ${getMessage("switch")} 🔄`,
 
   // Maybe 📢📣💬, 🟩 could also fit here.
-  [HotkeyAction.DECREASE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} 🔽`,
-  [HotkeyAction.INCREASE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} 🔼`,
-  [HotkeyAction.SET_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} =`,
-  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage('soundedSpeed')} ${getMessage('switch')} 🔄`,
+  [HotkeyAction.DECREASE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage("soundedSpeed")} 🔽`,
+  [HotkeyAction.INCREASE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage("soundedSpeed")} 🔼`,
+  [HotkeyAction.SET_SOUNDED_SPEED]: `▶️🗣️ ${getMessage("soundedSpeed")} =`,
+  [HotkeyAction.TOGGLE_SOUNDED_SPEED]: `▶️🗣️ ${getMessage("soundedSpeed")} ${getMessage("switch")} 🔄`,
 
   // 🤐, 🟥 could also fit.
-  [HotkeyAction.DECREASE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} 🔽`,
-  [HotkeyAction.INCREASE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} 🔼`,
-  [HotkeyAction.SET_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} =`,
-  [HotkeyAction.TOGGLE_SILENCE_SPEED]: `⏩🙊 ${getMessage('silenceSpeed')} ${getMessage('switch')} 🔄`,
+  [HotkeyAction.DECREASE_SILENCE_SPEED]: `⏩🙊 ${getMessage("silenceSpeed")} 🔽`,
+  [HotkeyAction.INCREASE_SILENCE_SPEED]: `⏩🙊 ${getMessage("silenceSpeed")} 🔼`,
+  [HotkeyAction.SET_SILENCE_SPEED]: `⏩🙊 ${getMessage("silenceSpeed")} =`,
+  [HotkeyAction.TOGGLE_SILENCE_SPEED]: `⏩🙊 ${getMessage("silenceSpeed")} ${getMessage("switch")} 🔄`,
 
   // TODO should we specify here that the values are in seconds?
   // 📏? Couldn't find anything better.
-  [HotkeyAction.DECREASE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} 🔽`,
-  [HotkeyAction.INCREASE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} 🔼`,
-  [HotkeyAction.SET_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} =`,
-  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage('marginBefore')} ${getMessage('switch')} 🔄`,
+  [HotkeyAction.DECREASE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage("marginBefore")} 🔽`,
+  [HotkeyAction.INCREASE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage("marginBefore")} 🔼`,
+  [HotkeyAction.SET_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage("marginBefore")} =`,
+  [HotkeyAction.TOGGLE_MARGIN_BEFORE]: `⏱️⬅️ ${getMessage("marginBefore")} ${getMessage("switch")} 🔄`,
 
-  [HotkeyAction.DECREASE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} 🔽`,
-  [HotkeyAction.INCREASE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} 🔼`,
-  [HotkeyAction.SET_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} =`,
-  [HotkeyAction.TOGGLE_MARGIN_AFTER]: `⏱️➡️ ${getMessage('marginAfter')} ${getMessage('switch')} 🔄`,
+  [HotkeyAction.DECREASE_MARGIN_AFTER]: `⏱️➡️ ${getMessage("marginAfter")} 🔽`,
+  [HotkeyAction.INCREASE_MARGIN_AFTER]: `⏱️➡️ ${getMessage("marginAfter")} 🔼`,
+  [HotkeyAction.SET_MARGIN_AFTER]: `⏱️➡️ ${getMessage("marginAfter")} =`,
+  [HotkeyAction.TOGGLE_MARGIN_AFTER]: `⏱️➡️ ${getMessage("marginAfter")} ${getMessage("switch")} 🔄`,
 
-  [HotkeyAction.REWIND]: `⬅️ ${getMessage('rewind')}`,
-  [HotkeyAction.ADVANCE]: `➡️ ${getMessage('advance')}`,
-  [HotkeyAction.TOGGLE_PAUSE]: `⏯️ ${getMessage('togglePause')}`,
-  [HotkeyAction.TOGGLE_MUTE]: `🔇 ${getMessage('toggleMute')}`,
-  [HotkeyAction.DECREASE_VOLUME]: `🔉 ${getMessage('decreaseVolume')}`,
-  [HotkeyAction.INCREASE_VOLUME]: `🔊 ${getMessage('increaseVolume')}`,
+  [HotkeyAction.REWIND]: `⬅️ ${getMessage("rewind")}`,
+  [HotkeyAction.ADVANCE]: `➡️ ${getMessage("advance")}`,
+  [HotkeyAction.TOGGLE_PAUSE]: `⏯️ ${getMessage("togglePause")}`,
+  [HotkeyAction.TOGGLE_MUTE]: `🔇 ${getMessage("toggleMute")}`,
+  [HotkeyAction.DECREASE_VOLUME]: `🔉 ${getMessage("decreaseVolume")}`,
+  [HotkeyAction.INCREASE_VOLUME]: `🔊 ${getMessage("increaseVolume")}`,
 };

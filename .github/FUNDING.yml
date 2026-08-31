@@ -1,6 +1,10 @@
 github: WofWca
 
 # `custom` field of FUNDING.yml doesn't support links like `bitcoin:fffffffff`
-custom: ["https://antiwarcommittee.info/en/sunrise/#help", "https://github.com/WofWca/jumpcutter#donate"]
+custom:
+  [
+    "https://antiwarcommittee.info/en/sunrise/#help",
+    "https://github.com/WofWca/jumpcutter#donate",
+  ]
 
 # liberapay: WofWca

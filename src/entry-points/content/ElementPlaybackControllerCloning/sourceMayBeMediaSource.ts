@@ -44,7 +44,7 @@ export function sourceMayBeMediaSource(element: HTMLMediaElement): boolean {
   } else {
     // URLs returned by `createObjectURL` are guaranteed to `.startsWith('blob:')`:
     // https://w3c.github.io/FileAPI/#unicodeBlobURL
-    if (!currentSrc.startsWith('blob:')) {
+    if (!currentSrc.startsWith("blob:")) {
       // Just a regular src, like `https://example.com/bbb.mp4`.
       // Hold up, but is `URL.createObjectURL` the only way to create a URL from a `MediaSource`?
       return false;

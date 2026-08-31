@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import App from './App.svelte';
+import App from "./App.svelte";
 
 new App({
   target: document.body,

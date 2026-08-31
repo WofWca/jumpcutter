@@ -18,18 +18,19 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings } from '@/settings';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import type { Settings } from "@/settings";
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
 export default async function (): Promise<void> {
   const newSettings: Partial<Settings> = {};
 
   // `popupChartJumpPeriod` is now expressed as a fraction of `popupChartLengthInSeconds`.
-  const { popupChartLengthInSeconds, popupChartJumpPeriod } = await browserOrChrome.storage.local.get({
-    popupChartLengthInSeconds: 8,
-    popupChartJumpPeriod: 0,
-  });
-  let percent = popupChartJumpPeriod / popupChartLengthInSeconds * 100;
+  const { popupChartLengthInSeconds, popupChartJumpPeriod } =
+    await browserOrChrome.storage.local.get({
+      popupChartLengthInSeconds: 8,
+      popupChartJumpPeriod: 0,
+    });
+  let percent = (popupChartJumpPeriod / popupChartLengthInSeconds) * 100;
   const sane = 0 <= percent && percent <= 100;
   if (!sane) {
     percent = 0;
@@ -37,7 +38,7 @@ export default async function (): Promise<void> {
   newSettings.popupChartJumpPeriod = percent;
 
   // Just the new default.
-  newSettings.popupChartSpeed = 'soundedSpeedTime';
+  newSettings.popupChartSpeed = "soundedSpeedTime";
 
   await browserOrChrome.storage.local.set(newSettings);
 }

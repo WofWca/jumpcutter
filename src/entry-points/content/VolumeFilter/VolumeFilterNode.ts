@@ -18,14 +18,18 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { TimeDelta } from "@/helpers"
+import type { TimeDelta } from "@/helpers";
 
 /**
  * Takes audio and outputs its loudness.
  */
 export default class VolumeFilterNode extends AudioWorkletNode {
-  constructor(context: AudioContext, maxSmoothingWindowLength: TimeDelta, smoothingWindowLength: TimeDelta) {
-    super(context, 'VolumeFilter', {
+  constructor(
+    context: AudioContext,
+    maxSmoothingWindowLength: TimeDelta,
+    smoothingWindowLength: TimeDelta,
+  ) {
+    super(context, "VolumeFilter", {
       outputChannelCount: [1],
       // TODO see the same comment in `SilenceDetectorNode.ts`.
       // processorOptions: {

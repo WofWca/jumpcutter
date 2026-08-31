@@ -28,7 +28,9 @@ const VERBOSE_LOGGING = IS_DEV_MODE && true;
 // `WeakRef`s and `FinalizationRegistry`? Why doesn't everybody does it?
 
 export function startCloningMediaSources(): [
-  getCloneElement: (originalElement: HTMLMediaElement) => HTMLMediaElement | undefined,
+  getCloneElement: (
+    originalElement: HTMLMediaElement,
+  ) => HTMLMediaElement | undefined,
   stopCloningMediaSources: () => void,
 ] {
   const [objectUrlToMediaSourceMap, stopMaintainingUrlMap] =
@@ -36,24 +38,32 @@ export function startCloningMediaSources(): [
   const [mediaSourceToCloneMediaElementMap, stopMaintainingCloneMap] =
     createMaintainedMediaSourceToCloneMediaElementMap();
 
-  function getCloneElement(originalElement: HTMLMediaElement): HTMLMediaElement | undefined {
+  function getCloneElement(
+    originalElement: HTMLMediaElement,
+  ): HTMLMediaElement | undefined {
     const originalMediaSource = getOriginalMediaSource(originalElement);
     if (!originalMediaSource) {
       if (IS_DEV_MODE) {
-        console.error('No original `MediaSource` found for the requested original element')
+        console.error(
+          "No original `MediaSource` found for the requested original element",
+        );
       }
       return;
     }
     const cloneEl = mediaSourceToCloneMediaElementMap.get(originalMediaSource);
     if (!cloneEl) {
       if (IS_DEV_MODE) {
-        console.error('No clone element found for `MediaSource`. How did we miss it?');
+        console.error(
+          "No clone element found for `MediaSource`. How did we miss it?",
+        );
       }
       return;
     }
     return cloneEl;
   }
-  function getOriginalMediaSource(originalElement: HTMLMediaElement): MediaSource | undefined {
+  function getOriginalMediaSource(
+    originalElement: HTMLMediaElement,
+  ): MediaSource | undefined {
     // Also see {@link `createCloneElementWithSameSrc`}. It is very similar.
     // Maybe even too similar.
 
@@ -82,25 +92,29 @@ export function startCloningMediaSources(): [
     if (IS_DEV_MODE) {
       // URLs returned by `createObjectURL` are guaranteed to `.startsWith('blob:')`:
       // https://w3c.github.io/FileAPI/#unicodeBlobURL
-      if (!currentSrc.startsWith('blob:')) {
-        console.warn('Requested a clone element for original element whose `currentSrc` is not'
-          + ' empty and is not a URL made from `URL.createObjectURL`');
+      if (!currentSrc.startsWith("blob:")) {
+        console.warn(
+          "Requested a clone element for original element whose `currentSrc` is not" +
+            " empty and is not a URL made from `URL.createObjectURL`",
+        );
       }
     }
 
     const fromObjectUrlMap = objectUrlToMediaSourceMap.get(currentSrc);
     if (!fromObjectUrlMap) {
       if (IS_DEV_MODE) {
-        console.error('No MediaSource for this objectURL. How did we miss it?')
+        console.error("No MediaSource for this objectURL. How did we miss it?");
       }
       return;
     }
     const derefed = fromObjectUrlMap.deref();
     if (!derefed) {
       if (IS_DEV_MODE) {
-        console.error('An original `MediaSource` for an `objectURL` used to exist,'
-          + ' but it is now garbage-collected. How did we get a request for it then,'
-          + ' if there are no references to it?');
+        console.error(
+          "An original `MediaSource` for an `objectURL` used to exist," +
+            " but it is now garbage-collected. How did we get a request for it then," +
+            " if there are no references to it?",
+        );
       }
       return;
     }
@@ -143,18 +157,21 @@ function createMaintainedObjectUrlToMediaSourceMap(): [
   map: ObjectUrlToItsMediaSource,
   stopWatching: () => void,
 ] {
-  const map: ObjectUrlToItsMediaSource = new Map<string, WeakRef<MediaSource>>();
+  const map: ObjectUrlToItsMediaSource = new Map<
+    string,
+    WeakRef<MediaSource>
+  >();
   // TODO perf: potential smol memory leak: add `FinalizationRegistry` (see the comment in
   // `ObjectUrlToItsMediaSource`).
 
   const stopInterceptingCreateObjectUrlCalls = startInterceptingMethodCalls(
     URL,
-    'createObjectURL',
+    "createObjectURL",
     ([obj], url) => {
       if (obj instanceof MediaSource) {
         map.set(url, new WeakRef(obj));
       }
-    }
+    },
   );
   // The fact that `revokeObjectURL` has been called
   // doesn't mean that we need to remove it from the map, because an
@@ -170,10 +187,7 @@ function createMaintainedObjectUrlToMediaSourceMap(): [
   //   ([url]) => map.delete(url)
   // );
 
-  return [
-    map,
-    stopInterceptingCreateObjectUrlCalls,
-  ];
+  return [map, stopInterceptingCreateObjectUrlCalls];
 }
 
 function createMaintainedMediaSourceToCloneMediaElementMap(): [
@@ -185,88 +199,96 @@ function createMaintainedMediaSourceToCloneMediaElementMap(): [
   // However, we currently don't (and can't, I think) intercept the corresponding `MediaSource`
   // constructor invokations since, according to the current spec, such `MediaSource`s can only
   // be constructed in workers (also see `MediaSource.canConstructInDedicatedWorker`). Sigh. TODO?
-  const stopInterceptingMediaSourceConstructorCalls = startInterceptingMediaSourceConstructorCalls(
-    (constructorArgs, originalMediaSource) => {
-      // TODO handle `stopMaintainingMediaSourceClone` so the clone can be GCd.
-      const maintainedMediaSourceClone =
-        makeMaintainedMediaSourceClone(originalMediaSource, constructorArgs);
+  const stopInterceptingMediaSourceConstructorCalls =
+    startInterceptingMediaSourceConstructorCalls(
+      (constructorArgs, originalMediaSource) => {
+        // TODO handle `stopMaintainingMediaSourceClone` so the clone can be GCd.
+        const maintainedMediaSourceClone = makeMaintainedMediaSourceClone(
+          originalMediaSource,
+          constructorArgs,
+        );
 
-      // "Hold up, why can't we attach clone `MediaSource`s to clone `HTMLMediaElement`s or demand,
-      // when we need a clone element to play back?". TL;DR: to avoid a memory leak.
-      // Look at how the `makeMaintainedMediaSourceClone` function works.
-      // Practically every operation on a `MediaSource` requires its `readyState` to be `"open"`.
-      // So, when an operation is performed on the original `MediaSource`, we re-apply the operation
-      // on the clone _through `cloneMSOpenP.then`_. This means that operations are queued until the
-      // clone's state is "open". And they're not light-weight, especially the `appendBuffer` ones,
-      // which are a huge memory leak hazard.
-      //
-      // TODO refactor: add tests that show that the clone `HTMLMediaElement` gets GCd when
-      // the original `MediaSource` becomes unreachable.
-      const cloneElement = document.createElement('audio');
+        // "Hold up, why can't we attach clone `MediaSource`s to clone `HTMLMediaElement`s or demand,
+        // when we need a clone element to play back?". TL;DR: to avoid a memory leak.
+        // Look at how the `makeMaintainedMediaSourceClone` function works.
+        // Practically every operation on a `MediaSource` requires its `readyState` to be `"open"`.
+        // So, when an operation is performed on the original `MediaSource`, we re-apply the operation
+        // on the clone _through `cloneMSOpenP.then`_. This means that operations are queued until the
+        // clone's state is "open". And they're not light-weight, especially the `appendBuffer` ones,
+        // which are a huge memory leak hazard.
+        //
+        // TODO refactor: add tests that show that the clone `HTMLMediaElement` gets GCd when
+        // the original `MediaSource` becomes unreachable.
+        const cloneElement = document.createElement("audio");
 
-      if (IS_DEV_MODE) {
-        cloneElement.addEventListener('error', () => {
-          console.error(
-            'Jump Cutter: clone element error:',
-            cloneElement.error
-          );
-        });
-      }
-
-      // TODO fix: I believe we also need to copy some attributes from the original element,
-      // like `crossOrigin` (see {@link createCloneElementWithSameSrc}).
-      // Should we leave it up to the script that actually uses the element?
-      
-      // Keep in mind that `URL.createObjectURL` is intercepted by us. Currently this is fine.
-      const cloneMediaSourceUrl = URL.createObjectURL(maintainedMediaSourceClone);
-      cloneElement.src = cloneMediaSourceUrl;
-      // We can `URL.revokeObjectURL` as soon as the `HTMLMediaElement` gets a hold of the
-      // underlying `MediaSource` and it will work fine. At least based on my tests, and this note:
-      // https://w3c.github.io/FileAPI/#creating-revoking
-      // > Requests that were started before the url was revoked should still succeed.
-      // TODO refactor: the spec seems a bit vague in this regard. I.e. can you really use the
-      // term "request" in regards to `MediaSource`s being used for `HTMLMediaElement` playback?
-      {
-        const revokeAndRemoveListener = () => {
-          URL.revokeObjectURL(cloneMediaSourceUrl);
-          cloneElement.removeEventListener('loadstart', revokeAndRemoveListener);
-          clearTimeout(timeoutId);
+        if (IS_DEV_MODE) {
+          cloneElement.addEventListener("error", () => {
+            console.error(
+              "Jump Cutter: clone element error:",
+              cloneElement.error,
+            );
+          });
         }
-        cloneElement.addEventListener('loadstart', revokeAndRemoveListener, { once: true, passive: true });
-        // Failsafe, just in case the event didn't fire for some reason.
-        let timeoutId = setTimeout(() => {
-          // Two `setTimeout`s in case one event cycle takes longer than serveral seconds idk lol.
-          timeoutId = setTimeout(revokeAndRemoveListener);
-        }, 10000);
-      }
 
-      // TODO fix: memory leak. Even when an `HTMLMediaSource` becomes unreachable,
-      // it doesn't guarantee that it's gonna get GCd as long as it can potentially play audio:
-      // https://html.spec.whatwg.org/multipage/media.html#best-practices-for-authors-using-media-elements
-      // https://github.com/WofWca/jumpcutter/blob/505b55924871ebc3c433c54d431b828a052c470c/src/entry-points/content/ElementPlaybackControllerCloning/Lookahead.ts#L92-L102
-      //
-      // I'd suggest "well, just `.src = ''` when it's not needed and assign it when it is needed".
-      // Doesn't work because you can only attach a `MediaSource` to a `HTMLMediaElement` once.
-      //
-      // I guess what we have to do is ensure that this extension doesn't hold strong references
-      // to the original `MediaSource` (currently the clone `MediaSource` strongy references it)
-      // and use `FinalizationRegistry` to watch for when the original `MediaSource` gets GCd
-      // and clean up the clones.
-      //
-      // Another idea: since we know that `MediaSource`s can only be attached once to an
-      // `HTMLMediaElement` (or do we know that? this comment
-      // https://github.com/WofWca/jumpcutter/issues/2#issuecomment-1571654947
-      // says that they can?? But in that case, we'd not have to create a clone `MediaSource`,
-      // would we?), we could watch the original element that the original `MediaSource` gets
-      // attached to and when it does get detached, we are good to clean our clones up.
+        // TODO fix: I believe we also need to copy some attributes from the original element,
+        // like `crossOrigin` (see {@link createCloneElementWithSameSrc}).
+        // Should we leave it up to the script that actually uses the element?
 
-      map.set(originalMediaSource, cloneElement);
-    }
-  )
-  return [
-    map,
-    () => stopInterceptingMediaSourceConstructorCalls(),
-  ];
+        // Keep in mind that `URL.createObjectURL` is intercepted by us. Currently this is fine.
+        const cloneMediaSourceUrl = URL.createObjectURL(
+          maintainedMediaSourceClone,
+        );
+        cloneElement.src = cloneMediaSourceUrl;
+        // We can `URL.revokeObjectURL` as soon as the `HTMLMediaElement` gets a hold of the
+        // underlying `MediaSource` and it will work fine. At least based on my tests, and this note:
+        // https://w3c.github.io/FileAPI/#creating-revoking
+        // > Requests that were started before the url was revoked should still succeed.
+        // TODO refactor: the spec seems a bit vague in this regard. I.e. can you really use the
+        // term "request" in regards to `MediaSource`s being used for `HTMLMediaElement` playback?
+        {
+          const revokeAndRemoveListener = () => {
+            URL.revokeObjectURL(cloneMediaSourceUrl);
+            cloneElement.removeEventListener(
+              "loadstart",
+              revokeAndRemoveListener,
+            );
+            clearTimeout(timeoutId);
+          };
+          cloneElement.addEventListener("loadstart", revokeAndRemoveListener, {
+            once: true,
+            passive: true,
+          });
+          // Failsafe, just in case the event didn't fire for some reason.
+          let timeoutId = setTimeout(() => {
+            // Two `setTimeout`s in case one event cycle takes longer than serveral seconds idk lol.
+            timeoutId = setTimeout(revokeAndRemoveListener);
+          }, 10000);
+        }
+
+        // TODO fix: memory leak. Even when an `HTMLMediaSource` becomes unreachable,
+        // it doesn't guarantee that it's gonna get GCd as long as it can potentially play audio:
+        // https://html.spec.whatwg.org/multipage/media.html#best-practices-for-authors-using-media-elements
+        // https://github.com/WofWca/jumpcutter/blob/505b55924871ebc3c433c54d431b828a052c470c/src/entry-points/content/ElementPlaybackControllerCloning/Lookahead.ts#L92-L102
+        //
+        // I'd suggest "well, just `.src = ''` when it's not needed and assign it when it is needed".
+        // Doesn't work because you can only attach a `MediaSource` to a `HTMLMediaElement` once.
+        //
+        // I guess what we have to do is ensure that this extension doesn't hold strong references
+        // to the original `MediaSource` (currently the clone `MediaSource` strongy references it)
+        // and use `FinalizationRegistry` to watch for when the original `MediaSource` gets GCd
+        // and clean up the clones.
+        //
+        // Another idea: since we know that `MediaSource`s can only be attached once to an
+        // `HTMLMediaElement` (or do we know that? this comment
+        // https://github.com/WofWca/jumpcutter/issues/2#issuecomment-1571654947
+        // says that they can?? But in that case, we'd not have to create a clone `MediaSource`,
+        // would we?), we could watch the original element that the original `MediaSource` gets
+        // attached to and when it does get detached, we are good to clean our clones up.
+
+        map.set(originalMediaSource, cloneElement);
+      },
+    );
+  return [map, () => stopInterceptingMediaSourceConstructorCalls()];
 }
 
 function makeIntercepted<T extends (...args: unknown[]) => unknown>(
@@ -276,15 +298,15 @@ function makeIntercepted<T extends (...args: unknown[]) => unknown>(
   // TODO perf: should we use `Proxy.revokable()`?
   return new Proxy(originalFn, {
     apply(target, thisArg, argArray, ...rest) {
-      const originalRetVal = Reflect.apply(target, thisArg, argArray, ...rest) as ReturnType<T>;
+      const originalRetVal = Reflect.apply(
+        target,
+        thisArg,
+        argArray,
+        ...rest,
+      ) as ReturnType<T>;
 
       VERBOSE_LOGGING &&
-        console.debug(
-          "➡️ intercepted",
-          originalFn,
-          argArray,
-          originalRetVal
-        );
+        console.debug("➡️ intercepted", originalFn, argArray, originalRetVal);
       // TODO perf: maybe `queueMicrotask` so that the website's code is given
       // priority. However, it's the way the code was initially,
       // but switching to synchronous execution makes the cloning algorithm
@@ -295,13 +317,13 @@ function makeIntercepted<T extends (...args: unknown[]) => unknown>(
       try {
         callback(argArray as Parameters<T>, originalRetVal);
       } catch (e) {
-        IS_DEV_MODE
-        && console.error('calling', originalFn, 'on clone threw an error', e);
+        IS_DEV_MODE &&
+          console.error("calling", originalFn, "on clone threw an error", e);
       }
 
       return originalRetVal;
     },
-  })
+  });
 }
 /**
  * When called, starts invoking `callback` whenever `object[methodName]` is called.
@@ -318,7 +340,7 @@ function startInterceptingMethodCalls<
   object: T,
   methodName: U,
   callback: (params: Parameters<T[U]>, retVal: ReturnType<T[U]>) => void,
-  addOriginalProperty = true
+  addOriginalProperty = true,
 ): () => void {
   const original = object[methodName];
   // TODO fix: consider overriding the prototype instead (`MediaSource.prototype.addSourceBuffer`).
@@ -337,9 +359,10 @@ function startInterceptingMethodCalls<
   // each object, so it needs to be universal.
   object[methodName] = makeIntercepted(object[methodName], callback);
 
-  const originalValuePropName = `_jumpCutterExtensionOriginal_${methodName}` as const;
+  const originalValuePropName =
+    `_jumpCutterExtensionOriginal_${methodName}` as const;
   type MutatedOriginalObject = T & {
-    OriginalValuePropName?: T[U]
+    OriginalValuePropName?: T[U];
   };
   if (addOriginalProperty) {
     // Also consider `Object.defineProperty` with `enumberable: false`.
@@ -350,7 +373,7 @@ function startInterceptingMethodCalls<
   return () => {
     object[methodName] = original;
     delete (object as MutatedOriginalObject)[originalValuePropName];
-  }
+  };
 }
 
 // You might ask "why not just do `new Proxy(object, { set(...`". Well, how are you gonna do it
@@ -364,24 +387,22 @@ function startInterceptingSetters<
   C extends new (...args: any) => any,
   T extends InstanceType<C>,
   P extends keyof T,
->(
-  object: T,
-  propName: P,
-  objectClass: C,
-  callback: (newVal: T[P]) => void,
-) {
+>(object: T, propName: P, objectClass: C, callback: (newVal: T[P]) => void) {
   const prototype = objectClass.prototype;
-  const originalDescriptor = Object.getOwnPropertyDescriptor(prototype, propName);
+  const originalDescriptor = Object.getOwnPropertyDescriptor(
+    prototype,
+    propName,
+  );
   if (!originalDescriptor) {
     if (IS_DEV_MODE) {
-      console.error('No such property.', object, propName, prototype);
+      console.error("No such property.", object, propName, prototype);
     }
     return;
   }
   const originalSet = originalDescriptor.set;
   if (!originalSet) {
     if (IS_DEV_MODE) {
-      console.error('No setter for', propName, prototype, object);
+      console.error("No setter for", propName, prototype, object);
     }
     return;
   }
@@ -398,8 +419,14 @@ function startInterceptingSetters<
       try {
         callback(newVal);
       } catch (e) {
-        IS_DEV_MODE
-        && console.error('setting', object, propName, 'on clone threw an error', e);
+        IS_DEV_MODE &&
+          console.error(
+            "setting",
+            object,
+            propName,
+            "on clone threw an error",
+            e,
+          );
       }
 
       return retVal;
@@ -408,35 +435,39 @@ function startInterceptingSetters<
 
   return () => {
     delete object[propName];
-  }
+  };
 }
 
 type MutatedGlobalThis = typeof globalThis & {
-  _jumpCutterExtensionOriginal_MediaSource?: typeof MediaSource
+  _jumpCutterExtensionOriginal_MediaSource?: typeof MediaSource;
 };
 /**
  * @returns stop intercepting
  */
 function startInterceptingMediaSourceConstructorCalls(
-  callback:
-    (
-      constructorArgs: ConstructorParameters<typeof MediaSource>,
-      newMediaSource: MediaSource,
-    ) => void,
+  callback: (
+    constructorArgs: ConstructorParameters<typeof MediaSource>,
+    newMediaSource: MediaSource,
+  ) => void,
 ): () => void {
   // TODO refactor: this code is very similar to `startInterceptingMethod`.
 
   const original = MediaSource;
   globalThis.MediaSource = new Proxy(MediaSource, {
     construct(target, argArray, newTarget, ...rest) {
-      const originalRetVal = Reflect.construct(target, argArray, newTarget, ...rest);
+      const originalRetVal = Reflect.construct(
+        target,
+        argArray,
+        newTarget,
+        ...rest,
+      );
 
       VERBOSE_LOGGING &&
         console.debug(
           "➡️ intercepted MediaSource constructor",
           newTarget,
           argArray,
-          originalRetVal
+          originalRetVal,
         );
       // queueMicrotask(() => callback(
       //   argArray as ConstructorParameters<typeof MediaSource>,
@@ -445,11 +476,15 @@ function startInterceptingMediaSourceConstructorCalls(
       try {
         callback(
           argArray as ConstructorParameters<typeof MediaSource>,
-          originalRetVal
+          originalRetVal,
         );
       } catch (e) {
-        IS_DEV_MODE
-        && console.error('MediaSource constructor interceptor threw an error', argArray, e);
+        IS_DEV_MODE &&
+          console.error(
+            "MediaSource constructor interceptor threw an error",
+            argArray,
+            e,
+          );
       }
 
       return originalRetVal;
@@ -457,14 +492,14 @@ function startInterceptingMediaSourceConstructorCalls(
     // TODO refactor: this does not belong to the function named
     // `startInterceptingMediaSourceConstructorCalls`
     get(target, propName, receiver) {
-      if (propName === 'canConstructInDedicatedWorker') {
+      if (propName === "canConstructInDedicatedWorker") {
         VERBOSE_LOGGING &&
           console.debug(
             "➡️ intercepted `MediaSource.canConstructInDedicatedWorker` getter. " +
               "Overiding with `false`",
             propName,
             "original would have returned:",
-            Reflect.get(target, propName, receiver)
+            Reflect.get(target, propName, receiver),
           );
 
         // We cannot intercept `MediaSource`s that are created inside dedicated workers.
@@ -474,17 +509,19 @@ function startInterceptingMediaSourceConstructorCalls(
         // TODO an option to turn this off.
         return false;
       }
-      return Reflect.get(target, propName, receiver)
+      return Reflect.get(target, propName, receiver);
     },
   });
 
   // Also make it accessible to the whole page juuuust in case.
-  (globalThis as MutatedGlobalThis)._jumpCutterExtensionOriginal_MediaSource = original;
+  (globalThis as MutatedGlobalThis)._jumpCutterExtensionOriginal_MediaSource =
+    original;
 
   return () => {
     globalThis.MediaSource = original;
-    delete (globalThis as MutatedGlobalThis)._jumpCutterExtensionOriginal_MediaSource;
-  }
+    delete (globalThis as MutatedGlobalThis)
+      ._jumpCutterExtensionOriginal_MediaSource;
+  };
 }
 
 function makeMaintainedMediaSourceClone(
@@ -498,22 +535,29 @@ function makeMaintainedMediaSourceClone(
   // interceptor that this constructor is not to be intercepted? Extra constructor parameter?
   // Or some global variable, like `dontCloneNextMediaSourceInstance`. Or make
   // `startInterceptingMediaSourceConstructorCalls` also return `(pause/unpause)Intercepting`.
-  const cloneMS = new (globalThis as Required<MutatedGlobalThis>)
-    ._jumpCutterExtensionOriginal_MediaSource(...constructorArgs);
+  const cloneMS = new (
+    globalThis as Required<MutatedGlobalThis>
+  )._jumpCutterExtensionOriginal_MediaSource(...constructorArgs);
 
   // Many mutations of `MediaSource` (like `addSourceBuffer`) throw if its state is not "open",
   // so need to await.
   // https://w3c.github.io/media-source/#dom-mediasource-addsourcebuffer
   // TODO `readyState` can transition back from "open" actually, so maybe need to check and await
   // every time, roughly like `execWhenSourceBufferReady`.
-  const cloneMSOpenP = new Promise<MediaSource>(r => {
-    cloneMS.addEventListener('sourceopen', () => r(cloneMS), { once: true, passive: true });
+  const cloneMSOpenP = new Promise<MediaSource>((r) => {
+    cloneMS.addEventListener("sourceopen", () => r(cloneMS), {
+      once: true,
+      passive: true,
+    });
   });
 
   if (IS_DEV_MODE) {
     const timeoutId = setTimeout(() => {
-      console.error("Created a clone `MediaSource` for", cloneMS, "5 seconds ago, but it's"
-        + " still not 'open'. Potential memory leak.");
+      console.error(
+        "Created a clone `MediaSource` for",
+        cloneMS,
+        "5 seconds ago, but it's" + " still not 'open'. Potential memory leak.",
+      );
       cloneMSOpenP.then(() => {
         console.warn(cloneMS, "is finally 'open'. Sheesh, that took a while");
       });
@@ -521,8 +565,10 @@ function makeMaintainedMediaSourceClone(
     cloneMSOpenP.then(() => clearTimeout(timeoutId));
   }
 
-  const originalToCloneSourceBufferP =
-    new WeakMap<SourceBuffer, Promise<SourceBuffer>>();
+  const originalToCloneSourceBufferP = new WeakMap<
+    SourceBuffer,
+    Promise<SourceBuffer>
+  >();
 
   // TODO perf: `stopIntercepting`.
   //
@@ -535,20 +581,28 @@ function makeMaintainedMediaSourceClone(
   // TODO refactor: consider a black-list approach instead, for forwards compatibility, or
   // maybe even dynamically determine which properties are settable
   // (`Object.getOwnPropertyDescriptors(MediaSource.prototype)`).
-  startInterceptingMethodCalls(originalMS, 'addSourceBuffer', (params, originalSourceBuffer) => {
-    const cloneSourceBufferP = makeMaintainedSourceBufferCloneWhenOpen(
-      originalSourceBuffer,
-      params,
-      cloneMSOpenP
-    );
-    originalToCloneSourceBufferP.set(originalSourceBuffer, cloneSourceBufferP);
-  });
   startInterceptingMethodCalls(
     originalMS,
-    'removeSourceBuffer',
+    "addSourceBuffer",
+    (params, originalSourceBuffer) => {
+      const cloneSourceBufferP = makeMaintainedSourceBufferCloneWhenOpen(
+        originalSourceBuffer,
+        params,
+        cloneMSOpenP,
+      );
+      originalToCloneSourceBufferP.set(
+        originalSourceBuffer,
+        cloneSourceBufferP,
+      );
+    },
+  );
+  startInterceptingMethodCalls(
+    originalMS,
+    "removeSourceBuffer",
     ([originalSourceBuffer]) => {
-      const cloneSourceBufferP = originalToCloneSourceBufferP.get(originalSourceBuffer);
-      cloneSourceBufferP!.then(cloneSourceBuffer => {
+      const cloneSourceBufferP =
+        originalToCloneSourceBufferP.get(originalSourceBuffer);
+      cloneSourceBufferP!.then((cloneSourceBuffer) => {
         VERBOSE_LOGGING &&
           console.debug(
             "⬅️ executing on clone",
@@ -558,29 +612,34 @@ function makeMaintainedMediaSourceClone(
             cloneSourceBuffer,
           );
 
-        cloneMS.removeSourceBuffer(cloneSourceBuffer)
+        cloneMS.removeSourceBuffer(cloneSourceBuffer);
       });
-    }
+    },
   );
   // TBH I'm not sure if it's of any use to replicate `endOfStream`.
-  startInterceptingMethodCalls(originalMS, 'endOfStream', (params) => {
+  startInterceptingMethodCalls(originalMS, "endOfStream", (params) => {
     // TODO fix: this throws if one or more of the `SourceBuffer`s are `.updating === true`.
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/endOfStream#exceptions
     // M8, how am I supposed to track that?
     // Perhaps need a function like `execWhenSourceBufferReady`, but
     // `execWhenAllSourceBuffersReady(mediaSource, fn)`
-    cloneMSOpenP.then(cloneMS => {
+    cloneMSOpenP.then((cloneMS) => {
       VERBOSE_LOGGING &&
-        console.debug("⬅️ executing on clone", originalMS, "endOfStream", params);
+        console.debug(
+          "⬅️ executing on clone",
+          originalMS,
+          "endOfStream",
+          params,
+        );
 
-      cloneMS.endOfStream(...params)
+      cloneMS.endOfStream(...params);
     });
   });
 
-  startInterceptingSetters(originalMS, 'duration', MediaSource, newVal => {
+  startInterceptingSetters(originalMS, "duration", MediaSource, (newVal) => {
     // TODO this throws if one or more of the `SourceBuffer`s are `.updating === true`.
     // And I actually encountered it in the wild.
-    cloneMSOpenP.then(cloneMS => {
+    cloneMSOpenP.then((cloneMS) => {
       VERBOSE_LOGGING &&
         console.debug("⬅️ setting on clone", originalMS, "duration", newVal);
 
@@ -595,21 +654,22 @@ function makeMaintainedMediaSourceClone(
  * @returns a Promise that resolves that the clone SourceBuffer
  */
 function makeMaintainedSourceBufferCloneWhenOpen(
-  originalSourceBuffer: ReturnType<MediaSource['addSourceBuffer']>,
-  addSourceBufferParams: Parameters<MediaSource['addSourceBuffer']>,
+  originalSourceBuffer: ReturnType<MediaSource["addSourceBuffer"]>,
+  addSourceBufferParams: Parameters<MediaSource["addSourceBuffer"]>,
   cloneMediaSourceOpenP: Promise<MediaSource>,
 ): Promise<SourceBuffer> {
-  const cloneSourceBufferP = cloneMediaSourceOpenP.then(cloneMS => {
-    VERBOSE_LOGGING && console.debug('make sourceBuffer', addSourceBufferParams);
+  const cloneSourceBufferP = cloneMediaSourceOpenP.then((cloneMS) => {
+    VERBOSE_LOGGING &&
+      console.debug("make sourceBuffer", addSourceBufferParams);
     return cloneMS.addSourceBuffer(...addSourceBufferParams);
   });
 
   if (IS_DEV_MODE) {
-    cloneSourceBufferP.then(cloneSourceBuffer => {
-      cloneSourceBuffer.addEventListener('error', (event) => {
-        console.error('cloneSourceBuffer error event', event)
-      })
-    })
+    cloneSourceBufferP.then((cloneSourceBuffer) => {
+      cloneSourceBuffer.addEventListener("error", (event) => {
+        console.error("cloneSourceBuffer error event", event);
+      });
+    });
   }
 
   // TODO perf: `stopIntercepting`.
@@ -618,63 +678,66 @@ function makeMaintainedSourceBufferCloneWhenOpen(
   // Currently known functions that we're not intercepting:
   // `EventTarget` ones (`addEventListener`, `dispatchEvent`)
   const methodNamesToReplicateCallsFor = [
-    'appendBuffer',
+    "appendBuffer",
     // `abort` may seem unimportant based on its name (like "let's just save time and not process"
     // the last chunk"), but it actually also
     // > resets the segment parser
     // , which is important for when you perform a seek to an unbuffered range, i.e. when
     // you `appendBuffer` that does not directly follow the last appended one in media-time
     // (or something like that, I'm not good at codecs).
-    'abort',
+    "abort",
     // We're replicating this mostly to avoid memory leaks, but I don't know if it's of essense
     // to playback.
-    'remove',
-    'changeType',
-  ] as const /* satisfies Array<keyof typeof originalSourceBuffer> */;
+    "remove",
+    "changeType",
+  ] as const; /* satisfies Array<keyof typeof originalSourceBuffer> */
   for (const methodName of methodNamesToReplicateCallsFor) {
     // Yes, we need to start intercepting _before_ the `cloneSourceBuffer` is created, in order
     // to not skip any calls.
-    startInterceptingMethodCalls(originalSourceBuffer, methodName, async (params) => {
-      const cloneSourceBuffer = await cloneSourceBufferP;
-      execWhenSourceBufferReady(
-        cloneSourceBuffer,
-        () => {
+    startInterceptingMethodCalls(
+      originalSourceBuffer,
+      methodName,
+      async (params) => {
+        const cloneSourceBuffer = await cloneSourceBufferP;
+        execWhenSourceBufferReady(cloneSourceBuffer, () => {
           VERBOSE_LOGGING &&
             console.debug(
               "⬅️ executing on clone",
               originalSourceBuffer,
               methodName,
-              params
+              params,
             );
           (cloneSourceBuffer[methodName] as any)(...params);
-        },
-      );
-    });
+        });
+      },
+    );
   }
 
   const propNamesToReplicateSettersFor = [
-    'appendWindowStart',
-    'appendWindowEnd',
-    'mode',
-    'timestampOffset',
-  ] as const /* satisfies Array<keyof typeof originalSourceBuffer> */;
+    "appendWindowStart",
+    "appendWindowEnd",
+    "mode",
+    "timestampOffset",
+  ] as const; /* satisfies Array<keyof typeof originalSourceBuffer> */
   for (const propName of propNamesToReplicateSettersFor) {
-    startInterceptingSetters(originalSourceBuffer, propName, SourceBuffer, async newVal => {
-      const cloneSourceBuffer = await cloneSourceBufferP;
-      execWhenSourceBufferReady(
-        cloneSourceBuffer,
-        () => {
+    startInterceptingSetters(
+      originalSourceBuffer,
+      propName,
+      SourceBuffer,
+      async (newVal) => {
+        const cloneSourceBuffer = await cloneSourceBufferP;
+        execWhenSourceBufferReady(cloneSourceBuffer, () => {
           VERBOSE_LOGGING &&
             console.debug(
               "⬅️ setting on clone",
               originalSourceBuffer,
               propName,
-              newVal
+              newVal,
             );
           (cloneSourceBuffer[propName] as any) = newVal;
-        }
-      );
-    });
+        });
+      },
+    );
   }
 
   return cloneSourceBufferP;
@@ -686,7 +749,10 @@ function makeMaintainedSourceBufferCloneWhenOpen(
  * If this function was called several times while `sourceBuffer.updating === true` then
  * `fn`s are executed in the same order as this function was called.
  */
-function execWhenSourceBufferReady(sourceBuffer: SourceBuffer, fn: () => void): void {
+function execWhenSourceBufferReady(
+  sourceBuffer: SourceBuffer,
+  fn: () => void,
+): void {
   let queue = queueMap.get(sourceBuffer);
   if (queue && queue.length > 0) {
     // console.log('queue not empty, pushing', fn);
@@ -710,20 +776,21 @@ function execWhenSourceBufferReady(sourceBuffer: SourceBuffer, fn: () => void): 
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _assert1: true = sourceBuffer.updating
+  const _assert1: true = sourceBuffer.updating;
   // `sourceBuffer.updating === true` and we just added the first item
   // to the queue.
   // Let's initiate the "empty queue" process
 
   const onSourceBufferReadyAndQueueNotEmpty = () => {
     if (sourceBuffer.updating) {
-      IS_DEV_MODE && console.warn(
-        "sourceBuffer.updating === true, but we're supposed to be the only " +
-        "party that can operate on the sourceBuffer. " +
-        "Something else made it busy. " +
-        "We'll graciously wait for the next 'updateend' event"
-      )
-      return
+      IS_DEV_MODE &&
+        console.warn(
+          "sourceBuffer.updating === true, but we're supposed to be the only " +
+            "party that can operate on the sourceBuffer. " +
+            "Something else made it busy. " +
+            "We'll graciously wait for the next 'updateend' event",
+        );
+      return;
     }
 
     // why `do while`? Because if `sourceBuffer.updating` didn't
@@ -732,42 +799,43 @@ function execWhenSourceBufferReady(sourceBuffer: SourceBuffer, fn: () => void): 
     // so we'd be waiting for it indefinitely.
     do {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _assert2: true = !sourceBuffer.updating
+      const _assert2: true = !sourceBuffer.updating;
       const fn = queue.shift();
       assertDev(fn);
       fn();
 
       if (!sourceBuffer.updating) {
-        IS_DEV_MODE && console.warn(
-          "Executed `fn()`, but it didn't make " +
-          "`sourceBuffer.updating === true`\n" +
-          "We'll handle it graciously, but usually " +
-          "operations on `sourceBuffer` cause it to become busy."
-        )
+        IS_DEV_MODE &&
+          console.warn(
+            "Executed `fn()`, but it didn't make " +
+              "`sourceBuffer.updating === true`\n" +
+              "We'll handle it graciously, but usually " +
+              "operations on `sourceBuffer` cause it to become busy.",
+          );
       }
-  
+
       // Checking length _after_ `queue.shift()` because, as stated before,
       // there is at least one item in the queue, and this is the only code
       // that can reduce the size of the queue.
       if (queue.length === 0) {
         sourceBuffer.removeEventListener(
-          'updateend',
-          onSourceBufferReadyAndQueueNotEmpty
+          "updateend",
+          onSourceBufferReadyAndQueueNotEmpty,
         );
-        return
+        return;
       }
       // The queue is still not empty.
-    } while (!sourceBuffer.updating)
+    } while (!sourceBuffer.updating);
     // `sourceBuffer.updating === true` and the queue is still not empty.
     // Let's simply wait for the next 'updateend' event.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _assert2: true = sourceBuffer.updating
-  }
+    const _assert2: true = sourceBuffer.updating;
+  };
 
   sourceBuffer.addEventListener(
-    'updateend',
+    "updateend",
     onSourceBufferReadyAndQueueNotEmpty,
-    { passive: true }
+    { passive: true },
   );
   // Why 'updateend' and not 'updated' or 'update' and 'error' and 'abort'?
   // Because 'updateend' seems to be the only event that 100% correlates

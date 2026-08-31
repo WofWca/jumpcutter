@@ -22,24 +22,24 @@
 // https://developer.chrome.com/extensions/background_pages#unloading
 // 1. migrations
 // 2. settings saving.
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
-import { onCommand as onCommandWhenReady } from './browserHotkeysListener';
+import { onCommand as onCommandWhenReady } from "./browserHotkeysListener";
 import {
   initIconAndBadge,
   onNewTimeSavedInfo,
-  updateIconAndBadge
-} from './iconAndBadgeUpdater';
-import { storage } from '@/settings/_storage';
+  updateIconAndBadge,
+} from "./iconAndBadgeUpdater";
+import { storage } from "@/settings/_storage";
 import {
   ControllerKind_CLONING,
   createWrapperListener,
   getSettings,
   settingsChanges2NewValues,
 } from "@/settings";
-import type { Settings } from '@/settings';
-import { defaultSettings } from '@/settings';
-import runRequiredMigrations from './migrations/runRequiredMigrations';
+import type { Settings } from "@/settings";
+import { defaultSettings } from "@/settings";
+import runRequiredMigrations from "./migrations/runRequiredMigrations";
 
 // Remember that we need to attach the event listeners at the top level since it's a
 // non-persistent background script:
@@ -66,26 +66,32 @@ async function setNewSettingsKeysToDefaults() {
 }
 
 const currentVersion = browserOrChrome.runtime.getManifest().version;
-let postInstallStorageChangesDonePResolve: (storageMightHaveBeenChanged: boolean) => void;
+let postInstallStorageChangesDonePResolve: (
+  storageMightHaveBeenChanged: boolean,
+) => void;
 /**
  * Resolves when it is made sure that all migrations have been run (if there are any) and it is safe to operate the
  * storage. The resolve value indicates if we might have made changes to the storage.
  */
-const postInstallStorageChangesDoneP = new Promise<boolean>(r => postInstallStorageChangesDonePResolve = r);
+const postInstallStorageChangesDoneP = new Promise<boolean>(
+  (r) => (postInstallStorageChangesDonePResolve = r),
+);
 // Pretty hacky. Feels like there must be API that allows us to do this. TODO?
-browserOrChrome.storage.local.get('__lastHandledUpdateToVersion').then(({ __lastHandledUpdateToVersion }) => {
-  if (currentVersion === __lastHandledUpdateToVersion) {
-    postInstallStorageChangesDonePResolve(false);
-  }
-});
-browserOrChrome.runtime.onInstalled.addListener(async details => {
-  if (!['update', 'install'].includes(details.reason)) {
+browserOrChrome.storage.local
+  .get("__lastHandledUpdateToVersion")
+  .then(({ __lastHandledUpdateToVersion }) => {
+    if (currentVersion === __lastHandledUpdateToVersion) {
+      postInstallStorageChangesDonePResolve(false);
+    }
+  });
+browserOrChrome.runtime.onInstalled.addListener(async (details) => {
+  if (!["update", "install"].includes(details.reason)) {
     return;
   }
   // In regard to popup or content scripts – this is pretty much guaranteed to finish running before them because
   // popups don't get opened immediately upon installation and in order to get content scripts to work you'd
   // need to reload the page.
-  if (details.reason === 'update') {
+  if (details.reason === "update") {
     // TODO perf: dynamic import for service worker
     // const { default: runRequiredMigrations } = await import(
     //   /* webpackExports: ['default'] */
@@ -97,7 +103,9 @@ browserOrChrome.runtime.onInstalled.addListener(async details => {
   }
   await setNewSettingsKeysToDefaults();
 
-  browserOrChrome.storage.local.set({ __lastHandledUpdateToVersion: currentVersion });
+  browserOrChrome.storage.local.set({
+    __lastHandledUpdateToVersion: currentVersion,
+  });
   postInstallStorageChangesDonePResolve(true);
 });
 
@@ -107,30 +115,33 @@ browserOrChrome.commands?.onCommand?.addListener?.(async (command) => {
   onCommandWhenReady(command);
 });
 
-let mayThisOnStorageChangeEventBeCausedByPostInstallScriptP: Promise<boolean> | boolean
-= (async () => {
-  const storageMightHaveBeenChangedByPostInstallScript = await postInstallStorageChangesDoneP;
+let mayThisOnStorageChangeEventBeCausedByPostInstallScriptP:
+  Promise<boolean> | boolean = (async () => {
+  const storageMightHaveBeenChangedByPostInstallScript =
+    await postInstallStorageChangesDoneP;
   return storageMightHaveBeenChangedByPostInstallScript;
 })();
 (async () => {
   await postInstallStorageChangesDoneP;
-  setTimeout(() => setTimeout(() => {
-    // After some time all the the `storage.onChanged` listeners, that might have been triggered
-    // by the post-install script, have been executed so we don't expect any more of them.
-    // Yes, it may already be `Awaited<false>`
-    mayThisOnStorageChangeEventBeCausedByPostInstallScriptP = false;
-  }));
+  setTimeout(() =>
+    setTimeout(() => {
+      // After some time all the the `storage.onChanged` listeners, that might have been triggered
+      // by the post-install script, have been executed so we don't expect any more of them.
+      // Yes, it may already be `Awaited<false>`
+      mayThisOnStorageChangeEventBeCausedByPostInstallScriptP = false;
+    }),
+  );
 })();
 
 const settingsP = postInstallStorageChangesDoneP.then(() => getSettings());
 
-const initIconAndBadgeP = settingsP.then(s => initIconAndBadge(s));
-settingsP.then(s => {
+const initIconAndBadgeP = settingsP.then((s) => initIconAndBadge(s));
+settingsP.then((s) => {
   // FYI the script registration might already be in the desired state
   // since the last time the background script was running.
   updateMediaSourceCloningScriptRegistered(s);
-})
-const onStorageChanged = createWrapperListener(async changes => {
+});
+const onStorageChanged = createWrapperListener(async (changes) => {
   const settings = await settingsP;
   // Yes, every time this function executes, `await settingsP` is the same
   // object, so mutations to it persist.
@@ -156,11 +167,11 @@ browserOrChrome.storage.onChanged.addListener(async (...args) => {
   await onStorageChanged(...args);
 });
 
-browserOrChrome.runtime.onConnect.addListener(port => {
-  if (port.name !== 'timeSavedBadgeText') {
+browserOrChrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "timeSavedBadgeText") {
     console.warn(
-      'received connection, but port name is unknown. Ignoring.',
-      port.name
+      "received connection, but port name is unknown. Ignoring.",
+      port.name,
     );
     // port.disconnect()
     return;
@@ -170,40 +181,40 @@ browserOrChrome.runtime.onConnect.addListener(port => {
   if (senderTabId == undefined) {
     console.warn(`received ${port.name}, but tab.id is not set. Ignoring`);
     // port.disconnect()
-    return
+    return;
   }
 
-  let settings: undefined | Awaited<typeof settingsP> = undefined
+  let settings: undefined | Awaited<typeof settingsP> = undefined;
   port.onMessage.addListener(async (timeSavedString) => {
-    if (typeof timeSavedString !== 'string') {
+    if (typeof timeSavedString !== "string") {
       console.warn(
         port.name,
-        'sent a message',
+        "sent a message",
         timeSavedString,
-        'but we expected a string',
+        "but we expected a string",
       );
       return;
     }
 
     if (settings == undefined) {
-      settings = await settingsP
+      settings = await settingsP;
     }
 
-    if (settings.badgeWhatSettingToDisplayByDefault !== 'timeSaved') {
+    if (settings.badgeWhatSettingToDisplayByDefault !== "timeSaved") {
       console.warn(
-        'Received timeSavedBadgeText message, but `settings.badgeWhatSettingToDisplayByDefault` is',
+        "Received timeSavedBadgeText message, but `settings.badgeWhatSettingToDisplayByDefault` is",
         settings.badgeWhatSettingToDisplayByDefault,
-        'This is expected if the setting value got changed but the page has not been reloaded'
-      )
-      return
+        "This is expected if the setting value got changed but the page has not been reloaded",
+      );
+      return;
     }
 
-    onNewTimeSavedInfo(senderTabId, timeSavedString)
-  })
+    onNewTimeSavedInfo(senderTabId, timeSavedString);
+  });
 });
 
 async function updateMediaSourceCloningScriptRegistered(
-  settings: Pick<Settings, "enabled" | "experimentalControllerType">
+  settings: Pick<Settings, "enabled" | "experimentalControllerType">,
 ) {
   // TODO fix: this function is async, probably won't work well
   // if the related setting change rapidly. Though it's rare.
@@ -221,7 +232,7 @@ async function updateMediaSourceCloningScriptRegistered(
     if (IS_DEV_MODE) {
       console.log(
         `\`cloneMediaSources\` content script is already` +
-          ` ${isRegistered ? "" : "un"}registered, keeping it this way`
+          ` ${isRegistered ? "" : "un"}registered, keeping it this way`,
       );
     }
 
@@ -254,14 +265,10 @@ async function updateMediaSourceCloningScriptRegistered(
         // https://whattrainisitnow.com/calendar/
         // But let's not mark `strict_min_version`, because the extension
         // is still usable without `matchOriginAsFallback`.
-        ...(
-          (
-            BUILD_DEFINITIONS.BROWSER === "gecko" &&
-            !(await doesGeckoSupportMatchOriginAsFallback())
-          )
-            ? {}
-            : { matchOriginAsFallback: true }
-        ),
+        ...(BUILD_DEFINITIONS.BROWSER === "gecko" &&
+        !(await doesGeckoSupportMatchOriginAsFallback())
+          ? {}
+          : { matchOriginAsFallback: true }),
 
         // TODO improvement: add `world: 'MAIN'` and load the
         // `content/cloneMediaSources-for-page-world.js` script directly.
@@ -277,7 +284,7 @@ async function updateMediaSourceCloningScriptRegistered(
     });
   }
 }
-const cloneMediaSourcesScriptId = 'cloneMediaSources';
+const cloneMediaSourcesScriptId = "cloneMediaSources";
 
 async function doesGeckoSupportMatchOriginAsFallback(): Promise<boolean> {
   const version = (

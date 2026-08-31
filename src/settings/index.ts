@@ -18,38 +18,41 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { HotkeyBinding } from '@/hotkeys';
-import { ControllerKind } from './ControllerKind';
+import { HotkeyBinding } from "@/hotkeys";
+import { ControllerKind } from "./ControllerKind";
 // For JSDoc.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
+import type TimeSavedTracker from "@/entry-points/content/TimeSavedTracker";
 
 // It is impossible to explicitly set `experimentalControllerType` to `ControllerKind.ALWAYS_SOUNDED`.
 // See `AllMediaElementsController.ts`.
-type SettingsControllerKind = Exclude<ControllerKind, ControllerKind.ALWAYS_SOUNDED>;
+type SettingsControllerKind = Exclude<
+  ControllerKind,
+  ControllerKind.ALWAYS_SOUNDED
+>;
 
 export interface Settings {
-  volumeThreshold: number,
-  previousVolumeThreshold: number,
+  volumeThreshold: number;
+  previousVolumeThreshold: number;
 
-  silenceSpeedSpecificationMethod: 'relativeToSoundedSpeed' | 'absolute',
+  silenceSpeedSpecificationMethod: "relativeToSoundedSpeed" | "absolute";
   /**
    * "raw" means that we need to check {@link silenceSpeedSpecificationMethod}
    * and not simply `video.playbackRate = silenceSpeedRaw`
    */
-  silenceSpeedRaw: number,
-  previousSilenceSpeedRaw: number,
+  silenceSpeedRaw: number;
+  previousSilenceSpeedRaw: number;
 
-  soundedSpeed: number,
-  previousSoundedSpeed: number,
-  enabled: boolean,
-  marginBefore: number,
-  previousMarginBefore: number,
-  marginAfter: number,
-  previousMarginAfter: number,
+  soundedSpeed: number;
+  previousSoundedSpeed: number;
+  enabled: boolean;
+  marginBefore: number;
+  previousMarginBefore: number;
+  marginAfter: number;
+  previousMarginAfter: number;
 
   // TODO I made this purely for testing. For release we'll probably need something better.
-  experimentalControllerType: SettingsControllerKind,
+  experimentalControllerType: SettingsControllerKind;
   /**
    * Why do we need this? Controller algorithms are quite different and each have their advantages and disadvantages,
    * which need to be considered when choosing settings such as margin(Before|After). For example, some people may hate
@@ -60,19 +63,21 @@ export interface Settings {
    * May want to replace this with a list of settings keys and rename it in the future.
    * Because we also already added `volumeThreshold` to the list.
    */
-  useSeparateMarginSettingsForDifferentAlgorithms: boolean,
+  useSeparateMarginSettingsForDifferentAlgorithms: boolean;
   // Settings for the currently active algorithm are not synced (just in case you decided to use them).
   // Which is a bit confusing and wasteful in terms of storage space. But not too bad.
   algorithmSpecificSettings: {
     [P in SettingsControllerKind]: {
-      [P in keyof Pick<
-        Settings,
-        'volumeThreshold' | 'marginBefore' | 'marginAfter'
-      >]: Settings[P];
+      [
+        P in keyof Pick<
+          Settings,
+          "volumeThreshold" | "marginBefore" | "marginAfter"
+        >
+      ]: Settings[P];
     };
-  },
+  };
 
-  applyTo: 'videoOnly' | 'audioOnly' | 'both',
+  applyTo: "videoOnly" | "audioOnly" | "both";
 
   /**
    * This is to solve the following issues:
@@ -81,83 +86,81 @@ export interface Settings {
    * * Some media elements are not even supposed to play audio (like some fancy backgrounds on some fancy designer's
    * website).
    */
-  omitMutedElements: boolean,
+  omitMutedElements: boolean;
 
   /**
    * See the comments in `getAppropriateControllerType`:
    * https://github.com/WofWca/jumpcutter/blob/f9cafdc59e042674e494482abe2f0f3dc955e695/src/content/AllMediaElementsController.ts#L67-L77
    */
-  dontAttachToCrossOriginMedia: boolean,
+  dontAttachToCrossOriginMedia: boolean;
 
-  enableHotkeys: boolean,
-  hotkeys: HotkeyBinding[],
+  enableHotkeys: boolean;
+  hotkeys: HotkeyBinding[];
 
   /**
    * In case input controls and hotkeys are intersecting in popup.
    * kind of looks like a half-assed solution, no? TODO.
    */
-  popupDisableHotkeysWhileInputFocused: boolean,
+  popupDisableHotkeysWhileInputFocused: boolean;
   /**
    * This comes in especially handy when `popupDisableHotkeysWhileInputFocused === true`.
    * TODO but when `popupDisableHotkeysWhileInputFocused === true && popupAutofocusEnabledInput === true` it is
    * practically impossible to use hotkeys in the popup as removing focus is done with "Esc", which also closes the
    * popup. These options are considered "Advanced" so I think we can remove then without worrying too much.
    */
-  popupAutofocusEnabledInput: boolean,
-  popupChartWidthPx: number,
-  popupChartHeightPx: number,
-  popupChartLengthInSeconds: number,
+  popupAutofocusEnabledInput: boolean;
+  popupChartWidthPx: number;
+  popupChartHeightPx: number;
+  popupChartLengthInSeconds: number;
   /** Expressed as a percentage. */
-  popupChartJumpPeriod: number,
-  popupChartSpeed: 'realTime' | 'intrinsicTime' | 'soundedSpeedTime', // TODO add 'intrinsicTimeRelativeToSounded'
-  popupAlwaysShowOpenLocalFileLink: boolean,
+  popupChartJumpPeriod: number;
+  popupChartSpeed: "realTime" | "intrinsicTime" | "soundedSpeedTime"; // TODO add 'intrinsicTimeRelativeToSounded'
+  popupAlwaysShowOpenLocalFileLink: boolean;
 
-  popupVolumeThresholdMin: number,
-  popupVolumeThresholdMax: number,
-  popupVolumeThresholdStep: number,
+  popupVolumeThresholdMin: number;
+  popupVolumeThresholdMax: number;
+  popupVolumeThresholdStep: number;
 
-  popupSoundedSpeedMin: number,
-  popupSoundedSpeedMax: number,
-  popupSoundedSpeedStep: number,
+  popupSoundedSpeedMin: number;
+  popupSoundedSpeedMax: number;
+  popupSoundedSpeedStep: number;
 
-  popupSilenceSpeedRawMin: number,
-  popupSilenceSpeedRawMax: number,
-  popupSilenceSpeedRawStep: number,
+  popupSilenceSpeedRawMin: number;
+  popupSilenceSpeedRawMax: number;
+  popupSilenceSpeedRawStep: number;
 
-  popupMarginBeforeMin: number,
-  popupMarginBeforeMax: number,
-  popupMarginBeforeStep: number,
+  popupMarginBeforeMin: number;
+  popupMarginBeforeMax: number;
+  popupMarginBeforeStep: number;
 
-  popupMarginAfterMin: number,
-  popupMarginAfterMax: number,
-  popupMarginAfterStep: number,
+  popupMarginAfterMin: number;
+  popupMarginAfterMax: number;
+  popupMarginAfterStep: number;
 
   // But `overrideWebsiteHotkeys` is not applicable to popup-specific hotkeys.
   // TODO refactor use `Array<Omit<HotkeyBinding, 'overrideWebsiteHotkeys'>>`?
-  popupSpecificHotkeys: HotkeyBinding[],
+  popupSpecificHotkeys: HotkeyBinding[];
 
   timeSavedRepresentation:
-    | 'minutesOutOfHour'
-    | 'percentage'
-    | 'effectivePlaybackRate',
-  timeSavedAveragingMethod: 'all-time' | 'exponential',
+    "minutesOutOfHour" | "percentage" | "effectivePlaybackRate";
+  timeSavedAveragingMethod: "all-time" | "exponential";
   // This may not be the most accurate name for an exponential averaging window. TODO refactor?
-  timeSavedAveragingWindowLength: number,
+  timeSavedAveragingWindowLength: number;
   /**
    * When the averaging window is an exponential window, how much weight does the interval of length
    * `timeSavedAveragingWindowLength` has to possess (compared to the resulting average value) (so data older than
    * `timeSavedAveragingWindowLength` has weight of as little as `1 - <this value>`).
    */
-  timeSavedExponentialAveragingLatestDataWeight: number,
+  timeSavedExponentialAveragingLatestDataWeight: number;
 
   // Yes, these are not "settings".
   /**
    * @see {@link TimeSavedTracker}.
    */
-  lifetimeTimeSavedComparedToSoundedSpeed: number
-  lifetimeTimeSavedComparedToIntrinsicSpeed: number
-  lifetimeWouldHaveLastedIfSpeedWasSounded: number
-  lifetimeWouldHaveLastedIfSpeedWasIntrinsic: number
+  lifetimeTimeSavedComparedToSoundedSpeed: number;
+  lifetimeTimeSavedComparedToIntrinsicSpeed: number;
+  lifetimeWouldHaveLastedIfSpeedWasSounded: number;
+  lifetimeWouldHaveLastedIfSpeedWasIntrinsic: number;
 
   // TODO should we add other options for this setting?
   /**
@@ -166,27 +169,28 @@ export interface Settings {
    * The same applies to the i18n string.
    */
   badgeWhatSettingToDisplayByDefault:
-    | 'none'
-    | 'timeSaved'
-    | 'soundedSpeed'
-    | 'silenceSpeedRaw'
-    | 'volumeThreshold',
+    | "none"
+    | "timeSaved"
+    | "soundedSpeed"
+    | "silenceSpeedRaw"
+    | "volumeThreshold";
 
-  enableDesyncCorrection: boolean,
+  enableDesyncCorrection: boolean;
 
-  onPlaybackRateChangeFromOtherScripts: 'prevent' | 'updateSoundedSpeed' | 'doNothing',
+  onPlaybackRateChangeFromOtherScripts:
+    "prevent" | "updateSoundedSpeed" | "doNothing";
 
-  __lastHandledUpdateToVersion?: `${number}.${number}.${number}`,
+  __lastHandledUpdateToVersion?: `${number}.${number}.${number}`;
 
-  advancedMode: boolean,
-  simpleSlider: number,
+  advancedMode: boolean;
+  simpleSlider: number;
 
   /**
    * Whether we should skip sounded (loud) parts instead of silent parts.
    *
    * This is only supported by the cloning algorithm.
    */
-  oppositeDayMode: OppositeDayMode
+  oppositeDayMode: OppositeDayMode;
 }
 
 export const enum OppositeDayMode {
@@ -195,14 +199,14 @@ export const enum OppositeDayMode {
    * We have either not shown it anywhere yet, or we did show it,
    * but the user hasn't interacted with it.
    */
-  UNDISCOVERED = 'undiscovered',
-  ON = 'on',
-  OFF = 'off',
+  UNDISCOVERED = "undiscovered",
+  ON = "on",
+  OFF = "off",
   /**
    * The user has hidden the checkbox from the popup,
    * by toggling a setting on the options page.
    */
-  HIDDEN_BY_USER = 'hiddenByUser',
+  HIDDEN_BY_USER = "hiddenByUser",
 }
 
 export const OppositeDayMode_UNDISCOVERED = OppositeDayMode.UNDISCOVERED;
@@ -213,21 +217,21 @@ export const OppositeDayMode_HIDDEN_BY_USER = OppositeDayMode.HIDDEN_BY_USER;
 // https://developer.chrome.com/apps/storage#property-onChanged-changes
 export type MyStorageChanges = {
   [P in keyof Settings]?: {
-    newValue?: Settings[P],
-    oldValue?: Settings[P],
-  }
+    newValue?: Settings[P];
+    oldValue?: Settings[P];
+  };
 };
 
-export * from './enabledSettingDefaultValue';
-export * from './defaultSettings';
-export * from './getSettings';
-export * from './setSettings';
-export * from './ControllerKind';
-export * from './getAbsoluteClampedSilenceSpeed';
-export * from './settingsChanges2NewValues';
-export * from './togglableSettings';
-export * from './onChanged';
-export * from './localStorageOnlyKeys';
-export * from './filterOutLocalStorageOnlySettings';
-export * from './changeAlgorithmAndMaybeRelatedSettings';
-export * from './popupAdjustableRangeInputs';
+export * from "./enabledSettingDefaultValue";
+export * from "./defaultSettings";
+export * from "./getSettings";
+export * from "./setSettings";
+export * from "./ControllerKind";
+export * from "./getAbsoluteClampedSilenceSpeed";
+export * from "./settingsChanges2NewValues";
+export * from "./togglableSettings";
+export * from "./onChanged";
+export * from "./localStorageOnlyKeys";
+export * from "./filterOutLocalStorageOnlySettings";
+export * from "./changeAlgorithmAndMaybeRelatedSettings";
+export * from "./popupAdjustableRangeInputs";

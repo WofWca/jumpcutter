@@ -20,10 +20,13 @@
 
 // Importing this way because the Tone.js library has a lot of modules with side-effects and they get bundled.
 // TODO can we import `.ts` files instead of the built ones?
-import { setContext as toneSetContext, getContext as toneGetContext } from 'tone/build/esm/core/Global';
-import { connect as ToneConnect } from 'tone/build/esm/core/context/ToneAudioNode';
-import { PitchShift } from 'tone/build/esm/effect/PitchShift';
-import { ToneAudioNode } from 'tone/build/esm/core/context/ToneAudioNode';
+import {
+  setContext as toneSetContext,
+  getContext as toneGetContext,
+} from "tone/build/esm/core/Global";
+import { connect as ToneConnect } from "tone/build/esm/core/context/ToneAudioNode";
+import { PitchShift } from "tone/build/esm/effect/PitchShift";
+import { ToneAudioNode } from "tone/build/esm/core/context/ToneAudioNode";
 import {
   getWhenMomentGetsToStretchersDelayNodeOutput,
   getDelayFromInputToStretcherOutput,
@@ -31,10 +34,9 @@ import {
   getStretcherDelayChange,
   getRealtimeMargin,
   getStretcherSoundedDelay,
-} from '@/entry-points/content/helpers';
-import type { StretchInfo, AudioContextTime, TimeDelta } from '@/helpers';
-import { assertDev } from '@/helpers';
-
+} from "@/entry-points/content/helpers";
+import type { StretchInfo, AudioContextTime, TimeDelta } from "@/helpers";
+import { assertDev } from "@/helpers";
 
 // TODO make it into a setting?
 const CROSS_FADE_DURATION = 0.001;
@@ -46,9 +48,9 @@ const enum PitchSetting {
 }
 
 const pitchSettingToItsGainNodePropName = {
-  [PitchSetting.NORMAL]: 'normalSpeedGain',
-  [PitchSetting.SPEEDUP]: 'speedUpGain',
-  [PitchSetting.SLOWDOWN]: 'slowDownGain',
+  [PitchSetting.NORMAL]: "normalSpeedGain",
+  [PitchSetting.SPEEDUP]: "speedUpGain",
+  [PitchSetting.SLOWDOWN]: "slowDownGain",
 } as const;
 
 export default class StretcherAndPitchCorrectorNode {
@@ -57,31 +59,33 @@ export default class StretcherAndPitchCorrectorNode {
   private speedUpGain: GainNode;
   private slowDownGain: GainNode;
   private normalSpeedGain: GainNode;
-  private toneContext: ReturnType<typeof toneGetContext>
+  private toneContext: ReturnType<typeof toneGetContext>;
   private speedUpPitchShift: PitchShift;
   private slowDownPitchShift: PitchShift;
   private originalPitchCompensationDelay: DelayNode;
   private delayNode: DelayNode;
-  lastScheduledStretch?: StretchInfo & { speedupOrSlowdown: PitchSetting.SPEEDUP | PitchSetting.SLOWDOWN };
+  lastScheduledStretch?: StretchInfo & {
+    speedupOrSlowdown: PitchSetting.SPEEDUP | PitchSetting.SLOWDOWN;
+  };
   private lastElementSpeedChangeAtInputTime?: AudioContextTime;
 
   constructor(
     private context: AudioContext,
     maxDelay: TimeDelta,
     initialDelay: TimeDelta = 0,
-    private getSettings: () => ({
-      soundedSpeed: number,
-      silenceSpeed: number,
-      marginBefore: number,
-      marginAfter: number,
-    }),
+    private getSettings: () => {
+      soundedSpeed: number;
+      silenceSpeed: number;
+      marginBefore: number;
+      marginAfter: number;
+    },
     private getLookaheadDelay: () => number,
   ) {
     this.speedUpGain = context.createGain();
     this.slowDownGain = context.createGain();
     this.normalSpeedGain = context.createGain();
     this.speedUpGain.gain.value = 0;
-    this.slowDownGain.gain.value = 0
+    this.slowDownGain.gain.value = 0;
     this.normalSpeedGain.gain.value = 1;
 
     const oldToneContext = toneGetContext();
@@ -104,8 +108,11 @@ export default class StretcherAndPitchCorrectorNode {
     // https://github.com/Tonejs/Tone.js/blob/ed0d3b08be2b95220fffe7cce7eac32a5b77580e/Tone/effect/PitchShift.ts#L97-L117
     // This is so their outputs and original pitch outputs are in sync.
     const averagePitchShiftDelay = windowSize / 2;
-    this.originalPitchCompensationDelay = context.createDelay(averagePitchShiftDelay);
-    this.originalPitchCompensationDelay.delayTime.value = averagePitchShiftDelay;
+    this.originalPitchCompensationDelay = context.createDelay(
+      averagePitchShiftDelay,
+    );
+    this.originalPitchCompensationDelay.delayTime.value =
+      averagePitchShiftDelay;
     this.delayNode = context.createDelay(maxDelay);
     this.delayNode.delayTime.value = initialDelay;
 
@@ -133,9 +140,9 @@ export default class StretcherAndPitchCorrectorNode {
     sourceNode.connect(this.delayNode);
   }
   connectOutputTo(destinationNode: AudioNode): void {
-    this.speedUpPitchShift.connect(destinationNode)
-    this.slowDownPitchShift.connect(destinationNode)
-    this.originalPitchCompensationDelay.connect(destinationNode)
+    this.speedUpPitchShift.connect(destinationNode);
+    this.slowDownPitchShift.connect(destinationNode);
+    this.originalPitchCompensationDelay.connect(destinationNode);
   }
   connect = this.connectOutputTo;
 
@@ -150,9 +157,12 @@ export default class StretcherAndPitchCorrectorNode {
 
     // These are guaranteed to be non-null, because `onSilenceStart` is always called
     // before `onSilenceEnd`.
-    assertDev(this.lastScheduledStretch && this.lastElementSpeedChangeAtInputTime);
+    assertDev(
+      this.lastScheduledStretch && this.lastElementSpeedChangeAtInputTime,
+    );
     const lastScheduledStretcherDelayReset = this.lastScheduledStretch;
-    const lastElementSpeedChangeAtInputTime = this.lastElementSpeedChangeAtInputTime;
+    const lastElementSpeedChangeAtInputTime =
+      this.lastElementSpeedChangeAtInputTime;
     this.lastElementSpeedChangeAtInputTime = elementSpeedSwitchedAt;
 
     const lookaheadDelay = this.getLookaheadDelay();
@@ -162,7 +172,8 @@ export default class StretcherAndPitchCorrectorNode {
       elementSpeedSwitchedAt - lastElementSpeedChangeAtInputTime;
     // "IntrinsicTime" siffix refers to the intrinsic time of the media. Same for the other
     // variable names.
-    const lastSilenceSpeedLastsForIntrinsicTime = lastSilenceSpeedLastsForRealtime * settings.silenceSpeed;
+    const lastSilenceSpeedLastsForIntrinsicTime =
+      lastSilenceSpeedLastsForRealtime * settings.silenceSpeed;
 
     /**
      * The fact that we encountered a loud part (`onSilenceEnd`) doesn't mean that the entire
@@ -172,30 +183,35 @@ export default class StretcherAndPitchCorrectorNode {
      */
     const marginBeforePartAtSilenceSpeedIntrinsicTimeDuration = Math.min(
       lastSilenceSpeedLastsForIntrinsicTime,
-      settings.marginBefore
+      settings.marginBefore,
     );
     const marginBeforePartAtSilenceSpeedRealTimeDuration =
-      marginBeforePartAtSilenceSpeedIntrinsicTimeDuration / settings.silenceSpeed;
+      marginBeforePartAtSilenceSpeedIntrinsicTimeDuration /
+      settings.silenceSpeed;
     const marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration =
-      settings.marginBefore - marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
+      settings.marginBefore -
+      marginBeforePartAtSilenceSpeedIntrinsicTimeDuration;
     const marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration =
-      marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration / settings.soundedSpeed;
+      marginBeforePartAlreadyAtSoundedSpeedIntrinsicTimeDuration /
+      settings.soundedSpeed;
 
     /**
      * The time at which the moment from which the speed of the video needs to be slow has
      * been on the input (i.e. the output of the audio element).
      */
     const marginBeforeStartInputTime =
-      elementSpeedSwitchedAt
-      - marginBeforePartAtSilenceSpeedRealTimeDuration
-      - marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
+      elementSpeedSwitchedAt -
+      marginBeforePartAtSilenceSpeedRealTimeDuration -
+      marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
     // Same, but when it's going to be on the output.
-    const marginBeforeStartOutputTime = getWhenMomentGetsToStretchersDelayNodeOutput(
-      marginBeforeStartInputTime,
-      lookaheadDelay,
-      lastScheduledStretcherDelayReset
-    );
-    const marginBeforeStartOutputTimeTotalDelay = marginBeforeStartOutputTime - marginBeforeStartInputTime;
+    const marginBeforeStartOutputTime =
+      getWhenMomentGetsToStretchersDelayNodeOutput(
+        marginBeforeStartInputTime,
+        lookaheadDelay,
+        lastScheduledStretcherDelayReset,
+      );
+    const marginBeforeStartOutputTimeTotalDelay =
+      marginBeforeStartOutputTime - marginBeforeStartInputTime;
     const marginBeforeStartOutputTimeStretcherDelay =
       marginBeforeStartOutputTimeTotalDelay - lookaheadDelay;
 
@@ -209,17 +225,20 @@ export default class StretcherAndPitchCorrectorNode {
     // This is also the reason why `getWhenMomentGetsToStretchersDelayNodeOutput` function is so long.
     // Let's find this breakpoint.
 
-    if (marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime) {
+    if (
+      marginBeforeStartOutputTime < lastScheduledStretcherDelayReset.endTime
+    ) {
       // Cancel the complete delay reset, and instead stop decreasing it at `marginBeforeStartOutputTime`.
       this.interruptLastScheduledStretch(
         // A.k.a. `lastScheduledStretcherDelayReset.startTime`
         marginBeforeStartOutputTimeStretcherDelay,
-        marginBeforeStartOutputTime
+        marginBeforeStartOutputTime,
       );
     }
 
     const marginBeforePartAtSilenceSpeedStartOutputTime =
-      marginBeforeStartOutputTime + marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration
+      marginBeforeStartOutputTime +
+      marginBeforePartAlreadyAtSoundedSpeedRealTimeDuration;
     // const silenceSpeedPartStretchedDuration = getNewSnippetDuration(
     //   marginBeforePartAtSilenceSpeedRealTimeDuration,
     //   settings.silenceSpeed,
@@ -228,16 +247,19 @@ export default class StretcherAndPitchCorrectorNode {
     const stretcherDelayIncrease = getStretcherDelayChange(
       marginBeforePartAtSilenceSpeedRealTimeDuration,
       settings.silenceSpeed,
-      settings.soundedSpeed
+      settings.soundedSpeed,
     );
     // I think currently it should always be equal to the max delay.
-    const finalStretcherDelay = marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
+    const finalStretcherDelay =
+      marginBeforeStartOutputTimeStretcherDelay + stretcherDelayIncrease;
 
     const startValue = marginBeforeStartOutputTimeStretcherDelay;
     const endValue = finalStretcherDelay;
     const startTime = marginBeforePartAtSilenceSpeedStartOutputTime;
     // A.k.a. `marginBeforePartAtSilenceSpeedStartOutputTime + silenceSpeedPartStretchedDuration`
-    const endTime = elementSpeedSwitchedAt + getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
+    const endTime =
+      elementSpeedSwitchedAt +
+      getDelayFromInputToStretcherOutput(lookaheadDelay, finalStretcherDelay);
     this.stretch(startValue, endValue, startTime, endTime);
   }
   onSilenceStart(elementSpeedSwitchedAt: AudioContextTime): void {
@@ -245,13 +267,21 @@ export default class StretcherAndPitchCorrectorNode {
 
     const settings = this.getSettings();
 
-    const realtimeMarginBefore = getRealtimeMargin(settings.marginBefore, settings.soundedSpeed);
+    const realtimeMarginBefore = getRealtimeMargin(
+      settings.marginBefore,
+      settings.soundedSpeed,
+    );
     // When the time comes to increase the video speed, the stretcher's delay is always at its max value.
-    const stretcherDelayStartValue =
-      getStretcherSoundedDelay(settings.marginBefore, settings.soundedSpeed, settings.silenceSpeed);
+    const stretcherDelayStartValue = getStretcherSoundedDelay(
+      settings.marginBefore,
+      settings.soundedSpeed,
+      settings.silenceSpeed,
+    );
     const marginAfterEndOutputTime =
-      getDelayFromInputToStretcherOutput(this.getLookaheadDelay(), stretcherDelayStartValue)
-      - realtimeMarginBefore;
+      getDelayFromInputToStretcherOutput(
+        this.getLookaheadDelay(),
+        stretcherDelayStartValue,
+      ) - realtimeMarginBefore;
     const startIn = marginAfterEndOutputTime;
 
     const speedUpBy = settings.silenceSpeed / settings.soundedSpeed;
@@ -261,25 +291,30 @@ export default class StretcherAndPitchCorrectorNode {
     const snippetNewDuration = stretcherDelayStartValue / delayDecreaseSpeed;
     const startTime = elementSpeedSwitchedAt + startIn;
     const endTime = startTime + snippetNewDuration;
-    this.stretch(
-      stretcherDelayStartValue,
-      0,
-      startTime,
-      endTime,
-    );
+    this.stretch(stretcherDelayStartValue, 0, startTime, endTime);
   }
 
-  private setOutputPitchAt(pitchSetting: PitchSetting, time: AudioContextTime, oldPitchSetting: PitchSetting) {
+  private setOutputPitchAt(
+    pitchSetting: PitchSetting,
+    time: AudioContextTime,
+    oldPitchSetting: PitchSetting,
+  ) {
     if (IS_DEV_MODE) {
       if (pitchSetting === oldPitchSetting) {
-        console.warn(`New pitchSetting is the same as oldPitchSetting: ${pitchSetting}`);
+        console.warn(
+          `New pitchSetting is the same as oldPitchSetting: ${pitchSetting}`,
+        );
       }
       if (
-        pitchSetting === PitchSetting.SPEEDUP && oldPitchSetting === PitchSetting.SLOWDOWN
-        || pitchSetting === PitchSetting.SLOWDOWN && oldPitchSetting === PitchSetting.SPEEDUP
+        (pitchSetting === PitchSetting.SPEEDUP &&
+          oldPitchSetting === PitchSetting.SLOWDOWN) ||
+        (pitchSetting === PitchSetting.SLOWDOWN &&
+          oldPitchSetting === PitchSetting.SPEEDUP)
       ) {
-        console.warn(`Switching from ${oldPitchSetting} to ${pitchSetting} immediately. It hasn't been happening`
-          + 'at the time of writing, so not sure if it works as intended.');
+        console.warn(
+          `Switching from ${oldPitchSetting} to ${pitchSetting} immediately. It hasn't been happening` +
+            "at the time of writing, so not sure if it works as intended.",
+        );
       }
     }
 
@@ -298,7 +333,7 @@ export default class StretcherAndPitchCorrectorNode {
     if (IS_DEV_MODE) {
       const lateBy = this.context.currentTime - crossFadeStart;
       if (lateBy >= 0) {
-        console.error('crossFadeStart late by', lateBy)
+        console.error("crossFadeStart late by", lateBy);
       }
     }
   }
@@ -307,7 +342,7 @@ export default class StretcherAndPitchCorrectorNode {
     startValue: TimeDelta,
     endValue: TimeDelta,
     startTime: AudioContextTime,
-    endTime: AudioContextTime
+    endTime: AudioContextTime,
   ): void {
     if (startValue === endValue) {
       return;
@@ -316,28 +351,34 @@ export default class StretcherAndPitchCorrectorNode {
     this.delayNode.delayTime
       .setValueAtTime(startValue, startTime)
       .linearRampToValueAtTime(endValue, endTime);
-    const speedupOrSlowdown = endValue > startValue ? PitchSetting.SLOWDOWN : PitchSetting.SPEEDUP;
-    this.setOutputPitchAt(
-      speedupOrSlowdown,
-      startTime,
-      PitchSetting.NORMAL
-    );
+    const speedupOrSlowdown =
+      endValue > startValue ? PitchSetting.SLOWDOWN : PitchSetting.SPEEDUP;
+    this.setOutputPitchAt(speedupOrSlowdown, startTime, PitchSetting.NORMAL);
     this.setOutputPitchAt(PitchSetting.NORMAL, endTime, speedupOrSlowdown);
 
-    const speedChangeMultiplier = getStretchSpeedChangeMultiplier({ startValue, endValue, startTime, endTime });
+    const speedChangeMultiplier = getStretchSpeedChangeMultiplier({
+      startValue,
+      endValue,
+      startTime,
+      endTime,
+    });
     // So it is changed a bit earlier to make sure that tail time has passed and the pitch value is what we want it to
     // be.
     const earlierBy = 0.05;
     // Acutally we only need to do this when the user changes settings.
-    setTimeout(() => {
-      function speedChangeMultiplierToSemitones(m: number) {
-        return -12 * Math.log2(m);
-      }
-      const node = speedupOrSlowdown === PitchSetting.SPEEDUP
-        ? this.speedUpPitchShift
-        : this.slowDownPitchShift;
-      node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
-    }, (startTime - this.context.currentTime - earlierBy) * 1000);
+    setTimeout(
+      () => {
+        function speedChangeMultiplierToSemitones(m: number) {
+          return -12 * Math.log2(m);
+        }
+        const node =
+          speedupOrSlowdown === PitchSetting.SPEEDUP
+            ? this.speedUpPitchShift
+            : this.slowDownPitchShift;
+        node.pitch = speedChangeMultiplierToSemitones(speedChangeMultiplier);
+      },
+      (startTime - this.context.currentTime - earlierBy) * 1000,
+    );
 
     this.lastScheduledStretch = {
       startValue,
@@ -350,7 +391,7 @@ export default class StretcherAndPitchCorrectorNode {
     if (IS_DEV_MODE) {
       const lateBy = this.context.currentTime - startTime;
       if (lateBy >= 0) {
-        console.error('stretch startTime late by', lateBy);
+        console.error("stretch startTime late by", lateBy);
       }
     }
   }
@@ -359,9 +400,15 @@ export default class StretcherAndPitchCorrectorNode {
    * @param interruptAtTimeValue the value of the delay at `interruptAtTime`
    * @param interruptAtTime the time at which to stop changing the delay.
    */
-  private interruptLastScheduledStretch(interruptAtTimeValue: TimeDelta, interruptAtTime: AudioContextTime): void {
-    assertDev(this.lastScheduledStretch, 'Called `interruptLastScheduledStretch`, but no stretch has been scheduled '
-      + 'yet');
+  private interruptLastScheduledStretch(
+    interruptAtTimeValue: TimeDelta,
+    interruptAtTime: AudioContextTime,
+  ): void {
+    assertDev(
+      this.lastScheduledStretch,
+      "Called `interruptLastScheduledStretch`, but no stretch has been scheduled " +
+        "yet",
+    );
     // We don't need to specify the start time since it has been scheduled before in the `stretch` method
     this.delayNode.delayTime
       .cancelScheduledValues(interruptAtTime)
@@ -375,22 +422,29 @@ export default class StretcherAndPitchCorrectorNode {
     for (const node of allGainNodes) {
       node.gain.cancelScheduledValues(interruptAtTime);
     }
-    this.setOutputPitchAt(PitchSetting.NORMAL, interruptAtTime, this.lastScheduledStretch.speedupOrSlowdown);
+    this.setOutputPitchAt(
+      PitchSetting.NORMAL,
+      interruptAtTime,
+      this.lastScheduledStretch.speedupOrSlowdown,
+    );
 
     if (IS_DEV_MODE) {
       const lateBy = this.context.currentTime - interruptAtTime;
       if (lateBy >= 0) {
-        console.error('interruptAtTime late by', lateBy)
+        console.error("interruptAtTime late by", lateBy);
       }
 
-      const timeAfterStretchStart = interruptAtTime - this.lastScheduledStretch.startTime;
+      const timeAfterStretchStart =
+        interruptAtTime - this.lastScheduledStretch.startTime;
       // Though sometimes it happens to be 0. It is when SILENCE_END is immediately followed by SILENCE_START
       // in `silenceDetector.port.onmessage`, so `_stretcherAndPitch.onSilenceStart` & `_stretcherAndPitch.onSilenceEnd`
       // get called with equal `elementSpeedSwitchedAt` arguments. TODO should we do something about this?
       if (timeAfterStretchStart < 0) {
-        console.error(`A stretch interruption has been scheduled to take place ${timeAfterStretchStart}s before`
-          + ' the actual stretch start. At the time of writing it should not possible.'
-          + ' Make sure you have the consequences handled.');
+        console.error(
+          `A stretch interruption has been scheduled to take place ${timeAfterStretchStart}s before` +
+            " the actual stretch start. At the time of writing it should not possible." +
+            " Make sure you have the consequences handled.",
+        );
       }
     }
   }
@@ -403,7 +457,7 @@ export default class StretcherAndPitchCorrectorNode {
     this.delayNode.delayTime.value = getStretcherSoundedDelay(
       newSettings.marginBefore,
       newSettings.soundedSpeed,
-      newSettings.silenceSpeed
+      newSettings.silenceSpeed,
     );
   }
 
@@ -414,11 +468,16 @@ export default class StretcherAndPitchCorrectorNode {
     }
 
     if (IS_DEV_MODE) {
-      Object.values(this).forEach(propertyVal => {
-        if (propertyVal instanceof ToneAudioNode && !(toneAudioNodes as ToneAudioNode[]).includes(propertyVal)) {
-          console.warn('Undisposed ToneAudioNode found. Expected all to be disposed upon `destroy()` call');
+      Object.values(this).forEach((propertyVal) => {
+        if (
+          propertyVal instanceof ToneAudioNode &&
+          !(toneAudioNodes as ToneAudioNode[]).includes(propertyVal)
+        ) {
+          console.warn(
+            "Undisposed ToneAudioNode found. Expected all to be disposed upon `destroy()` call",
+          );
         }
-      })
+      });
     }
 
     this.toneContext.dispose();

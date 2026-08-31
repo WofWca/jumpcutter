@@ -18,11 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { KeyCombination } from '.';
-import { modifierFlagPropNames } from './modifierFlagPropNames';
+import type { KeyCombination } from ".";
+import { modifierFlagPropNames } from "./modifierFlagPropNames";
 
 export function eventToCombination(e: KeyboardEvent): KeyCombination {
-  const modifiers = modifierFlagPropNames.filter(flagName => e[flagName]);
+  const modifiers = modifierFlagPropNames.filter((flagName) => e[flagName]);
   const combination: KeyCombination = {
     code: e.code,
   };

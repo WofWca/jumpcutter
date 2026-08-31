@@ -18,11 +18,12 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getGeckoLikelyMaxNonMutedPlaybackRate } from '@/helpers';
+import { getGeckoLikelyMaxNonMutedPlaybackRate } from "@/helpers";
 
 // In Chromium the max value is 16 and when you assign to `.playbackRate` a higher value, it throws
 // (https://html.spec.whatwg.org/multipage/media.html#dom-media-playbackrate),
 // https://github.com/chromium/chromium/blob/46326599815cf2577efd7479d36946ea4a649083/third_party/blink/renderer/core/html/media/html_media_element.cc#L169-L171
-export const maxPlaybackRate = BUILD_DEFINITIONS.BROWSER === 'gecko'
-  ? getGeckoLikelyMaxNonMutedPlaybackRate()
-  : 16;
+export const maxPlaybackRate =
+  BUILD_DEFINITIONS.BROWSER === "gecko"
+    ? getGeckoLikelyMaxNonMutedPlaybackRate()
+    : 16;

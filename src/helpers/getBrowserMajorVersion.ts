@@ -3,8 +3,10 @@
  */
 export function getGeckoMajorVersion(): number | undefined {
   if (IS_DEV_MODE) {
-    if (BUILD_DEFINITIONS.BROWSER !== 'gecko') {
-      console.warn('`parseGeckoVersion` should not be used in non-gecko builds.');
+    if (BUILD_DEFINITIONS.BROWSER !== "gecko") {
+      console.warn(
+        "`parseGeckoVersion` should not be used in non-gecko builds.",
+      );
     }
   }
 
@@ -14,9 +16,7 @@ export function getGeckoMajorVersion(): number | undefined {
     return undefined;
   }
   const majorVersion = parseInt(majorVersionString);
-  return isNaN(majorVersion)
-    ? undefined
-    : majorVersion;
+  return isNaN(majorVersion) ? undefined : majorVersion;
 }
 
 /**
@@ -24,8 +24,10 @@ export function getGeckoMajorVersion(): number | undefined {
  */
 export function getChromiumMajorVersion(): number | undefined {
   if (IS_DEV_MODE) {
-    if (BUILD_DEFINITIONS.BROWSER !== 'chromium') {
-      console.warn('`getChromiumMajorVersion` should not be used in non-Chromium builds.');
+    if (BUILD_DEFINITIONS.BROWSER !== "chromium") {
+      console.warn(
+        "`getChromiumMajorVersion` should not be used in non-Chromium builds.",
+      );
     }
   }
 
@@ -35,7 +37,5 @@ export function getChromiumMajorVersion(): number | undefined {
     return undefined;
   }
   const majorVersion = parseInt(majorVersionString);
-  return isNaN(majorVersion)
-    ? undefined
-    : majorVersion;
+  return isNaN(majorVersion) ? undefined : majorVersion;
 }

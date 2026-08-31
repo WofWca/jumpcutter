@@ -21,18 +21,19 @@
 import type { Settings } from "./";
 
 export function changeAlgorithmAndMaybeRelatedSettings(
-  settings: Pick<Settings,
-    'algorithmSpecificSettings'
-    | 'useSeparateMarginSettingsForDifferentAlgorithms'
-    | 'experimentalControllerType'
-    | 'volumeThreshold'
-    | 'marginBefore'
-    | 'marginAfter'
+  settings: Pick<
+    Settings,
+    | "algorithmSpecificSettings"
+    | "useSeparateMarginSettingsForDifferentAlgorithms"
+    | "experimentalControllerType"
+    | "volumeThreshold"
+    | "marginBefore"
+    | "marginAfter"
   >,
-  newControllerType: Settings['experimentalControllerType']
+  newControllerType: Settings["experimentalControllerType"],
 ): Partial<Settings> {
   const baseValues = {
-    experimentalControllerType: newControllerType
+    experimentalControllerType: newControllerType,
   };
   if (!settings.useSeparateMarginSettingsForDifferentAlgorithms) {
     return baseValues;
@@ -47,7 +48,7 @@ export function changeAlgorithmAndMaybeRelatedSettings(
           volumeThreshold: settings.volumeThreshold,
           marginBefore: settings.marginBefore,
           marginAfter: settings.marginAfter,
-        }
+        },
       },
     };
   }

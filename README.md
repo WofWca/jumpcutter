@@ -10,8 +10,7 @@ Download:
 [![Chrome Web Store](docs/extension-store-badges/chrome.png)][chrome-web-store]
 [![Firefox Browser Add-ons](docs/extension-store-badges/mozilla.svg)][addons-mozilla-org]
 [![Microsoft Edge Add-ons](docs/extension-store-badges/microsoft.svg)][microsoft-edge-addons]
-or from GitHub: [Chromium](https://github.com/WofWca/jumpcutter/releases/latest/download/lmppdpldfpfdlipofacekcfleacbbncp_main.crx
-) / [Gecko (Firefox)](https://github.com/WofWca/jumpcutter/releases/latest/download/jump_cutter.xpi)
+or from GitHub: [Chromium](https://github.com/WofWca/jumpcutter/releases/latest/download/lmppdpldfpfdlipofacekcfleacbbncp_main.crx) / [Gecko (Firefox)](https://github.com/WofWca/jumpcutter/releases/latest/download/jump_cutter.xpi)
 
 Skips silent parts in videos, in real time.
 
@@ -27,6 +26,7 @@ This video's license: CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-n
 Not sure if I did comply with the license here.
 But I believe this use case would be considered "fair use" anyway.
  -->
+
 <https://user-images.githubusercontent.com/39462442/131825020-5308b879-0509-41a3-95c9-bb4ad8938dc0.mp4>
 
 Inspired by [this video](https://youtu.be/DQ8orIurGxw) by carykh.
@@ -88,6 +88,7 @@ so the playback rate is higher.
 Now, when we encounter a loud part, we go
 "aha! That might be a word, and it might start with 'th'".
 <!-- , which we might not have marked as loud, because 'th' is not that loud" -->
+
 As said above, we always delay (buffer) the audio for ~200ms
 before outputting it.
 So we know that these 200ms of buffered audio
@@ -115,6 +116,7 @@ Currently you can enable this algorithm by checking the "Use the experimental al
 <!-- Referenced lines and lines might get shifted.
 Need to reference specific commits perhaps,
 but I don't want to link to GitHub. -->
+
 We look for video elements by
 [injecting a script in all pages](./src/manifest_base.json#L16-L23)
 and simply
@@ -193,7 +195,7 @@ graph
     | Lookahead
 
     %% end
-    
+
     %% ElementPlaybackControllerStretching
 
     %% subgraph "ElementPlaybackControllerStretching"
@@ -231,48 +233,48 @@ graph
 </details>
 
 <!-- FYI this section is linked from CONTRIBUTING.md -->
+
 ## Contribute
 
-* [🌐 Translate (on Weblate)][weblate]
-* 👨‍💻 Code. See [CONTRIBUTING.md](./CONTRIBUTING.md) on how to get started. And feel free to contact me.
-* [💸 Donate](#donate)
-* General feedback and questioning my decisions is appreciated
+- [🌐 Translate (on Weblate)][weblate]
+- 👨‍💻 Code. See [CONTRIBUTING.md](./CONTRIBUTING.md) on how to get started. And feel free to contact me.
+- [💸 Donate](#donate)
+- General feedback and questioning my decisions is appreciated
 
 <!-- FYI this section is linked from CONTRIBUTING.md -->
+
 ## Build
 
 1. Install base tools:
-    * [Node.js](https://nodejs.org/).
-    * [Yarn v1](https://classic.yarnpkg.com/docs/install).
+   - [Node.js](https://nodejs.org/).
+   - [Yarn v1](https://classic.yarnpkg.com/docs/install).
 2. Run
 
-    ```bash
-    yarn install
-    ```
+   ```bash
+   yarn install
+   ```
 
-3.
-    Fill the `src/_locales` directory with localization files. Skip this step if they're already there. Either:
+3. Fill the `src/_locales` directory with localization files. Skip this step if they're already there. Either:
 
-    * If you're using `git`:
+   - If you're using `git`:
 
-        `git submodule update --init`
+     `git submodule update --init`
 
-    * If you don't want to use `git`, download them from the `translations` branch and put in `src/_locales` manually.
+   - If you don't want to use `git`, download them from the `translations` branch and put in `src/_locales` manually.
 
-4.
-    * To build for Gecko (e.g. Firefox):
+4. - To build for Gecko (e.g. Firefox):
 
-        ```bash
-        yarn build:gecko
-        ```
+     ```bash
+     yarn build:gecko
+     ```
 
-    * To build for Chromium (e.g. Chrome, Edge)
+   - To build for Chromium (e.g. Chrome, Edge)
 
-        ```bash
-        yarn build:chromium
-        ```
+     ```bash
+     yarn build:chromium
+     ```
 
-    Bundled files will appear in `./dist-gecko` (or `./dist-chromium`).
+   Bundled files will appear in `./dist-gecko` (or `./dist-chromium`).
 
 For development build, see [CONTRIBUTING.md](./CONTRIBUTING.md)
 
@@ -284,10 +286,10 @@ In short: it's fine.
 
 As with practically every other extension, websites you're visiting _may_ detect that you're using this (or alike) extension, and your settings for the extension, by observing:
 
-* playback rate changes of an element.
-* the fact that `createMediaElementSource` has been called for an element.
-* increased frequency of media chunk requests resulting from increased playback rate. This cannot be mitigated with disabling JavaScript.
-* the fact of requesting the same media twice, as a result of using the cloning algotihm.
+- playback rate changes of an element.
+- the fact that `createMediaElementSource` has been called for an element.
+- increased frequency of media chunk requests resulting from increased playback rate. This cannot be mitigated with disabling JavaScript.
+- the fact of requesting the same media twice, as a result of using the cloning algotihm.
 
 However I doubt that currently there are services that do specifically this. But there may be.
 
@@ -319,6 +321,7 @@ and if you donate $5 I'll only be able to buy one coffee with it
 and will not really be incentivized to continue the development".
 
 <!-- Isn't this turning into a blog post rant? -->
+
 A lot of people are willing to pay. They want to really purchase the product
 and be done with it fair and square
 instead of running a charity
@@ -342,13 +345,15 @@ I am not really considering it.
 
 ## Donate
 
-* <https://antiwarcommittee.info/en/sunrise/#help>
-* Monero (XMR):
+- <https://antiwarcommittee.info/en/sunrise/#help>
+- Monero (XMR):
 
   > <monero:88yzE5FbDoMVLXUXkbJXVHjNpP5S3xkMaTwBSxmetBDvQMbecMtVCXnQ44W6WRYsPGCPoAYp74ER9aDgBLYDGAAiSt2wu8a?tx_amount=0.050000000000&recipient_name=WofWca%20(https%3A//github.com/WofWca)&tx_description=Donation%20for%20Jump%20Cutter%20extension%20development>
-* Bitcoin (BTC):
+
+- Bitcoin (BTC):
 
   > <bitcoin:bc1qdfz74882mlk64pj4ctpdegvxv9r7jgq8xs2qkxpv3gkv5xqygvgs0fyzm9>
+
 <!-- * <https://liberapay.com/WofWca> -->
 
 <br>

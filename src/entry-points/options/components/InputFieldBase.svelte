@@ -17,10 +17,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
 -->
+<svelte:options immutable={true} />
 
-<svelte:options
-  immutable={true}
-/>
 <script lang="ts">
   export let label: string;
 
@@ -28,9 +26,7 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 </script>
 
 <div class="container">
-  <label
-    for={id}
-  >{label}</label>
+  <label for={id}>{label}</label>
   <div class="slot-container">
     <slot {id}></slot>
   </div>

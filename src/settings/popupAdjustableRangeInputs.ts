@@ -18,12 +18,13 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings } from './'
+import type { Settings } from "./";
 
-export type PopupAdjustableRangeInputsCapitalized = Capitalize<keyof Settings> & (
-  'VolumeThreshold'
-  | 'SoundedSpeed'
-  | 'SilenceSpeedRaw'
-  | 'MarginBefore'
-  | 'MarginAfter'
-);
+export type PopupAdjustableRangeInputsCapitalized = Capitalize<keyof Settings> &
+  (
+    | "VolumeThreshold"
+    | "SoundedSpeed"
+    | "SilenceSpeedRaw"
+    | "MarginBefore"
+    | "MarginAfter"
+  );

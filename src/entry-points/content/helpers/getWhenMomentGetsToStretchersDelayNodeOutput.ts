@@ -18,9 +18,9 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { AudioContextTime, StretchInfo, TimeDelta } from '@/helpers';
-import { getStretchSpeedChangeMultiplier } from './getStretchSpeedChangeMultiplier';
-import { getDelayFromInputToStretcherOutput } from './getDelayFromInputToStretcherOutput';
+import type { AudioContextTime, StretchInfo, TimeDelta } from "@/helpers";
+import { getStretchSpeedChangeMultiplier } from "./getStretchSpeedChangeMultiplier";
+import { getDelayFromInputToStretcherOutput } from "./getDelayFromInputToStretcherOutput";
 
 /**
  * The holy grail of the stretching algorithm.
@@ -34,10 +34,13 @@ import { getDelayFromInputToStretcherOutput } from './getDelayFromInputToStretch
 export function getWhenMomentGetsToStretchersDelayNodeOutput(
   momentTime: AudioContextTime,
   lookaheadDelay: TimeDelta,
-  lastScheduledStretcherDelayReset: StretchInfo
+  lastScheduledStretcherDelayReset: StretchInfo,
 ): AudioContextTime {
   const stretch = lastScheduledStretcherDelayReset;
-  const stretchEndTotalDelay = getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.endValue);
+  const stretchEndTotalDelay = getDelayFromInputToStretcherOutput(
+    lookaheadDelay,
+    stretch.endValue,
+  );
   // Simpliest case. The target moment is after the `stretch`'s end time
   // TODO DRY `const asdadsd = momentTime + stretchEndTotalDelay;`?
   if (momentTime + stretchEndTotalDelay >= stretch.endTime) {
@@ -48,12 +51,16 @@ export function getWhenMomentGetsToStretchersDelayNodeOutput(
     // At which point between its start and end would the target moment be played if we were to not actually change the
     // delay ?
     const originalTargetMomentOffsetRelativeToStretchStart =
-      momentTime + getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.startValue) - stretch.startTime;
+      momentTime +
+      getDelayFromInputToStretcherOutput(lookaheadDelay, stretch.startValue) -
+      stretch.startTime;
     // By how much the snippet is going to be stretched?
-    const playbackSpeedupDuringStretch = getStretchSpeedChangeMultiplier(stretch);
+    const playbackSpeedupDuringStretch =
+      getStretchSpeedChangeMultiplier(stretch);
     // How much time will pass since the stretch start until the target moment is played on the output?
     const finalTargetMomentOffsetRelativeToStretchStart =
-      originalTargetMomentOffsetRelativeToStretchStart / playbackSpeedupDuringStretch;
+      originalTargetMomentOffsetRelativeToStretchStart /
+      playbackSpeedupDuringStretch;
     return stretch.startTime + finalTargetMomentOffsetRelativeToStretchStart;
   }
 }

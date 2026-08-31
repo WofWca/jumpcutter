@@ -18,12 +18,12 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { TimeDelta } from '@/helpers';
+import type { TimeDelta } from "@/helpers";
 
 export function getTotalOutputDelay(
   lookaheadNodeDelay: TimeDelta,
   stretcherDelay: TimeDelta,
-  pitchCorrectorDelay: TimeDelta
+  pitchCorrectorDelay: TimeDelta,
 ): TimeDelta {
   return lookaheadNodeDelay + stretcherDelay + pitchCorrectorDelay;
 }

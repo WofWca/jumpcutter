@@ -18,9 +18,11 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings, MyStorageChanges } from './';
+import type { Settings, MyStorageChanges } from "./";
 
-export function settingsChanges2NewValues(changes: MyStorageChanges): Partial<Settings> {
+export function settingsChanges2NewValues(
+  changes: MyStorageChanges,
+): Partial<Settings> {
   const newValues: Partial<Settings> = {};
   for (const [settingName, change] of Object.entries(changes)) {
     (newValues[settingName as keyof Settings] as any) = change!.newValue;

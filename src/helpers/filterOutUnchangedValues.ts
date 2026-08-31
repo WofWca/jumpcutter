@@ -18,7 +18,7 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import isEqual from 'lodash/isEqual';
+import isEqual from "lodash/isEqual";
 
 /**
  * `browser.storage.onChanged` listeners in Firefox may be called with `newValue` equal to `oldValue` if you call
@@ -31,11 +31,13 @@ import isEqual from 'lodash/isEqual';
  * @return a shallow clone with unchanged value keys deleted.
  */
 export function filterOutUnchangedValues(
-  changes: Record<string, browser.storage.StorageChange>
+  changes: Record<string, browser.storage.StorageChange>,
 ): Record<string, browser.storage.StorageChange> {
   if (IS_DEV_MODE) {
-    if (!BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT) {
-      console.warn('It is redundant to use this function in Chromium');
+    if (
+      !BUILD_DEFINITIONS.BROWSER_MAY_HAVE_EQUAL_OLD_AND_NEW_VALUE_IN_STORAGE_CHANGE_OBJECT
+    ) {
+      console.warn("It is redundant to use this function in Chromium");
     }
   }
 

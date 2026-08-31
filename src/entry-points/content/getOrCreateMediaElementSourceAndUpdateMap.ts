@@ -19,9 +19,10 @@
  */
 
 // Doing it the way it's suggested in https://stackoverflow.com/a/39725071/10406353
-export const mediaElementSourcesMap:
-  WeakMap<HTMLMediaElement, [AudioContext, MediaElementAudioSourceNode]>
-  = new WeakMap();
+export const mediaElementSourcesMap: WeakMap<
+  HTMLMediaElement,
+  [AudioContext, MediaElementAudioSourceNode]
+> = new WeakMap();
 
 /**
  * @param getDefaultAudioContext must return an AudioContext that is gonna be used when
@@ -42,8 +43,10 @@ export function getOrCreateMediaElementSourceAndUpdateMap(
   } else {
     const audioContext = getDefaultAudioContext();
     const mediaElementSource = audioContext.createMediaElementSource(element);
-    const tuple: [AudioContext, MediaElementAudioSourceNode]
-      = [audioContext, mediaElementSource];
+    const tuple: [AudioContext, MediaElementAudioSourceNode] = [
+      audioContext,
+      mediaElementSource,
+    ];
     mediaElementSourcesMap.set(element, tuple);
     return tuple;
   }

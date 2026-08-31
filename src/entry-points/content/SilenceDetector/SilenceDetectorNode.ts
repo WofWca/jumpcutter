@@ -18,13 +18,13 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export * from './SilenceDetectorMessage';
+export * from "./SilenceDetectorMessage";
 
 export default class SilenceDetectorNode extends AudioWorkletNode {
   volumeThresholdParam: AudioParam;
   durationThresholdParam: AudioParam;
   constructor(context: AudioContext, durationThreshold: number) {
-    super(context, 'SilenceDetectorProcessor', {
+    super(context, "SilenceDetectorProcessor", {
       parameterData: {
         durationThreshold,
       },
@@ -36,13 +36,13 @@ export default class SilenceDetectorNode extends AudioWorkletNode {
       numberOfOutputs: 0,
     });
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.volumeThresholdParam = this.parameters.get('volumeThreshold')!;
+    this.volumeThresholdParam = this.parameters.get("volumeThreshold")!;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.durationThresholdParam = this.parameters.get('durationThreshold')!;
+    this.durationThresholdParam = this.parameters.get("durationThreshold")!;
     // TODO a workaround. Otherwise when you create an instance of `SilenceDetectorNode`, it appears to not have
     // the below `volumeThreshold` & `durationThreshold` setters.
     // Need to report this bug.
-    if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
+    if (BUILD_DEFINITIONS.BROWSER === "gecko") {
       Object.setPrototypeOf(this, SilenceDetectorNode.prototype);
     }
   }

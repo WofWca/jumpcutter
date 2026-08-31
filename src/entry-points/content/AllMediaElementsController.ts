@@ -18,67 +18,74 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 import {
-  Settings, getSettings, setSettings, addOnStorageChangedListener, MyStorageChanges, ControllerKind,
+  Settings,
+  getSettings,
+  setSettings,
+  addOnStorageChangedListener,
+  MyStorageChanges,
+  ControllerKind,
   settingsChanges2NewValues,
-} from '@/settings';
-import { assertNever, assertDev } from '@/helpers';
-import { isSourceCrossOrigin, requestIdleCallbackPolyfill } from '@/entry-points/content/helpers';
-import requestIdlePromise from './helpers/requestIdlePromise';
-import type ElementPlaybackControllerStretching from
-  './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching';
-import type ElementPlaybackControllerCloning from './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning';
-import type ElementPlaybackControllerAlwaysSounded from './ElementPlaybackControllerAlwaysSounded';
-import type TimeSavedTracker from './TimeSavedTracker';
-import extensionSettings2ControllerSettings from './helpers/extensionSettings2ControllerSettings';
-import broadcastStatus from './broadcastStatus';
-import once from 'lodash/once';
-import debounce from 'lodash/debounce';
+} from "@/settings";
+import { assertNever, assertDev } from "@/helpers";
 import {
-  mediaElementSourcesMap
-} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
+  isSourceCrossOrigin,
+  requestIdleCallbackPolyfill,
+} from "@/entry-points/content/helpers";
+import requestIdlePromise from "./helpers/requestIdlePromise";
+import type ElementPlaybackControllerStretching from "./ElementPlaybackControllerStretching/ElementPlaybackControllerStretching";
+import type ElementPlaybackControllerCloning from "./ElementPlaybackControllerCloning/ElementPlaybackControllerCloning";
+import type ElementPlaybackControllerAlwaysSounded from "./ElementPlaybackControllerAlwaysSounded";
+import type TimeSavedTracker from "./TimeSavedTracker";
+import extensionSettings2ControllerSettings from "./helpers/extensionSettings2ControllerSettings";
+import broadcastStatus from "./broadcastStatus";
+import once from "lodash/once";
+import debounce from "lodash/debounce";
+import { mediaElementSourcesMap } from "@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap";
 import {
-  lastPlaybackRateSetByThisExtensionMap, lastDefaultPlaybackRateSetByThisExtensionMap,
-  setPlaybackRateAndRememberIt
-} from './playbackRateChangeTracking';
-import type executeNonSettingsActionsT from './nonSettingsUserActions';
+  lastPlaybackRateSetByThisExtensionMap,
+  lastDefaultPlaybackRateSetByThisExtensionMap,
+  setPlaybackRateAndRememberIt,
+} from "./playbackRateChangeTracking";
+import type executeNonSettingsActionsT from "./nonSettingsUserActions";
 
 type SomeController =
-  ElementPlaybackControllerStretching
+  | ElementPlaybackControllerStretching
   | ElementPlaybackControllerCloning
   | ElementPlaybackControllerAlwaysSounded;
 
-export type TelemetryMessage =
-  SomeController['telemetry']
-  & {
-    sessionTimeSaved: TimeSavedTracker['timeSavedData'],
-    lifetimeTimeSaved: TimeSavedTracker['timeSavedData'],
-    controllerType: ControllerKind,
-    elementLikelyCorsRestricted: boolean,
-    elementCurrentSrc?: string,
-    createMediaElementSourceCalledForElement: boolean,
-    /**
-     * Remember that this could be `Infinity` for live streams,
-     * and if `.duration` is otherwise unknown.
-     */
-    elementRemainingIntrinsicDuration: number,
-  };
+export type TelemetryMessage = SomeController["telemetry"] & {
+  sessionTimeSaved: TimeSavedTracker["timeSavedData"];
+  lifetimeTimeSaved: TimeSavedTracker["timeSavedData"];
+  controllerType: ControllerKind;
+  elementLikelyCorsRestricted: boolean;
+  elementCurrentSrc?: string;
+  createMediaElementSourceCalledForElement: boolean;
+  /**
+   * Remember that this could be `Infinity` for live streams,
+   * and if `.duration` is otherwise unknown.
+   */
+  elementRemainingIntrinsicDuration: number;
+};
 
 let allMediaElementsControllerActive = false;
 
 type ControllerType<T extends ControllerKind> =
-  T extends ControllerKind.STRETCHING ? typeof ElementPlaybackControllerStretching
-  : T extends ControllerKind.CLONING ? typeof ElementPlaybackControllerCloning
-  : T extends ControllerKind.ALWAYS_SOUNDED ? typeof ElementPlaybackControllerAlwaysSounded
-  : never;
+  T extends ControllerKind.STRETCHING
+    ? typeof ElementPlaybackControllerStretching
+    : T extends ControllerKind.CLONING
+      ? typeof ElementPlaybackControllerCloning
+      : T extends ControllerKind.ALWAYS_SOUNDED
+        ? typeof ElementPlaybackControllerAlwaysSounded
+        : never;
 
 const controllerTypeDependsOnSettings = [
-  'experimentalControllerType',
-  'dontAttachToCrossOriginMedia',
+  "experimentalControllerType",
+  "dontAttachToCrossOriginMedia",
 ] as const;
 function getAppropriateControllerType(
-  settings: Pick<Settings, typeof controllerTypeDependsOnSettings[number]>,
+  settings: Pick<Settings, (typeof controllerTypeDependsOnSettings)[number]>,
   elementSourceIsCrossOrigin: boolean,
 ): ControllerKind {
   // Analyzing audio data of a CORS-restricted media element is impossible because its
@@ -96,48 +103,56 @@ function getAppropriateControllerType(
   // It's better to not attach to an element than to risk muting it as it's more confusing to the user.
   return elementSourceIsCrossOrigin && settings.dontAttachToCrossOriginMedia
     ? ControllerKind.ALWAYS_SOUNDED
-    : settings.experimentalControllerType
+    : settings.experimentalControllerType;
 }
 
 async function importAndCreateController<T extends ControllerKind>(
   kind: T,
   // Not just `constructorArgs` because e.g. settings can change while `import()` is ongoing.
-  getConstructorArgs: () => ConstructorParameters<ControllerType<T>>
+  getConstructorArgs: () => ConstructorParameters<ControllerType<T>>,
 ) {
   let Controller;
   switch (kind) {
     case ControllerKind.STRETCHING: {
-      Controller = (await import(
-        /* webpackExports: ['default'] */
-        './ElementPlaybackControllerStretching/ElementPlaybackControllerStretching'
-      )).default;
+      Controller = (
+        await import(
+          /* webpackExports: ['default'] */
+          "./ElementPlaybackControllerStretching/ElementPlaybackControllerStretching"
+        )
+      ).default;
       break;
     }
     case ControllerKind.CLONING: {
-      Controller = (await import(
-        /* webpackExports: ['default'] */
-        './ElementPlaybackControllerCloning/ElementPlaybackControllerCloning'
-      )).default;
+      Controller = (
+        await import(
+          /* webpackExports: ['default'] */
+          "./ElementPlaybackControllerCloning/ElementPlaybackControllerCloning"
+        )
+      ).default;
       break;
     }
     case ControllerKind.ALWAYS_SOUNDED: {
-      Controller = (await import(
-        /* webpackExports: ['default'] */
-        './ElementPlaybackControllerAlwaysSounded'
-      )).default;
+      Controller = (
+        await import(
+          /* webpackExports: ['default'] */
+          "./ElementPlaybackControllerAlwaysSounded"
+        )
+      ).default;
       break;
     }
-    default: assertNever(kind);
+    default:
+      assertNever(kind);
   }
   type Hack = ConstructorParameters<typeof ElementPlaybackControllerCloning>;
   const controller = new Controller(...(getConstructorArgs() as Hack));
   return controller;
 }
 
-function isElementIneligibleBecauseMuted(el: HTMLMediaElement, settings: Pick<Settings, 'omitMutedElements'>) {
-  return settings.omitMutedElements
-    ? el.muted
-    : false;
+function isElementIneligibleBecauseMuted(
+  el: HTMLMediaElement,
+  settings: Pick<Settings, "omitMutedElements">,
+) {
+  return settings.omitMutedElements ? el.muted : false;
 }
 
 // type BasicSettings = Pick<Settings, 'omitMutedElements'>;
@@ -153,36 +168,42 @@ export default class AllMediaElementsController {
   // TODO refactor: rename this var? Since there are now 2 time saved trackers.
   // And other such variables.
   timeSavedTracker: TimeSavedTracker | undefined;
-  private onSilenceSkippingSeek?: TimeSavedTracker['onSilenceSkippingSeek'];
-  private getLifetimeTimeSaved?: () => TimeSavedTracker['timeSavedData']
+  private onSilenceSkippingSeek?: TimeSavedTracker["onSilenceSkippingSeek"];
+  private getLifetimeTimeSaved?: () => TimeSavedTracker["timeSavedData"];
 
   private settings: Settings | undefined;
   // This is so we don't have to load all the settings keys just for basic functionality.
   // This is pretty stupid. Maybe it could be soumehow refactored to look less stupid.
-  private basicSettingsP: Promise<Pick<Settings, 'omitMutedElements'>>;
+  private basicSettingsP: Promise<Pick<Settings, "omitMutedElements">>;
   private basicSettings: Awaited<typeof this.basicSettingsP> | undefined;
   private _resolveDestroyedPromise!: () => void;
   // Whatever is added to `_destroyedPromise.then` doesn't need to be added to `_onDetachFromActiveElement`,
   // it will be called in `destroy`.
-  private _destroyedPromise = new Promise<void>(r => this._resolveDestroyedPromise = r);
+  private _destroyedPromise = new Promise<void>(
+    (r) => (this._resolveDestroyedPromise = r),
+  );
   private _onDetachFromActiveElement?: () => void;
 
   constructor() {
     if (IS_DEV_MODE) {
       if (allMediaElementsControllerActive) {
-        console.error("AllMediaElementsController is supposed to be a singletone, but it another was created while "
-          + "one has not been destroyed");
+        console.error(
+          "AllMediaElementsController is supposed to be a singletone, but it another was created while " +
+            "one has not been destroyed",
+        );
       }
       allMediaElementsControllerActive = true;
     }
 
-    this.basicSettingsP = getSettings('omitMutedElements').then(s => this.basicSettings = s);
+    this.basicSettingsP = getSettings("omitMutedElements").then(
+      (s) => (this.basicSettings = s),
+    );
 
     // Keep in mind that this listener is also responsible for the desturction of this instance in case
     // `enabled` gets changed to `false`.
     const reactToStorageChanges = (changes: MyStorageChanges) => {
       this.reactToSettingsNewValues(settingsChanges2NewValues(changes));
-    }
+    };
     const removeListener = addOnStorageChangedListener(reactToStorageChanges);
     this._destroyedPromise.then(removeListener);
   }
@@ -235,26 +256,34 @@ export default class AllMediaElementsController {
     Object.assign(this.settings, newValues);
     assertDev(this.controller);
 
-    if (controllerTypeDependsOnSettings.some(key => key in newValues)) {
+    if (controllerTypeDependsOnSettings.some((key) => key in newValues)) {
       const currentController = this.controller;
       const el = currentController.element;
-      assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
-      const newControllerType = getAppropriateControllerType(this.settings, this.activeMediaElementSourceIsCrossOrigin);
-      if (newControllerType !== (currentController.constructor as any).controllerType) {
+      assertDev(
+        typeof this.activeMediaElementSourceIsCrossOrigin === "boolean",
+      );
+      const newControllerType = getAppropriateControllerType(
+        this.settings,
+        this.activeMediaElementSourceIsCrossOrigin,
+      );
+      if (
+        newControllerType !==
+        (currentController.constructor as any).controllerType
+      ) {
         const oldController = currentController;
         this.controller = undefined;
         (async () => {
           await oldController.destroy();
           assertDev(this.settings);
-          const controller = this.controller = await importAndCreateController(
+          const controller = (this.controller = await importAndCreateController(
             newControllerType,
             () => [
               el,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               extensionSettings2ControllerSettings(this.settings!),
               (...args) => this.onSilenceSkippingSeek?.(...args),
-            ]
-          );
+            ],
+          ));
           controller.init();
           // Controller destruction is done in `detachFromActiveElement`.
         })();
@@ -263,25 +292,26 @@ export default class AllMediaElementsController {
       // See the `updateSettingsAndMaybeCreateNewInstance` method - `this.controller` may be uninitialized after that.
       // TODO maybe it would be more clear to explicitly reinstantiate it in this file, rather than in that method?
       this.controller = this.controller.updateSettingsAndMaybeCreateNewInstance(
-        extensionSettings2ControllerSettings(this.settings) // TODO creating a new object on each settings change? SMH.
+        extensionSettings2ControllerSettings(this.settings), // TODO creating a new object on each settings change? SMH.
       );
       // Controller destruction is done in `detachFromActiveElement`.
     }
   }
 
   private onConnect = (port: browser.runtime.Port | chrome.runtime.Port) => {
-    let executeNonSettingsActions: undefined | typeof executeNonSettingsActionsT
+    let executeNonSettingsActions:
+      undefined | typeof executeNonSettingsActionsT;
 
     let listener: (msg: unknown) => void;
     switch (port.name) {
-      case 'telemetry': {
+      case "telemetry": {
         let shouldRespondToNextRequest = true;
-        const setShouldRespondToNextRequestToTrue =
-          () => shouldRespondToNextRequest = true;
+        const setShouldRespondToNextRequestToTrue = () =>
+          (shouldRespondToNextRequest = true);
         listener = (msg: unknown) => {
           if (IS_DEV_MODE) {
-            if (msg !== 'getTelemetry') {
-              throw new Error('Unsupported message type')
+            if (msg !== "getTelemetry") {
+              throw new Error("Unsupported message type");
             }
           }
 
@@ -308,15 +338,18 @@ export default class AllMediaElementsController {
           setTimeout(setShouldRespondToNextRequestToTrue, 200);
 
           if (
-            !this.controller?.initialized
-            || !this.timeSavedTracker
-            || !this.getLifetimeTimeSaved
+            !this.controller?.initialized ||
+            !this.timeSavedTracker ||
+            !this.getLifetimeTimeSaved
           ) {
             return;
           }
-          assertDev(typeof this.activeMediaElementSourceIsCrossOrigin === 'boolean');
+          assertDev(
+            typeof this.activeMediaElementSourceIsCrossOrigin === "boolean",
+          );
           assertDev(this.activeMediaElement);
-          const elementLikelyCorsRestricted = this.activeMediaElementSourceIsCrossOrigin;
+          const elementLikelyCorsRestricted =
+            this.activeMediaElementSourceIsCrossOrigin;
           const telemetryMessage: TelemetryMessage = {
             ...this.controller.telemetry,
             sessionTimeSaved: this.timeSavedTracker.timeSavedData,
@@ -324,34 +357,44 @@ export default class AllMediaElementsController {
             controllerType: (this.controller.constructor as any).controllerType,
             elementLikelyCorsRestricted,
             // `undefined` for performance.
-            elementCurrentSrc: elementLikelyCorsRestricted ? this.activeMediaElement.currentSrc : undefined,
+            elementCurrentSrc: elementLikelyCorsRestricted
+              ? this.activeMediaElement.currentSrc
+              : undefined,
             // TODO check if the map lookup is too slow to do it several times per second.
-            createMediaElementSourceCalledForElement: !!mediaElementSourcesMap.get(this.activeMediaElement),
-            elementRemainingIntrinsicDuration: this.activeMediaElement.duration - this.activeMediaElement.currentTime,
+            createMediaElementSourceCalledForElement:
+              !!mediaElementSourcesMap.get(this.activeMediaElement),
+            elementRemainingIntrinsicDuration:
+              this.activeMediaElement.duration -
+              this.activeMediaElement.currentTime,
           };
           port.postMessage(telemetryMessage);
         };
         break;
       }
-      case 'nonSettingsActions': {
+      case "nonSettingsActions": {
         listener = async (msg: unknown) => {
           if (this.activeMediaElement == undefined) {
-            return
+            return;
           }
           if (executeNonSettingsActions == undefined) {
-            executeNonSettingsActions = (await import(
-              /* webpackExports: ['default'] */
-              './nonSettingsUserActions'
-            )).default
+            executeNonSettingsActions = (
+              await import(
+                /* webpackExports: ['default'] */
+                "./nonSettingsUserActions"
+              )
+            ).default;
           }
-          executeNonSettingsActions(this.activeMediaElement, msg as Parameters<typeof executeNonSettingsActions>[1]);
+          executeNonSettingsActions(
+            this.activeMediaElement,
+            msg as Parameters<typeof executeNonSettingsActions>[1],
+          );
         };
         break;
       }
       default: {
         // port.disconnect()
         if (IS_DEV_MODE) {
-          if (port.name !== 'timeSavedBadgeText') {
+          if (port.name !== "timeSavedBadgeText") {
             throw new Error(`Unrecognized port name "${port.name}"`);
           }
         }
@@ -360,19 +403,23 @@ export default class AllMediaElementsController {
     }
     port.onMessage.addListener(listener);
     this._destroyedPromise.then(() => port.onMessage.removeListener(listener));
-  }
+  };
   private _addOnConnectListener() {
     browserOrChrome.runtime.onConnect.addListener(this.onConnect);
-    this._destroyedPromise.then(() => browserOrChrome.runtime.onConnect.removeListener(this.onConnect));
+    this._destroyedPromise.then(() =>
+      browserOrChrome.runtime.onConnect.removeListener(this.onConnect),
+    );
   }
   private ensureAddOnConnectListener = once(this._addOnConnectListener);
 
   private async _initHotkeyListener() {
-    assertDev(this.settings)
-    const initHotkeyListener = (await import(
-      /* webpackExports: ['default'] */
-      './hotkeys'
-    )).default;
+    assertDev(this.settings);
+    const initHotkeyListener = (
+      await import(
+        /* webpackExports: ['default'] */
+        "./hotkeys"
+      )
+    ).default;
     await initHotkeyListener({
       getSettings: () => this.settings!,
       setSettings: (newSettings) => {
@@ -387,7 +434,7 @@ export default class AllMediaElementsController {
       },
       getActiveMediaElement: () => this.activeMediaElement,
       onStop: (callback) => this._destroyedPromise.then(callback),
-    })
+    });
   }
   private ensureInitHotkeyListener = once(this._initHotkeyListener);
 
@@ -399,7 +446,9 @@ export default class AllMediaElementsController {
         // algorithm.
         // TODO fix: I think this can happen when the video is muted initially and you unmute
         // it while it's still not loaded.
-        console.warn('Attaching to an element with `el.readyState < HTMLMediaElement.HAVE_METADATA`');
+        console.warn(
+          "Attaching to an element with `el.readyState < HTMLMediaElement.HAVE_METADATA`",
+        );
       }
     }
 
@@ -415,29 +464,33 @@ export default class AllMediaElementsController {
     }
     this.activeMediaElement = el;
 
-    assertDev(this._onDetachFromActiveElement === undefined, 'I think `_onDetachFromActiveElement` '
-      + `should be \`undefined\` here. Instead it is ${this._onDetachFromActiveElement}`);
-    const onDetachCallbacks: Array<() => void> = []
+    assertDev(
+      this._onDetachFromActiveElement === undefined,
+      "I think `_onDetachFromActiveElement` " +
+        `should be \`undefined\` here. Instead it is ${this._onDetachFromActiveElement}`,
+    );
+    const onDetachCallbacks: Array<() => void> = [];
     let onDetach = (callback: () => void) => {
-      onDetachCallbacks.push(callback)
-    }
+      onDetachCallbacks.push(callback);
+    };
     this._onDetachFromActiveElement = () => {
-      onDetachCallbacks.forEach(cb => cb());
-      this._onDetachFromActiveElement = undefined
+      onDetachCallbacks.forEach((cb) => cb());
+      this._onDetachFromActiveElement = undefined;
 
       // We have been ordered to detach from the element.
       // From now on just invoke the cleanup callbacks immediately.
-      onDetach = (callback) => callback()
-    }
+      onDetach = (callback) => callback();
+    };
 
     // Currently this is technically not required since `this.activeMediaElement` is immediately reassigned
     // in the line above after the `detachFromActiveElement` call.
-    onDetach(() => this.activeMediaElement = undefined);
+    onDetach(() => (this.activeMediaElement = undefined));
 
     await this.ensureLoadSettings();
-    assertDev(this.settings)
+    assertDev(this.settings);
 
-    const elCrossOrigin = this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
+    const elCrossOrigin = (this.activeMediaElementSourceIsCrossOrigin =
+      isSourceCrossOrigin(el));
     const onMaybeSourceChange = () => {
       this.activeMediaElementSourceIsCrossOrigin = isSourceCrossOrigin(el);
       // TODO perhaps we also need to re-run the controller selection code (which is inside
@@ -449,8 +502,8 @@ export default class AllMediaElementsController {
     // has been called manually), but you pretty much can't change source and begin its playback
     // without firing the 'loadstart' event.
     // So this is reliable.
-    el.addEventListener('loadstart', onMaybeSourceChange, { passive: true });
-    onDetach(() => el.removeEventListener('loadstart', onMaybeSourceChange));
+    el.addEventListener("loadstart", onMaybeSourceChange, { passive: true });
+    onDetach(() => el.removeEventListener("loadstart", onMaybeSourceChange));
 
     const controllerP = importAndCreateController(
       getAppropriateControllerType(this.settings, elCrossOrigin),
@@ -459,8 +512,8 @@ export default class AllMediaElementsController {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extensionSettings2ControllerSettings(this.settings!),
         (...args) => this.onSilenceSkippingSeek?.(...args),
-      ]
-    ).then(async controller => {
+      ],
+    ).then(async (controller) => {
       this.controller = controller;
       await controller.init();
       // Controller destruction is done in `detachFromActiveElement`.
@@ -472,71 +525,69 @@ export default class AllMediaElementsController {
       hotkeyListenerP = this.ensureInitHotkeyListener();
     }
 
-    let onSilenceSkippingSeek1: typeof this.onSilenceSkippingSeek
-    let onSilenceSkippingSeek2: typeof this.onSilenceSkippingSeek
+    let onSilenceSkippingSeek1: typeof this.onSilenceSkippingSeek;
+    let onSilenceSkippingSeek2: typeof this.onSilenceSkippingSeek;
     this.onSilenceSkippingSeek = (...args) => {
-      onSilenceSkippingSeek1?.(...args)
-      onSilenceSkippingSeek2?.(...args)
-    }
-    onDetach(() => this.onSilenceSkippingSeek = undefined);
+      onSilenceSkippingSeek1?.(...args);
+      onSilenceSkippingSeek2?.(...args);
+    };
+    onDetach(() => (this.onSilenceSkippingSeek = undefined));
 
     const TimeSavedTrackerPromise = import(
       /* webpackExports: ['default'] */
-      './TimeSavedTracker'
+      "./TimeSavedTracker"
     );
     // TODO an option to disable it.
     const timeSavedTrackerPromise = (async () => {
-      const TimeSavedTracker = (await TimeSavedTrackerPromise).default
+      const TimeSavedTracker = (await TimeSavedTrackerPromise).default;
       await controllerP; // It doesn't make sense to measure its effectiveness if it hasn't actually started working yet.
-      const timeSavedTracker = this.timeSavedTracker = new TimeSavedTracker(
+      const timeSavedTracker = (this.timeSavedTracker = new TimeSavedTracker(
         el,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.settings!,
         addOnStorageChangedListener,
-      );
+      ));
       onDetach(() => timeSavedTracker.destroy());
 
       onSilenceSkippingSeek1 =
         timeSavedTracker.onSilenceSkippingSeek.bind(timeSavedTracker);
 
-      return timeSavedTracker
+      return timeSavedTracker;
     })();
 
     // TODO an option to disable it.
-    const trackLifetimeTimeSaved = true
+    const trackLifetimeTimeSaved = true;
     if (trackLifetimeTimeSaved) {
       const importP = import(
         /* webpackExports: ['default'] */
-        './lifetimeTimeSaved'
+        "./lifetimeTimeSaved"
       );
       (async () => {
-        const startTrackingLifetimeTimeSaved = (await importP).default
-        const TimeSavedTracker = (await TimeSavedTrackerPromise).default
+        const startTrackingLifetimeTimeSaved = (await importP).default;
+        const TimeSavedTracker = (await TimeSavedTrackerPromise).default;
         await controllerP; // Same as above
         // Note that this will delay all telemetry.
-        await requestIdlePromise({ timeout: 10_000 })
+        await requestIdlePromise({ timeout: 10_000 });
 
-        const {
-          getLifetimeTimeSaved,
-          onSilenceSkippingSeek
-        } = startTrackingLifetimeTimeSaved(
-          el,
-          this.settings!,
-          (newSettingsValues) => {
-            setSettings(newSettingsValues);
+        const { getLifetimeTimeSaved, onSilenceSkippingSeek } =
+          startTrackingLifetimeTimeSaved(
+            el,
+            this.settings!,
+            (newSettingsValues) => {
+              setSettings(newSettingsValues);
 
-            // We could have called `this.reactToSettingsNewValues` instead,
-            // but let's not do that for performance,
-            // because it's not interested in the changes
-            // to these "time saved" values.
-            Object.assign(this.settings!, newSettingsValues);
-          },
-          TimeSavedTracker,
-          onDetach,
-        )
-        onSilenceSkippingSeek2 = onSilenceSkippingSeek
+              // We could have called `this.reactToSettingsNewValues` instead,
+              // but let's not do that for performance,
+              // because it's not interested in the changes
+              // to these "time saved" values.
+              Object.assign(this.settings!, newSettingsValues);
+            },
+            TimeSavedTracker,
+            onDetach,
+          );
+        onSilenceSkippingSeek2 = onSilenceSkippingSeek;
 
-        this.getLifetimeTimeSaved = getLifetimeTimeSaved
+        this.getLifetimeTimeSaved = getLifetimeTimeSaved;
         onDetach(() => {
           if (this.getLifetimeTimeSaved !== getLifetimeTimeSaved) {
             // Note that this is not the only place that would be affected
@@ -546,7 +597,7 @@ export default class AllMediaElementsController {
                 "Race condition: this.getLifetimeTimeSaved !== getLifetimeTimeSaved",
                 this.getLifetimeTimeSaved,
                 getLifetimeTimeSaved,
-                "maybe we tried to attach to an element before detaching from the previous one"
+                "maybe we tried to attach to an element before detaching from the previous one",
               );
 
             return;
@@ -580,47 +631,56 @@ export default class AllMediaElementsController {
       // there, but let's super-ensure it.
       // Semantically it says "we approve the current values".
       lastPlaybackRateSetByThisExtensionMap.set(el, el.playbackRate);
-      lastDefaultPlaybackRateSetByThisExtensionMap.set(el, el.defaultPlaybackRate);
+      lastDefaultPlaybackRateSetByThisExtensionMap.set(
+        el,
+        el.defaultPlaybackRate,
+      );
 
       // A quick and dirty fix for Twitch (https://github.com/WofWca/jumpcutter/issues/25).
       // TODO improvement: https://github.com/WofWca/jumpcutter/issues/101.
       // So people don't have to go to settings.
-      const forcePrevent = (
+      const forcePrevent =
         // Check if the setting has the default value (so the user didn't change it, otherwise
         // they probably want different behavior).
-        [undefined, 'updateSoundedSpeed'].includes(
-          this.settings!.onPlaybackRateChangeFromOtherScripts
-        )
+        [undefined, "updateSoundedSpeed"].includes(
+          this.settings!.onPlaybackRateChangeFromOtherScripts,
+        ) &&
         // So people have a way of tirning this off.
         // @ts-expect-error 2339
-        && !this.settings.dontForcePreventPlaybackRateChangesOnTwitch
-        && ['www.twitch.tv', 'twitch.tv'].includes(document.location.host)
+        !this.settings.dontForcePreventPlaybackRateChangesOnTwitch &&
+        ["www.twitch.tv", "twitch.tv"].includes(document.location.host) &&
         // 2050-01-01. In case I get hit by a bus.
-        && Date.now() < 2524608000000
-      );
+        Date.now() < 2524608000000;
 
       const ratechangeListener = (event: Event) => {
         const el_ = event.target as HTMLMediaElement;
 
         if (IS_DEV_MODE) {
           if (lastPlaybackRateSetByThisExtensionMap.get(el_) === undefined) {
-            console.warn('Expected playbackRate to have been set by us at least once');
+            console.warn(
+              "Expected playbackRate to have been set by us at least once",
+            );
           }
-          if (lastDefaultPlaybackRateSetByThisExtensionMap.get(el_) === undefined) {
-            console.warn('Expected defaultPlaybackRate to have been set by us at least once');
+          if (
+            lastDefaultPlaybackRateSetByThisExtensionMap.get(el_) === undefined
+          ) {
+            console.warn(
+              "Expected defaultPlaybackRate to have been set by us at least once",
+            );
           }
         }
 
         switch (
           !forcePrevent
             ? this.settings!.onPlaybackRateChangeFromOtherScripts
-            : 'prevent'
+            : "prevent"
         ) {
-          case 'updateSoundedSpeed': {
-            const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
+          case "updateSoundedSpeed": {
+            const lastPlaybackRateSetByUs =
+              lastPlaybackRateSetByThisExtensionMap.get(el_);
             if (
-              el_.playbackRate !== lastPlaybackRateSetByUs
-              && lastPlaybackRateSetByUs !== undefined
+              el_.playbackRate !== lastPlaybackRateSetByUs &&
+              lastPlaybackRateSetByUs !== undefined
             ) {
               // TODO improvement: hey, how about we watch `defaultPlaybackRate` instead of `playbackRate`?
               // While it may make more, sense, unfortunately it's rare that websites ever use `defaultPlaybackRate`.
@@ -635,19 +695,22 @@ export default class AllMediaElementsController {
               this.reactToSettingsNewValues(settingsNewValues);
               setSettings(settingsNewValues);
               if (IS_DEV_MODE) {
-                console.warn('Updating soundedSpeed because apparently playbackRate was changed by'
-                  + ' something other that this extension.');
+                console.warn(
+                  "Updating soundedSpeed because apparently playbackRate was changed by" +
+                    " something other that this extension.",
+                );
               }
             }
             break;
           }
-          case 'prevent': {
+          case "prevent": {
             // Consider doing this for `defaultPlaybackRate` as well.
-            const lastPlaybackRateSetByUs = lastPlaybackRateSetByThisExtensionMap.get(el_);
+            const lastPlaybackRateSetByUs =
+              lastPlaybackRateSetByThisExtensionMap.get(el_);
             if (
-              el_.playbackRate !== lastPlaybackRateSetByUs
+              el_.playbackRate !== lastPlaybackRateSetByUs &&
               // Just in case.
-              && lastPlaybackRateSetByUs !== undefined
+              lastPlaybackRateSetByUs !== undefined
             ) {
               setPlaybackRateAndRememberIt(el_, lastPlaybackRateSetByUs);
               // The website may be listening to 'ratechange' events and update `playbackRate`
@@ -666,41 +729,48 @@ export default class AllMediaElementsController {
         // `onPlaybackRateChangeFromOtherScripts === 'prevent'`.
         capture: true,
         passive: true,
-      }
+      };
       // TODO perf: we could be not attaching the listener at all if
       // `onPlaybackRateChangeFromOtherScripts === 'doNothing'`, and then attach it when
       // this gets changed.
-      el.addEventListener('ratechange', ratechangeListener, listenerOptions);
-      onDetach(
-        () => el.removeEventListener('ratechange', ratechangeListener, listenerOptions)
+      el.addEventListener("ratechange", ratechangeListener, listenerOptions);
+      onDetach(() =>
+        el.removeEventListener(
+          "ratechange",
+          ratechangeListener,
+          listenerOptions,
+        ),
       );
     }
 
     // TODO feat: don't require page reload for this settings change
     // to take effect.
-    let sendingTimeSavedMessagesForBadgeP: undefined | Promise<void>
-    if (this.settings.badgeWhatSettingToDisplayByDefault === 'timeSaved') {
+    let sendingTimeSavedMessagesForBadgeP: undefined | Promise<void>;
+    if (this.settings.badgeWhatSettingToDisplayByDefault === "timeSaved") {
       sendingTimeSavedMessagesForBadgeP = (async () => {
-        const startSendingTimeSavedMessagesForBadge = (await import(
-          /* webpackExports: ['startSendingTimeSavedMessagesForBadge'] */
-          './badgeTimeSaved'
-        )).startSendingTimeSavedMessagesForBadge;
-        await requestIdlePromise({ timeout: 20_000 })
+        const startSendingTimeSavedMessagesForBadge = (
+          await import(
+            /* webpackExports: ['startSendingTimeSavedMessagesForBadge'] */
+            "./badgeTimeSaved"
+          )
+        ).startSendingTimeSavedMessagesForBadge;
+        await requestIdlePromise({ timeout: 20_000 });
 
         await startSendingTimeSavedMessagesForBadge(
           el,
           this.settings!,
           addOnStorageChangedListener,
           timeSavedTrackerPromise,
-          onDetach
+          onDetach,
         );
       })();
     }
 
     await controllerP;
-    hotkeyListenerP && await hotkeyListenerP;
+    hotkeyListenerP && (await hotkeyListenerP);
     await timeSavedTrackerPromise;
-    sendingTimeSavedMessagesForBadgeP && await sendingTimeSavedMessagesForBadgeP
+    sendingTimeSavedMessagesForBadgeP &&
+      (await sendingTimeSavedMessagesForBadgeP);
 
     this.ensureAddOnConnectListener();
     // Not doing this at the beginning of the function, beside `this.activeMediaElement = el;` because the popup
@@ -718,7 +788,7 @@ export default class AllMediaElementsController {
     if (!isElementIneligibleBecauseMuted(el, this.basicSettings)) {
       this.ensureAttachToElement(el);
     }
-  }
+  };
   // private ensureAttachToEventTargetElementIfGotUnmutedAndIsPlayingAndOmitMutedIsTrue = async (e: Event) => {
   private onvolumechange = async (e: Event) => {
     const el = e.target as HTMLMediaElement;
@@ -737,8 +807,10 @@ export default class AllMediaElementsController {
         this.ensureAttachToElement(el);
       }
     }
-  }
-  private handleNewElements(basicSettings: Exclude<typeof this.basicSettings, undefined>) {
+  };
+  private handleNewElements(
+    basicSettings: Exclude<typeof this.basicSettings, undefined>,
+  ) {
     const newElements = this.unhandledNewElements;
     this.unhandledNewElements = new Set();
 
@@ -750,14 +822,27 @@ export default class AllMediaElementsController {
 
       // Make the active element the one that got started last.
       // Why not 'play'? See the comment about `el.readyState` below.
-      el.addEventListener('playing', this.ensureAttachToEventTargetElementIfEligible, { passive: true });
-      this._destroyedPromise.then(() => el.removeEventListener('playing', this.ensureAttachToEventTargetElementIfEligible));
+      el.addEventListener(
+        "playing",
+        this.ensureAttachToEventTargetElementIfEligible,
+        { passive: true },
+      );
+      this._destroyedPromise.then(() =>
+        el.removeEventListener(
+          "playing",
+          this.ensureAttachToEventTargetElementIfEligible,
+        ),
+      );
 
       if (el.muted) {
         this.handledMutedElements.add(el);
       }
-      el.addEventListener('volumechange', this.onvolumechange, { passive: true });
-      this._destroyedPromise.then(() => el.removeEventListener('volumechange', this.onvolumechange));
+      el.addEventListener("volumechange", this.onvolumechange, {
+        passive: true,
+      });
+      this._destroyedPromise.then(() =>
+        el.removeEventListener("volumechange", this.onvolumechange),
+      );
 
       // TODO should we detach when it gets muted again? Maybe make a separate option for this?
       // Or should we maybe move this logic to the Controller?
@@ -766,11 +851,11 @@ export default class AllMediaElementsController {
     }
 
     const eligibleForAttachmentElements: HTMLMediaElement[] = [];
-    newElements.forEach(el => {
+    newElements.forEach((el) => {
       if (!isElementIneligibleBecauseMuted(el, basicSettings)) {
         eligibleForAttachmentElements.push(el);
       }
-    })
+    });
 
     // Attach to the first new element that is not paused, even if we're already attached to another.
     // The thoguht process is like this - if such an element has been inserted, it is most likely due to the user
@@ -788,7 +873,7 @@ export default class AllMediaElementsController {
     if (!this.activeMediaElement) {
       for (const el of eligibleForAttachmentElements) {
         if (
-          el.currentTime > 0
+          el.currentTime > 0 &&
           // It is possilble for an element to have `currentTime > 0` while having its `readyState === HAVE_NOTHING`.
           // For example, this can happen if a website resumes playback from where the user stopped watching it on
           // another occasion (e.g. Odysee). Or with streams. This is mostly to ensure that we don't attach to
@@ -798,7 +883,7 @@ export default class AllMediaElementsController {
           // every other call to `ensureAttach`. Or make `ensureAttach` an async function
           // that awaits for the element to become ready. Don't forget to cancel the attachment
           // if it was called again with a new element.
-          && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+          el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
         ) {
           this.ensureAttachToElement(el);
           break;
@@ -808,19 +893,21 @@ export default class AllMediaElementsController {
     // Otherwise it seems that the only benefit of attaching to some other element is that it can be started with a
     // pause/unpause hotkey.
   }
-  private debouncedHandleNewElements = debounce(this.handleNewElements, 0, { maxWait: 3000 });
+  private debouncedHandleNewElements = debounce(this.handleNewElements, 0, {
+    maxWait: 3000,
+  });
   /**
    * Calling with the same element multiple times is fine, calling multiple times on the same tick is fine.
    * Order in which elements are passed in fact matters, but in practice not very much.
    */
   public onNewMediaElements(...newElements: HTMLMediaElement[]): void {
-    newElements.forEach(el => this.unhandledNewElements.add(el));
+    newElements.forEach((el) => this.unhandledNewElements.add(el));
     // TODO actually we don't currently have to await for `this.basicSettingsP` if the element is not muted,
     // so something like `isPotentiallyIneligibleForAttachment` would do in that case. It would probably
     // unreasonably complicate the code a lot though.
     this.basicSettingsP.then(() => {
       assertDev(this.basicSettings);
       this.debouncedHandleNewElements(this.basicSettings);
-    })
+    });
   }
 }

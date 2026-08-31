@@ -25,10 +25,10 @@ export default class WorkaroundAudioWorkletProcessor extends AudioWorkletProcess
   constructor(...args: ConstructorParameters<typeof AudioWorkletProcessor>) {
     super(...args);
     this.keepAlive = true;
-    this.port.onmessage = e => {
-      if (e.data === 'destroy') {
+    this.port.onmessage = (e) => {
+      if (e.data === "destroy") {
         this.keepAlive = false;
       }
-    }
+    };
   }
 }

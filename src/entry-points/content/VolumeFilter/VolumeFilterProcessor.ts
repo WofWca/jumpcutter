@@ -18,8 +18,8 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import WorkaroundAudioWorkletProcessor from '../WorkaroundAudioWorkletProcessor';
-import type { TimeDelta } from '@/helpers';
+import WorkaroundAudioWorkletProcessor from "../WorkaroundAudioWorkletProcessor";
+import type { TimeDelta } from "@/helpers";
 
 const SAMPLES_PER_QUANTUM = 128;
 // This is the minimum number a broswer should support, apparently. TODO make sure this is correct.
@@ -75,32 +75,47 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
       maxSmoothingWindowLength: options.parameterData.smoothingWindowLength,
       ...options.processorOptions,
     };
-    const bufferLength = windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength);
+    const bufferLength = windowLengthNumSecondsToSamples(
+      this._options.maxSmoothingWindowLength,
+    );
     this._sampleSquaresRingBuffer = new SingleChannelRingBuffer(bufferLength);
   }
   static get parameterDescriptors() {
     return [
       // The length (duration, one could say) of the window, values of which affect the output.
       {
-        name: 'smoothingWindowLength',
+        name: "smoothingWindowLength",
         defaultValue: 0.02,
         minValue: 0,
         // maxValue: this._options.maxSmoothingWindowLength? But it's static.
-        automationRate: 'k-rate',
+        automationRate: "k-rate",
       },
     ];
   }
-  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>) {
+  process(
+    inputs: Float32Array[][],
+    outputs: Float32Array[][],
+    parameters: Record<string, Float32Array>,
+  ) {
     const smoothingWindowLength = parameters.smoothingWindowLength[0];
-    const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(smoothingWindowLength);
+    const smoothingWindowLengthSamples = windowLengthNumSecondsToSamples(
+      smoothingWindowLength,
+    );
 
     if (IS_DEV_MODE) {
       if (
-        smoothingWindowLengthSamples !== windowLengthNumSecondsToSamples(this._options.maxSmoothingWindowLength)
-        && !devErrorShown
+        smoothingWindowLengthSamples !==
+          windowLengthNumSecondsToSamples(
+            this._options.maxSmoothingWindowLength,
+          ) &&
+        !devErrorShown
       ) {
-        console.error('Looks like you\'ve started dynamically changing `smoothingWindowLength`. You\'ll probably need'
-          + ' to revert the commit that introduced this change.', smoothingWindowLength, this._options.maxSmoothingWindowLength)
+        console.error(
+          "Looks like you've started dynamically changing `smoothingWindowLength`. You'll probably need" +
+            " to revert the commit that introduced this change.",
+          smoothingWindowLength,
+          this._options.maxSmoothingWindowLength,
+        );
         devErrorShown = true;
       }
     }
@@ -120,7 +135,9 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
         // > However, plans are already in place to revise the specification
         // > to allow the size of the audio blocks to be changed
         // > depending on circumstances
-        throw new Error('Splish-splash. Your assumptions about quantum length are trash');
+        throw new Error(
+          "Splish-splash. Your assumptions about quantum length are trash",
+        );
       }
     }
 
@@ -131,15 +148,17 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
         allChannelsSampleSquareSum += sample ** 2;
       }
       // TODO are you sure this has to be RMS? It's for a single moment in time for multiple channels, not over time.
-      const allChannelsSampleMeanSquare = allChannelsSampleSquareSum / numChannels;
+      const allChannelsSampleMeanSquare =
+        allChannelsSampleSquareSum / numChannels;
 
       // As long as we use a rectangular window, we can just subtract the value of the sample that leaves the window and
       // add the value of the sample that enters it.
       // TODO I believe floating point error may snowball here over time? Better compute it from scratch on each cycle,
       // like a normal person. Or maybe we could simply periodically (like every 10 minutes) reset it or something?
       // TODO handle the case when smoothingWindowLength is shorter than `SAMPLES_PER_QUANTUM`.
-      const lastWindowSampleSquare =
-        this._sampleSquaresRingBuffer.getReverse((smoothingWindowLengthSamples - 1));
+      const lastWindowSampleSquare = this._sampleSquaresRingBuffer.getReverse(
+        smoothingWindowLengthSamples - 1,
+      );
       this._currWindowSquaresSum -= lastWindowSampleSquare;
       this._currWindowSquaresSum += allChannelsSampleMeanSquare;
       // Dunno, it becomes negative from time to time.
@@ -147,7 +166,9 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
       this._currWindowSquaresSum = Math.max(this._currWindowSquaresSum, 0);
       this._sampleSquaresRingBuffer.push(allChannelsSampleMeanSquare);
 
-      const currVolume = Math.sqrt(this._currWindowSquaresSum / smoothingWindowLengthSamples);
+      const currVolume = Math.sqrt(
+        this._currWindowSquaresSum / smoothingWindowLengthSamples,
+      );
       outputChannel[sampleI] = currVolume;
     }
 
@@ -155,4 +176,4 @@ class VolumeFilterProcessor extends WorkaroundAudioWorkletProcessor {
   }
 }
 
-registerProcessor('VolumeFilter', VolumeFilterProcessor);
+registerProcessor("VolumeFilter", VolumeFilterProcessor);

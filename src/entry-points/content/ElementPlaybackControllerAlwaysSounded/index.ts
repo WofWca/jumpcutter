@@ -19,46 +19,40 @@
  */
 
 // Technically we can replace `audioContext.currentTime` with `performance.now() / 1000`.
-import { audioContext } from '@/entry-points/content/audioContext';
-import {
-  isPlaybackActive,
-} from '@/entry-points/content/helpers';
-import { assertDev } from '@/helpers';
-import type { MediaTime, AnyTime, AudioContextTime } from '@/helpers';
-import type { Settings as ExtensionSettings } from '@/settings';
-import { ControllerKind } from '@/settings';
-import { SpeedName } from '@/helpers';
-import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
+import { audioContext } from "@/entry-points/content/audioContext";
+import { isPlaybackActive } from "@/entry-points/content/helpers";
+import { assertDev } from "@/helpers";
+import type { MediaTime, AnyTime, AudioContextTime } from "@/helpers";
+import type { Settings as ExtensionSettings } from "@/settings";
+import { ControllerKind } from "@/settings";
+import { SpeedName } from "@/helpers";
+import type TimeSavedTracker from "@/entry-points/content/TimeSavedTracker";
 import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
-} from '../playbackRateChangeTracking';
+} from "../playbackRateChangeTracking";
 
 type Time = AnyTime;
 
-export type ControllerSettings =
-  Pick<
-    ExtensionSettings,
-    'soundedSpeed'
-  >;
+export type ControllerSettings = Pick<ExtensionSettings, "soundedSpeed">;
 
 export interface TelemetryRecord {
-  clonePlaybackError?: never,
-  unixTime: Time,
-  intrinsicTime: MediaTime,
-  elementPlaybackActive: boolean,
-  contextTime: Time,
-  inputVolume: number,
+  clonePlaybackError?: never;
+  unixTime: Time;
+  intrinsicTime: MediaTime;
+  elementPlaybackActive: boolean;
+  contextTime: Time;
+  inputVolume: number;
   lastActualPlaybackRateChange: {
-    time: Time,
-    value: number,
-    name: SpeedName,
-  },
-  delayFromInputToStretcherOutput: 0,
-  elementVolume: number,
-  totalOutputDelay: 0,
-  lastScheduledStretchInputTime?: never,
-  stretcherDelay: 0,
+    time: Time;
+    value: number;
+    name: SpeedName;
+  };
+  delayFromInputToStretcherOutput: 0;
+  elementVolume: number;
+  totalOutputDelay: 0;
+  lastScheduledStretchInputTime?: never;
+  stretcherDelay: 0;
 }
 
 // TODO a lot of stuff is copy-pasted from ElementPlaybackControllerStretching.
@@ -76,11 +70,11 @@ export default class Controller {
   readonly initialized = true;
 
   public destroy!: () => void;
-  private _destroyedPromise = new Promise<void>(r => this.destroy = r);
+  private _destroyedPromise = new Promise<void>((r) => (this.destroy = r));
   _lastActualPlaybackRateChange: {
-    time: AudioContextTime,
-    value: number,
-    name: SpeedName,
+    time: AudioContextTime;
+    value: number;
+    name: SpeedName;
   } = {
     // Dummy values, will be ovewritten immediately in `_setSpeedAndLog`.
     name: SpeedName.SOUNDED,
@@ -94,7 +88,7 @@ export default class Controller {
     // It's unused in this type of controller for now. Why do we specify it then? It's a hack. See
     // https://github.com/WofWca/jumpcutter/blob/d58946c0654ccc4adc94d31751f006976be2e9d5/src/content/AllMediaElementsController.ts#L68
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    __onSilenceSkippingSeek: TimeSavedTracker['onSilenceSkippingSeek'],
+    __onSilenceSkippingSeek: TimeSavedTracker["onSilenceSkippingSeek"],
   ) {
     this.element = videoElement;
     this.settings = controllerSettings;
@@ -108,8 +102,14 @@ export default class Controller {
       defaultPlaybackRate: elementDefaultPlaybackRateBeforeInitialization,
     } = element;
     this._destroyedPromise.then(() => {
-      setPlaybackRateAndRememberIt(element, elementPlaybackRateBeforeInitialization);
-      setDefaultPlaybackRateAndRememberIt(element, elementDefaultPlaybackRateBeforeInitialization);
+      setPlaybackRateAndRememberIt(
+        element,
+        elementPlaybackRateBeforeInitialization,
+      );
+      setDefaultPlaybackRateAndRememberIt(
+        element,
+        elementDefaultPlaybackRateBeforeInitialization,
+      );
     });
 
     this._setStateAccordingToNewSettings(this.settings);
@@ -148,7 +148,9 @@ export default class Controller {
    * immediately (waiting for the old one to get destroyed).
    * Can be called before the instance has been initialized.
    */
-  updateSettingsAndMaybeCreateNewInstance(newSettings: ControllerSettings): Controller {
+  updateSettingsAndMaybeCreateNewInstance(
+    newSettings: ControllerSettings,
+  ): Controller {
     // TODO how about not updating settings that heven't been changed
     this._setStateAccordingToNewSettings(newSettings);
     return this;
@@ -166,10 +168,10 @@ export default class Controller {
       if (speedName === SpeedName.SOUNDED) {
         assertDev(
           this.element.playbackRate === this.element.defaultPlaybackRate,
-          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:`
-          + ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}`
-          + 'Perhaps `defaultPlaybackRate` was updated outside of this extension'
-          + ', or you forgot to update it yourself. It\'s not a major problem, just a heads-up'
+          `Switched to soundedSpeed, but \`soundedSpeed !== defaultPlaybackRate\`:` +
+            ` ${this.element.playbackRate} !== ${this.element.defaultPlaybackRate}` +
+            "Perhaps `defaultPlaybackRate` was updated outside of this extension" +
+            ", or you forgot to update it yourself. It's not a major problem, just a heads-up",
         );
       }
     }

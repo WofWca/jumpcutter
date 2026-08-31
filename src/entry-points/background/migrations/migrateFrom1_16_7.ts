@@ -18,11 +18,13 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Settings } from '@/settings';
-import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
+import type { Settings } from "@/settings";
+import { browserOrChrome } from "@/webextensions-api-browser-or-chrome";
 
 export default async function (): Promise<void> {
-  const { popupChartLengthInSeconds } = await browserOrChrome.storage.local.get('popupChartLengthInSeconds');
+  const { popupChartLengthInSeconds } = await browserOrChrome.storage.local.get(
+    "popupChartLengthInSeconds",
+  );
   //  Otherwise the value key missing will be assigned from default settings.
   if (popupChartLengthInSeconds !== undefined) {
     const newValues: Partial<Settings> = {

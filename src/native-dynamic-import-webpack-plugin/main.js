@@ -25,19 +25,22 @@
 
 /* eslint-env node */
 /* eslint-disable @typescript-eslint/no-var-requires */
-const RuntimeGlobals = require('webpack/lib/RuntimeGlobals')
-const LoadScriptRuntimeModule = require('./LoadScriptRuntimeModule')
+const RuntimeGlobals = require("webpack/lib/RuntimeGlobals");
+const LoadScriptRuntimeModule = require("./LoadScriptRuntimeModule");
 
 module.exports = class NativeDynamicImportPlugin {
   apply(compiler) {
-    compiler.hooks.compilation.tap(NativeDynamicImportPlugin.name, (compilation) => {
-      compilation.hooks.runtimeRequirementInTree
-        .for(RuntimeGlobals.loadScript)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        .tap(NativeDynamicImportPlugin.name, (chunk, _set) => {
-          compilation.addRuntimeModule(chunk, new LoadScriptRuntimeModule())
-          return true
-        })
-    })
+    compiler.hooks.compilation.tap(
+      NativeDynamicImportPlugin.name,
+      (compilation) => {
+        compilation.hooks.runtimeRequirementInTree
+          .for(RuntimeGlobals.loadScript)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          .tap(NativeDynamicImportPlugin.name, (chunk, _set) => {
+            compilation.addRuntimeModule(chunk, new LoadScriptRuntimeModule());
+            return true;
+          });
+      },
+    );
   }
-}
+};
