@@ -18,12 +18,60 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const audioContext = new AudioContext({
-  // From what I understood `latencyHint` only affects the delay between `AudioDestinationNode`
-  // and the system's output, so changing this to something faster won't actually affect
-  // how fast we can react to loudness changes.
-  // https://webaudio.github.io/web-audio-api/#dom-audiocontextoptions-latencyhint
-  // https://webaudio.github.io/web-audio-api/#dom-audiocontext-baselatency
-  // Would be cool if I was wrong.
-  latencyHint: 'playback',
-});
+import { getOrCreateMediaElementSourceAndUpdateMap } from './getOrCreateMediaElementSourceAndUpdateMap';
+
+/** Keep processing only while the element plays, allowing delayed output to drain on pause. */
+export function suspendAudioContextWhenPaused(
+  element: HTMLMediaElement,
+  audioContext: AudioContext,
+  getSuspendDelay: () => number = () => 0,
+): () => void {
+  let timeoutId: number | undefined;
+  const suspend = () => { audioContext.suspend(); };
+  const onPause = () => {
+    clearTimeout(timeoutId);
+    const delay = getSuspendDelay();
+    if (delay > 0) {
+      timeoutId = window.setTimeout(suspend, delay * 1000);
+    } else {
+      suspend();
+    }
+  };
+  const onPlay = () => {
+    clearTimeout(timeoutId);
+    audioContext.resume();
+  };
+  element.addEventListener('pause', onPause, { passive: true });
+  element.addEventListener('play', onPlay, { passive: true });
+  if (element.paused) {
+    suspend();
+  } else {
+    onPlay();
+  }
+  return () => {
+    clearTimeout(timeoutId);
+    element.removeEventListener('pause', onPause);
+    element.removeEventListener('play', onPlay);
+  };
+}
+
+const stopSyncingPlayback = new WeakMap<HTMLMediaElement, () => void>();
+
+/**
+ * A media element stays routed through its context even after the controller is destroyed.
+ * Keep following play/pause for that element's lifetime, including when Jump Cutter is disabled.
+ * Separate contexts prevent pausing one element from silencing another.
+ */
+export function getOrCreatePlaybackAudioContext(
+  element: HTMLMediaElement,
+  getSuspendDelay?: () => number,
+): [AudioContext, MediaElementAudioSourceNode] {
+  const result = getOrCreateMediaElementSourceAndUpdateMap(
+    element,
+    () => new AudioContext({ latencyHint: 'playback' }),
+  );
+  stopSyncingPlayback.get(element)?.();
+  stopSyncingPlayback.set(element,
+    suspendAudioContextWhenPaused(element, result[0], getSuspendDelay));
+  return result;
+}

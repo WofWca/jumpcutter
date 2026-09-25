@@ -18,8 +18,6 @@
  * along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Technically we can replace `audioContext.currentTime` with `performance.now() / 1000`.
-import { audioContext } from '@/entry-points/content/audioContext';
 import {
   isPlaybackActive,
 } from '@/entry-points/content/helpers';
@@ -160,7 +158,8 @@ export default class Controller {
   private _setSpeedAndLog(speedName: SpeedName.SOUNDED) {
     const speedVal = this.settings.soundedSpeed;
     setPlaybackRateAndRememberIt(this.element, speedVal);
-    const elementSpeedSwitchedAt = audioContext.currentTime;
+    // Telemetry needs a clock, but this controller does not need an audio device.
+    const elementSpeedSwitchedAt = performance.now() / 1000;
 
     if (IS_DEV_MODE) {
       if (speedName === SpeedName.SOUNDED) {
@@ -189,7 +188,7 @@ export default class Controller {
       // 'ratechange' and infer `element.currentTime` from that?
       intrinsicTime: this.element.currentTime,
       elementPlaybackActive: isPlaybackActive(this.element),
-      contextTime: audioContext.currentTime,
+      contextTime: performance.now() / 1000,
       inputVolume: 0,
       lastActualPlaybackRateChange: this._lastActualPlaybackRateChange,
       elementVolume: this.element.volume,

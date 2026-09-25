@@ -31,11 +31,9 @@ import type TimeSavedTracker from '@/entry-points/content/TimeSavedTracker';
 import VolumeFilterNode from '@/entry-points/content/VolumeFilter/VolumeFilterNode';
 import lookaheadVolumeFilterSmoothing from './lookaheadVolumeFilterSmoothing.json'
 import {
-  audioContext as commonAudioContext,
+  getOrCreatePlaybackAudioContext,
+  suspendAudioContextWhenPaused,
 } from '@/entry-points/content/audioContext';
-import {
-  getOrCreateMediaElementSourceAndUpdateMap
-} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
 import {
   setPlaybackRateAndRememberIt,
   setDefaultPlaybackRateAndRememberIt,
@@ -229,7 +227,9 @@ export default class Controller {
     const audioContext = this.audioContext = new AudioContext({
       latencyHint: 'playback',
     });
+    const stopSyncing = suspendAudioContextWhenPaused(element, audioContext);
     this._destroyedPromise.then(() => {
+      stopSyncing();
       audioContext.close();
     })
   }
@@ -383,11 +383,8 @@ export default class Controller {
         if (BUILD_DEFINITIONS.BROWSER === 'gecko') {
           const mozCaptureStreamUsed = !unprefixedCaptureStreamPresent;
           if (mozCaptureStreamUsed) {
-            const [, mediaElementSource] = getOrCreateMediaElementSourceAndUpdateMap(
-              element,
-              () => commonAudioContext
-            );
-            mediaElementSource.connect(commonAudioContext.destination);
+            const [context, mediaElementSource] = getOrCreatePlaybackAudioContext(element);
+            mediaElementSource.connect(context.destination);
           }
         }
 

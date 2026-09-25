@@ -19,10 +19,7 @@
  */
 
 import { browserOrChrome } from '@/webextensions-api-browser-or-chrome';
-import { audioContext } from '@/entry-points/content/audioContext';
-import {
-  getOrCreateMediaElementSourceAndUpdateMap
-} from '@/entry-points/content/getOrCreateMediaElementSourceAndUpdateMap';
+import { getOrCreatePlaybackAudioContext } from '@/entry-points/content/audioContext';
 import {
   getRealtimeMargin,
   getOptimalLookaheadDelay,
@@ -196,7 +193,17 @@ export default class Controller {
       setDefaultPlaybackRateAndRememberIt(element, elementDefaultPlaybackRateBeforeInitialization);
     });
 
+    const [audioContext, mediaElementSource] = getOrCreatePlaybackAudioContext(element, () => {
+      const totalTailTime = getTotalOutputDelay(
+        this._lookahead?.delayTime.value ?? 0,
+        this._stretcherAndPitch?.stretcherDelay ?? 0,
+        this._stretcherAndPitch?.pitchCorrectorDelay ?? 0,
+      );
+      return totalTailTime + 0.02;
+    });
     this.audioContext = audioContext;
+    // Keep direct playback while the worklets and stretcher are loading.
+    mediaElementSource.connect(audioContext.destination);
 
     const addWorkletProcessor = (url: string) =>
       audioContext.audioWorklet.addModule(browserOrChrome.runtime.getURL(url));
@@ -260,57 +267,7 @@ export default class Controller {
       this._destroyedPromise.then(() => this._stretcherAndPitch!.destroy());
     }
 
-    {
-      // This is mainly to reduce CPU consumption while the video is paused. Also gets rid of slight misbehaviors like
-      // speed always becoming silenceSpeed when media element gets paused, which causes a guaranteed audio stretch on
-      // resume.
-      // TODO This causes a bug - start playing two media elements (on the same <iframe>), then pause one - both will get
-      // silenced. Nobody really does that, but still.
-      // Tbh I don't remember why we're using a single `audioContext`. Probably because it
-      // used to be good enough, and saved some memory on not creating a bunch of contexts.
-      const suspendAudioContext = () => audioContext.suspend();
-      let suspendAudioContextTimeoutId: number | undefined;
-      const scheduleSuspendAudioContext = () => {
-        clearTimeout(suspendAudioContextTimeoutId); // Just in case, e.g. `scheduleSuspendAudioContext` is called twice.
-
-        // Isn't this too much calculation? Maybe doing `(settings.marginBefore + settings.marginAfter) * 10` would be
-        // enough?
-        const totalTailTime = getTotalOutputDelay(
-          this._lookahead?.delayTime.value ?? 0,
-          this._stretcherAndPitch?.stretcherDelay ?? 0,
-          this._stretcherAndPitch?.pitchCorrectorDelay ?? 0,
-        );
-        // Maybe I'm calculating `totalTailTime` wrong, but it appears it's not enough – try settings `marginBefore` to
-        // a high value (e.g. 0.5s) and pause the element on a sounded part, then unpause it -
-        // as soon as you unpause you'll hear sound, then silence for 0.5s, then sound again (i.e. the
-        // first piece of sound is not supposed to be there, it was supposed to be done playing in that tail-time
-        // before `audioContext.suspend()`).
-        const safetyMargin = 0.02;
-        suspendAudioContextTimeoutId = (setTimeout as typeof window.setTimeout)(
-          suspendAudioContext,
-          (totalTailTime + safetyMargin) * 1000
-        );
-      };
-      const resumeAudioContext = () => {
-        clearTimeout(suspendAudioContextTimeoutId);
-        audioContext.resume();
-      };
-      if (element.paused) {
-        suspendAudioContext();
-      }
-      element.addEventListener('pause', scheduleSuspendAudioContext, { passive: true });
-      element.addEventListener('play', resumeAudioContext, { passive: true });
-      this._destroyedPromise.then(() => {
-        element.removeEventListener('pause', scheduleSuspendAudioContext);
-        element.removeEventListener('play', resumeAudioContext);
-        resumeAudioContext(); // In case the video is paused.
-      });
-    }
-
-    const [, mediaElementSource] = getOrCreateMediaElementSourceAndUpdateMap(
-      element,
-      () => audioContext
-    );
+    mediaElementSource.disconnect();
     let toDestinationChainLastConnectedLink: { connect: (destinationNode: AudioNode) => void }
       = mediaElementSource;
     if (this.isStretcherEnabled()) {
@@ -336,8 +293,9 @@ export default class Controller {
     toDestinationChainLastConnectedLink.connect(audioContext.destination);
 
     this._destroyedPromise.then(() => {
-      mediaElementSource.disconnect();
-      mediaElementSource.connect(audioContext.destination);
+      // Restore direct playback and drop the controller's delayed-output callback.
+      const [, source] = getOrCreatePlaybackAudioContext(element);
+      source.connect(audioContext.destination);
     });
 
     if (isLogging(this)) {
