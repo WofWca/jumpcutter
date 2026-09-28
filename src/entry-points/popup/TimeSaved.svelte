@@ -317,8 +317,8 @@ especially accessibility-wise. -->
 
     <!-- Adding getMessage("overTheLast") here might be "correct",
     but it's perhaps confusing for just the "estimatedRemainingDuration" -->
-    {#if estimatedRemainingDuration != undefined && // 10,000 hour sanity check
-      estimatedRemainingDuration < 10000 * 60 * 60}
+    <!-- 10,000 hour sanity check -->
+    {#if estimatedRemainingDuration != undefined && estimatedRemainingDuration < 10000 * 60 * 60}
       <p style="margin-bottom: 0.25rem;">
         {getMessage("estimatedRemainingDuration")}<br />
         {mmSs(estimatedRemainingDuration)}<br />
