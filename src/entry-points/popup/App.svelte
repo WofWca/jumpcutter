@@ -510,9 +510,12 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
   if (commandsPromise) {
     commandsPromise.then((commands) => {
       commands.forEach((command) => {
-        if (command.name === "toggle_enabled" && command.shortcut) {
+        if (command.name === "toggle_enabled") {
           toggleExtensionTooltip = {
-            content: getMessage("toggleSettingValue") + ": " + command.shortcut,
+            content:
+              getMessage("toggleSettingValue") +
+              ": " +
+              (command.shortcut || "-"),
             theme: "my-tippy",
             placement: "bottom",
           };
