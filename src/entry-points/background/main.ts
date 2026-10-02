@@ -107,6 +107,17 @@ browserOrChrome.runtime.onInstalled.addListener(async (details) => {
     __lastHandledUpdateToVersion: currentVersion,
   });
   postInstallStorageChangesDonePResolve(true);
+
+  await browserOrChrome.scripting.registerContentScripts([
+    {
+      id: "main",
+      allFrames: true,
+      matches: ["http://*/*", "https://*/*"],
+      js: ["/content/main.js"],
+      runAt: "document_idle",
+      matchOriginAsFallback: true,
+    },
+  ]);
 });
 
 // `commands` API is currently not supported by Gecko for Android.

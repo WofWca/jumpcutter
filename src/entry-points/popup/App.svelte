@@ -175,6 +175,82 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
     return tab;
   })();
 
+  let currentSite: string | null = null;
+  let enabledForAllSites: boolean | null = null;
+  let enabledForCurrentSite: boolean | null = null;
+
+  (async () => {
+    const tab = await tabLoadedPromise;
+    if (!tab.url) {
+      return;
+    }
+
+    const url = new URL(tab.url);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return;
+    }
+
+    currentSite = url.origin;
+    enabledForAllSites = await isEnabledForAllSites();
+    if (!enabledForAllSites) {
+      enabledForCurrentSite = await isEnabledForCurrentSite();
+    }
+  })();
+
+  async function isEnabledForAllSites() {
+    const origins = ["http://*/*", "https://*/*"];
+    return await browserOrChrome.permissions.contains({ origins });
+  }
+
+  async function isEnabledForCurrentSite() {
+    const origins = [currentSite! + "/*"];
+    return await browserOrChrome.permissions.contains({ origins });
+  }
+
+  async function onEnabledForAllSitesClick(
+    event: MouseEvent & {
+      currentTarget: EventTarget & HTMLInputElement;
+    },
+  ) {
+    event.preventDefault();
+
+    if (event.currentTarget.checked) {
+      const origins = ["http://*/*", "https://*/*"];
+      const accepted = await browserOrChrome.permissions.request({ origins });
+      if (accepted) {
+        enabledForAllSites = true;
+      }
+    } else {
+      const origins = (await browserOrChrome.permissions.getAll()).origins;
+      const removed = await browserOrChrome.permissions.remove({ origins });
+      if (removed) {
+        enabledForAllSites = false;
+        enabledForCurrentSite = false;
+      }
+    }
+  }
+
+  async function onEnabledForCurrentSiteClick(
+    event: MouseEvent & {
+      currentTarget: EventTarget & HTMLInputElement;
+    },
+  ) {
+    event.preventDefault();
+
+    const origins = [`${currentSite}/*`];
+    if (event.currentTarget.checked) {
+      const accepted = await browserOrChrome.permissions.request({ origins });
+      if (accepted) {
+        enabledForCurrentSite = true;
+      }
+    } else {
+      const removed = await browserOrChrome.permissions.remove({ origins });
+      if (removed) {
+        enabledForCurrentSite = false;
+      }
+    }
+  }
+
   let nonSettingsActionsPort:
     | (Omit<ReturnType<typeof browserOrChrome.tabs.connect>, "postMessage"> & {
         postMessage: (actions: Array<HotkeyBinding<NonSettingsAction>>) => void;
@@ -601,16 +677,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
         justify-content: space-between;
       "
     >
-      <div style="margin-bottom: 0.375rem;">
+      <div>
         <!-- TODO style: when `toggleExtensionTooltip == undefined`,
         the tooltip is just empty. -->
-        <label
-          style="
-        display: inline-flex;
-        align-items: center;
-        "
-          use:tippy={toggleExtensionTooltip}
-        >
+        <label class="input-label" use:tippy={toggleExtensionTooltip}>
           <!-- TODO it needs to be ensured that `on:change` (`on:input`) goes after `bind:` for all inputs.
           DRY? With `{...myBind}` or something?
           Also for some reason if you use `on:input` instead of `on:change` for this checkbox, it stops working.
@@ -624,6 +694,32 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
           <span>{getMessage("enable")}</span>
         </label>
       </div>
+      {#if currentSite !== null && enabledForAllSites !== null}
+        <div style="margin-bottom: 0.375rem;">
+          <div>
+            <label class="input-label">
+              <input
+                type="checkbox"
+                on:click={onEnabledForAllSitesClick}
+                checked={enabledForAllSites}
+              />
+              <span>{getMessage("enableForAllSites")}</span>
+            </label>
+          </div>
+          {#if enabledForCurrentSite !== null && enabledForAllSites === false}
+            <div>
+              <label class="input-label">
+                <input
+                  type="checkbox"
+                  on:click={onEnabledForCurrentSiteClick}
+                  checked={enabledForCurrentSite}
+                />
+                <span>{getMessage("enableFor")} {currentSite}</span>
+              </label>
+            </div>
+          {/if}
+        </div>
+      {/if}
       {#if settings.advancedMode}
         <div style="margin-bottom: 0.375rem;">
           <VolumeIndicator {latestTelemetryRecord} {getActionString} />
@@ -1188,5 +1284,10 @@ along with Jump Cutter Browser Extension.  If not, see <https://www.gnu.org/lice
 
   .capitalize-first-letter::first-letter {
     text-transform: capitalize;
+  }
+
+  .input-label {
+    display: inline-flex;
+    align-items: center;
   }
 </style>
